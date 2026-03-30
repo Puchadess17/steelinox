@@ -62,17 +62,17 @@ const SIApp = {
 
         const menus = {
             admin: [
-                { icon: 'grid', label: 'Projects', route: 'dashboard' },
-                { icon: 'users', label: 'Clients', route: 'clients' },
-                { icon: 'briefcase', label: 'Commercials', route: 'commercials' },
-                { icon: 'shield', label: 'Audit Log', route: 'audit-log' },
+                { icon: 'grid',      label: 'Projects',   href: '/steelinox/panel',                  route: 'dashboard' },
+                { icon: 'users',     label: 'Clients',    href: '/steelinox/panel?view=clients',     route: 'clients' },
+                { icon: 'briefcase', label: 'Commercials',href: '/steelinox/panel?view=commercials',  route: 'commercials' },
+                { icon: 'shield',    label: 'Audit Log',  href: '/steelinox/panel?view=audit-log',   route: 'audit-log' },
             ],
             comercial: [
-                { icon: 'grid', label: 'My Projects', route: 'dashboard' },
-                { icon: 'users', label: 'Clients', route: 'clients' },
+                { icon: 'grid',  label: 'My Projects', href: '/steelinox/panel',               route: 'dashboard' },
+                { icon: 'users', label: 'Clients',     href: '/steelinox/panel?view=clients',  route: 'clients' },
             ],
             cliente: [
-                { icon: 'grid', label: 'My Projects', route: 'dashboard' },
+                { icon: 'grid', label: 'My Projects', href: '/steelinox/panel', route: 'dashboard' },
             ],
         };
 
@@ -87,7 +87,7 @@ const SIApp = {
         const items = menus[this.user.role] || [];
 
         const menuHtml = items.map(item => `
-            <a href="${item.route}"
+            <a href="${item.href}"
                class="sidebar-item"
                data-route="${item.route}">
                 ${icons[item.icon] || ''}
@@ -98,7 +98,7 @@ const SIApp = {
         // Settings al fondo (separado)
         const settingsHtml = `
             <div class="mt-auto pt-4 border-t border-gray-100">
-                <a href="?view=settings" class="sidebar-item" data-route="settings">
+                <a href="/steelinox/panel?view=settings" class="sidebar-item" data-route="settings">
                     ${icons.settings}
                     <span>Settings</span>
                 </a>

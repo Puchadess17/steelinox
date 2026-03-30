@@ -25,17 +25,17 @@ const ProjectAdminView = {
     async loadProjectData() {
         try {
             const response = await API.get('/projects/' + this.projectId);
-            
+
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Error al cargar el proyecto.');
             }
 
             // Securización vía DTO (Reutilizamos lógica si está disponible o la extendemos aquí)
             this.project = response.data;
-            
+
             // Actualizar Cabecera
             this.renderHeader();
-            
+
             // Renderizar la pestaña activa inicial (Resumen)
             this.renderTabContent();
 
@@ -75,7 +75,7 @@ const ProjectAdminView = {
         if (titleEl) titleEl.textContent = this.project.name;
         if (breadcrumbEl) breadcrumbEl.textContent = this.project.name;
         if (refEl) refEl.textContent = this.project.reference || 'SIN REF';
-        
+
         if (badgeEl) {
             const labels = {
                 propuesta: 'Propuesta',
@@ -91,7 +91,7 @@ const ProjectAdminView = {
             };
             const label = labels[this.project.status] || this.project.status;
             const style = styles[this.project.status] || 'bg-gray-100 text-gray-600';
-            
+
             badgeEl.className = `px-4 py-2 rounded-xl text-xs font-bold uppercase border ${style} shadow-sm inline-block`;
             badgeEl.textContent = label;
         }
@@ -102,11 +102,11 @@ const ProjectAdminView = {
         const container = document.getElementById('tab-content');
         if (!container) return;
 
-        switch(this.activeTab) {
-            case 'resumen':    container.innerHTML = this._renderResumen(); break;
+        switch (this.activeTab) {
+            case 'resumen': container.innerHTML = this._renderResumen(); break;
             case 'documentos': container.innerHTML = this._renderDocumentos(); break;
             case 'comentarios': container.innerHTML = this._renderComentarios(); break;
-            case 'historial':   container.innerHTML = this._renderHistorial(); break;
+            case 'historial': container.innerHTML = this._renderHistorial(); break;
             default: container.innerHTML = '<p class="text-center py-20 text-gray-400">Próximamente...</p>';
         }
     },
@@ -258,210 +258,139 @@ const ProjectAdminView = {
 
     /** PESTAÑA: DOCUMENTOS (Mock) */
     _renderDocumentos() {
-       return `
+        return `
             <div class="space-y-6">
-                <!-- Dropzone Mock -->
-                <div class="border-2 border-dashed border-gray-200 rounded-3xl p-12 flex flex-col items-center justify-center bg-white hover:border-orange-200 hover:bg-orange-50/20 transition-all cursor-pointer group">
-                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                    </div>
-                    <h4 class="text-lg font-extrabold text-[#1a1b25] mb-2">Arrastra y suelta documentos aquí</h4>
-                    <p class="text-sm text-gray-400 text-center mb-6 max-w-sm leading-relaxed">Soporta planos CAD (.dwg), documentos PDF y archivos de imagen de alta resolución.</p>
-                    <div class="flex gap-4">
-                         <button class="bg-orange-500 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all">+ Seleccionar Archivo</button>
-                         <button class="bg-white border border-gray-100 px-8 py-3 rounded-xl text-sm font-bold text-gray-600 shadow-sm hover:bg-gray-50 transition-all">Ver Requisitos</button>
-                    </div>
+                <!-- Buscador -->
+                <div class="relative">
+                    <svg class="w-5 h-5 text-gray-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input id="doc-search-input" type="text" placeholder="Buscar documentos..." oninput="ProjectAdminView._filterDocs(this.value)" class="w-full bg-white border border-gray-100 text-base rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-[#E57B23]/20 focus:border-[#E57B23] focus:outline-none shadow-sm text-gray-700 font-medium">
                 </div>
 
-                <!-- Tabla de Documentos Mock -->
-                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div class="px-6 py-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-4">
-                        <h4 class="font-bold text-gray-900">Repositorio del Proyecto</h4>
-                        <div class="flex items-center gap-3">
-                             <div class="relative">
-                                <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <input type="text" placeholder="Buscar por título..." class="bg-gray-50 border-none text-xs rounded-lg pl-9 pr-4 py-2 w-48 focus:ring-1 focus:ring-orange-500">
-                             </div>
-                             <button class="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors">
-                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                                 Filtrar Tipo
-                             </button>
-                        </div>
-                    </div>
-                    <div class="si-table-wrapper">
-                        <table class="w-full si-table">
-                            <thead>
-                                <tr class="bg-gray-50/50">
-                                    <th class="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Título del Documento</th>
-                                    <th class="px-6 py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tipo</th>
-                                    <th class="px-4 py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Versión</th>
-                                    <th class="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fecha de Carga</th>
-                                    <th class="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Autor</th>
-                                    <th class="px-6 py-4"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                ${this._mockDocRow('Plano Estructural Planta Baja - Rev A', 'CAD', 'v2.4 (Actual)', '14 Jun 2024, 10:30', 'Roberto Silva')}
-                                ${this._mockDocRow('Contrato de Suministro de Acero Inoxidable', 'PDF', 'v1.0 (Final)', '12 Jun 2024, 09:15', 'Elena Martínez')}
-                                ${this._mockDocRow('Fotos de Avance Cimentación - Vista Norte', 'Imagen', 'v1.0', '10 Jun 2024, 16:45', 'Carlos Ruiz')}
-                                ${this._mockDocRow('Especificaciones Técnicas Perfiles H', 'PDF', 'v3.2 (Actual)', '08 Jun 2024, 11:20', 'Roberto Silva')}
-                                ${this._mockDocRow('Detalle de Soldadura Nudo 45', 'CAD', 'v1.2', '05 Jun 2024, 14:00', 'Roberto Silva')}
-                            </tbody>
-                        </table>
-                    </div>
-                    <!-- Paginación Mock -->
-                    <div class="px-6 py-4 bg-gray-50/30 flex items-center justify-between text-xs text-gray-500 font-medium">
-                        <span>Mostrando 5 de 24 documentos</span>
-                        <div class="flex items-center gap-1">
-                            <button class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50" disabled>Anterior</button>
-                            <button class="px-3 py-1 bg-orange-500 text-white rounded-lg">1</button>
-                            <button class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">2</button>
-                            <button class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">3</button>
-                            <button class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Siguiente</button>
-                        </div>
-                    </div>
+                <!-- Botón Principal -->
+                <button class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-full py-4 text-sm font-black shadow-lg shadow-[#E57B23]/20 transition-all flex items-center justify-center gap-2 uppercase tracking-widest">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Seleccionar Archivo
+                </button>
+
+                <!-- Header de Lista -->
+                <div class="flex items-center justify-between pt-2">
+                    <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide">Archivos Recientes</h3>
+                    <button class="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Lista de Archivos -->
+                <div class="space-y-3 pb-6" id="doc-cards-container">
+                    ${this._mockDocCard('Plano_Estructural_V1.dwg', 'CAD', 'v2.4 • 12 Oct', 'JD')}
+                    ${this._mockDocCard('Especificaciones_Acero.pdf', 'PDF', 'v1.1 • 10 Oct', 'AL')}
+                    ${this._mockDocCard('Memorias_Calculo_Final.zip', 'ZIP', 'v2.0 • 08 Oct', 'MP')}
+                    ${this._mockDocCard('Cronograma_Suministros.xlsx', 'XLS', 'v3.2 • 05 Oct', 'RS')}
+                    ${this._mockDocCard('Detalle_Soldadura_A3.dwg', 'CAD', 'v1.4 • 02 Oct', 'JD')}
                 </div>
             </div>
-       `;
-    },
-
-    _mockDocRow(title, type, version, date, author) {
-        const iconMap = {
-            'CAD': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
-            'PDF': '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>',
-            'Imagen': '<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
-        };
-        const badgeMap = {
-            'CAD': 'bg-gray-100 text-gray-500',
-            'PDF': 'bg-red-50 text-red-600',
-            'Imagen': 'bg-blue-50 text-blue-600'
-        };
-        return `
-            <tr class="hover:bg-gray-50/50 group">
-                <td class="px-6 py-4">
-                     <div class="flex items-center gap-3">
-                         <div class="w-9 h-9 border border-gray-100 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0 group-hover:bg-white group-hover:shadow-sm">
-                             ${iconMap[type] || ''}
-                         </div>
-                         <div>
-                            <p class="text-sm font-bold text-gray-900 leading-tight">${title}</p>
-                            <p class="text-[10px] text-gray-300 font-medium">42.5 MB</p>
-                         </div>
-                     </div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badgeMap[type] || ''}">${type}</span>
-                </td>
-                <td class="px-4 py-4 text-center">
-                    <span class="text-[10px] font-bold text-gray-500">${version}</span>
-                </td>
-                <td class="px-6 py-4">
-                    <p class="text-xs text-gray-600 font-medium">${date}</p>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                         <div class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[8px] font-bold text-gray-500">
-                             ${author.split(' ').map(n => n[0]).join('')}
-                         </div>
-                         <p class="text-xs text-gray-700 font-bold">${author}</p>
-                    </div>
-                </td>
-                <td class="px-6 py-4 text-right">
-                    <div class="flex items-center justify-end gap-2">
-                        <button class="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-                        <button class="p-1.5 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg></button>
-                    </div>
-                </td>
-            </tr>
         `;
     },
 
-    /** PESTAÑA: COMENTARIOS (Mock) */
-    _renderComentarios() {
+    _mockDocCard(title, type, meta, avatar) {
+        const typeProps = {
+            'CAD': { icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>', bg: 'bg-[#e0f2fe]', text: 'text-[#0284c7]', badgeBg: 'bg-[#bae6fd]', badgeText: 'text-[#0369a1]' },
+            'PDF': { icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>', bg: 'bg-[#fee2e2]', text: 'text-[#dc2626]', badgeBg: 'bg-[#fecaca]', badgeText: 'text-[#b91c1c]' },
+            'ZIP': { icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>', bg: 'bg-[#ffedd5]', text: 'text-[#ea580c]', badgeBg: 'bg-[#fed7aa]', badgeText: 'text-[#c2410c]' },
+            'XLS': { icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" clip-rule="evenodd"/></svg>', bg: 'bg-[#dcfce7]', text: 'text-[#16a34a]', badgeBg: 'bg-[#bbf7d0]', badgeText: 'text-[#15803d]' }
+        };
+        const style = typeProps[type] || typeProps['CAD'];
+
         return `
-            <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm flex flex-col h-[600px]">
-                <div class="px-8 py-5 border-b border-gray-100 flex items-center justify-between">
-                    <h4 class="text-lg font-extrabold text-[#1a1b25] flex items-center gap-3">
-                        Línea de Tiempo
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-400 text-[9px] font-black rounded uppercase tracking-wider">3 mensajes</span>
-                    </h4>
-                    <button class="text-xs font-bold text-gray-400 hover:text-gray-700 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                        Filtrar por rol
+            <div class="doc-row flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-100" data-title="${title.toLowerCase()}">
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-[52px] h-[52px] ${style.bg} ${style.text} rounded-[14px] flex items-center justify-center shrink-0">
+                        ${style.icon}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[15.5px] font-extrabold text-gray-900 leading-tight mb-1 truncate">${title}</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded ${style.badgeBg} ${style.badgeText} text-[10px] font-black tracking-widest uppercase">${type}</span>
+                            <span class="text-xs text-gray-400 font-bold uppercase tracking-tighter">${meta}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center justify-between gap-2 shrink-0 pl-3">
+                    <div class="w-8 h-8 bg-gray-100 rounded-full border border-white shadow-sm flex items-center justify-center text-[10px] uppercase font-black text-gray-500">${avatar}</div>
+                    <button class="text-gray-300 hover:text-gray-700">
+                        <svg class="w-5 h-5 translate-y-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
                     </button>
                 </div>
-                
-                <!-- Timeline Scroll Area -->
-                <div class="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/20">
-                    <!-- Message 1 -->
-                    <div class="flex gap-5">
-                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 border-white shadow-sm">CR</div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="font-extrabold text-sm text-gray-900">Carlos Rodríguez</span>
-                                <span class="px-2 py-0.5 bg-gray-100 text-gray-400 text-[8px] font-black rounded uppercase tracking-tighter">CLIENTE</span>
-                                <span class="text-[10px] text-gray-300 font-medium ml-2">Hoy, 09:15 AM</span>
+            </div>
+        `;
+    },
+
+    /** PESTAÑA: COMENTARIOS/CHAT */
+    _renderComentarios() {
+        return `
+            <div class="flex flex-col bg-transparent -mx-4 sm:mx-0 relative">
+                <!-- Chat Area -->
+                <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 pb-10">
+                    <!-- Date badge -->
+                    <div class="text-center mb-4">
+                        <span class="inline-block px-4 py-1.5 bg-[#f8f9fa] text-gray-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-gray-100">Hoy • 24 Octubre</span>
+                    </div>
+
+                    <!-- Message Other -->
+                    <div class="flex gap-4">
+                        <img src="https://i.pravatar.cc/100?u=ElenaValdes" class="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm border-2 border-white" alt="Elena">
+                        <div class="flex-1 max-w-[85%]">
+                            <div class="flex items-center gap-2 mb-2 px-1">
+                                <span class="text-sm font-black text-[#1a1b25]">Elena Valdés</span>
+                                <span class="text-[11px] text-gray-300 font-bold">09:12 AM</span>
                             </div>
-                            <div class="bg-white border border-gray-100 p-5 rounded-2xl rounded-tl-sm shadow-sm space-y-4">
-                                <p class="text-sm text-gray-700 leading-relaxed">He revisado la propuesta inicial de los acabados. ¿Es posible aumentar el pulido en las juntas de la sección B?</p>
-                                <!-- Adjunto Mock -->
-                                <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-between group cursor-pointer hover:border-orange-200 transition-colors">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center text-orange-400 shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
-                                        <div>
-                                            <p class="text-xs font-bold text-gray-900">Plano_Estructural_SeccionB.pdf</p>
-                                            <p class="text-[9px] text-gray-400 font-bold uppercase">Referencia de versión: v1.2</p>
-                                        </div>
-                                    </div>
-                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <!-- Bubble content -->
+                            <div class="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-sm p-5 text-[15px] text-gray-700 leading-relaxed font-medium mb-3">
+                                Buenos días equipo. He subido los nuevos planos de la Fase 2. ¿Podéis revisarlos antes de la reunión de las 11:00?
+                            </div>
+                            
+                            <!-- Attached file card -->
+                            <div class="bg-[#f0f9ff] border border-[#bae6fd] shadow-sm rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-[#e0f2fe] transition-colors w-full max-w-[320px]">
+                                <div class="w-12 h-12 bg-white text-[#0284c7] rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
                                 </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-black text-[#0369a1] uppercase tracking-wider truncate">PLANO_ESTRUCTURAL_F2.pdf</p>
+                                    <p class="text-[10px] text-[#0ea5e9] font-black uppercase tracking-tighter">4.2 MB • DOCUMENTO PDF</p>
+                                </div>
+                                <svg class="w-5 h-5 text-[#0ea5e9] ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Message 2 -->
-                    <div class="flex gap-5">
-                         <div class="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 border-white shadow-sm">AM</div>
-                         <div class="flex-1">
-                             <div class="flex items-center gap-2 mb-2">
-                                 <span class="font-extrabold text-sm text-gray-900">Ana Martínez</span>
-                                 <span class="px-2 py-0.5 bg-red-50 text-red-400 text-[8px] font-black rounded uppercase tracking-tighter">ADMINISTRADOR</span>
-                                 <span class="text-[10px] text-gray-300 font-medium ml-2">Hoy, 10:30 AM</span>
-                             </div>
-                             <div class="bg-white border border-gray-100 p-5 rounded-2xl rounded-tl-sm shadow-sm space-y-4">
-                                <p class="text-sm text-gray-700 leading-relaxed">Hola Carlos. Sí, es posible. He hablado con el equipo técnico y ajustaremos el proceso de acabado para esa zona. Adjunto el presupuesto actualizado con ese pequeño cambio.</p>
-                                <div class="inline-flex items-center gap-2 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 hover:bg-gray-100 cursor-pointer">
-                                    <svg class="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
-                                    Presupuesto_Ajustado_V2.pdf (1.2 MB)
-                                    <svg class="w-3 h-3 text-gray-400 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                </div>
-                             </div>
-                         </div>
+                    <!-- Message Me -->
+                    <div class="flex gap-4 flex-row-reverse mt-4">
+                        <img src="https://i.pravatar.cc/100?u=Tu" class="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm border-2 border-white" alt="Tu">
+                        <div class="flex-1 max-w-[85%] flex flex-col items-end">
+                            <div class="flex items-center gap-2 mb-2 px-1 flex-row-reverse">
+                                <span class="text-sm font-black text-[#1a1b25]">Tú (Admin)</span>
+                                <span class="text-[11px] text-gray-300 font-bold">09:15 AM</span>
+                            </div>
+                            <div class="bg-[#E57B23] shadow-md shadow-orange-500/10 rounded-2xl rounded-tr-sm p-5 text-[15px] text-white leading-relaxed font-bold">
+                                Recibido, Elena. Los reviso ahora mismo. ¿Hay algún cambio crítico en la sección de vigas de acero?
+                            </div>
+                            <div class="flex items-center gap-1 mt-2 text-[10px] font-black text-[#E57B23] tracking-widest uppercase">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                LEÍDO
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Input area -->
-                <div class="p-8 border-t border-gray-100">
-                    <div class="border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/10 transition-all">
-                         <div class="px-5 py-3 border-b border-gray-50 flex items-center justify-between bg-gray-50/10 rounded-t-2xl">
-                             <h5 class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                Nuevo comentario
-                             </h5>
-                             <button class="text-[10px] text-gray-400 hover:text-gray-900 font-bold uppercase tracking-wider">Cerrar hilo</button>
-                         </div>
-                         <textarea class="w-full h-32 px-6 py-4 border-none text-sm placeholder:text-gray-300 resize-none focus:ring-0" placeholder="Escribe un mensaje para el equipo o cliente... Usa @ para mencionar a alguien."></textarea>
-                         <div class="p-4 flex items-center justify-between border-t border-gray-50">
-                             <div class="flex items-center gap-6 px-2">
-                                 <span class="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Visibilidad: Todos los participantes</span>
-                                 <span class="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Presiona Shift + Enter para salto de línea</span>
+                    <!-- Message Other -->
+                    <div class="flex gap-4 mt-4">
+                         <img src="https://i.pravatar.cc/100?u=ElenaValdes" class="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm border-2 border-white" alt="Elena">
+                         <div class="flex-1 max-w-[85%]">
+                             <div class="flex items-center gap-2 mb-2 px-1">
+                                 <span class="text-sm font-black text-[#1a1b25]">Elena Valdés</span>
+                                 <span class="text-[11px] text-gray-300 font-bold">09:18 AM</span>
                              </div>
-                             <div class="flex items-center gap-3">
-                                 <button class="px-5 py-2.5 bg-gray-50 text-gray-500 rounded-xl text-xs font-bold border border-gray-100 hover:bg-white transition-all flex items-center gap-2 italic">
-                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                     Adjuntar archivo
-                                 </button>
-                                 <button class="px-8 py-2.5 bg-orange-500/30 text-white rounded-xl text-xs font-black shadow-lg shadow-orange-500/5 cursor-not-allowed">Enviar Comentario</button>
+                             <div class="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-sm p-5 text-[15px] text-gray-700 leading-relaxed font-medium">
+                                 Sí, se ha ajustado el espesor del refuerzo en el nodo C-4 para cumplir con la nueva normativa industrial de resistencia.
                              </div>
                          </div>
                     </div>
@@ -473,129 +402,97 @@ const ProjectAdminView = {
     /** PESTAÑA: HISTORIAL (Mock) */
     _renderHistorial() {
         return `
-            <div class="space-y-6">
-                <!-- Top Filters -->
-                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div class="relative flex-1 max-w-lg">
-                        <svg class="w-4 h-4 text-gray-300 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" placeholder="Buscar por usuario, acción o palabra clave..." class="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-6 py-3 text-sm focus:ring-1 focus:ring-gray-200">
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="flex bg-gray-100 p-1 rounded-xl">
-                            <button class="px-4 py-1.5 bg-white text-gray-900 text-xs font-bold rounded-lg shadow-sm">Todo</button>
-                            <button class="px-4 py-1.5 text-gray-500 text-xs font-bold rounded-lg">Estados</button>
-                            <button class="px-4 py-1.5 text-gray-500 text-xs font-bold rounded-lg">Documentos</button>
-                            <button class="px-4 py-1.5 text-gray-500 text-xs font-bold rounded-lg">Usuarios</button>
-                        </div>
-                         <button class="p-3 text-gray-400 hover:text-gray-900 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg></button>
-                    </div>
+            <div class="space-y-6 pb-6">
+                <!-- Header -->
+                <div class="pt-2 px-1">
+                     <h3 class="text-[11px] font-black text-[#E57B23] uppercase tracking-[0.2em] mb-2">INDUSTRIAL STEEL CO.</h3>
+                     <h1 class="text-3xl font-black text-[#1a1b25] tracking-tight">Historial de Actividad</h1>
+                     <p class="text-sm text-gray-400 mt-2 font-medium">Cronología completa de eventos en el Proyecto Nave A24</p>
                 </div>
 
-                <!-- Tabla Registro Activity -->
-                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div class="si-table-wrapper">
-                        <table class="w-full si-table">
-                            <thead>
-                                <tr class="bg-gray-50/50 border-b border-gray-50">
-                                    <th class="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fecha y Hora</th>
-                                    <th class="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Usuario</th>
-                                    <th class="px-6 py-5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tipo de Acción</th>
-                                    <th class="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Descripción</th>
-                                    <th class="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Detalles</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50/80">
-                                ${this._mockHistoryRow('24 May 2024, 10:45:12', 'Carlos Mendoza', 'Estado', 'Cambio de estado del proyecto', '"Estado cambiado de Propuesta a Aprobado por Cliente."')}
-                                ${this._mockHistoryRow('24 May 2024, 09:15:00', 'Elena Rodríguez', 'Comentario', 'Nuevo comentario añadido', '"Confirmación de presupuesto para la fase de cerramientos..."')}
-                                ${this._mockHistoryRow('23 May 2024, 16:30:45', 'Juan Pérez', 'Documento', 'Subida de nuevo plano técnico', '"Archivo Plano_Fachada_V2.pdf subido a la sección..."')}
-                                ${this._mockHistoryRow('22 May 2024, 11:00:20', 'Carlos Mendoza', 'Edición', 'Actualización de presupuesto', '"Aumento del presupuesto base en un 5% por costes..."')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Bottom Stats Mock -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4 group">
-                        <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        </div>
-                        <div>
-                            <p class="text-xs font-extrabold text-[#1a1b25]">Integridad Garantizada</p>
-                            <p class="text-[10px] text-gray-400 mt-0.5 leading-tight">Registros sellados en tiempo real.</p>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4 group">
-                        <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <p class="text-xs font-extrabold text-[#1a1b25]">Trazabilidad Total</p>
-                            <p class="text-[10px] text-gray-400 mt-0.5 leading-tight">Visualice quién, cuándo y qué cambió.</p>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4 group cursor-pointer hover:border-gray-200 hover:shadow-md transition-all">
-                        <div class="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center group-hover:bg-gray-900 group-hover:text-white transition-all">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs font-extrabold text-[#1a1b25]">Informes Disponibles</p>
-                            <p class="text-[10px] text-gray-400 mt-0.5 pointer-events-none">Exportar historial completo a CSV.</p>
-                        </div>
-                        <svg class="w-4 h-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                    </div>
+                <!-- Timeline Container -->
+                <div class="relative pl-8 space-y-10 mt-10">
+                    <!-- Linea vertical -->
+                    <div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>
+
+                    ${this._mockHistoryNode('status', 'Carlos Ruiz', 'Hoy, 10:45 AM', 'CAMBIO DE ESTADO', 'Fase de Montaje: Iniciada', 'Se ha verificado la recepción de las vigas maestras y se procede al izaje según el plan de seguridad.')}
+                    ${this._mockHistoryNode('document', 'Elena Soler', 'Ayer, 04:20 PM', 'NUEVO DOCUMENTO', 'Planos_Detalle_V5.pdf', 'Archivo PDF (12.4 MB)<br><span class="text-[11px] font-black text-blue-400 uppercase tracking-tighter">OFICINA TÉCNICA</span>', true)}
+                    ${this._mockHistoryNode('chat', 'Marcos Peña', '22 Oct, 09:15 AM', 'COMENTARIO INTERNO', '', '"Confirmada la revisión estructural del nodo B-12. Podemos proceder con el torqueado final de pernos grado 8."')}
+                    ${this._mockHistoryNode('edit', 'Ana Martínez', '21 Oct, 02:30 PM', 'EDICIÓN DE DATOS', 'Ajuste de Cronograma', 'El hito de cimentación se ha desplazado debido a condiciones climáticas.<br><strong class="text-orange-500">Nueva fecha: 28/10/2023</strong>')}
                 </div>
             </div>
         `;
     },
 
-    _mockHistoryRow(datetime, user, type, action, details) {
-        const typeStyles = {
-            'Estado': 'bg-[#f0efff] text-[#6e56cf] border-[#e1dffb]',
-            'Comentario': 'bg-[#fff9eb] text-[#cb8e24] border-[#fdecdb]',
-            'Documento': 'bg-[#ecfdf4] text-[#44c173] border-[#d1fae5]',
-            'Edición': 'bg-gray-100 text-gray-600 border-gray-200'
+    _mockHistoryNode(type, user, time, actionTitle, title, content, isAttachment = false) {
+        const icons = {
+            'status': { color: 'bg-[#E57B23]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
+            'document': { color: 'bg-[#0284c7]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+            'chat': { color: 'bg-gray-100', icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>' },
+            'edit': { color: 'bg-amber-100', icon: '<svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' }
         };
-        const typeIcons = {
-            'Estado': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>',
-            'Comentario': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2.01 2.01 0 00.586 1.414l2.5 2.5a1 1 0 00.707.293V19a1 1 0 001.707.707L11.414 17H11"/></svg>',
-            'Documento': '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
-            'Edición': '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'
-        };
+        const node = icons[type] || icons.edit;
+        
+        let contentHtml = '';
+        if (isAttachment) {
+            contentHtml = `
+                <div class="mt-4 p-4 bg-[#f8faff] border border-[#e0e7ff] rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white border border-[#c7d2fe] rounded-xl shadow-sm flex items-center justify-center text-[#4338ca]">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-black text-[#1e1b4b] leading-tight mb-1 truncate">${content.split('<br>')[0]}</p>
+                        ${content.split('<br>')[1] || ''}
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-900 shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+                </div>
+            `;
+        } else if (type === 'chat') {
+            contentHtml = `
+                <div class="mt-4 text-[15px] text-gray-500 font-medium italic relative pl-4 border-l-3 border-[#E57B23]/30 leading-relaxed bg-[#fff9f4] py-3 rounded-r-xl">
+                    ${content}
+                </div>
+            `;
+        } else {
+            contentHtml = `
+                <p class="text-[15px] text-gray-600 mt-3 leading-relaxed font-medium">${content}</p>
+                ${type === 'status' ? '<div class="mt-4"><span class="inline-flex items-center text-[10px] font-black text-white bg-[#E57B23] px-3 py-1 rounded-lg uppercase tracking-widest cursor-pointer hover:bg-[#c9661c]">Ver Detalles</span></div>' : ''}
+            `;
+        }
 
         return `
-            <tr class="hover:bg-gray-50/30 transition-colors">
-                <td class="px-8 py-5">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <p class="text-xs text-gray-500 font-bold">${datetime}</p>
+            <div class="relative pl-6 z-10">
+                <!-- Node Icon -->
+                <div class="absolute left-[-11px] top-6 w-12 h-12 ${node.color} rounded-full border-4 border-white flex items-center justify-center shadow-md z-20">
+                    ${node.icon}
+                </div>
+                
+                <!-- Card -->
+                <div class="bg-white border text-left border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <img src="https://i.pravatar.cc/100?u=${user.replace(' ', '')}" alt="avatar" class="w-8 h-8 rounded-full border border-gray-200">
+                            <span class="text-[15px] font-black text-[#1a1b25]">${user}</span>
+                        </div>
+                        <span class="px-3 py-1 bg-gray-50 text-gray-400 text-[10px] font-black rounded-full uppercase tracking-tighter border border-gray-100">${time}</span>
                     </div>
-                </td>
-                <td class="px-8 py-5">
-                    <div class="flex items-center gap-3">
-                         <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-500">
-                             ${user.split(' ').map(n => n[0]).join('')}
-                         </div>
-                         <div>
-                            <p class="text-xs font-bold text-gray-900 leading-tight">${user}</p>
-                            <p class="text-[9px] text-gray-300 font-black uppercase tracking-tight">Administrador</p>
-                         </div>
-                    </div>
-                </td>
-                <td class="px-6 py-5 text-center">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold uppercase border ${typeStyles[type] || ''}">
-                        ${typeIcons[type] || ''}
-                        ${type}
-                    </span>
-                </td>
-                <td class="px-8 py-5">
-                    <p class="text-xs text-gray-600 font-bold leading-tight">${action}</p>
-                </td>
-                <td class="px-8 py-5">
-                    <p class="text-[11px] text-gray-400 font-medium italic translate-y-0.5 truncate max-w-[220px]">${details}</p>
-                </td>
-            </tr>
+                    
+                    <h5 class="text-[11px] font-black text-orange-400 tracking-[0.15em] uppercase mb-1.5">${actionTitle}</h5>
+                    ${title ? `<h4 class="text-[17px] font-black text-[#1a1b25] leading-tight">${title}</h4>` : ''}
+                    
+                    ${contentHtml}
+                </div>
+            </div>
         `;
+    },
+
+    /** Filtrar filas de documentos en tiempo real (ahora por tarjetas) */
+    _filterDocs(query) {
+        const q = query.toLowerCase().trim();
+        document.querySelectorAll('.doc-row').forEach(card => {
+            const title = card.dataset.title || '';
+            card.style.display = (!q || title.includes(q)) ? 'flex' : 'none';
+        });
     }
 };
 
