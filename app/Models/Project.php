@@ -35,4 +35,32 @@ class Project {
         
         return $stmt->fetchAll();
     }
+
+    // Proyecto individual->fetch
+    public function getById($projectId, $userId, $role, $clientId) {
+        $sql = "SELECT p.*, 
+                       c.name AS client_name, 
+                       c.reference AS client_reference, 
+                       c.is_active AS client_is_active 
+                FROM projects p
+                LEFT JOIN clients c ON p.client_id = c.id
+                WHERE p.id = :project_id AND p.deleted_at IS NULL";
+
+        $params = ['project_id' => $projectId];
+
+        // Reglas de seguridad
+        if ($role === 'cliente') {
+            $sql .= " AND p.client_id = :client_id";
+            $params['client_id'] = $clientId;
+
+        } elseif ($role === 'comercial') {
+            $sql .= " AND p.id IN (SELECT project_id FROM project_user WHERE user_id = :user_id)";
+            $params['user_id'] = $userId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        
+        return $stmt->fetch(); 
+    }
 }

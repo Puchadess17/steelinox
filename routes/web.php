@@ -10,6 +10,7 @@ $router->post('/api/logout', 'AuthController@logout');
 
 // proyectos
 $router->get('/api/projects/search', 'ProjectController@search');
+$router->get('/api/projects/(\d+)', 'ProjectController@show');
 
 // FRONTEND
 $router->get('/', 'AuthController@showLogin');
