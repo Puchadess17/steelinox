@@ -19,4 +19,21 @@ class DashboardController {
             echo "Error: No se encuentra la vista del panel principal.";
         }
     }
+
+    public function showProject($slug, $id) {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /steelinox/');
+            exit;
+        }
+
+        $viewPath = APP_PATH . '/Views/project_detail.php';
+        
+        if (file_exists($viewPath)) {
+            require_once $viewPath;
+        } else {
+            echo "Error: No se encuentra la vista del detalle del proyecto.";
+        }
+    }
 }

@@ -15,3 +15,4 @@ $router->get('/api/projects/(\d+)', 'ProjectController@show');
 // FRONTEND
 $router->get('/', 'AuthController@showLogin');
 $router->get('/panel', 'DashboardController@index');
+$router->get('/project/([a-zA-Z0-9\-]+)-(\d+)', 'DashboardController@showProject');
