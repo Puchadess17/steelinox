@@ -34,7 +34,7 @@ class Router {
     public function dispatch($url) {
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         
-        // Soporte para "method spoofing" (formularios HTML que envían un campo oculto _method)
+        // "method spoofing"
         if ($requestMethod === 'POST' && isset($_POST['_method'])) {
             $requestMethod = strtoupper($_POST['_method']);
         }
@@ -42,8 +42,17 @@ class Router {
         $url = '/' . trim($url, '/');
 
         foreach ($this->routes as $route) {
-            if ($route['method'] === $requestMethod && $route['uri'] === $url) {
-                // Separamos el string "Controlador@metodo"
+            // URI guardada en un patrón de expresión regular
+            // Ej: /api/projects/(\d+) se convierte en #^/api/projects/(\d+)$#
+            $pattern = '#^' . $route['uri'] . '$#';
+
+            // preg_match en lugar de === p --> URL encaja con el patrón
+            if ($route['method'] === $requestMethod && preg_match($pattern, $url, $matches)) {
+                
+                // Eliminar primer elemento de $matches (que es la URL completa)
+                // para quedarnos con los parámetros capturados (ej: el ID '1')
+                array_shift($matches);
+
                 $actionParts = explode('@', $route['action']);
                 $controllerName = $actionParts[0];
                 $methodName = $actionParts[1];
@@ -55,16 +64,16 @@ class Router {
                     $controller = new $controllerName();
                     
                     if (method_exists($controller, $methodName)) {
-                        // Ejecutamos el método del controlador y salimos del router
-                        return $controller->$methodName();
+                        // Ejecuto método pasándole los parámetros extraídos dinámicamente
+                        // El operador ... (spread) convierte el array en argumentos separados
+                        return $controller->$methodName(...$matches);
                     }
                 }
             }
         }
 
-        // Si el bucle termina y no hay coincidencia, devolvemos un 404
         http_response_code(404);
-        require APP_PATH . '/Views/error.php';
+        echo json_encode(['success' => false, 'message' => 'Ruta no encontrada']);
         return;
     }
 }
