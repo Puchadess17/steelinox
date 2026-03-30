@@ -498,7 +498,7 @@ SIModules.dashboard = {
         };
 
         return projects.map(p => `
-            <a href="/steelinox/project/${SIApp.generateSlug(p.name)}-${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md block">
+            <a href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md block">
                 <div class="p-5 flex-1">
                     <div class="flex items-center justify-between mb-4">
                         <span class="text-[11px] font-bold text-gray-400 tracking-wide uppercase">REF: ${SIApp.escapeHtml(p.reference)}</span>

@@ -151,6 +151,8 @@
     <script src="/steelinox/public/assets/js/modules/dashboard.js"></script>
 
     <script>
+        window.CURRENT_PROJECT_ID = <?php echo isset($projectId) ? json_encode($projectId) : 'null'; ?>;
+        
         // Panel UI helpers (mobile sidebar)
         const SIPanelUI = {
             openMobileSidebar() {

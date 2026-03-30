@@ -8,7 +8,6 @@ const SIRouter = {
     currentView: null,
     contentContainer: null,
 
-    /** Inicializar el router */
     init(containerId = 'main-content') {
         this.contentContainer = document.getElementById(containerId);
 
@@ -17,10 +16,8 @@ const SIRouter = {
             return;
         }
 
-        // Definir rutas
         this.defineRoutes();
 
-        // Interceptar clicks en enlaces para SPA
         document.body.addEventListener('click', (e) => {
             const link = e.target.closest('a[data-route]');
             if (link) {
@@ -30,26 +27,41 @@ const SIRouter = {
             }
         });
 
-        // Listener para botones del navegador (atrás/adelante)
+        // NUEVO: Al darle al botón de "Atrás" en el navegador, leemos la ruta limpia
         window.addEventListener('popstate', () => {
-            const params = new URLSearchParams(window.location.search);
-            const view = params.get('view') || 'dashboard';
-            this.handleRoute(view);
+            this.handleRoute(this.getViewFromUrl());
         });
 
-        // Obtener vista inicial (por defecto 'dashboard' si no hay)
-        const params = new URLSearchParams(window.location.search);
-        const initialView = params.get('view') || 'dashboard';
+        // NUEVO: Obtener vista inicial leyendo la URL real
+        this.handleRoute(this.getViewFromUrl());
+    },
 
-        this.handleRoute(initialView);
+    getViewFromUrl() {
+        const path = window.location.pathname;
+        const basePath = '/steelinox/'; 
+        let cleanPath = path.replace(basePath, '').replace(/^\/|\/$/g, '');
+
+        if (cleanPath === 'panel' || cleanPath === '') {
+            return 'dashboard';
+        }
+        
+        // --- LA MAGIA NUEVA ---
+        // Si la URL empieza por "project/", le decimos al router que cargue la vista 'project-detail'
+        if (cleanPath.startsWith('project/')) {
+            return 'project-detail';
+        }
+        
+        return cleanPath;
     },
 
     /** Mapa de rutas: nombre de la vista → { module, method, roles, title } */
     defineRoutes() {
         this.routes = {
             'dashboard':            { module: 'dashboard', method: 'loadDashboardAuto',       roles: ['admin', 'comercial', 'cliente'], title: 'Panel General' },
-            'clients':              { module: 'clients',   method: 'dummyMethod',             roles: ['admin', 'comercial'],            title: 'Clientes' },
-            'commercials':          { module: 'users',     method: 'dummyMethod',             roles: ['admin'],                         title: 'Comerciales' },
+            'clients':              { module: 'clients',   method: 'dummyMethod',             roles: ['admin', 'comercial'],            title: 'Clientes' }, 
+            'project-detail':       { module: 'projects',  method: 'loadProjectDetails',             roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
+            
+            'commercials':          { module: 'users',     method: 'dummyMethod',             roles: ['admin'],                         title: 'Comerciales' },'projects-new':   { module: 'projects',  method: 'dummyMethod',        roles: ['admin', 'comercial'],            title: 'Nuevo Proyecto' },
             'audit-log':            { module: 'audit',     method: 'dummyMethod',             roles: ['admin'],                         title: 'Registro de Actividad' },
             'settings':             { module: 'settings',  method: 'dummyMethod',             roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
             'projects-new':         { module: 'projects',  method: 'dummyMethod',             roles: ['admin', 'comercial'],            title: 'Nuevo Proyecto' }
@@ -134,16 +146,15 @@ const SIRouter = {
 
     /** Navegar programáticamente */
     navigate(view) {
-        // En lugar de hash, usamos query param ?view=... 
-        // y si es dashboard enviamos la ruta limpia a /panel
-        const url = new URL(window.location.href);
-        if (view === 'dashboard') {
-            url.searchParams.delete('view');
-        } else {
-            url.searchParams.set('view', view);
-        }
+        // OJO JOAN: Ajusta la base igual que arriba
+        const basePath = '/steelinox/'; 
         
-        window.history.pushState(null, '', url.toString());
+        // Si la vista es dashboard, la URL amigable es 'panel'
+        const urlPath = view === 'dashboard' ? 'panel' : view;
+        const finalUrl = basePath + urlPath;
+        
+        // Cambiamos la URL en el navegador SIN recargar la página
+        window.history.pushState(null, '', finalUrl);
         this.handleRoute(view);
     },
 
