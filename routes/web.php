@@ -12,7 +12,11 @@ $router->post('/api/logout', 'AuthController@logout');
 $router->get('/api/projects/search', 'ProjectController@search');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
 
+// clientes
+$router->get('/api/clients', 'ClientController@index');
+
 // FRONTEND
 $router->get('/', 'AuthController@showLogin');
 $router->get('/panel', 'DashboardController@index');
-$router->get('/project/([a-zA-Z0-9\-]+)-(\d+)', 'DashboardController@showProject');
+$router->get('/project/(\d+)', 'DashboardController@showProject');
+$router->get('/clients', 'DashboardController@clients');

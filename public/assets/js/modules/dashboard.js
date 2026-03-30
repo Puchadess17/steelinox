@@ -145,7 +145,7 @@ SIModules.dashboard = {
         const tbody = data.map(p => `
             <tr class="hover:bg-orange-50/30 transition-colors group">
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${SIApp.generateSlug(p.name)}-${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(p.name)}</a>
+                    <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(p.name)}</a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>

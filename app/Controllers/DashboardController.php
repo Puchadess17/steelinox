@@ -20,7 +20,7 @@ class DashboardController {
         }
     }
 
-    public function showProject($slug, $id) {
+    public function showProject($id) {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         if (!isset($_SESSION['user_id'])) {
@@ -28,7 +28,6 @@ class DashboardController {
             exit;
         }
 
-        // Ruteo dinámico basado en rol
         $role = $_SESSION['role'] ?? 'cliente';
         
         if ($role === 'cliente') {
@@ -43,6 +42,29 @@ class DashboardController {
             require_once $viewPath;
         } else {
             echo "Error: No se encuentra la vista del detalle del proyecto.";
+        }
+    }
+
+    public function clients() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        // Los clientes no pueden ver la gestión de clientes
+        if ($_SESSION['role'] === 'cliente') {
+            header('Location: /steelinox/panel');
+            exit;
+        }
+
+        $viewPath = APP_PATH . '/Views/clients.php';
+        
+        if (file_exists($viewPath)) {
+            require_once $viewPath;
+        } else {
+            echo "Error: No se encuentra la vista de clientes.";
         }
     }
 }
