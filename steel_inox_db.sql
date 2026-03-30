@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-03-2026 a las 11:32:06
+-- Tiempo de generación: 30-03-2026 a las 10:37:59
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.4.19
 
@@ -173,7 +173,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `client_id`, `name`, `reference`, `status`, `budget_amount`, `description`, `surface`, `project_type`, `created_by`, `approved_at`, `closed_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 1, 'Reforma Oficinas Centrales', 'PRJ-2024-001', 'propuesta', 15000.00, NULL, NULL, NULL, 1, NULL, NULL, '2026-03-27 11:25:19', '2026-03-27 11:25:19', NULL);
+(1, 1, 'Reforma Oficinas Centrales', 'PRJ-2024-001', 'propuesta', 15000.00, 'Remodelación técnica de recepción con acabados en acero inoxidable satinado y mejora de iluminación integrada.', '125.50', 'Reforma de Interiores', 1, NULL, NULL, '2026-03-27 11:25:19', '2026-03-30 09:33:46', NULL);
 
 -- --------------------------------------------------------
 
@@ -227,7 +227,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `is_active`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, '2026-03-27 11:24:40', '2026-03-26 17:18:25', '2026-03-27 11:24:40', NULL);
+(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, '2026-03-30 08:19:26', '2026-03-26 17:18:25', '2026-03-30 08:19:26', NULL),
+(2, 1, 'cliente', 'Cliente Empresa \r\n        demo', 'empresa@cliente.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, '2026-03-30 09:15:07', '2026-03-30 09:12:24', '2026-03-30 09:15:07', NULL);
 
 --
 -- Índices para tablas volcadas
@@ -254,14 +255,18 @@ ALTER TABLE `clients`
 ALTER TABLE `comments`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_comments_project_created` (`project_id`,`created_at`),
-  ADD KEY `idx_comments_document_created` (`document_id`,`created_at`);
+  ADD KEY `idx_comments_document_created` (`document_id`,`created_at`),
+  ADD KEY `comments_ibfk_3` (`document_version_id`),
+  ADD KEY `comments_ibfk_4` (`author_user_id`);
 
 --
 -- Indices de la tabla `documents`
 --
 ALTER TABLE `documents`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_documents_proj_type_del` (`project_id`,`type`,`deleted_at`);
+  ADD KEY `idx_documents_proj_type_del` (`project_id`,`type`,`deleted_at`),
+  ADD KEY `documents_ibfk_2` (`created_by`),
+  ADD KEY `documents_ibfk_3` (`current_version_id`);
 
 --
 -- Indices de la tabla `document_versions`
@@ -269,13 +274,15 @@ ALTER TABLE `documents`
 ALTER TABLE `document_versions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_doc_versions_doc_current` (`document_id`,`is_current`),
-  ADD KEY `idx_doc_versions_uploaded_at` (`uploaded_at`);
+  ADD KEY `idx_doc_versions_uploaded_at` (`uploaded_at`),
+  ADD KEY `document_versions_ibfk_2` (`uploaded_by`);
 
 --
 -- Indices de la tabla `notifications_queue`
 --
 ALTER TABLE `notifications_queue`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `notifications_queue_ibfk_1` (`recipient_user_id`);
 
 --
 -- Indices de la tabla `projects`
@@ -284,13 +291,16 @@ ALTER TABLE `projects`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_projects_client_status` (`client_id`,`status`),
   ADD KEY `idx_projects_reference` (`reference`),
-  ADD KEY `idx_projects_created_at` (`created_at`);
+  ADD KEY `idx_projects_created_at` (`created_at`),
+  ADD KEY `projects_ibfk_2` (`created_by`);
 
 --
 -- Indices de la tabla `project_status_logs`
 --
 ALTER TABLE `project_status_logs`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `project_status_logs_ibfk_1` (`project_id`),
+  ADD KEY `project_status_logs_ibfk_2` (`changed_by_user_id`);
 
 --
 -- Indices de la tabla `project_user`
@@ -363,7 +373,7 @@ ALTER TABLE `project_status_logs`
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Restricciones para tablas volcadas
