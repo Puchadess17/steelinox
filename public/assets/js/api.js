@@ -195,15 +195,21 @@ const API = {
 
     /** Redirigir por sesión expirada */
     handleUnauthorized() {
-        sessionStorage.removeItem('si_user');
-        const isOnLogin = window.location.pathname.includes('/steelinox') &&
-                          !window.location.pathname.includes('/panel');
+        const isOnLogin = window.location.pathname === '/steelinox/' || 
+                          window.location.pathname.endsWith('/login');
         if (isOnLogin) return;
 
-        SIToast.error('Tu sesión ha expirado. Redirigiendo al login...');
-        setTimeout(() => {
-            window.location.href = '/steelinox/';
-        }, 1500);
+        // Evitar múltiples alertas si hay varias llamadas a la vez
+        if (this._isRedirecting) return;
+        this._isRedirecting = true;
+
+        sessionStorage.clear();
+        
+        // Un alert nativo bloquea el hilo de JS, impidiendo que el frontend continúe
+        // renderizando o intentando parsear datos de un usuario desconectado.
+        alert("Tu sesión ha caducado por seguridad. Vuelve a iniciar sesión.");
+        
+        window.location.href = '/steelinox/'; // Redirige al login limpiamente
     },
 };
 

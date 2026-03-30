@@ -294,11 +294,11 @@ SIModules.dashboard = {
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
-                        <div class="flex items-center gap-3 mb-1">
-                            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Mis Proyectos</h1>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-600 uppercase tracking-wide border border-orange-200/50 shadow-sm">${SIApp.escapeHtml(companyName)}</span>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Mis Proyectos</h1>
+                            <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">${SIApp.escapeHtml(companyName)}</span>
                         </div>
-                        <p class="text-sm text-gray-500">Gestiona y supervisa el estado de tus proyectos en curso.</p>
+                        <p class="text-gray-400">Gestiona y supervisa el estado de tus proyectos.</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-1 hidden sm:flex">
@@ -312,28 +312,29 @@ SIModules.dashboard = {
                 </div>
 
                 <!-- KPI Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                    ${this._kpiCardClient('Total Proyectos', kpis.total, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', 'blue')}
-                    ${this._kpiCardClient('Pendientes', kpis.pending, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l2.5 2.5"/></svg>', 'amber')}
-                    ${this._kpiCardClient('Completados', kpis.completed, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'emerald')}
-                    ${this._kpiCardClient('Última Actualización', latestDate ? SIApp.timeAgo(latestDate) : '-', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'orange')}
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
+                    ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                    ${this._kpiCardClient('PENDIENTES', kpis.pending, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>', 'amber')}
+                    ${this._kpiCardClient('COMPLETADOS', kpis.completed, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+                    ${this._kpiCardClient('ACTUALIZADO', latestDate ? SIApp.timeAgo(latestDate) : '-', '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>', 'blue')}
                 </div>
 
                 <!-- Tabs y Búsqueda -->
-                <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 py-4 border-b border-gray-100 mb-6 w-full">
-                    
-                    <!-- Tabs 2x2 MÓVIL / En línea ESCRITORIO -->
-                    <div class="grid grid-cols-2 xl:flex xl:flex-row items-center gap-1.5 bg-gray-50/80 p-1.5 rounded-2xl xl:rounded-full border border-gray-100 w-full xl:w-auto">
-                        <button class="tab-client flex items-center justify-center active w-full xl:w-auto px-1 xl:px-6 py-2.5 xl:py-2 text-xs xl:text-sm font-semibold shadow-sm rounded-xl xl:rounded-full transition-all duration-200" data-filter="all" onclick="SIModules.dashboard._filterClient('all', this)">Todos</button>
-                        <button class="tab-client flex items-center justify-center w-full xl:w-auto px-1 xl:px-6 py-2.5 xl:py-2 text-xs xl:text-sm font-semibold rounded-xl xl:rounded-full transition-all duration-200 hover:bg-gray-200/50" data-filter="ejecucion" onclick="SIModules.dashboard._filterClient('ejecucion', this)">En Proceso</button>
-                        <button class="tab-client flex items-center justify-center w-full xl:w-auto px-1 xl:px-6 py-2.5 xl:py-2 text-xs xl:text-sm font-semibold rounded-xl xl:rounded-full transition-all duration-200 hover:bg-gray-200/50 whitespace-normal xl:whitespace-nowrap leading-tight text-center" data-filter="propuesta" onclick="SIModules.dashboard._filterClient('propuesta', this)">Pdtes. Firma</button>
-                        <button class="tab-client flex items-center justify-center w-full xl:w-auto px-1 xl:px-6 py-2.5 xl:py-2 text-xs xl:text-sm font-semibold rounded-xl xl:rounded-full transition-all duration-200 hover:bg-gray-200/50" data-filter="cerrado" onclick="SIModules.dashboard._filterClient('cerrado', this)">Finalizados</button>
+                <div class="flex flex-col gap-4 mb-8 w-full max-w-full">
+                    <!-- Fila de Tabs con scroll horizontal nativo -->
+                    <div class="w-full">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client active whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClient('all', this)">Todos</button>
+                            <button class="tab-client whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterClient('ejecucion', this)">En Proceso</button>
+                            <button class="tab-client whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterClient('propuesta', this)">Pendientes</button>
+                            <button class="tab-client whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterClient('cerrado', this)">Finalizados</button>
+                        </div>
                     </div>
 
-                    <!-- Buscador -->
-                    <div class="relative w-full xl:w-80 group">
+                    <!-- Buscador que ocupa el 100% en móvil y se ajusta en desktop -->
+                    <div class="relative w-full sm:max-w-xs group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClient(this.value)" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 hover:bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClient(this.value)" placeholder="Buscar..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -459,25 +460,25 @@ SIModules.dashboard = {
         `;
     },
 
-    /** KPI Card para Client (con color y animaciones suaves) */
+    /** KPI Card para Client (Coincidiendo con UI proporcionada) */
     _kpiCardClient(label, value, icon, colorTheme = 'gray') {
         const colorMap = {
-            orange: { bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-100', hoverInfo: 'group-hover:text-orange-600' },
-            blue: { bg: 'bg-blue-50', text: 'text-blue-500', border: 'border-blue-100', hoverInfo: 'group-hover:text-blue-600' },
-            emerald: { bg: 'bg-emerald-50', text: 'text-emerald-500', border: 'border-emerald-100', hoverInfo: 'group-hover:text-emerald-600' },
-            amber: { bg: 'bg-amber-50', text: 'text-amber-500', border: 'border-amber-100', hoverInfo: 'group-hover:text-amber-600' },
-            gray: { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-100', hoverInfo: 'group-hover:text-gray-900' },
+            purple: { bg: 'bg-[#f0efff]', text: 'text-[#6e56cf]' },
+            amber: { bg: 'bg-[#fef9eb]', text: 'text-[#cb8e24]' },
+            emerald: { bg: 'bg-[#ecfdf4]', text: 'text-[#44c173]' },
+            blue: { bg: 'bg-blue-50', text: 'text-blue-500' },
+            gray: { bg: 'bg-gray-50', text: 'text-gray-500' },
         };
         const c = colorMap[colorTheme] || colorMap.gray;
 
         return `
-            <div class="group bg-white border border-gray-100/80 shadow-sm rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-gray-200 cursor-default">
-                <div class="w-10 h-10 sm:w-14 sm:h-14 flex-shrink-0 ${c.bg} rounded-xl sm:rounded-[1rem] flex items-center justify-center border ${c.border} transition-transform duration-300 group-hover:scale-110">
-                    <span class="${c.text} ${c.hoverInfo} transform scale-75 sm:scale-100">${icon}</span>
+            <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 sm:w-12 sm:h-12 flex-shrink-0 ${c.bg} rounded-full flex items-center justify-center">
+                    <span class="${c.text} scale-90 sm:scale-110">${icon}</span>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <span class="block text-[10px] sm:text-xs font-semibold text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wider truncate">${label}</span>
-                    <p class="text-lg sm:text-2xl font-black text-gray-900 leading-none truncate">${value}</p>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">${label}</span>
+                    <p class="text-base sm:text-2xl font-bold text-[#1a1b25] leading-tight truncate">${value}</p>
                 </div>
             </div>
         `;

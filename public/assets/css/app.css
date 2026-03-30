@@ -28,6 +28,42 @@
     --si-info: #3B82F6;
 }
 
+/* --- Layout Responsive Global --- */
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+}
+
+#main-content {
+    width: 100%;
+    padding: 1rem;
+    max-width: 100vw;
+}
+
+@media (min-width: 640px) {
+    #main-content { padding: 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+    #main-content { padding: 2rem; }
+}
+
+/* Helper para secciones con scroll horizontal (como los tabs) */
+.hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+/* Ajuste extremo para móviles pequeños */
+@media (max-width: 400px) {
+    .text-3xl { font-size: 1.5rem !important; }
+    .kpi-card { padding: 1rem !important; }
+}
+
 /* --- Scrollbar personalizado --- */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--si-gray-100); }
@@ -113,6 +149,12 @@
 }
 
 /* --- Tabla --- */
+.si-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    border-radius: 0.75rem;
+}
 .si-table th {
     font-size: 0.75rem;
     font-weight: 600;
@@ -238,16 +280,20 @@
 /* --- Tab filters (Client style) --- */
 .tab-client {
     cursor: pointer;
-    background: transparent;
+    background-color: var(--si-gray-50);
     color: var(--si-gray-500);
     border: none;
     transition: all 0.2s;
 }
-.tab-client:hover:not(.active) {
-    color: var(--si-gray-900);
+/* Evitar hover pegajoso en móviles (solo en dispositivos con ratón) */
+@media (hover: hover) and (pointer: fine) {
+    .tab-client:hover:not(.active) {
+        background-color: var(--si-gray-100);
+        color: var(--si-gray-900);
+    }
 }
 .tab-client.active {
-    background-color: var(--si-primary);
+    background-color: var(--si-primary); /* Naranja Steel Inox */
     color: white;
 }
 
