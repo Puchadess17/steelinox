@@ -51,90 +51,189 @@ SIModules.dashboard = {
             aprobado: projects.filter(p => p.status === 'aprobado').length,
         };
 
+        this.adminProjects = projects; // Caché para buscador y filtros interactivos
+        this.currentAdminFilter = 'all';
+
         this.container.innerHTML = `
             <div class="fade-in">
-                <!-- Header con saludo -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <!-- Header con saludo y nueva UX -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Bienvenido de nuevo, ${SIApp.escapeHtml(user.name)}</h1>
-                        <p class="text-sm text-gray-500 mt-1">Aquí tienes un resumen de la actividad reciente en los proyectos de Steel Inox.</p>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Panel Administrador</h1>
+                            <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">SUPER-ADMIN</span>
+                        </div>
+                        <p class="text-gray-400">Bienvenido ${SIApp.escapeHtml(user.name)}. Gestiona todos los proyectos globalmente.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button class="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                            Filtros
-                        </button>
-                        <button onclick="SIRouter.navigate('projects-new')" class="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-orange-500/25">
+                        <button onclick="SIRouter.navigate('projects-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Nuevo Proyecto
                         </button>
                     </div>
                 </div>
 
-                <!-- KPI Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    ${this._kpiCard('Proyectos Activos', kpis.ejecucion + kpis.propuesta + kpis.aprobado, 'orange', this._icon('grid'))}
-                    ${this._kpiCard('Total Proyectos', kpis.total, 'blue', this._icon('folder'))}
-                    ${this._kpiCard('En Ejecución', kpis.ejecucion, 'emerald', this._icon('play'))}
-                    ${this._kpiCard('Completados', kpis.cerrado, 'gray', this._icon('check'))}
+                <!-- KPI Grid Premium -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
+                    ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                    ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
+                    ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
+                    ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
                 </div>
 
-                <!-- Content Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Tabla de proyectos -->
-                    <div class="lg:col-span-2 bg-white border border-gray-200 rounded-xl overflow-hidden">
-                        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                            <h2 class="text-base font-semibold text-gray-900">Proyectos Recientes</h2>
-                            <span class="text-xs text-gray-400">${kpis.total} proyectos</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full si-table">
-                                <thead>
-                                    <tr class="bg-gray-50">
-                                        <th class="px-4 py-3 text-left">Proyecto</th>
-                                        <th class="px-4 py-3 text-left">Referencia</th>
-                                        <th class="px-4 py-3 text-left">Cliente</th>
-                                        <th class="px-4 py-3 text-left">Estado</th>
-                                        <th class="px-4 py-3 text-left">Creado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${projects.length > 0 ? projects.slice(0, 10).map(p => `
-                                        <tr class="hover:bg-gray-50 cursor-pointer">
-                                            <td class="px-4 py-3">
-                                                <p class="text-sm font-medium text-orange-500 hover:text-orange-600">${SIApp.escapeHtml(p.name)}</p>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${SIApp.escapeHtml(p.reference)}</span>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm text-gray-600">${SIApp.escapeHtml(p.client_name || '-')}</td>
-                                            <td class="px-4 py-3">${SIApp.statusBadge(p.status)}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-500">${SIApp.formatDate(p.created_at)}</td>
-                                        </tr>
-                                    `).join('') : `
-                                        <tr><td colspan="5" class="text-center py-8 text-sm text-gray-400">No hay proyectos registrados</td></tr>
-                                    `}
-                                </tbody>
-                            </table>
+                <!-- Tabs y Búsqueda Interactiva -->
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
+                    <!-- Fila de Tabs con scroll horizontal nativo -->
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client tab-admin active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterAdmin('all', this)">Todos</button>
+                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterAdmin('propuesta', this)">Pendientes</button>
+                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterAdmin('aprobado', this)">Aprobados</button>
+                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterAdmin('ejecucion', this)">En Ejecución</button>
+                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterAdmin('cerrado', this)">Cerrados</button>
                         </div>
                     </div>
 
-                    <!-- Panel lateral -->
-                    <div class="space-y-6">
-                        <!-- Resumen rápido por estado -->
-                        <div class="bg-white border border-gray-200 rounded-xl p-5">
-                            <h2 class="text-base font-semibold text-gray-900 mb-4">Distribución por Estado</h2>
-                            <div class="space-y-3">
-                                ${this._statusRow('Propuesta', kpis.propuesta, kpis.total, '#F59E0B')}
-                                ${this._statusRow('Aprobado', kpis.aprobado, kpis.total, '#10B981')}
-                                ${this._statusRow('Ejecución', kpis.ejecucion, kpis.total, '#F97316')}
-                                ${this._statusRow('Cerrado', kpis.cerrado, kpis.total, '#6B7280')}
-                            </div>
-                        </div>
+                    <!-- Buscador -->
+                    <div class="relative w-full xl:w-80 flex-shrink-0 group">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" oninput="SIModules.dashboard._searchAdmin(this.value)" placeholder="Buscar cliente, nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Content Grid (Tabla Principal) -->
+                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
+                        <h2 class="text-base font-bold text-[#1a1b25]">Listado Global de Proyectos</h2>
+                        <span id="admin-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest">${kpis.total} RESULTADOS</span>
+                    </div>
+                    <!-- Contenedor adaptativo (Cards en móvil, Tabla en Desktop) -->
+                    <div id="admin-table-container" class="select-none bg-gray-50/20">
+                        <!-- El renderizado de _renderAdminTable inyectará aquí la tabla o grid -->
                     </div>
                 </div>
             </div>
         `;
+
+        // Renderizar la tabla inicial
+        this._renderAdminTable(this.adminProjects);
+    },
+
+    // ═══════════════════════════════════════
+    // ADMIN LOGIC (Filtros, Search, Render)
+    // ═══════════════════════════════════════
+
+    /** Renderiza la tabla limpia de proyectos administador basándose en data filtrada **/
+    _renderAdminTable(data) {
+        const container = document.getElementById('admin-table-container');
+        const counter = document.getElementById('admin-table-counter');
+        if (!container) return;
+
+        if (counter) counter.innerText = `${data.length} RESULTADOS`;
+
+        if (data.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <svg class="w-12 h-12 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <p class="text-sm font-semibold text-gray-900">No se encontraron resultados</p>
+                    <p class="text-xs text-gray-500 mt-1">Prueba a cambiar el filtro o el término de búsqueda.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const tbody = data.map(p => `
+            <tr class="hover:bg-orange-50/30 transition-colors group">
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <a href="/steelinox/project/${SIApp.generateSlug(p.name)}-${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(p.name)}</a>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
+                </td>
+                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    ${SIApp.escapeHtml(p.client_name || 'Sin Asignar')}
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    ${SIApp.statusBadge(p.status)}
+                </td>
+                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase">
+                    ${SIApp.formatDate(p.created_at)}
+                </td>
+                <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <!-- VISTA MÓVIL: Grid de Cards Premium (oculto en md y mayores) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:hidden gap-4 p-4">
+                ${this._renderClientCards(data)}
+            </div>
+
+            <!-- VISTA DESKTOP: Tabla Extensa (visible solo en md y mayores) -->
+            <div class="hidden md:block si-table-wrapper">
+                <table class="w-full si-table">
+                    <thead>
+                        <tr class="bg-gray-50/50">
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                            <th class="px-5 py-3.5 text-right w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50/80">
+                        ${tbody}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    /** Filtro de tabs en panel administrador */
+    _filterAdmin(status, btnElement) {
+        if (!this.adminProjects) return;
+
+        // Actualizar visual de los botones
+        document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove('active'));
+        if (btnElement) {
+            btnElement.classList.add('active');
+        } else {
+            document.querySelector(`.tab-admin[data-filter="${status}"]`)?.classList.add('active');
+        }
+
+        this.currentAdminFilter = status;
+        this._searchAdmin(); // Llama a _searchAdmin sin argumentos para aplicar ambos filtros
+    },
+
+    /** Filtro de buscador en tiempo real administrador */
+    _searchAdmin(query = null) {
+        if (!this.adminProjects) return;
+
+        if (query !== null) {
+            this.currentAdminSearch = query.toLowerCase();
+        }
+
+        let filtered = this.adminProjects;
+
+        // Filtro por tab (estado)
+        if (this.currentAdminFilter !== 'all') {
+            filtered = filtered.filter(p => p.status === this.currentAdminFilter);
+        }
+
+        // Filtro por texto
+        if (this.currentAdminSearch) {
+            const q = this.currentAdminSearch;
+            filtered = filtered.filter(p =>
+                (p.name && p.name.toLowerCase().includes(q)) ||
+                (p.reference && p.reference.toLowerCase().includes(q)) ||
+                (p.client_name && p.client_name.toLowerCase().includes(q))
+            );
+        }
+
+        this._renderAdminTable(filtered);
     },
 
     // ═══════════════════════════════════════
@@ -320,21 +419,21 @@ SIModules.dashboard = {
                 </div>
 
                 <!-- Tabs y Búsqueda -->
-                <div class="flex flex-col gap-4 mb-8 w-full max-w-full">
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
                     <!-- Fila de Tabs con scroll horizontal nativo -->
-                    <div class="w-full">
-                        <div class="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-client active whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClient('all', this)">Todos</button>
-                            <button class="tab-client whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterClient('ejecucion', this)">En Proceso</button>
-                            <button class="tab-client whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterClient('propuesta', this)">Pendientes</button>
-                            <button class="tab-client whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterClient('cerrado', this)">Finalizados</button>
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClient('all', this)">Todos</button>
+                            <button class="tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterClient('ejecucion', this)">En Proceso</button>
+                            <button class="tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterClient('propuesta', this)">Pendientes</button>
+                            <button class="tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterClient('cerrado', this)">Finalizados</button>
                         </div>
                     </div>
 
                     <!-- Buscador que ocupa el 100% en móvil y se ajusta en desktop -->
-                    <div class="relative w-full sm:max-w-xs group">
+                    <div class="relative w-full xl:w-80 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClient(this.value)" placeholder="Buscar..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClient(this.value)" placeholder="Buscar..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -399,7 +498,7 @@ SIModules.dashboard = {
         };
 
         return projects.map(p => `
-            <div class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md">
+            <a href="/steelinox/project/${SIApp.generateSlug(p.name)}-${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md block">
                 <div class="p-5 flex-1">
                     <div class="flex items-center justify-between mb-4">
                         <span class="text-[11px] font-bold text-gray-400 tracking-wide uppercase">REF: ${SIApp.escapeHtml(p.reference)}</span>
@@ -422,10 +521,10 @@ SIModules.dashboard = {
                 </div>
                 <!-- Action Button -->
                 <div class="border-t border-gray-100 p-2">
-                    <button class="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">
+                    <div class="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-700 group-hover:text-gray-900 group-hover:bg-gray-50 rounded-xl transition-colors">
                         Ver detalles del proyecto
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </button>
+                    </div>
                 </div>
             </div>
         `).join('');

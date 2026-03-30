@@ -143,6 +143,20 @@ const SIApp = {
         return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.css}">${s.label}</span>`;
     },
 
+    /** Generar URLs amigables (slugs) */
+    generateSlug(texto) {
+        if (!texto) return '';
+        return texto
+            .toString()
+            .toLowerCase()
+            .normalize("NFD") // Separa las letras de las tildes (ej: 'é' -> 'e' + '´')
+            .replace(/[\u0300-\u036f]/g, "") // Borra las tildes que separamos antes
+            .replace(/[^a-z0-9 -]/g, "") // Borra cualquier carácter raro que no sea letra o número
+            .replace(/\s+/g, "-") // Cambia los espacios por guiones
+            .replace(/-+/g, "-") // Evita que haya dos guiones seguidos
+            .trim();
+    },
+
     /** Avatar con iniciales */
     avatarInitials(name) {
         const initials = this._getInitials(name);
