@@ -1,0 +1,16 @@
+<?php
+// routes/web.php
+
+// token CSRF
+$router->get('/api/csrf-token', 'AuthController@getCsrfToken');
+
+// autenticación
+$router->post('/api/login', 'AuthController@login');
+$router->post('/api/logout', 'AuthController@logout');
+
+// proyectos
+$router->get('/api/projects/search', 'ProjectController@search');
+
+// FRONTEND
+$router->get('/', 'AuthController@showLogin');
+$router->get('/panel', 'DashboardController@index');

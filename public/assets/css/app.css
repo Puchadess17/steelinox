@@ -1,0 +1,278 @@
+/* =============================================
+   Steel Inox Extranet — Design System
+   Complementa TailwindCSS CDN + FlyonUI CDN
+   ============================================= */
+
+/* --- Variables de marca --- */
+:root {
+    --si-primary: #F97316;
+    --si-primary-hover: #EA580C;
+    --si-primary-light: #FFF7ED;
+    --si-primary-50: #FFF7ED;
+    --si-primary-100: #FFEDD5;
+    --si-primary-500: #F97316;
+    --si-primary-600: #EA580C;
+    --si-primary-700: #C2410C;
+    --si-gray-50: #F9FAFB;
+    --si-gray-100: #F3F4F6;
+    --si-gray-200: #E5E7EB;
+    --si-gray-300: #D1D5DB;
+    --si-gray-400: #9CA3AF;
+    --si-gray-500: #6B7280;
+    --si-gray-700: #374151;
+    --si-gray-800: #1F2937;
+    --si-gray-900: #111827;
+    --si-success: #10B981;
+    --si-warning: #F59E0B;
+    --si-danger: #EF4444;
+    --si-info: #3B82F6;
+}
+
+/* --- Scrollbar personalizado --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--si-gray-100); }
+::-webkit-scrollbar-thumb { background: var(--si-gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--si-gray-400); }
+
+/* --- Transiciones globales --- */
+*, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Botón primario Steel Inox --- */
+.btn-si-primary {
+    background-color: var(--si-primary) !important;
+    border-color: var(--si-primary) !important;
+    color: white !important;
+}
+.btn-si-primary:hover {
+    background-color: var(--si-primary-hover) !important;
+    border-color: var(--si-primary-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+}
+.btn-si-primary:active { transform: scale(0.98); }
+.btn-si-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* --- Sidebar --- */
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--si-gray-500);
+    cursor: pointer;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+}
+.sidebar-item.active {
+    background-color: var(--si-primary-light);
+    color: var(--si-primary);
+    border-left-color: var(--si-primary);
+    font-weight: 600;
+}
+.sidebar-item:hover:not(.active) {
+    background-color: var(--si-gray-50);
+    color: var(--si-gray-700);
+}
+
+/* --- Badges de estado --- */
+.badge-propuesta { background-color: #FEF3C7; color: #92400E; }
+.badge-aprobado  { background-color: #D1FAE5; color: #065F46; }
+.badge-ejecucion { background-color: #FFF7ED; color: #C2410C; }
+.badge-cerrado   { background-color: #F3F4F6; color: #374151; }
+
+/* --- Cards con hover --- */
+.card-hover { transition: all 0.2s ease; }
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* --- KPI Cards --- */
+.kpi-card {
+    background: white;
+    border: 1px solid var(--si-gray-200);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+.kpi-card:hover {
+    border-color: var(--si-primary);
+    box-shadow: 0 0 0 1px var(--si-primary-100);
+}
+
+/* --- Tabla --- */
+.si-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--si-gray-500);
+    border-bottom: 2px solid var(--si-gray-200);
+}
+.si-table tbody tr {
+    border-bottom: 1px solid var(--si-gray-100);
+}
+.si-table tbody tr:hover {
+    background-color: var(--si-gray-50);
+}
+.si-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--si-gray-700);
+}
+
+/* --- Loader / Spinner --- */
+.si-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--si-gray-200);
+    border-top-color: var(--si-primary);
+    border-radius: 50%;
+    animation: si-spin 0.7s linear infinite;
+}
+@keyframes si-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Toast notification container --- */
+.si-toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+.si-toast-container > * {
+    pointer-events: auto;
+}
+
+/* --- Login page background --- */
+.login-bg {
+    background: linear-gradient(135deg, #FFF7ED 0%, #F9FAFB 50%, #FFF7ED 100%);
+    min-height: 100vh;
+}
+
+/* --- Animación de fade in --- */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Page transition --- */
+.page-enter {
+    animation: pageEnter 0.25s ease-out;
+}
+@keyframes pageEnter {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* --- Avatar con iniciales --- */
+.avatar-initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--si-primary-100);
+    color: var(--si-primary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* --- Progress bar --- */
+.si-progress {
+    width: 100%;
+    height: 6px;
+    background-color: var(--si-gray-200);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.si-progress-fill {
+    height: 100%;
+    background-color: var(--si-primary);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+/* --- Tab filters --- */
+.tab-filter {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border: 1px solid var(--si-gray-200);
+    background: white;
+    color: var(--si-gray-600);
+}
+.tab-filter:hover:not(.active) {
+    background: var(--si-gray-50);
+}
+.tab-filter.active {
+    background-color: var(--si-primary);
+    color: white;
+    border-color: var(--si-primary);
+}
+
+/* --- Tab filters (Client style) --- */
+.tab-client {
+    cursor: pointer;
+    background: transparent;
+    color: var(--si-gray-500);
+    border: none;
+    transition: all 0.2s;
+}
+.tab-client:hover:not(.active) {
+    color: var(--si-gray-900);
+}
+.tab-client.active {
+    background-color: var(--si-primary);
+    color: white;
+}
+
+/* --- Empty state --- */
+.si-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--si-gray-400);
+}
+.si-empty svg {
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1rem;
+    color: var(--si-gray-300);
+}
+
+/* --- Responsive sidebar --- */
+@media (max-width: 1023px) {
+    .sidebar-desktop { display: none !important; }
+}
+@media (min-width: 1024px) {
+    .sidebar-mobile-overlay,
+    .sidebar-mobile { display: none !important; }
+}
