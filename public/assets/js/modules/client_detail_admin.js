@@ -47,7 +47,7 @@ SIModules.clientDetailAdmin = {
                 <div class="flex-1 relative z-10">
                     <div class="flex items-center gap-3 mb-2">
                         <h1 id="client-name" class="text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando detalles...</h1>
-                        <span id="client-cif" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden"></span>
+                        <span id="client-reference" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden"></span>
                     </div>
                 </div>
             </div>
@@ -147,12 +147,12 @@ SIModules.clientDetailAdmin = {
 
         if (nameEl) nameEl.textContent = this.client.name;
         if (breadcrumbEl) breadcrumbEl.textContent = this.client.name;
-        
+
         if (refEl) {
-            const statusBadge = this.client.is_active 
+            const statusBadge = this.client.is_active
                 ? '<span class="ml-3 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
                 : '<span class="ml-3 px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>';
-            
+
             refEl.innerHTML = `REF: ${this.client.reference || 'SIN REF'} ${statusBadge}`;
         }
     },
@@ -195,9 +195,9 @@ SIModules.clientDetailAdmin = {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
-                                ${this.users.length > 0 
-                                    ? this.users.map(u => this._renderUserRow(u)).join('') 
-                                    : '<tr><td colspan="5" class="py-10 text-center text-gray-400 italic">No hay usuarios vinculados</td></tr>'}
+                                ${this.users.length > 0
+                ? this.users.map(u => this._renderUserRow(u)).join('')
+                : '<tr><td colspan="5" class="py-10 text-center text-gray-400 italic">No hay usuarios vinculados</td></tr>'}
                             </tbody>
                         </table>
                     </div>
@@ -218,9 +218,9 @@ SIModules.clientDetailAdmin = {
                         </a>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${this.projects.length > 0 
-                            ? this.projects.map(p => this._renderProjectCard(p)).join('') 
-                            : '<div class="col-span-full py-10 bg-white border border-dashed border-gray-200 rounded-2xl text-center text-gray-400 italic">No hay proyectos para este cliente</div>'}
+                        ${this.projects.length > 0
+                ? this.projects.map(p => this._renderProjectCard(p)).join('')
+                : '<div class="col-span-full py-10 bg-white border border-dashed border-gray-200 rounded-2xl text-center text-gray-400 italic">No hay proyectos para este cliente</div>'}
                         
                         <!-- Botón Nuevo Proyecto -->
                         <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer hover:border-orange-300 transition-all hover:bg-orange-50/30">
@@ -246,19 +246,19 @@ SIModules.clientDetailAdmin = {
                     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                         <div class="space-y-8 relative before:absolute before:left-6 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-50">
                             ${this._renderTimelineItem({
-                                type: 'success',
-                                author: 'Alberto Sánchez',
-                                action: 'Cliente actualizado satisfactoriamente',
-                                time: '15 de Mayo, 2024 • 10:24 AM',
-                                note: 'Se han actualizado los datos de contacto y la dirección fiscal tras el traslado de oficinas.'
-                            })}
+                    type: 'success',
+                    author: 'Alberto Sánchez',
+                    action: 'Cliente actualizado satisfactoriamente',
+                    time: '15 de Mayo, 2024 • 10:24 AM',
+                    note: 'Se han actualizado los datos de contacto y la dirección fiscal tras el traslado de oficinas.'
+                })}
                             ${this._renderTimelineItem({
-                                type: 'info',
-                                author: 'Sistema',
-                                action: 'Nuevo proyecto asignado: PRJ-2024-018',
-                                time: '01 de Marzo, 2024 • 09:00 AM',
-                                note: null
-                            })}
+                    type: 'info',
+                    author: 'Sistema',
+                    action: 'Nuevo proyecto asignado: PRJ-2024-018',
+                    time: '01 de Marzo, 2024 • 09:00 AM',
+                    note: null
+                })}
                         </div>
                         <div class="mt-8 pt-6 border-t border-gray-50 text-center">
                             <button class="text-xs font-bold text-orange-500 hover:text-orange-600 uppercase tracking-widest">Ver historial completo de auditoría</button>
@@ -323,7 +323,7 @@ SIModules.clientDetailAdmin = {
     _renderUserRow(u) {
         const initials = SIApp._getInitials(u.name);
         const lastAccess = u.last_login_at ? SIApp.formatDate(u.last_login_at) : 'Sin acceso';
-        
+
         return `
             <tr class="hover:bg-gray-50/80 transition-colors">
                 <td class="px-6 py-4">
@@ -360,11 +360,11 @@ SIModules.clientDetailAdmin = {
     /** Card: Individual Project card */
     _renderProjectCard(p) {
         const labels = { propuesta: 'Propuesta', aprobado: 'Aprobado', ejecucion: 'En Ejecución', cerrado: 'Finalizado' };
-        const statusColors = { 
-            propuesta: 'bg-amber-100 text-amber-600', 
-            aprobado: 'bg-blue-100 text-blue-600', 
-            ejecucion: 'bg-orange-100 text-orange-600', 
-            cerrado: 'bg-emerald-100 text-emerald-600' 
+        const statusColors = {
+            propuesta: 'bg-amber-100 text-amber-600',
+            aprobado: 'bg-blue-100 text-blue-600',
+            ejecucion: 'bg-orange-100 text-orange-600',
+            cerrado: 'bg-emerald-100 text-emerald-600'
         };
 
         return `

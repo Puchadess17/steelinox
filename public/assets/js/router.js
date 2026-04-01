@@ -184,8 +184,14 @@ const SIRouter = {
 
     /** Navegar programáticamente */
     navigate(view) {
-        // OJO JOAN: Ajusta la base igual que arriba
         const basePath = '/steelinox/';
+
+        // Si alguien pasa una URL completa (ej: '/steelinox/client/1'), manejarla directamente
+        if (view.startsWith(basePath)) {
+            window.history.pushState(null, '', view);
+            this.handleRoute(this.getViewFromUrl());
+            return;
+        }
 
         // Si la vista es dashboard, la URL amigable es 'panel'
         const urlPath = view === 'dashboard' ? 'panel' : view;

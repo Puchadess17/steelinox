@@ -670,7 +670,7 @@ SIModules.dashboard = {
                 <div class="flex flex-col sm:flex-row justify-between gap-4 mb-6">
                     <div class="relative w-full sm:w-96 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" placeholder="Buscar por nombre, email, teléfono o CIF..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" placeholder="Buscar por nombre, email, teléfono o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -700,7 +700,7 @@ SIModules.dashboard = {
         }
 
         const tbody = data.map(c => `
-            <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/client/${c.id}')" >
+            <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer">
                 <td class="px-5 py-4 whitespace-nowrap">
                     <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold border border-orange-200">
@@ -710,19 +710,16 @@ SIModules.dashboard = {
                     </a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
-                    ${SIApp.escapeHtml(c.cif || 'Sin CIF')}
+                    ${SIApp.escapeHtml(c.reference || 'Sin Referencia')}
                 </td>
                 <td class="px-5 py-4 text-sm font-medium text-gray-500 whitespace-nowrap">
-                    ${SIApp.escapeHtml(c.email || '-')}
-                </td>
-                <td class="px-5 py-4 text-sm font-medium text-gray-500 whitespace-nowrap">
-                    ${SIApp.escapeHtml(c.phone || '-')}
+                    ${SIApp.escapeHtml(SIApp.formatDate(c.created_at) || '-')}
                 </td>
                 <td class="px-5 py-4 text-center whitespace-nowrap">
-                    ${c.is_active 
-                        ? '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
-                        : '<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>'
-                    }
+                    ${c.is_active
+                ? '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
+                : '<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>'
+            }
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
                     <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-orange-500 hover:text-orange-600 text-sm font-semibold inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -738,11 +735,9 @@ SIModules.dashboard = {
                     <thead>
                         <tr class="bg-gray-50/50 border-b border-gray-100">
                             <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
-                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">CIF/NIF</th>
-                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Teléfono</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fecha Creación</th>
                             <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                            <th class="px-5 py-3.5 text-right w-12"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/80">
@@ -756,11 +751,11 @@ SIModules.dashboard = {
     _searchClients(query) {
         if (!this.adminClients) return;
         const q = query.toLowerCase();
-        const filtered = this.adminClients.filter(c => 
+        const filtered = this.adminClients.filter(c =>
             (c.name && c.name.toLowerCase().includes(q)) ||
-            (c.email && c.email.toLowerCase().includes(q)) ||
-            (c.cif && c.cif.toLowerCase().includes(q)) ||
-            (c.phone && c.phone.toLowerCase().includes(q))
+            (c.reference && c.reference.toLowerCase().includes(q)) ||
+            (c.created_at && c.created_at.toLowerCase().includes(q)) ||
+            (c.is_active && c.is_active.toLowerCase().includes(q))
         );
         this._renderClientsTable(filtered);
     }
