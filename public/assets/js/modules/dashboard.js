@@ -166,13 +166,13 @@ SIModules.dashboard = {
         `).join('');
 
         container.innerHTML = `
-            <!-- VISTA MÓVIL: Grid de Cards Premium (oculto en md y mayores) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:hidden gap-4 p-4">
+            <!-- VISTA MÓVIL: Grid de Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
                 ${this._renderClientCards(data)}
             </div>
 
-            <!-- VISTA DESKTOP: Tabla Extensa (visible solo en md y mayores) -->
-            <div class="hidden md:block si-table-wrapper">
+            <!-- VISTA DESKTOP: Tabla Extensa -->
+            <div class="hidden lg:block si-table-wrapper">
                 <table class="w-full si-table">
                     <thead>
                         <tr class="bg-gray-50/50">
@@ -303,7 +303,11 @@ SIModules.dashboard = {
                             </button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
+                        ${this._renderClientCards(projects)}
+                    </div>
+                    
+                    <div class="hidden lg:block si-table-wrapper">
                         <table class="w-full si-table">
                             <thead>
                                 <tr class="bg-gray-50">
@@ -317,7 +321,7 @@ SIModules.dashboard = {
                             </thead>
                             <tbody>
                                 ${projects.length > 0 ? projects.map(p => `
-                                    <tr class="hover:bg-gray-50">
+                                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
                                         <td class="px-4 py-3">
                                             <p class="text-sm font-medium text-gray-800">${SIApp.escapeHtml(p.name)}</p>
                                         </td>
@@ -479,13 +483,13 @@ SIModules.dashboard = {
             return `<div class="col-span-full si-empty border border-gray-100 rounded-2xl bg-white"><p class="text-sm">No se han encontrado proyectos que coincidan con la búsqueda.</p></div>`;
         }
 
-        // Diseño del status badge
+        // Diseño del status badge exacto a la imagen
         const getCustomBadge = (status) => {
             const styles = {
-                propuesta: 'bg-amber-100/50 text-amber-700 border-amber-200/70',
-                aprobado: 'bg-blue-100/50 text-blue-700 border-blue-200/70',
-                ejecucion: 'bg-orange-100/50 text-orange-700 border-orange-200/70',
-                cerrado: 'bg-emerald-100/50 text-emerald-700 border-emerald-200/70',
+                propuesta: 'bg-[#d28f41] text-[#fff] shadow-sm', // Color anaranjado suave/dorado
+                aprobado: 'bg-emerald-600 font-bold text-white shadow-sm',
+                ejecucion: 'bg-orange-500 font-bold text-white shadow-sm',
+                cerrado: 'bg-gray-600 font-bold text-white shadow-sm',
             };
             const labels = {
                 propuesta: 'Pendiente Aprobación',
@@ -493,40 +497,47 @@ SIModules.dashboard = {
                 ejecucion: 'En Proceso',
                 cerrado: 'Finalizado',
             };
-            const style = styles[status] || 'bg-gray-100/50 text-gray-700 border-gray-200/70';
-            return `<span class="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${style}">${labels[status] || status}</span>`;
+            const style = styles[status] || 'bg-gray-600 text-white';
+            return `<span class="inline-flex items-center px-3 py-1.5 rounded-[5px] text-[7.5px] sm:text-[8px] font-black uppercase tracking-[0.1em] ${style}">${labels[status] || status}</span>`;
         };
 
         return projects.map(p => `
-            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md block">
-                <div class="p-5 flex-1">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-[11px] font-bold text-gray-400 tracking-wide uppercase">REF: ${SIApp.escapeHtml(p.reference)}</span>
+            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-all hover:shadow-lg block group">
+                
+                <!-- Cabecera Oscura / Imagen Placeholder -->
+                <div class="h-36 sm:h-40 bg-[#1e1e24] relative flex items-center justify-center overflow-hidden">
+                    <!-- Status Badge absolute top-right -->
+                    <div class="absolute top-4 right-4 z-10">
                         ${getCustomBadge(p.status)}
                     </div>
-                    <!-- Title -->
-                    <h3 class="text-lg font-bold text-gray-900 mb-2 leading-tight">${SIApp.escapeHtml(p.name)}</h3>
                     
-                    <!-- Icons Row -->
-                    <div class="mt-5 flex items-center gap-5 pt-4 border-t border-gray-50/50">
-                        <div class="flex items-center gap-1.5 text-xs text-gray-500">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span class="font-medium">Act. ${SIApp.timeAgo(p.created_at) || SIApp.formatDate(p.created_at)}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 text-xs text-gray-500">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            <span class="font-medium">0 Documentos</span>
-                        </div>
+                    <!-- Decoración / Placeholder Logo -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-[#26262e] to-[#121216] opacity-80"></div>
+                    <div class="relative z-10 flex items-center gap-3 opacity-30 group-hover:opacity-50 transition-opacity">
+                        <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <span class="text-2xl font-black text-white tracking-[0.2em] uppercase hidden">PROYECTO</span>
                     </div>
                 </div>
-                <!-- Action Button -->
-                <div class="border-t border-gray-100 p-2">
-                    <div class="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-700 group-hover:text-gray-900 group-hover:bg-gray-50 rounded-xl transition-colors">
-                        Ver detalles del proyecto
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+
+                <!-- Contenido Info -->
+                <div class="p-5 sm:p-6 flex-1 flex flex-col bg-white">
+                    <span class="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 leading-none block">REF: ${SIApp.escapeHtml(p.reference)}</span>
+                    <h3 class="text-base sm:text-lg font-black text-[#1a1b25] leading-snug mb-4 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
+                    
+                    <div class="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-gray-400 mb-6">
+                        <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Actualizado ${SIApp.timeAgo(p.created_at) || SIApp.formatDate(p.created_at)}
+                    </div>
+
+                    <!-- Botón Acción (Separator Line) -->
+                    <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center transition-opacity">
+                        <span class="text-xs sm:text-sm font-black text-[#a9753c] group-hover:text-orange-600 transition-colors tracking-wide">
+                            Ver detalles del proyecto
+                        </span>
+                        <svg class="w-4 h-4 text-[#a9753c] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </div>
                 </div>
-            </div>
+            </a>
         `).join('');
     },
 
@@ -645,7 +656,9 @@ SIModules.dashboard = {
 
         const clients = Array.isArray(result.data) ? result.data : [];
 
-        // Save for search
+        // Estado para los filtros de clientes
+        this.currentClientFilter = 'all';
+        this.currentClientSearch = '';
         this.adminClients = clients;
 
         this.container.innerHTML = `
@@ -666,11 +679,21 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- Buscador -->
-                <div class="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                    <div class="relative w-full sm:w-96 group">
+                <!-- Buscador y Tabs -->
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
+                    <!-- Fila de Tabs con scroll horizontal nativo -->
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client tab-admin-client active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClientsAdmin('all', this)">Todos</button>
+                            <button class="tab-client tab-admin-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.dashboard._filterClientsAdmin('activo', this)">Activos</button>
+                            <button class="tab-client tab-admin-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.dashboard._filterClientsAdmin('inactivo', this)">Inactivos</button>
+                        </div>
+                    </div>
+
+                    <!-- Buscador -->
+                    <div class="relative w-full xl:w-96 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" placeholder="Buscar por nombre, email, teléfono o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" placeholder="Buscar por nombre o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -730,14 +753,21 @@ SIModules.dashboard = {
         `).join('');
 
         container.innerHTML = `
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
+            <!-- VISTA MÓVIL: Grid de Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0 mb-6">
+                ${data.map(c => this._renderClientCardAdminMobile(c)).join('')}
+            </div>
+
+            <!-- VISTA DESKTOP: Tabla Extensa -->
+            <div class="hidden lg:block si-table-wrapper bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                <table class="w-full si-table">
                     <thead>
-                        <tr class="bg-gray-50/50 border-b border-gray-100">
+                        <tr class="bg-gray-50/50">
                             <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
                             <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
                             <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fecha Creación</th>
                             <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                            <th class="px-5 py-3.5 text-right w-12"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/80">
@@ -748,15 +778,88 @@ SIModules.dashboard = {
         `;
     },
 
+    /** Card Mobile para el Listado de Clientes */
+    _renderClientCardAdminMobile(c) {
+        const initials = SIApp._getInitials(c.name);
+        // El status en azul para activo (similar al mock) y gris para inactivo
+        const statusBadge = c.is_active
+            ? '<span class="px-3 py-1 bg-[#eef4f7] text-[#346c8a] text-[8.5px] font-black rounded-full uppercase tracking-wider">ACTIVO</span>'
+            : '<span class="px-3 py-1 bg-gray-100 text-gray-500 text-[8.5px] font-black rounded-full uppercase tracking-wider">INACTIVO</span>';
+            
+        return `
+            <a data-route="client-detail" href="/steelinox/client/${c.id}" class="bg-white border-l-[3.5px] border-l-[#a9753c] border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col cursor-pointer transition-all hover:shadow-lg block group relative">
+                <div class="px-6 py-5">
+                    <!-- Top Info: Avatar, Name, Badge -->
+                    <div class="flex items-start justify-between mb-4 gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-[#f6eadc] text-[#a9753c] flex items-center justify-center text-sm font-black tracking-widest shrink-0 border border-[#f0dfcc]">
+                                ${initials}
+                            </div>
+                            <div>
+                                <h3 class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(c.name)}</h3>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1">${SIApp.escapeHtml(c.reference || 'Sin Referencia')}</span>
+                            </div>
+                        </div>
+                        <div class="shrink-0 mt-0.5">
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <div class="w-full h-px bg-gray-50/80 my-4"></div>
+
+                    <!-- Details List -->
+                    <div class="flex items-center gap-3 text-[11px] font-semibold text-gray-500 mb-1 ml-1">
+                        <svg class="w-4 h-4 text-gray-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Creado el ${SIApp.formatDate(c.created_at) || '-'}
+                    </div>
+                </div>
+
+                <!-- Footer button -->
+                <div class="mt-auto px-6 pb-6 pt-1 flex justify-end">
+                    <div class="px-5 py-2.5 bg-gray-100 group-hover:bg-orange-50 text-[#a9753c] group-hover:text-orange-600 rounded-full text-[11px] font-bold transition-colors shadow-sm cursor-pointer">
+                        Ver detalles
+                    </div>
+                </div>
+            </a>
+        `;
+    },
+
+    /** Filtros para la vista de listado de clientes */
+    _filterClientsAdmin(status, btnElement) {
+        document.querySelectorAll('.tab-admin-client').forEach(t => t.classList.remove('active'));
+        if (btnElement) {
+            btnElement.classList.add('active');
+        } else {
+            document.querySelector(`.tab-admin-client[data-filter="${status}"]`)?.classList.add('active');
+        }
+
+        this.currentClientFilter = status;
+        this._applyClientsAdminFilters();
+    },
+
     _searchClients(query) {
+        this.currentClientSearch = query.toLowerCase();
+        this._applyClientsAdminFilters();
+    },
+
+    _applyClientsAdminFilters() {
         if (!this.adminClients) return;
-        const q = query.toLowerCase();
-        const filtered = this.adminClients.filter(c =>
-            (c.name && c.name.toLowerCase().includes(q)) ||
-            (c.reference && c.reference.toLowerCase().includes(q)) ||
-            (c.created_at && c.created_at.toLowerCase().includes(q)) ||
-            (c.is_active && c.is_active.toLowerCase().includes(q))
-        );
+        
+        let filtered = this.adminClients;
+
+        if (this.currentClientFilter !== 'all') {
+            const isActive = this.currentClientFilter === 'activo';
+            filtered = filtered.filter(c => c.is_active === isActive);
+        }
+
+        if (this.currentClientSearch && this.currentClientSearch.trim() !== '') {
+            const q = this.currentClientSearch;
+            filtered = filtered.filter(c =>
+                (c.name && c.name.toLowerCase().includes(q)) ||
+                (c.reference && c.reference.toLowerCase().includes(q))
+            );
+        }
+
         this._renderClientsTable(filtered);
     }
 };

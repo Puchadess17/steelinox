@@ -125,10 +125,21 @@ const SIApp = {
         return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
     },
 
-    /** Formatear moneda */
+    /** Formatear moneda (12.345,67 €) */
     formatCurrency(amount) {
-        if (amount === null || amount === undefined) return '-';
-        return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+        if (amount === null || amount === undefined || isNaN(amount)) return '-';
+        return new Intl.NumberFormat('es-ES', { 
+            style: 'currency', 
+            currency: 'EUR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).format(amount);
+    },
+
+    /** Formatear número (12.345,67) */
+    formatNumber(num) {
+        if (num === null || num === undefined || isNaN(num)) return '0';
+        return new Intl.NumberFormat('es-ES').format(num);
     },
 
     /** Badge de estado */

@@ -14,15 +14,24 @@ SIModules.clientDetailAdmin = {
     userContext: null,
 
     async loadClientDetailSPA() {
-        const pathParts = window.location.pathname.split('/');
-        const clientId = pathParts[pathParts.length - 1];
+        console.log("[ClientDetailAdmin] Loading SPA view...");
+        
+        // Extraer ID de forma robusta: /steelinox/client/123 -> 123
+        const path = window.location.pathname;
+        const match = path.match(/\/client\/(\d+)/i);
+        const clientId = match ? match[1] : null;
 
-        if (!clientId || isNaN(clientId)) {
+        console.log("[ClientDetailAdmin] Extracted Client ID:", clientId);
+
+        if (!clientId) {
+            console.error("[ClientDetailAdmin] ID no encontrado en la URL:", path);
             SIRouter.show404();
             return;
         }
 
         const container = document.getElementById('main-content');
+        if (!container) return;
+
         container.innerHTML = `
             <!-- Breadcrumb y Acciones -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4 fade-in">
@@ -31,67 +40,35 @@ SIModules.clientDetailAdmin = {
                     <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     <span id="breadcrumb-client-name" class="text-gray-900 font-bold">Cargando...</span>
                 </nav>
-                <div class="flex gap-2" id="client-actions">
-                    <!-- Botones de estado -->
-                </div>
             </div>
 
             <!-- Header Cliente -->
             <div class="bg-white border border-gray-100 rounded-[2rem] p-8 mb-8 shadow-sm flex flex-col md:flex-row gap-8 items-start md:items-center relative overflow-hidden fade-in" style="animation-delay: 0.1s">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 
-                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-orange-600 shrink-0 relative z-10" id="client-avatar">
-                   <div class="si-spinner"></div>
+                <div class="w-24 h-24 rounded-[1.5rem] bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-white shadow-sm flex items-center justify-center shrink-0 relative z-10" id="client-avatar">
+                   <svg class="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                 </div>
 
                 <div class="flex-1 relative z-10">
                     <div class="flex items-center gap-3 mb-2">
                         <h1 id="client-name" class="text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando detalles...</h1>
-                        <span id="client-reference" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden"></span>
+                        <span id="client-ref" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden inline-flex items-center"></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Grid: Info y Proyectos -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Columna Izquierda: Info Contacto -->
-                <div class="lg:col-span-1 space-y-8 fade-in" style="animation-delay: 0.2s">
-                    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Información de Contacto</h3>
-                            <button class="text-gray-400 hover:text-orange-500 transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                        </div>
-                        <div class="space-y-5" id="client-contact-info">
-                            <div class="flex justify-center py-4"><div class="si-spinner"></div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Columna Derecha: Proyectos -->
-                <div class="lg:col-span-2 fade-in" style="animation-delay: 0.3s">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-[#1a1b25] flex items-center gap-2">
-                            Proyectos Activos
-                            <span id="client-projects-count" class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs hidden">0</span>
-                        </h2>
-                        <button class="text-sm font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition-colors">
-                            + Nuevo Proyecto
-                        </button>
-                    </div>
-
-                    <div id="client-projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2 py-10 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
-                            <div class="si-spinner mb-4"></div>
-                            <p class="text-sm font-medium">Buscando proyectos...</p>
-                        </div>
-                    </div>
+            <!-- Contenedor Dinámico: Info, KPIs, Proyectos y Usuarios -->
+            <div id="client-detail-content" class="fade-in" style="animation-delay: 0.2s">
+                <div class="py-20 flex flex-col items-center justify-center text-gray-400">
+                    <div class="si-spinner mb-4"></div>
+                    <p class="text-sm font-medium">Cargando información del cliente...</p>
                 </div>
             </div>
         `;
 
-        await this.init(clientId, window.SIApp.user);
+        console.log("[ClientDetailAdmin] Skeleton injected. Initializing data...");
+        await this.init(clientId, window.SIApp ? window.SIApp.user : null);
     },
 
     async init(clientId, user) {
@@ -109,33 +86,42 @@ SIModules.clientDetailAdmin = {
     /** Fetch detail data from API */
     async loadClientData() {
         try {
+            console.log("[ClientDetailAdmin] Calling API for client:", this.clientId);
             const response = await API.get('/clients/' + this.clientId);
+            console.log("[ClientDetailAdmin] API Response:", response);
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Error al cargar el cliente.');
             }
 
             const d = response.data;
-            this.client = d.client;
+            console.log("[ClientDetailAdmin] Mapping data:", d);
+
+            this.client = d.info || {};
             this.users = d.users || [];
             this.projects = d.projects || [];
-            this.stats = d.stats || {};
+            this.stats = d.kpis || {};
 
+            console.log("[ClientDetailAdmin] Rendering components...");
             this.renderHeader();
             this.renderContent();
+            console.log("[ClientDetailAdmin] Load complete.");
 
         } catch (error) {
             console.error('[ClientDetailAdmin] Error:', error);
-            document.getElementById('client-detail-content').innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20 text-center">
-                    <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            const detailContent = document.getElementById('client-detail-content');
+            if (detailContent) {
+                detailContent.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <p class="text-gray-900 font-bold mb-1">No se pudo cargar la información</p>
+                        <p class="text-sm text-gray-400">${error.message}</p>
+                        <button onclick="location.reload()" class="mt-6 px-6 py-2 bg-orange-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20">Reintentar</button>
                     </div>
-                    <p class="text-gray-900 font-bold mb-1">No se pudo cargar la información</p>
-                    <p class="text-sm text-gray-400">${error.message}</p>
-                    <button onclick="location.reload()" class="mt-6 px-6 py-2 bg-orange-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20">Reintentar</button>
-                </div>
-            `;
+                `;
+            }
         }
     },
 
@@ -145,15 +131,18 @@ SIModules.clientDetailAdmin = {
         const refEl = document.getElementById('client-ref');
         const breadcrumbEl = document.getElementById('breadcrumb-client-name');
 
-        if (nameEl) nameEl.textContent = this.client.name;
-        if (breadcrumbEl) breadcrumbEl.textContent = this.client.name;
+        if (this.client && this.client.name) {
+            if (nameEl) nameEl.textContent = this.client.name;
+            if (breadcrumbEl) breadcrumbEl.textContent = this.client.name;
+        }
 
-        if (refEl) {
+        if (refEl && this.client) {
             const statusBadge = this.client.is_active
                 ? '<span class="ml-3 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
                 : '<span class="ml-3 px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>';
 
             refEl.innerHTML = `REF: ${this.client.reference || 'SIN REF'} ${statusBadge}`;
+            refEl.classList.remove('hidden');
         }
     },
 
@@ -164,7 +153,7 @@ SIModules.clientDetailAdmin = {
 
         container.innerHTML = `
             <div class="space-y-10">
-                <!-- KPI SECTION (Redistribuida a 4 columnas) -->
+                <!-- KPI SECTION -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     ${this._renderKPIDash()}
                 </div>
@@ -188,16 +177,15 @@ SIModules.clientDetailAdmin = {
                             <thead class="bg-gray-50/50 border-b border-gray-100">
                                 <tr>
                                     <th class="px-6 py-4 text-[10px] uppercase font-black text-gray-400 tracking-widest">Nombre y Email</th>
-                                    <th class="px-6 py-4 text-[10px] uppercase font-black text-gray-400 tracking-widest">Cargo</th>
                                     <th class="px-6 py-4 text-[10px] uppercase font-black text-gray-400 tracking-widest text-center">Estado</th>
                                     <th class="px-6 py-4 text-[10px] uppercase font-black text-gray-400 tracking-widest">Último Acceso</th>
                                     <th class="px-6 py-4 text-[10px] uppercase font-black text-gray-400 tracking-widest text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
-                                ${this.users.length > 0
+                                ${this.users && this.users.length > 0
                 ? this.users.map(u => this._renderUserRow(u)).join('')
-                : '<tr><td colspan="5" class="py-10 text-center text-gray-400 italic">No hay usuarios vinculados</td></tr>'}
+                : '<tr><td colspan="4" class="py-10 text-center text-gray-400 italic">No hay usuarios vinculados</td></tr>'}
                             </tbody>
                         </table>
                     </div>
@@ -217,13 +205,27 @@ SIModules.clientDetailAdmin = {
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </a>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${this.projects.length > 0
-                ? this.projects.map(p => this._renderProjectCard(p)).join('')
-                : '<div class="col-span-full py-10 bg-white border border-dashed border-gray-200 rounded-2xl text-center text-gray-400 italic">No hay proyectos para este cliente</div>'}
-                        
-                        <!-- Botón Nuevo Proyecto -->
-                        <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer hover:border-orange-300 transition-all hover:bg-orange-50/30">
+                    <div class="si-table-wrapper border border-gray-100 rounded-2xl bg-white overflow-hidden shadow-sm">
+                        <table class="w-full si-table">
+                            <thead>
+                                <tr class="bg-gray-50/50">
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Presupuesto</th>
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                                    <th class="px-5 py-3.5 text-right w-12"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50/80">
+                                ${this.projects && this.projects.length > 0
+                ? this.projects.map(p => this._renderProjectRow(p)).join('')
+                : '<tr><td colspan="6" class="py-10 text-center text-gray-400 italic">No hay proyectos para este cliente</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                
+                    <div class="mt-6 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer hover:border-orange-300 transition-all hover:bg-orange-50/30">
                             <div class="w-12 h-12 bg-white rounded-full border border-gray-100 shadow-sm flex items-center justify-center text-gray-400 group-hover:text-orange-500 group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                             </div>
@@ -269,74 +271,81 @@ SIModules.clientDetailAdmin = {
         `;
     },
 
-    /** Section: KPI Cards (4 columns) */
     _renderKPIDash() {
-        const s = this.stats;
+        const s = this.stats || {};
+        const currency = (val) => (window.SIApp && SIApp.formatCurrency) ? SIApp.formatCurrency(val) : val;
+        const number = (val) => (window.SIApp && SIApp.formatNumber) ? SIApp.formatNumber(val) : val;
+
         return `
-            <!-- Proyectos Totales -->
             <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-5">
                 <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Proyectos Totales</span>
-                    <p class="text-2xl font-black text-gray-900">${s.total_projects || 0}</p>
+                    <p class="text-2xl font-black text-gray-900">${number(s.total_projects || 0)}</p>
                 </div>
             </div>
 
-            <!-- Usuarios con Acceso -->
             <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-5">
                 <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Usuarios con Acceso</span>
-                    <p class="text-2xl font-black text-gray-900">${s.total_users || 0}</p>
+                    <p class="text-2xl font-black text-gray-900">${number(s.active_users || 0)}</p>
                 </div>
             </div>
 
-            <!-- Proyectos Activos -->
             <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-5">
                 <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Proyectos Activos</span>
-                    <p class="text-2xl font-black text-gray-900">${s.active_projects || 0}</p>
+                    <p class="text-2xl font-black text-gray-900">${number(s.active_projects || 0)}</p>
                 </div>
             </div>
 
-            <!-- Facturación Anual -->
             <div class="bg-[#fcfaff] border border-[#f3ebff] rounded-2xl p-6 shadow-sm flex items-center gap-5">
                 <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-[#8a5cf5] uppercase tracking-widest leading-none mb-1">Facturación Total</span>
-                    <p class="text-2xl font-black text-gray-900">${SIApp.formatCurrency(s.total_billing || 0)}</p>
+                    <p class="text-2xl font-black text-gray-900">${currency(s.annual_revenue || 0)}</p>
                 </div>
             </div>
         `;
     },
 
-    /** Row: Individual User row in the table */
     _renderUserRow(u) {
-        const initials = SIApp._getInitials(u.name);
-        const lastAccess = u.last_login_at ? SIApp.formatDate(u.last_login_at) : 'Sin acceso';
+        const initials = (window.SIApp && SIApp._getInitials) ? SIApp._getInitials(u.name) : '??';
+        const lastAccess = u.last_login_at ? (SIApp.formatDate ? SIApp.formatDate(u.last_login_at) : u.last_login_at) : 'Sin acceso';
+
+        // Paleta de colores para avatares
+        const colors = [
+            'bg-blue-100 text-blue-700',
+            'bg-emerald-100 text-emerald-700',
+            'bg-purple-100 text-purple-700',
+            'bg-amber-100 text-amber-700',
+            'bg-rose-100 text-rose-700',
+            'bg-indigo-100 text-indigo-700',
+            'bg-cyan-100 text-cyan-700'
+        ];
+        // Seleccionar color basado en el ID o nombre para que sea consistente
+        const colorClass = colors[ (u.id || u.name.length) % colors.length ];
 
         return `
             <tr class="hover:bg-gray-50/80 transition-colors">
                 <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-sm">${initials}</div>
+                        <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-sm">${initials}</div>
                         <div>
                             <p class="text-sm font-bold text-gray-900 leading-tight">${u.name}</p>
                             <p class="text-xs text-gray-400">${u.email}</p>
                         </div>
                     </div>
-                </td>
-                <td class="px-6 py-4">
-                    <p class="text-xs font-semibold text-gray-600 italic">Director de Proyecto</p>
                 </td>
                 <td class="px-6 py-4 text-center">
                     <span class="px-2 py-1 ${u.is_active ? 'bg-emerald-100/60 text-emerald-700' : 'bg-red-100/60 text-red-700'} text-[10px] font-black rounded-lg uppercase tracking-widest">
@@ -357,50 +366,35 @@ SIModules.clientDetailAdmin = {
         `;
     },
 
-    /** Card: Individual Project card */
-    _renderProjectCard(p) {
-        const labels = { propuesta: 'Propuesta', aprobado: 'Aprobado', ejecucion: 'En Ejecución', cerrado: 'Finalizado' };
-        const statusColors = {
-            propuesta: 'bg-amber-100 text-amber-600',
-            aprobado: 'bg-blue-100 text-blue-600',
-            ejecucion: 'bg-orange-100 text-orange-600',
-            cerrado: 'bg-emerald-100 text-emerald-600'
-        };
+    _renderProjectRow(p) {
+        const format = (val) => (window.SIApp && SIApp.formatCurrency) ? SIApp.formatCurrency(val) : val;
+        const formatDate = (val) => (window.SIApp && SIApp.formatDate) ? SIApp.formatDate(val) : val;
+        const badge = (val) => (window.SIApp && SIApp.statusBadge) ? SIApp.statusBadge(val) : val;
 
         return `
-            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow group cursor-pointer block">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-[10px] font-bold text-gray-400 tracking-wide uppercase bg-gray-50 px-2 py-1 rounded">REF: ${SIApp.escapeHtml(p.reference)}</span>
-                    <button class="text-gray-300 hover:text-gray-600">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
-                    </button>
-                </div>
-                
-                <h4 class="text-lg font-black text-gray-900 leading-snug mb-4 group-hover:text-orange-500 transition-colors">${p.name}</h4>
-                
-                <div class="space-y-3 pb-4 mb-4 border-b border-gray-50">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Estado:</span>
-                        <span class="text-xs font-black uppercase tracking-tight ${statusColors[p.status] || 'text-gray-400'}">${labels[p.status] || p.status}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Comercial:</span>
-                        <span class="text-xs font-bold text-gray-700">${p.creator_name || 'Ana García'}</span>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">Iniciado: ${SIApp.formatDate(p.created_at)}</span>
-                    <span class="text-xs font-black text-orange-500 flex items-center gap-1 group-hover:gap-2 transition-all">
-                        Detalles
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                    </span>
-                </div>
-            </a>
+            <tr class="hover:bg-orange-50/30 transition-colors group">
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <a data-route="project-detail" href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${p.name}</a>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${p.reference}</span>
+                </td>
+                <td class="px-5 py-4 text-sm font-black text-gray-600 whitespace-nowrap">
+                    ${format(p.budget_amount || 0)}
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    ${badge(p.status)}
+                </td>
+                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase">
+                    ${formatDate(p.created_at)}
+                </td>
+                <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </td>
+            </tr>
         `;
     },
 
-    /** Item: Timeline history item */
     _renderTimelineItem(i) {
         const icons = {
             success: '<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>',

@@ -95,8 +95,7 @@ SIModules.projects = {
                                     <h2 class="text-lg font-bold text-gray-900 mb-4">Detalles Financieros</h2>
                                     <div class="p-4 bg-orange-50 rounded-xl border border-orange-100">
                                         <span class="block text-xs font-bold text-orange-600/70 uppercase mb-1">Presupuesto</span>
-                                        <span class="text-2xl font-black text-orange-600">
-                                            ${p.budget_amount ? new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(p.budget_amount) : '---'}
+                                            ${SIApp.formatCurrency(p.budget_amount)}
                                         </span>
                                     </div>
                                 </div>
