@@ -86,13 +86,13 @@ const ProjectAdminView = {
             const styles = {
                 propuesta: 'bg-amber-100/50 text-amber-700 border-amber-200/50',
                 aprobado: 'bg-blue-100/50 text-blue-700 border-blue-200/50',
-                ejecucion: 'bg-orange-100 text-white border-orange-200',
+                ejecucion: 'bg-orange-100 text-orange-700 border-orange-200',
                 cerrado: 'bg-emerald-100/50 text-emerald-700 border-emerald-200/50',
             };
             const label = labels[this.project.status] || this.project.status;
-            const style = styles[this.project.status] || 'bg-gray-100 text-gray-600';
+            const style = styles[this.project.status] || 'bg-gray-100 text-gray-600 border-gray-200';
 
-            badgeEl.className = `px-4 py-2 rounded-xl text-xs font-bold uppercase border ${style} shadow-sm inline-block`;
+            badgeEl.className = `px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest border shadow-md inline-block ${style}`;
             badgeEl.textContent = label;
         }
     },
@@ -432,7 +432,7 @@ const ProjectAdminView = {
             'edit': { color: 'bg-amber-100', icon: '<svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' }
         };
         const node = icons[type] || icons.edit;
-        
+
         let contentHtml = '';
         if (isAttachment) {
             contentHtml = `

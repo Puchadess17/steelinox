@@ -14,6 +14,7 @@ $router->get('/api/projects/(\d+)', 'ProjectController@show');
 
 // clientes
 $router->get('/api/clients', 'ClientController@index');
+$router->get('/api/clients/(\d+)', 'ClientController@show');
 
 // FRONTEND
 $router->get('/', 'AuthController@showLogin');
@@ -25,3 +26,4 @@ $router->get('/settings', 'DashboardController@index');
 $router->get('/projects-new', 'DashboardController@index');
 
 $router->get('/project/(\d+)', 'DashboardController@showProject');
+$router->get('/client/(\d+)', 'DashboardController@showClient');

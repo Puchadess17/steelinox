@@ -52,4 +52,50 @@ class ClientController {
             ]);
         }
     }
+
+    public function show($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado.']);
+            return;
+        }
+
+        try {
+            $clientModel = new Client();
+            $projectModel = new Project();
+
+            $client = $clientModel->getById($id);
+            if (!$client) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado']);
+                return;
+            }
+
+            $users = $clientModel->getUsers($id);
+            $stats = $clientModel->getStats($id);
+            $projects = $projectModel->getByClientId($id);
+
+            // Combinar todo en un objeto de respuesta rico
+            $data = [
+                'client'   => $client,
+                'users'    => $users,
+                'stats'    => $stats,
+                'projects' => $projects
+            ];
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Detalle del cliente recuperado',
+                'data'    => $data,
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error del servidor', 'errors' => ['server' => $e->getMessage()]]);
+        }
+    }
 }

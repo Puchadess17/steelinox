@@ -63,4 +63,17 @@ class Project {
         
         return $stmt->fetch(); 
     }
+
+    /** Obtener proyectos de un cliente específico */
+    public function getByClientId($clientId) {
+        $sql = "SELECT p.*, u.name AS creator_name 
+                FROM projects p
+                LEFT JOIN users u ON p.created_by = u.id
+                WHERE p.client_id = :client_id AND p.deleted_at IS NULL
+                ORDER BY p.created_at DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['client_id' => $clientId]);
+        return $stmt->fetchAll();
+    }
 }

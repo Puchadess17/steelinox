@@ -11,7 +11,7 @@ class Client {
     }
 
     public function getListByUser($userId, $role) {
-        // Si llega un cliente, devolvemos vacío
+        // ... (existing code stays the same)
         if ($role === 'cliente') {
             return [];
         }
@@ -25,7 +25,6 @@ class Client {
                     ORDER BY created_at DESC";
                     
         } elseif ($role === 'comercial') {
-            // Comercial ve clientes que creó él, o clientes de los proyectos en los que participa
             $sql = "SELECT DISTINCT c.id, c.name, c.reference, c.is_active, c.created_at 
                     FROM clients c
                     LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
@@ -41,5 +40,39 @@ class Client {
         $stmt->execute($params);
         
         return $stmt->fetchAll();
+    }
+
+    /** Obtener info básica del cliente */
+    public function getById($id) {
+        $sql = "SELECT * FROM clients WHERE id = :id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    /** Obtener usuarios vinculados al cliente */
+    public function getUsers($clientId) {
+        $sql = "SELECT id, name, email, role, is_active, last_login_at 
+                FROM users 
+                WHERE client_id = :client_id AND deleted_at IS NULL
+                ORDER BY name ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['client_id' => $clientId]);
+        return $stmt->fetchAll();
+    }
+
+    /** Obtener estadísticas y KPIs del cliente */
+    public function getStats($clientId) {
+        $sql = "SELECT 
+                (SELECT COUNT(*) FROM projects WHERE client_id = :id AND deleted_at IS NULL) as total_projects,
+                (SELECT COUNT(*) FROM projects WHERE client_id = :id AND status != 'cerrado' AND deleted_at IS NULL) as active_projects,
+                (SELECT COUNT(*) FROM users WHERE client_id = :id AND deleted_at IS NULL) as total_users,
+                (SELECT SUM(budget_amount) FROM projects WHERE client_id = :id AND deleted_at IS NULL) as total_billing
+                FROM clients 
+                WHERE id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $clientId]);
+        return $stmt->fetch();
     }
 }

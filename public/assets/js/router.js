@@ -38,33 +38,33 @@ const SIRouter = {
 
     getViewFromUrl() {
         const path = window.location.pathname;
-        const basePath = '/steelinox/'; 
+        const basePath = '/steelinox/';
         let cleanPath = path.replace(basePath, '').replace(/^\/|\/$/g, '');
 
         if (cleanPath === 'panel' || cleanPath === '') {
             return 'dashboard';
         }
-        
+
         // --- LA MAGIA NUEVA ---
         // Si la URL empieza por "project/", le decimos al router que cargue la vista 'project-detail'
         if (cleanPath.startsWith('project/')) {
             return 'project-detail';
         }
-        
+
         return cleanPath;
     },
 
     /** Mapa de rutas: nombre de la vista → { module, method, roles, title } */
     defineRoutes() {
         this.routes = {
-            'dashboard':            { module: 'dashboard', method: 'loadDashboardAuto',       roles: ['admin', 'comercial', 'cliente'], title: 'Panel General' },
-            'clients':              { module: 'clients',   method: 'dummyMethod',             roles: ['admin', 'comercial'],            title: 'Clientes' }, 
-            'project-detail':       { module: 'projects',  method: 'loadProjectDetails',             roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
-            
-            'commercials':          { module: 'users',     method: 'dummyMethod',             roles: ['admin'],                         title: 'Comerciales' },'projects-new':   { module: 'projects',  method: 'dummyMethod',        roles: ['admin', 'comercial'],            title: 'Nuevo Proyecto' },
-            'audit-log':            { module: 'audit',     method: 'dummyMethod',             roles: ['admin'],                         title: 'Registro de Actividad' },
-            'settings':             { module: 'settings',  method: 'dummyMethod',             roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
-            'projects-new':         { module: 'projects',  method: 'dummyMethod',             roles: ['admin', 'comercial'],            title: 'Nuevo Proyecto' }
+            'dashboard': { module: 'dashboard', method: 'loadDashboardAuto', roles: ['admin', 'comercial', 'cliente'], title: 'Panel General' },
+            'clients': { module: 'clients', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Clientes' },
+            'project-detail': { module: 'projects', method: 'loadProjectDetail', roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
+
+            'commercials': { module: 'users', method: 'dummyMethod', roles: ['admin'], title: 'Comerciales' }, 'projects-new': { module: 'projects', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Nuevo Proyecto' },
+            'audit-log': { module: 'audit', method: 'dummyMethod', roles: ['admin'], title: 'Registro de Actividad' },
+            'settings': { module: 'settings', method: 'dummyMethod', roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
+            'projects-new': { module: 'projects', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Nuevo Proyecto' }
         };
     },
 
@@ -107,7 +107,7 @@ const SIRouter = {
                 await mod[route.method]();
             }
         } else if (route.method === 'dummyMethod') {
-             this.contentContainer.innerHTML = `<div class="si-empty py-20 text-gray-500">Módulo <b>${route.title}</b> en construcción.</div>`;
+            this.contentContainer.innerHTML = `<div class="si-empty py-20 text-gray-500">Módulo <b>${route.title}</b> en construcción.</div>`;
         }
     },
 
@@ -147,12 +147,12 @@ const SIRouter = {
     /** Navegar programáticamente */
     navigate(view) {
         // OJO JOAN: Ajusta la base igual que arriba
-        const basePath = '/steelinox/'; 
-        
+        const basePath = '/steelinox/';
+
         // Si la vista es dashboard, la URL amigable es 'panel'
         const urlPath = view === 'dashboard' ? 'panel' : view;
         const finalUrl = basePath + urlPath;
-        
+
         // Cambiamos la URL en el navegador SIN recargar la página
         window.history.pushState(null, '', finalUrl);
         this.handleRoute(view);
@@ -162,8 +162,8 @@ const SIRouter = {
     show404() {
         if (this.contentContainer) {
             this.contentContainer.innerHTML = this._errorTemplate(
-                404, 
-                'Página no encontrada', 
+                404,
+                'Página no encontrada',
                 'Lo sentimos, la sección que intentas cargar no existe o ha sido movida.'
             );
         }
@@ -173,8 +173,8 @@ const SIRouter = {
     showForbidden() {
         if (this.contentContainer) {
             this.contentContainer.innerHTML = this._errorTemplate(
-                403, 
-                'Acceso Denegado', 
+                403,
+                'Acceso Denegado',
                 'No tienes los permisos suficientes para ver el contenido de esta sección.'
             );
         }
