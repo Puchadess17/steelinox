@@ -3,13 +3,96 @@
  * Handles the logic for the individual client page.
  */
 
-const ClientDetailAdmin = {
+window.SIModules = window.SIModules || {};
+
+SIModules.clientDetailAdmin = {
     clientId: null,
     client: null,
     users: [],
     projects: [],
     stats: null,
     userContext: null,
+
+    async loadClientDetailSPA() {
+        const pathParts = window.location.pathname.split('/');
+        const clientId = pathParts[pathParts.length - 1];
+
+        if (!clientId || isNaN(clientId)) {
+            SIRouter.show404();
+            return;
+        }
+
+        const container = document.getElementById('main-content');
+        container.innerHTML = `
+            <!-- Breadcrumb y Acciones -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4 fade-in">
+                <nav class="flex text-sm text-gray-500 gap-2" aria-label="Breadcrumb">
+                    <a data-route="clients" href="/steelinox/clients" class="hover:text-orange-500 transition-colors font-medium">Clientes</a>
+                    <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <span id="breadcrumb-client-name" class="text-gray-900 font-bold">Cargando...</span>
+                </nav>
+                <div class="flex gap-2" id="client-actions">
+                    <!-- Botones de estado -->
+                </div>
+            </div>
+
+            <!-- Header Cliente -->
+            <div class="bg-white border border-gray-100 rounded-[2rem] p-8 mb-8 shadow-sm flex flex-col md:flex-row gap-8 items-start md:items-center relative overflow-hidden fade-in" style="animation-delay: 0.1s">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                
+                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-orange-600 shrink-0 relative z-10" id="client-avatar">
+                   <div class="si-spinner"></div>
+                </div>
+
+                <div class="flex-1 relative z-10">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 id="client-name" class="text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando detalles...</h1>
+                        <span id="client-cif" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid: Info y Proyectos -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Columna Izquierda: Info Contacto -->
+                <div class="lg:col-span-1 space-y-8 fade-in" style="animation-delay: 0.2s">
+                    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Información de Contacto</h3>
+                            <button class="text-gray-400 hover:text-orange-500 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
+                        </div>
+                        <div class="space-y-5" id="client-contact-info">
+                            <div class="flex justify-center py-4"><div class="si-spinner"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Proyectos -->
+                <div class="lg:col-span-2 fade-in" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-[#1a1b25] flex items-center gap-2">
+                            Proyectos Activos
+                            <span id="client-projects-count" class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs hidden">0</span>
+                        </h2>
+                        <button class="text-sm font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition-colors">
+                            + Nuevo Proyecto
+                        </button>
+                    </div>
+
+                    <div id="client-projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2 py-10 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
+                            <div class="si-spinner mb-4"></div>
+                            <p class="text-sm font-medium">Buscando proyectos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        await this.init(clientId, window.SIApp.user);
+    },
 
     async init(clientId, user) {
         this.clientId = clientId;
@@ -285,9 +368,9 @@ const ClientDetailAdmin = {
         };
 
         return `
-            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="px-2.5 py-1 bg-gray-50 text-gray-400 text-[10px] font-black rounded-lg uppercase tracking-widest border border-gray-100">${p.reference}</span>
+            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow group cursor-pointer block">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-[10px] font-bold text-gray-400 tracking-wide uppercase bg-gray-50 px-2 py-1 rounded">REF: ${SIApp.escapeHtml(p.reference)}</span>
                     <button class="text-gray-300 hover:text-gray-600">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
                     </button>
@@ -308,12 +391,12 @@ const ClientDetailAdmin = {
 
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-gray-400 uppercase">Iniciado: ${SIApp.formatDate(p.created_at)}</span>
-                    <a href="/steelinox/project/${p.id}" class="text-xs font-black text-orange-500 flex items-center gap-1 group-hover:gap-2 transition-all">
+                    <span class="text-xs font-black text-orange-500 flex items-center gap-1 group-hover:gap-2 transition-all">
                         Detalles
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+                    </span>
                 </div>
-            </div>
+            </a>
         `;
     },
 
@@ -348,4 +431,4 @@ const ClientDetailAdmin = {
 };
 
 // Global export
-window.ClientDetailAdmin = ClientDetailAdmin;
+window.ClientDetailAdmin = SIModules.clientDetailAdmin;

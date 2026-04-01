@@ -35,23 +35,19 @@ SIModules.projects = {
         `;
 
         try {
-            // 3. Consumir tu endpoint PHP (usando la clase API de Joan si la tiene, o fetch directo)
-            // Asumo que Joan tiene un helper API.get, si no, usar: await fetch(`/steelinox/api/projects/${projectId}`)
-            const response = await fetch(`/steelinox/api/projects/${projectId}`);
+            const result = await API.get(`/projects/${projectId}`);
             
-            if (response.status === 404) {
-                SIRouter.show404();
-                return;
-            }
-            if (response.status === 401 || response.status === 403) {
-                SIRouter.showForbidden();
+            if (!result.success) {
+                if (result.message && result.message.includes('No tienes permiso')) {
+                    SIRouter.showForbidden();
+                } else {
+                    SIRouter.show404();
+                }
                 return;
             }
 
-            const json = await response.json();
-
-            if (json.success && json.data) {
-                const p = json.data;
+            if (result.success && result.data) {
+                const p = result.data;
                 
                 // 4. Renderizar la información real
                 this.container.innerHTML = `
@@ -108,8 +104,6 @@ SIModules.projects = {
                         </div>
                     </div>
                 `;
-            } else {
-                this.container.innerHTML = `<div class="p-8 text-red-500">Error: ${json.message}</div>`;
             }
         } catch (error) {
             console.error(error);

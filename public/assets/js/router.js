@@ -19,11 +19,36 @@ const SIRouter = {
         this.defineRoutes();
 
         document.body.addEventListener('click', (e) => {
-            const link = e.target.closest('a[data-route]');
-            if (link) {
-                e.preventDefault();
+            const link = e.target.closest('a[data-route]') || e.target.closest('a[href^="/steelinox/"]');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+
+            // Ignorar links externos, de descarga, o con target
+            if (!href || href.startsWith('#') || link.hasAttribute('download') || link.getAttribute('target') === '_blank') return;
+
+            // Solo interceptar rutas internas de la SPA
+            if (!href.startsWith('/steelinox/')) return;
+
+            // No interceptar rutas de API
+            if (href.startsWith('/steelinox/api/')) return;
+
+            e.preventDefault();
+
+            // Determinar la vista: si la URL contiene /project/ o /client/, pushear el href y recalcular
+            if (href.includes('/project/') || href.includes('/client/')) {
+                window.history.pushState(null, '', href);
+                this.handleRoute(this.getViewFromUrl());
+            } else {
+                // Para rutas normales, usar data-route si existe, sino calcular desde href
                 const route = link.getAttribute('data-route');
-                this.navigate(route);
+                if (route) {
+                    this.navigate(route);
+                } else {
+                    // Calcular la ruta desde el href
+                    window.history.pushState(null, '', href);
+                    this.handleRoute(this.getViewFromUrl());
+                }
             }
         });
 
@@ -48,7 +73,16 @@ const SIRouter = {
         // --- LA MAGIA NUEVA ---
         // Si la URL empieza por "project/", le decimos al router que cargue la vista 'project-detail'
         if (cleanPath.startsWith('project/')) {
+            const user = Auth.getUser();
+            if (user && user.role === 'cliente') {
+                return 'project-detail-cliente';
+            }
             return 'project-detail';
+        }
+
+        // Si la URL empieza por "client/", le decimos al router que cargue la vista 'client-detail'
+        if (cleanPath.startsWith('client/')) {
+            return 'client-detail';
         }
 
         return cleanPath;
@@ -58,10 +92,12 @@ const SIRouter = {
     defineRoutes() {
         this.routes = {
             'dashboard': { module: 'dashboard', method: 'loadDashboardAuto', roles: ['admin', 'comercial', 'cliente'], title: 'Panel General' },
-            'clients': { module: 'clients', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Clientes' },
-            'project-detail': { module: 'projects', method: 'loadProjectDetail', roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
+            'clients': { module: 'dashboard', method: 'loadClientsList', roles: ['admin', 'comercial'], title: 'Clientes' },
+            'project-detail': { module: 'projectDetailAdmin', method: 'loadProjectDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Proyecto' },
+            'project-detail-cliente': { module: 'projects', method: 'loadProjectDetail', roles: ['cliente'], title: 'Detalle del Proyecto' },
+            'client-detail': { module: 'clientDetailAdmin', method: 'loadClientDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Cliente' },
 
-            'commercials': { module: 'users', method: 'dummyMethod', roles: ['admin'], title: 'Comerciales' }, 'projects-new': { module: 'projects', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Nuevo Proyecto' },
+            'commercials': { module: 'users', method: 'dummyMethod', roles: ['admin'], title: 'Comerciales' },
             'audit-log': { module: 'audit', method: 'dummyMethod', roles: ['admin'], title: 'Registro de Actividad' },
             'settings': { module: 'settings', method: 'dummyMethod', roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
             'projects-new': { module: 'projects', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Nuevo Proyecto' }
@@ -126,7 +162,9 @@ const SIRouter = {
     updateSidebar(view) {
         document.querySelectorAll('.sidebar-item').forEach(item => {
             item.classList.remove('active');
-            if (item.dataset.route === view || (view === 'dashboard' && item.dataset.route === 'dashboard')) {
+            let route = item.dataset.route;
+            // Para el dashboard manejamos también la vista panel
+            if (route === view || (view === 'dashboard' && route === 'dashboard') || (view.startsWith('project-detail') && route === 'dashboard') || (view === 'client-detail' && route === 'clients')) {
                 item.classList.add('active');
             }
         });

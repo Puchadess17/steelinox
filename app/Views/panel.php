@@ -144,14 +144,16 @@
     <!-- ═══════════════════════════════════ -->
     <!-- SCRIPTS                             -->
     <!-- ═══════════════════════════════════ -->
-    <script src="/steelinox/public/assets/js/api.js"></script>
-    <script src="/steelinox/public/assets/js/auth.js"></script>
-    <script src="/steelinox/public/assets/js/router.js"></script>
-    <script src="/steelinox/public/assets/js/app.js"></script>
-    <script src="/steelinox/public/assets/js/modules/dashboard.js"></script>
+    <script src="/steelinox/public/assets/js/api.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/auth.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/router.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/app.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/modules/dashboard.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/modules/projects.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/modules/project_detail_admin.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/modules/client_detail_admin.js?v=2"></script>
 
     <script>
-        window.CURRENT_PROJECT_ID = <?php echo isset($projectId) ? json_encode($projectId) : 'null'; ?>;
         
         // Panel UI helpers (mobile sidebar)
         const SIPanelUI = {

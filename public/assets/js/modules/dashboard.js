@@ -145,7 +145,7 @@ SIModules.dashboard = {
         const tbody = data.map(p => `
             <tr class="hover:bg-orange-50/30 transition-colors group">
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(p.name)}</a>
+                    <a data-route="project-detail" href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(p.name)}</a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
@@ -498,7 +498,7 @@ SIModules.dashboard = {
         };
 
         return projects.map(p => `
-            <a href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md block">
+            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-shadow hover:shadow-md block">
                 <div class="p-5 flex-1">
                     <div class="flex items-center justify-between mb-4">
                         <span class="text-[11px] font-bold text-gray-400 tracking-wide uppercase">REF: ${SIApp.escapeHtml(p.reference)}</span>
@@ -624,4 +624,144 @@ SIModules.dashboard = {
         };
         return map[name] || '';
     },
+
+    // ═══════════════════════════════════════
+    // CLIENTS LIST DASHBOARD (ADMIN/COMERCIAL)
+    // ═══════════════════════════════════════
+
+    async loadClientsList() {
+        const user = Auth.getUser();
+        if (!user || user.role === 'cliente') {
+            SIRouter.showForbidden();
+            return;
+        }
+
+        const result = await API.get('/clients');
+
+        if (!result.success) {
+            this.container.innerHTML = this._errorState('No se pudieron cargar los datos de clientes.');
+            return;
+        }
+
+        const clients = Array.isArray(result.data) ? result.data : [];
+
+        // Save for search
+        this.adminClients = clients;
+
+        this.container.innerHTML = `
+            <div class="fade-in">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Directorio de Clientes</h1>
+                        </div>
+                        <p class="text-gray-400">Gestiona la cartera de clientes y accede a sus proyectos asociados.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Nuevo Cliente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Buscador -->
+                <div class="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+                    <div class="relative w-full sm:w-96 group">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" placeholder="Buscar por nombre, email, teléfono o CIF..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Lista de Clientes -->
+                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                    <div id="clients-table-container">
+                        <!-- Renderizado dinámico aquí -->
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this._renderClientsTable(clients);
+    },
+
+    _renderClientsTable(data) {
+        const container = document.getElementById('clients-table-container');
+        if (!container) return;
+
+        if (data.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <p class="text-sm font-semibold text-gray-900">No se encontraron clientes</p>
+                </div>
+            `;
+            return;
+        }
+
+        const tbody = data.map(c => `
+            <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/client/${c.id}')" >
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold border border-orange-200">
+                            ${SIApp._getInitials(c.name)}
+                        </div>
+                        ${SIApp.escapeHtml(c.name)}
+                    </a>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                    ${SIApp.escapeHtml(c.cif || 'Sin CIF')}
+                </td>
+                <td class="px-5 py-4 text-sm font-medium text-gray-500 whitespace-nowrap">
+                    ${SIApp.escapeHtml(c.email || '-')}
+                </td>
+                <td class="px-5 py-4 text-sm font-medium text-gray-500 whitespace-nowrap">
+                    ${SIApp.escapeHtml(c.phone || '-')}
+                </td>
+                <td class="px-5 py-4 text-center whitespace-nowrap">
+                    ${c.is_active 
+                        ? '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
+                        : '<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>'
+                    }
+                </td>
+                <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-orange-500 hover:text-orange-600 text-sm font-semibold inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Ver ficha <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50/50 border-b border-gray-100">
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">CIF/NIF</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
+                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Teléfono</th>
+                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                            <th class="px-5 py-3.5 text-right w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50/80">
+                        ${tbody}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    _searchClients(query) {
+        if (!this.adminClients) return;
+        const q = query.toLowerCase();
+        const filtered = this.adminClients.filter(c => 
+            (c.name && c.name.toLowerCase().includes(q)) ||
+            (c.email && c.email.toLowerCase().includes(q)) ||
+            (c.cif && c.cif.toLowerCase().includes(q)) ||
+            (c.phone && c.phone.toLowerCase().includes(q))
+        );
+        this._renderClientsTable(filtered);
+    }
 };

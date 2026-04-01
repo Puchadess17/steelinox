@@ -3,11 +3,71 @@
  * Maneja la lógica de la página individual del proyecto para el equipo interno.
  */
 
-const ProjectAdminView = {
+window.SIModules = window.SIModules || {};
+
+SIModules.projectDetailAdmin = {
     projectId: null,
     project: null,
     userContext: null,
     activeTab: 'resumen',
+
+    async loadProjectDetailSPA() {
+        const pathParts = window.location.pathname.split('/');
+        const projectId = pathParts[pathParts.length - 1];
+
+        if (!projectId || isNaN(projectId)) {
+            SIRouter.show404();
+            return;
+        }
+
+        const user = Auth.getUser();
+
+        // Generar layout inicial
+        const container = document.getElementById('main-content');
+        container.innerHTML = `
+            <!-- Breadcrumb -->
+            <nav class="flex text-sm text-gray-500 mb-6 gap-2" aria-label="Breadcrumb">
+                <a data-route="dashboard" href="/steelinox/panel" class="hover:text-orange-500 transition-colors">Proyectos</a>
+                <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span id="breadcrumb-project-name" class="text-gray-900 font-medium font-bold">Cargando proyecto...</span>
+            </nav>
+
+            <!-- Título, Referencia y Status en un solo bloque -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-2 flex-wrap">
+                        <h1 id="admin-prj-title" class="text-2xl md:text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando...</h1>
+                        <div class="flex items-center gap-2">
+                            <span id="admin-prj-ref" class="px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-lg uppercase tracking-wider">REF</span>
+                            <span id="admin-prj-status-badge"></span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">Gestión y seguimiento detallado de la obra actual.</p>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="border-b border-gray-200 mb-8 overflow-x-auto hide-scrollbar">
+                <nav class="flex gap-8" aria-label="Tabs">
+                    <button onclick="SIModules.projectDetailAdmin.switchTab('resumen', this)" class="tab-btn active border-orange-500 text-orange-600 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Resumen</button>
+                    <button onclick="SIModules.projectDetailAdmin.switchTab('documentos', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Documentos</button>
+                    <button onclick="SIModules.projectDetailAdmin.switchTab('comentarios', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Comentarios</button>
+                    <button onclick="SIModules.projectDetailAdmin.switchTab('historial', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Histórico</button>
+                </nav>
+            </div>
+
+            <!-- TAB CONTENT CONTAINER -->
+            <div id="tab-content" class="fade-in min-h-[400px]">
+                <div class="flex items-center justify-center py-20">
+                    <div class="si-spinner"></div>
+                </div>
+            </div>
+        `;
+
+        await this.init(projectId, user);
+    },
 
     async init(projectId, user) {
         this.projectId = projectId;
@@ -263,7 +323,7 @@ const ProjectAdminView = {
                 <!-- Buscador -->
                 <div class="relative">
                     <svg class="w-5 h-5 text-gray-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input id="doc-search-input" type="text" placeholder="Buscar documentos..." oninput="ProjectAdminView._filterDocs(this.value)" class="w-full bg-white border border-gray-100 text-base rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-[#E57B23]/20 focus:border-[#E57B23] focus:outline-none shadow-sm text-gray-700 font-medium">
+                    <input id="doc-search-input" type="text" placeholder="Buscar documentos..." oninput="SIModules.projectDetailAdmin._filterDocs(this.value)" class="w-full bg-white border border-gray-100 text-base rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-[#E57B23]/20 focus:border-[#E57B23] focus:outline-none shadow-sm text-gray-700 font-medium">
                 </div>
 
                 <!-- Botón Principal -->
@@ -495,6 +555,3 @@ const ProjectAdminView = {
         });
     }
 };
-
-// Exportación global
-window.ProjectAdminView = ProjectAdminView;

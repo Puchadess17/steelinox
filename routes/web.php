@@ -25,5 +25,5 @@ $router->get('/audit-log', 'DashboardController@index');
 $router->get('/settings', 'DashboardController@index');
 $router->get('/projects-new', 'DashboardController@index');
 
-$router->get('/project/(\d+)', 'DashboardController@showProject');
-$router->get('/client/(\d+)', 'DashboardController@showClient');
+$router->get('/project/(\d+)', 'DashboardController@index');
+$router->get('/client/(\d+)', 'DashboardController@index');
