@@ -50,32 +50,6 @@ class Client {
         return $stmt->fetch();
     }
 
-    /** Obtener usuarios vinculados al cliente */
-    public function getUsers($clientId) {
-        $sql = "SELECT id, name, email, role, is_active, last_login_at 
-                FROM users 
-                WHERE client_id = :client_id AND deleted_at IS NULL
-                ORDER BY name ASC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['client_id' => $clientId]);
-        return $stmt->fetchAll();
-    }
-
-    /** Obtener estadísticas y KPIs del cliente */
-    public function getStats($clientId) {
-        $sql = "SELECT 
-                (SELECT COUNT(*) FROM projects WHERE client_id = :id AND deleted_at IS NULL) as total_projects,
-                (SELECT COUNT(*) FROM projects WHERE client_id = :id AND status != 'cerrado' AND deleted_at IS NULL) as active_projects,
-                (SELECT COUNT(*) FROM users WHERE client_id = :id AND deleted_at IS NULL) as total_users,
-                (SELECT SUM(budget_amount) FROM projects WHERE client_id = :id AND deleted_at IS NULL) as total_billing
-                FROM clients 
-                WHERE id = :id";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['id' => $clientId]);
-        return $stmt->fetch();
-    }
-
     public function getDetailsById($clientId, $userId, $role) {
         if ($role === 'cliente') {
             return false;
