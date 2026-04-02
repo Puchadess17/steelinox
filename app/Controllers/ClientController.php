@@ -106,4 +106,71 @@ class ClientController {
             ]);
         }
     }
+
+    // Crear un nuevo cliente (POST)
+    public function store() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Muro de Autorización
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba POST']]);
+            return;
+        }
+
+        // Leer el JSON del body (raw input)
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        // Validación básica
+        $errors = [];
+        if (empty($input['name'])) {
+            $errors['name'] = 'El nombre de la empresa es obligatorio.';
+        }
+
+        if (!empty($errors)) {
+            http_response_code(422); // Unprocessable Entity
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error de validación',
+                'data'    => null,
+                'errors'  => $errors
+            ]);
+            return;
+        }
+
+        try {
+            $clientModel = new Client();
+            
+            // Empaquetamos los datos, inyectando el ID del usuario creador desde la sesión
+            $newClientId = $clientModel->create([
+                'name'       => trim($input['name']),
+                'reference'  => !empty($input['reference']) ? trim($input['reference']) : null,
+                'is_active'  => isset($input['is_active']) ? (int)$input['is_active'] : 1,
+                'created_by' => $_SESSION['user_id']
+            ]);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Cliente creado correctamente',
+                'data'    => ['id' => $newClientId],
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al crear el cliente',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
 }

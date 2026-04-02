@@ -129,4 +129,20 @@ class Client {
             'users'    => $usersList
         ];
     }
+
+    /** Crear nuevo cliente */
+    public function create($data) {
+        $sql = "INSERT INTO clients (name, reference, is_active, created_by, created_at) 
+                VALUES (:name, :reference, :is_active, :created_by, NOW())";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'name'       => $data['name'],
+            'reference'  => $data['reference'] ?? null,
+            'is_active'  => $data['is_active'] ?? 1,
+            'created_by' => $data['created_by']
+        ]);
+        
+        return $this->db->lastInsertId();
+    }
 }
