@@ -10,9 +10,37 @@ const SIApp = {
     async init() {
         // 1. Verificar sesión local
         this.user = Auth.getUser();
+
+        // Si no hay datos en sessionStorage, intentar recuperar la sesión del servidor.
+        // Esto evita un bucle infinito de redirecciones cuando el usuario cierra
+        // la pestaña y la reabre (sessionStorage se pierde, pero la cookie PHP sigue viva).
         if (!this.user) {
-            window.location.href = '/steelinox/';
-            return;
+            try {
+                const res = await fetch('/steelinox/api/me', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.success && json.data) {
+                        // Sesión PHP sigue viva → recuperar datos en sessionStorage
+                        sessionStorage.setItem('si_user', JSON.stringify(json.data));
+                        this.user = json.data;
+                    } else {
+                        // Sesión PHP expirada → ir a login
+                        window.location.href = '/steelinox/';
+                        return;
+                    }
+                } else {
+                    // 401 u otro error → ir a login
+                    window.location.href = '/steelinox/';
+                    return;
+                }
+            } catch (e) {
+                console.error('SIApp: Error verificando sesión:', e);
+                window.location.href = '/steelinox/';
+                return;
+            }
         }
 
         // 2. Obtener CSRF token para futuras mutaciones

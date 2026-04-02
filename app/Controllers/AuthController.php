@@ -22,6 +22,53 @@ class AuthController {
         ]);
     }
 
+    /**
+     * Devuelve los datos del usuario actual desde la sesión PHP.
+     * Permite al frontend recuperar la sesión cuando sessionStorage se pierde
+     * (ej: al cerrar y reabrir pestaña).
+     */
+    public function me() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Verificar timeout por inactividad (misma lógica que AuthMiddleware)
+        if (isset($_SESSION['last_activity'])) {
+            $secondsInactive = time() - $_SESSION['last_activity'];
+            if ($secondsInactive >= 1800) {
+                session_unset();
+                session_destroy();
+                $this->sendResponse(401, false, 'Su sesión ha expirado por inactividad.', null, ['auth' => 'Sesión expirada']);
+                return;
+            }
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            $this->sendResponse(401, false, 'No autorizado. Por favor, inicie sesión.', null, ['auth' => 'No autorizado']);
+            return;
+        }
+
+        // Actualizar timestamp de actividad
+        $_SESSION['last_activity'] = time();
+
+        // Devolver datos del usuario desde la sesión
+        $userModel = new User();
+        $user = $userModel->findById($_SESSION['user_id']);
+
+        if (!$user) {
+            session_unset();
+            session_destroy();
+            $this->sendResponse(401, false, 'Usuario no encontrado.', null, ['auth' => 'Usuario inválido']);
+            return;
+        }
+
+        $this->sendResponse(200, true, 'Sesión activa', [
+            'id'   => $user['id'],
+            'name' => $user['name'],
+            'role' => $user['role']
+        ], null);
+    }
+
     public function showLogin() {
         if (session_status() === PHP_SESSION_NONE) session_start();
         if (isset($_SESSION['user_id'])) {

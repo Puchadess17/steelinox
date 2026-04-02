@@ -144,14 +144,14 @@
     <!-- ═══════════════════════════════════ -->
     <!-- SCRIPTS                             -->
     <!-- ═══════════════════════════════════ -->
-    <script src="/steelinox/public/assets/js/api.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/auth.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/router.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/app.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/modules/dashboard.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/modules/projects.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/modules/project_detail_admin.js?v=2"></script>
-    <script src="/steelinox/public/assets/js/modules/client_detail_admin.js?v=2"></script>
+    <script src="/steelinox/public/assets/js/api.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/auth.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/router.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/app.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/modules/dashboard.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/modules/projects.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/modules/project_detail_admin.js?v=3"></script>
+    <script src="/steelinox/public/assets/js/modules/client_detail_admin.js?v=3"></script>
 
     <script>
         

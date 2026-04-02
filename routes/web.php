@@ -5,6 +5,7 @@
 $router->get('/api/csrf-token', 'AuthController@getCsrfToken');
 
 // autenticación
+$router->get('/api/me', 'AuthController@me');
 $router->post('/api/login', 'AuthController@login');
 $router->post('/api/logout', 'AuthController@logout');
 
