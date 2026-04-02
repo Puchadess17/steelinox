@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flyonui@latest/flyonui.min.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/steelinox/public/assets/css/app.css">
+    <link rel="stylesheet" href="/steelinox/public/assets/css/app.css?v=<?php echo filemtime(ROOT_PATH . '/public/assets/css/app.css'); ?>">
 
     <style>
         * { font-family: 'Inter', sans-serif; }
@@ -124,8 +124,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/steelinox/public/assets/js/api.js"></script>
-    <script src="/steelinox/public/assets/js/auth.js"></script>
+    <script src="/steelinox/public/assets/js/api.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/api.js'); ?>"></script>
+    <script src="/steelinox/public/assets/js/auth.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/auth.js'); ?>"></script>
     <script>
         // Inicializar CSRF + login form cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', async () => {

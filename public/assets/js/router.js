@@ -80,8 +80,10 @@ const SIRouter = {
             return 'project-detail';
         }
 
-        // Si la URL empieza por "client/", le decimos al router que cargue la vista 'client-detail'
+        // Si la URL empieza por "client/", le decimos al router que cargue la vista correspondiente
         if (cleanPath.startsWith('client/')) {
+            if (cleanPath === 'client/new') return 'client-new';
+            if (cleanPath.startsWith('client/edit/')) return 'client-edit';
             return 'client-detail';
         }
 
@@ -96,6 +98,8 @@ const SIRouter = {
             'project-detail': { module: 'projectDetailAdmin', method: 'loadProjectDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Proyecto' },
             'project-detail-cliente': { module: 'projects', method: 'loadProjectDetail', roles: ['cliente'], title: 'Detalle del Proyecto' },
             'client-detail': { module: 'clientDetailAdmin', method: 'loadClientDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Cliente' },
+            'client-new': { module: 'clientFormAdmin', method: 'loadCreateSPA', roles: ['admin', 'comercial'], title: 'Nuevo Cliente' },
+            'client-edit': { module: 'clientFormAdmin', method: 'loadEditSPA', roles: ['admin', 'comercial'], title: 'Editar Cliente' },
 
             'commercials': { module: 'users', method: 'dummyMethod', roles: ['admin'], title: 'Comerciales' },
             'audit-log': { module: 'audit', method: 'dummyMethod', roles: ['admin'], title: 'Registro de Actividad' },

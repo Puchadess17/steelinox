@@ -29,7 +29,8 @@
 }
 
 /* --- Layout Responsive Global --- */
-html, body {
+html,
+body {
     max-width: 100%;
     overflow-x: hidden;
     position: relative;
@@ -42,36 +43,64 @@ html, body {
 }
 
 @media (min-width: 640px) {
-    #main-content { padding: 1.5rem; }
+    #main-content {
+        padding: 1.5rem;
+    }
 }
 
 @media (min-width: 1024px) {
-    #main-content { padding: 2rem; }
+    #main-content {
+        padding: 2rem;
+    }
 }
 
 /* Helper para secciones con scroll horizontal (como los tabs) */
 .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
 }
+
 .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
 }
 
 /* Ajuste extremo para móviles pequeños */
 @media (max-width: 400px) {
-    .text-3xl { font-size: 1.5rem !important; }
-    .kpi-card { padding: 1rem !important; }
+    .text-3xl {
+        font-size: 1.5rem !important;
+    }
+
+    .kpi-card {
+        padding: 1rem !important;
+    }
 }
 
 /* --- Scrollbar personalizado --- */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--si-gray-100); }
-::-webkit-scrollbar-thumb { background: var(--si-gray-300); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--si-gray-400); }
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--si-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--si-gray-300);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--si-gray-400);
+}
 
 /* --- Transiciones globales --- */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
     transition-duration: 150ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -83,13 +112,18 @@ html, body {
     border-color: var(--si-primary) !important;
     color: white !important;
 }
+
 .btn-si-primary:hover {
     background-color: var(--si-primary-hover) !important;
     border-color: var(--si-primary-hover) !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
 }
-.btn-si-primary:active { transform: scale(0.98); }
+
+.btn-si-primary:active {
+    transform: scale(0.98);
+}
+
 .btn-si-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -111,25 +145,93 @@ html, body {
     text-decoration: none;
     border-left: 3px solid transparent;
 }
+
 .sidebar-item.active {
     background-color: var(--si-primary-light);
     color: var(--si-primary);
     border-left-color: var(--si-primary);
     font-weight: 600;
 }
+
 .sidebar-item:hover:not(.active) {
     background-color: var(--si-gray-50);
     color: var(--si-gray-700);
 }
 
-/* --- Badges de estado --- */
-.badge-propuesta { background-color: #FEF3C7; color: #92400E; }
-.badge-aprobado  { background-color: #D1FAE5; color: #065F46; }
-.badge-ejecucion { background-color: #FFF7ED; color: #C2410C; }
-.badge-cerrado   { background-color: #F3F4F6; color: #374151; }
+/* --- Badges de estado Premium --- */
+.si-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+/* Colores con bordes sutiles */
+.badge-propuesta {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border-color: #FDE68A;
+}
+
+.badge-aprobado {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border-color: #A7F3D0;
+}
+
+.badge-ejecucion {
+    background-color: #FFF7ED;
+    color: #C2410C;
+    border-color: #FFEDD5;
+}
+
+.badge-cerrado {
+    background-color: #F8FAFC;
+    color: #475569;
+    border-color: #E2E8F0;
+}
+
+.badge-activo {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border-color: #A7F3D0;
+}
+
+.badge-inactivo {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border-color: #FECACA;
+}
+
+/* Animación de pulso para proyectos en curso */
+.animate-si-pulse {
+    animation: si-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes si-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .4;
+    }
+}
 
 /* --- Cards con hover --- */
-.card-hover { transition: all 0.2s ease; }
+.card-hover {
+    transition: all 0.2s ease;
+}
+
 .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
@@ -143,6 +245,7 @@ html, body {
     padding: 1.25rem;
     transition: all 0.2s ease;
 }
+
 .kpi-card:hover {
     border-color: var(--si-primary);
     box-shadow: 0 0 0 1px var(--si-primary-100);
@@ -152,9 +255,11 @@ html, body {
 .si-table-wrapper {
     width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Scroll suave en iOS */
     border-radius: 0.75rem;
 }
+
 .si-table th {
     font-size: 0.75rem;
     font-weight: 600;
@@ -163,12 +268,15 @@ html, body {
     color: var(--si-gray-500);
     border-bottom: 2px solid var(--si-gray-200);
 }
+
 .si-table tbody tr {
     border-bottom: 1px solid var(--si-gray-100);
 }
+
 .si-table tbody tr:hover {
     background-color: var(--si-gray-50);
 }
+
 .si-table td {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
@@ -184,8 +292,11 @@ html, body {
     border-radius: 50%;
     animation: si-spin 0.7s linear infinite;
 }
+
 @keyframes si-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* --- Toast notification container --- */
@@ -199,7 +310,8 @@ html, body {
     gap: 0.5rem;
     pointer-events: none;
 }
-.si-toast-container > * {
+
+.si-toast-container>* {
     pointer-events: auto;
 }
 
@@ -213,18 +325,32 @@ html, body {
 .fade-in {
     animation: fadeIn 0.3s ease-in;
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* --- Page transition --- */
 .page-enter {
     animation: pageEnter 0.25s ease-out;
 }
+
 @keyframes pageEnter {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* --- Avatar con iniciales --- */
@@ -250,6 +376,7 @@ html, body {
     border-radius: 3px;
     overflow: hidden;
 }
+
 .si-progress-fill {
     height: 100%;
     background-color: var(--si-primary);
@@ -268,9 +395,11 @@ html, body {
     background: white;
     color: var(--si-gray-600);
 }
+
 .tab-filter:hover:not(.active) {
     background: var(--si-gray-50);
 }
+
 .tab-filter.active {
     background-color: var(--si-primary);
     color: white;
@@ -285,6 +414,7 @@ html, body {
     border: none;
     transition: all 0.2s;
 }
+
 /* Evitar hover pegajoso en móviles (solo en dispositivos con ratón) */
 @media (hover: hover) and (pointer: fine) {
     .tab-client:hover:not(.active) {
@@ -292,8 +422,10 @@ html, body {
         color: var(--si-gray-900);
     }
 }
+
 .tab-client.active {
-    background-color: var(--si-primary); /* Naranja Steel Inox */
+    background-color: var(--si-primary);
+    /* Naranja Steel Inox */
     color: white;
 }
 
@@ -307,6 +439,7 @@ html, body {
     text-align: center;
     color: var(--si-gray-400);
 }
+
 .si-empty svg {
     width: 4rem;
     height: 4rem;
@@ -316,9 +449,15 @@ html, body {
 
 /* --- Responsive sidebar --- */
 @media (max-width: 1023px) {
-    .sidebar-desktop { display: none !important; }
+    .sidebar-desktop {
+        display: none !important;
+    }
 }
+
 @media (min-width: 1024px) {
+
     .sidebar-mobile-overlay,
-    .sidebar-mobile { display: none !important; }
+    .sidebar-mobile {
+        display: none !important;
+    }
 }

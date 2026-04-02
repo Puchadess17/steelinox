@@ -90,14 +90,14 @@ const SIApp = {
 
         const menus = {
             admin: [
-                { icon: 'grid',      label: 'Projects',   href: '/steelinox/panel',                  route: 'dashboard' },
-                { icon: 'users',     label: 'Clients',    href: '/steelinox/clients',     route: 'clients' },
-                { icon: 'briefcase', label: 'Commercials',href: '/steelinox/commercials',  route: 'commercials' },
-                { icon: 'shield',    label: 'Audit Log',  href: '/steelinox/audit-log',   route: 'audit-log' },
+                { icon: 'grid', label: 'Projects', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'users', label: 'Clients', href: '/steelinox/clients', route: 'clients' },
+                { icon: 'briefcase', label: 'Commercials', href: '/steelinox/commercials', route: 'commercials' },
+                { icon: 'shield', label: 'Audit Log', href: '/steelinox/audit-log', route: 'audit-log' },
             ],
             comercial: [
-                { icon: 'grid',  label: 'My Projects', href: '/steelinox/panel',               route: 'dashboard' },
-                { icon: 'users', label: 'Clients',     href: '/steelinox/clients',  route: 'clients' },
+                { icon: 'grid', label: 'My Projects', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'users', label: 'Clients', href: '/steelinox/clients', route: 'clients' },
             ],
             cliente: [
                 { icon: 'grid', label: 'My Projects', href: '/steelinox/panel', route: 'dashboard' },
@@ -156,8 +156,8 @@ const SIApp = {
     /** Formatear moneda (12.345,67 €) */
     formatCurrency(amount) {
         if (amount === null || amount === undefined || isNaN(amount)) return '-';
-        return new Intl.NumberFormat('es-ES', { 
-            style: 'currency', 
+        return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
             currency: 'EUR',
             minimumFractionDigits: 0,
             maximumFractionDigits: 2
@@ -170,16 +170,43 @@ const SIApp = {
         return new Intl.NumberFormat('es-ES').format(num);
     },
 
-    /** Badge de estado */
+    /** Badge de estado con indicador visual */
     statusBadge(status) {
         const map = {
             propuesta: { label: 'Propuesta', css: 'badge-propuesta' },
             aprobado: { label: 'Aprobado', css: 'badge-aprobado' },
-            ejecucion: { label: 'Ejecución', css: 'badge-ejecucion' },
+            ejecucion: { label: 'Ejecución', css: 'badge-ejecucion', dot: true, pulse: true },
             cerrado: { label: 'Cerrado', css: 'badge-cerrado' },
         };
-        const s = map[status] || { label: status || '—', css: 'bg-gray-100 text-gray-600' };
-        return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.css}">${s.label}</span>`;
+
+        const s = map[status] || { label: status || '—', css: 'bg-gray-100 text-gray-500', dot: false };
+
+        // Construir el punto indicador (dot)
+        const dotHtml = s.dot ? `
+        <svg class="w-1.5 h-1.5 ${s.pulse ? 'animate-si-pulse' : ''}" fill="currentColor" viewBox="0 0 8 8">
+            <circle cx="4" cy="4" r="3" />
+        </svg>
+    ` : '';
+
+        return `
+        <span class="si-badge ${s.css}">
+            ${dotHtml}
+            <span>${s.label}</span>
+        </span>
+    `;
+    },
+
+    /** Badge de Activo/Inactivo unificado */
+    activeBadge(isActive) {
+        const isA = (isActive == 1 || isActive === true);
+        const css = isA ? 'badge-activo' : 'badge-inactivo';
+        const label = isA ? 'Activo' : 'Inactivo';
+
+        return `
+        <span class="si-badge ${css}">
+            <span>${label}</span>
+        </span>
+    `;
     },
 
     /** Generar URLs amigables (slugs) */
@@ -234,3 +261,6 @@ const SIApp = {
         return div.innerHTML;
     },
 };
+
+// Exportar globalmente para que typeof window.SIApp funcione correctamente
+window.SIApp = SIApp;

@@ -15,7 +15,7 @@ SIModules.clientDetailAdmin = {
 
     async loadClientDetailSPA() {
         console.log("[ClientDetailAdmin] Loading SPA view...");
-        
+
         // Extraer ID de forma robusta: /steelinox/client/123 -> 123
         const path = window.location.pathname;
         const match = path.match(/\/client\/(\d+)/i);
@@ -53,8 +53,16 @@ SIModules.clientDetailAdmin = {
                 <div class="flex-1 relative z-10">
                     <div class="flex items-center gap-3 mb-2">
                         <h1 id="client-name" class="text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando detalles...</h1>
+                        <span id="client-status" class="hidden inline-flex"></span>
                         <span id="client-ref" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden inline-flex items-center"></span>
                     </div>
+                </div>
+
+                <div class="absolute top-6 right-6 z-20">
+                    <a data-route="client-edit" href="/steelinox/client/edit/${clientId}" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-orange-500 hover:border-orange-500 shadow-sm transition-all hover:shadow-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        Editar Cliente
+                    </a>
                 </div>
             </div>
 
@@ -125,10 +133,11 @@ SIModules.clientDetailAdmin = {
         }
     },
 
-    /** Update Title, Reference and Breadcrumb */
+    /** Update Title, Reference, Status and Breadcrumb */
     renderHeader() {
         const nameEl = document.getElementById('client-name');
         const refEl = document.getElementById('client-ref');
+        const statusEl = document.getElementById('client-status');
         const breadcrumbEl = document.getElementById('breadcrumb-client-name');
 
         if (this.client && this.client.name) {
@@ -137,12 +146,16 @@ SIModules.clientDetailAdmin = {
         }
 
         if (refEl && this.client) {
-            const statusBadge = this.client.is_active
-                ? '<span class="ml-3 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
-                : '<span class="ml-3 px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>';
-
-            refEl.innerHTML = `REF: ${this.client.reference || 'SIN REF'} ${statusBadge}`;
+            refEl.textContent = `REF: ${this.client.reference || 'SIN REF'}`;
             refEl.classList.remove('hidden');
+        }
+
+        if (statusEl && this.client) {
+            const isActive = this.client.is_active == 1 || this.client.is_active === true;
+            const statusBadge = (window.SIApp ? SIApp.activeBadge(isActive) : '');
+
+            statusEl.innerHTML = statusBadge;
+            statusEl.classList.remove('hidden');
         }
     },
 
@@ -334,7 +347,7 @@ SIModules.clientDetailAdmin = {
             'bg-cyan-100 text-cyan-700'
         ];
         // Seleccionar color basado en el ID o nombre para que sea consistente
-        const colorClass = colors[ (u.id || u.name.length) % colors.length ];
+        const colorClass = colors[(u.id || u.name.length) % colors.length];
 
         return `
             <tr class="hover:bg-gray-50/80 transition-colors">
@@ -348,9 +361,7 @@ SIModules.clientDetailAdmin = {
                     </div>
                 </td>
                 <td class="px-6 py-4 text-center">
-                    <span class="px-2 py-1 ${u.is_active ? 'bg-emerald-100/60 text-emerald-700' : 'bg-red-100/60 text-red-700'} text-[10px] font-black rounded-lg uppercase tracking-widest">
-                        ${u.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
+                    ${window.SIApp ? SIApp.activeBadge(u.is_active) : ''}
                 </td>
                 <td class="px-6 py-4">
                     <p class="text-xs font-bold text-gray-500">${lastAccess}</p>
@@ -380,7 +391,7 @@ SIModules.clientDetailAdmin = {
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${p.reference}</span>
                 </td>
                 <td class="px-5 py-4 text-sm font-black text-gray-600 whitespace-nowrap">
-                    ${format(p.budget_amount || 0)}
+                    ${format(p.budget_amount || 0)} €
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${badge(p.status)}

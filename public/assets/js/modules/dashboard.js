@@ -672,7 +672,7 @@ SIModules.dashboard = {
                         <p class="text-gray-400">Gestiona la cartera de clientes y accede a sus proyectos asociados.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <button onclick="SIRouter.navigate('client-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Nuevo Cliente
                         </button>
@@ -723,7 +723,7 @@ SIModules.dashboard = {
         }
 
         const tbody = data.map(c => `
-            <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer">
+            <tr class="hover:bg-orange-50/30 transition-colors group">
                 <td class="px-5 py-4 whitespace-nowrap">
                     <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold border border-orange-200">
@@ -739,15 +739,17 @@ SIModules.dashboard = {
                     ${SIApp.escapeHtml(SIApp.formatDate(c.created_at) || '-')}
                 </td>
                 <td class="px-5 py-4 text-center whitespace-nowrap">
-                    ${c.is_active
-                ? '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-200/50">Activo</span>'
-                : '<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded uppercase tracking-widest border border-red-200/50">Inactivo</span>'
-            }
+                    ${window.SIApp ? SIApp.activeBadge(c.is_active) : ''}
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-orange-500 hover:text-orange-600 text-sm font-semibold inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Ver ficha <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a data-route="client-detail" href="/steelinox/client/${c.id}" title="Ver Cliente" class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                        <a data-route="client-edit" href="/steelinox/client/edit/${c.id}" title="Editar Cliente" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </a>
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -782,12 +784,10 @@ SIModules.dashboard = {
     _renderClientCardAdminMobile(c) {
         const initials = SIApp._getInitials(c.name);
         // El status en azul para activo (similar al mock) y gris para inactivo
-        const statusBadge = c.is_active
-            ? '<span class="px-3 py-1 bg-[#eef4f7] text-[#346c8a] text-[8.5px] font-black rounded-full uppercase tracking-wider">ACTIVO</span>'
-            : '<span class="px-3 py-1 bg-gray-100 text-gray-500 text-[8.5px] font-black rounded-full uppercase tracking-wider">INACTIVO</span>';
-            
+        const statusBadge = window.SIApp ? SIApp.activeBadge(c.is_active) : '';
+
         return `
-            <a data-route="client-detail" href="/steelinox/client/${c.id}" class="bg-white border-l-[3.5px] border-l-[#a9753c] border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col cursor-pointer transition-all hover:shadow-lg block group relative">
+            <div class="bg-white border-l-[3.5px] border-l-[#a9753c] border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg block group relative">
                 <div class="px-6 py-5">
                     <!-- Top Info: Avatar, Name, Badge -->
                     <div class="flex items-start justify-between mb-4 gap-3">
@@ -796,7 +796,7 @@ SIModules.dashboard = {
                                 ${initials}
                             </div>
                             <div>
-                                <h3 class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(c.name)}</h3>
+                                <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(c.name)}</a>
                                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1">${SIApp.escapeHtml(c.reference || 'Sin Referencia')}</span>
                             </div>
                         </div>
@@ -814,13 +814,18 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- Footer button -->
-                <div class="mt-auto px-6 pb-6 pt-1 flex justify-end">
-                    <div class="px-5 py-2.5 bg-gray-100 group-hover:bg-orange-50 text-[#a9753c] group-hover:text-orange-600 rounded-full text-[11px] font-bold transition-colors shadow-sm cursor-pointer">
-                        Ver detalles
-                    </div>
+                <!-- Footer buttons -->
+                <div class="mt-auto px-6 pb-6 pt-1 flex justify-end gap-2">
+                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="px-4 py-2 bg-gray-100 hover:bg-orange-50 text-[#a9753c] hover:text-orange-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        Ver
+                    </a>
+                    <a data-route="client-edit" href="/steelinox/client/edit/${c.id}" class="px-4 py-2 bg-gray-100 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        Editar
+                    </a>
                 </div>
-            </a>
+            </div>
         `;
     },
 
@@ -844,12 +849,12 @@ SIModules.dashboard = {
 
     _applyClientsAdminFilters() {
         if (!this.adminClients) return;
-        
+
         let filtered = this.adminClients;
 
         if (this.currentClientFilter !== 'all') {
             const isActive = this.currentClientFilter === 'activo';
-            filtered = filtered.filter(c => c.is_active === isActive);
+            filtered = filtered.filter(c => (c.is_active == 1 || c.is_active === true) === isActive);
         }
 
         if (this.currentClientSearch && this.currentClientSearch.trim() !== '') {
