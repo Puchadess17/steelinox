@@ -28,4 +28,6 @@ $router->get('/settings', 'DashboardController@index');
 $router->get('/projects-new', 'DashboardController@index');
 
 $router->get('/project/(\d+)', 'DashboardController@index');
-$router->get('/client/(\d+)', 'DashboardController@index');
+
+$router->get('/client/edit/(\d+)', 'DashboardController@index');
+$router->get('/client/new', 'DashboardController@index');
