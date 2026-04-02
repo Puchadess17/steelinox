@@ -145,4 +145,21 @@ class Client {
         
         return $this->db->lastInsertId();
     }
+
+    /** Actualiza los datos de un cliente */
+    public function update($id, $data) {
+        $sql = "UPDATE clients 
+                SET name = :name, 
+                    reference = :reference, 
+                    is_active = :is_active 
+                WHERE id = :id AND deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'name'      => $data['name'],
+            'reference' => $data['reference'] ?? null,
+            'is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
+            'id'        => $id
+        ]);
+    }
 }

@@ -17,6 +17,7 @@ $router->get('/api/projects/(\d+)', 'ProjectController@show');
 $router->get('/api/clients', 'ClientController@index');
 $router->get('/api/clients/(\d+)', 'ClientController@show');
 $router->post('/api/clients', 'ClientController@store');
+$router->put('/api/clients/(\d+)', 'ClientController@update');
 
 // FRONTEND
 $router->get('/', 'AuthController@showLogin');

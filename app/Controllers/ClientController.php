@@ -173,4 +173,81 @@ class ClientController {
             ]);
         }
     }
+
+    // Actualizar un cliente existente (PUT)
+    public function update($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Muro de Autorización
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            return;
+        }
+
+        // Aceptamos PUT (o POST si el frontend usa method spoofing con _method=PUT)
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba PUT']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            
+            $clientModel = new Client();
+            
+            // 1. Escudo de seguridad: ¿Tiene permiso para ver/editar este cliente?
+            $clientDetails = $clientModel->getDetailsById($id, $userId, $role);
+            if (!$clientDetails) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Cliente no encontrado o sin permisos de edición',
+                    'data'    => null,
+                    'errors'  => ['client' => 'Recurso inaccesible']
+                ]);
+                return;
+            }
+
+            // 2. Leer los datos enviados
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            // 3. Validación básica
+            if (empty($input['name'])) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['name' => 'El nombre es obligatorio']]);
+                return;
+            }
+
+            // 4. Actualizar en la base de datos
+            $updated = $clientModel->update($id, [
+                'name'      => trim($input['name']),
+                'reference' => !empty($input['reference']) ? trim($input['reference']) : null,
+                'is_active' => isset($input['is_active']) ? (int)$input['is_active'] : $clientDetails['info']['is_active']
+            ]);
+
+            if ($updated) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cliente actualizado correctamente',
+                    'data'    => ['id' => $id],
+                    'errors'  => null
+                ]);
+            } else {
+                throw new Exception("No se pudo actualizar el registro en la base de datos");
+            }
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al actualizar el cliente',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
 }
