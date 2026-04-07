@@ -43,23 +43,23 @@ SIModules.clientDetailAdmin = {
             </div>
 
             <!-- Header Cliente -->
-            <div class="bg-white border border-gray-100 rounded-[2rem] p-8 mb-8 shadow-sm flex flex-col md:flex-row gap-8 items-start md:items-center relative overflow-hidden fade-in" style="animation-delay: 0.1s">
+            <div class="bg-white border border-gray-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 mb-8 shadow-sm flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-center relative overflow-hidden fade-in" style="animation-delay: 0.1s">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 
-                <div class="w-24 h-24 rounded-[1.5rem] bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-white shadow-sm flex items-center justify-center shrink-0 relative z-10" id="client-avatar">
-                   <svg class="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-[1.5rem] bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-white shadow-sm flex items-center justify-center shrink-0 relative z-10" id="client-avatar">
+                   <svg class="w-7 h-7 sm:w-10 sm:h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                 </div>
 
-                <div class="flex-1 relative z-10">
-                    <div class="flex items-center gap-3 mb-2">
-                        <h1 id="client-name" class="text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando detalles...</h1>
+                <div class="flex-1 relative z-10 min-w-0">
+                    <h1 id="client-name" class="text-xl sm:text-3xl font-extrabold text-[#1a1b25] tracking-tight break-words mb-2">Cargando detalles...</h1>
+                    <div class="flex flex-wrap items-center gap-2">
                         <span id="client-status" class="hidden inline-flex"></span>
-                        <span id="client-ref" class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden inline-flex items-center"></span>
+                        <span id="client-ref" class="px-2 sm:px-3 py-1 bg-gray-100 text-gray-500 text-[10px] sm:text-xs font-bold rounded-lg tracking-wider border border-gray-200/50 hidden inline-flex items-center"></span>
                     </div>
                 </div>
 
-                <div class="absolute top-6 right-6 z-20">
-                    <a data-route="client-edit" href="/steelinox/client/edit/${clientId}" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-orange-500 hover:border-orange-500 shadow-sm transition-all hover:shadow-md">
+                <div class="relative sm:absolute sm:top-6 sm:right-6 z-20 w-full sm:w-auto">
+                    <a data-route="client-edit" href="/steelinox/client/edit/${clientId}" class="flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-orange-500 hover:border-orange-500 shadow-sm transition-all hover:shadow-md w-full sm:w-auto">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         Editar Cliente
                     </a>
@@ -173,19 +173,20 @@ SIModules.clientDetailAdmin = {
 
                 <!-- USUARIOS ASOCIADOS -->
                 <section>
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
                              <div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                              </div>
-                             <h2 class="text-xl font-extrabold text-gray-900">Usuarios Asociados</h2>
+                             <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Usuarios Asociados</h2>
                         </div>
-                        <button class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50">
+                        <button class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50 w-full sm:w-auto justify-center sm:justify-start">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                             Invitar Usuario
                         </button>
                     </div>
-                    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                    <!-- Desktop: Table -->
+                    <div class="hidden sm:block bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
                         <table class="w-full text-left">
                             <thead class="bg-gray-50/50 border-b border-gray-100">
                                 <tr>
@@ -202,23 +203,30 @@ SIModules.clientDetailAdmin = {
                             </tbody>
                         </table>
                     </div>
+                    <!-- Mobile: Cards -->
+                    <div class="sm:hidden space-y-3">
+                        ${this.users && this.users.length > 0
+                ? this.users.map(u => this._renderUserCard(u)).join('')
+                : '<div class="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 italic shadow-sm">No hay usuarios vinculados</div>'}
+                    </div>
                 </section>
 
                 <!-- PROYECTOS VINCULADOS -->
                 <section>
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
                              <div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                              </div>
-                             <h2 class="text-xl font-extrabold text-gray-900">Proyectos Vinculados</h2>
+                             <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Proyectos Vinculados</h2>
                         </div>
                         <a href="/steelinox/projects" class="text-orange-500 text-xs font-bold hover:underline flex items-center gap-1">
                             Ver Todos
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </a>
                     </div>
-                    <div class="si-table-wrapper border border-gray-100 rounded-2xl bg-white overflow-hidden shadow-sm">
+                    <!-- Desktop: Table -->
+                    <div class="hidden sm:block si-table-wrapper border border-gray-100 rounded-2xl bg-white overflow-hidden shadow-sm">
                         <table class="w-full si-table">
                             <thead>
                                 <tr class="bg-gray-50/50">
@@ -236,6 +244,12 @@ SIModules.clientDetailAdmin = {
                 : '<tr><td colspan="6" class="py-10 text-center text-gray-400 italic">No hay proyectos para este cliente</td></tr>'}
                             </tbody>
                         </table>
+                    </div>
+                    <!-- Mobile: Cards -->
+                    <div class="sm:hidden space-y-3">
+                        ${this.projects && this.projects.length > 0
+                ? this.projects.map(p => this._renderProjectCard(p)).join('')
+                : '<div class="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 italic shadow-sm">No hay proyectos para este cliente</div>'}
                     </div>
                 
                     <div class="mt-6 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer hover:border-orange-300 transition-all hover:bg-orange-50/30">
@@ -403,6 +417,65 @@ SIModules.clientDetailAdmin = {
                     <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </td>
             </tr>
+        `;
+    },
+
+    /** Mobile card for a user */
+    _renderUserCard(u) {
+        const initials = (window.SIApp && SIApp._getInitials) ? SIApp._getInitials(u.name) : '??';
+        const lastAccess = u.last_login_at ? (SIApp.formatDate ? SIApp.formatDate(u.last_login_at) : u.last_login_at) : 'Sin acceso';
+        const colors = ['bg-blue-100 text-blue-700','bg-emerald-100 text-emerald-700','bg-purple-100 text-purple-700','bg-amber-100 text-amber-700','bg-rose-100 text-rose-700'];
+        const colorClass = colors[(u.id || u.name.length) % colors.length];
+
+        return `
+            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 ${colorClass} rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-sm shrink-0">${initials}</div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-gray-900 leading-tight truncate">${u.name}</p>
+                            <p class="text-xs text-gray-400 truncate">${u.email}</p>
+                        </div>
+                    </div>
+                    ${window.SIApp ? SIApp.activeBadge(u.is_active) : ''}
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                    <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        ${lastAccess}
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button class="p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                        <button class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    /** Mobile card for a project */
+    _renderProjectCard(p) {
+        const format = (val) => (window.SIApp && SIApp.formatCurrency) ? SIApp.formatCurrency(val) : val;
+        const formatDate = (val) => (window.SIApp && SIApp.formatDate) ? SIApp.formatDate(val) : val;
+        const badge = (val) => (window.SIApp && SIApp.statusBadge) ? SIApp.statusBadge(val) : val;
+
+        return `
+            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="block bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group">
+                <div class="flex items-start justify-between mb-3 gap-2">
+                    <div class="min-w-0">
+                        <p class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors leading-tight truncate">${p.name}</p>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${p.reference}</span>
+                    </div>
+                    ${badge(p.status)}
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                    <p class="text-sm font-black text-gray-700">${format(p.budget_amount || 0)} €</p>
+                    <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        ${formatDate(p.created_at)}
+                    </div>
+                </div>
+            </a>
         `;
     },
 

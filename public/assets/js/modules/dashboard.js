@@ -787,12 +787,12 @@ SIModules.dashboard = {
         const statusBadge = window.SIApp ? SIApp.activeBadge(c.is_active) : '';
 
         return `
-            <div class="bg-white border-l-[3.5px] border-l-[#a9753c] border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg block group relative">
+            <div class="bg-white border-l-[3.5px] border-l-orange-500 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg block group relative">
                 <div class="px-6 py-5">
                     <!-- Top Info: Avatar, Name, Badge -->
                     <div class="flex items-start justify-between mb-4 gap-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-[#f6eadc] text-[#a9753c] flex items-center justify-center text-sm font-black tracking-widest shrink-0 border border-[#f0dfcc]">
+                            <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-black tracking-widest shrink-0 border border-orange-100">
                                 ${initials}
                             </div>
                             <div>
@@ -816,7 +816,7 @@ SIModules.dashboard = {
 
                 <!-- Footer buttons -->
                 <div class="mt-auto px-6 pb-6 pt-1 flex justify-end gap-2">
-                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="px-4 py-2 bg-gray-100 hover:bg-orange-50 text-[#a9753c] hover:text-orange-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         Ver
                     </a>

@@ -152,7 +152,7 @@ SIModules.projectDetailAdmin = {
             const label = labels[this.project.status] || this.project.status;
             const style = styles[this.project.status] || 'bg-gray-100 text-gray-600 border-gray-200';
 
-            badgeEl.className = `px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest border shadow-md inline-block ${style}`;
+            badgeEl.className = `inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${style}`;
             badgeEl.textContent = label;
         }
     },
