@@ -33,6 +33,11 @@ $router->post('/api/users', 'UserController@store');
 $router->put('/api/users/(\d+)', 'UserController@update');
 $router->delete('/api/users/(\d+)', 'UserController@destroy');
 
+// Documentos de proyectos (API Segura)
+$router->get('/api/projects/(\d+)/documents', 'DocumentController@index');
+$router->post('/api/projects/(\d+)/documents', 'DocumentController@store');
+$router->get('/api/projects/(\d+)/documents/(\d+)/download', 'DocumentController@download');
+
 // --- FRONTEND ---
 $router->get('/', 'AuthController@showLogin');
 $router->get('/panel', 'DashboardController@index');
