@@ -69,7 +69,8 @@ class Project {
         $sql = "SELECT u.id, u.name, u.email, u.role, u.is_active, u.last_login_at 
                 FROM users u
                 INNER JOIN project_user pu ON u.id = pu.user_id
-                WHERE pu.project_id = :project_id 
+                WHERE pu.project_id = :project_id
+                AND u.role = 'comercial' 
                   AND u.deleted_at IS NULL";
         
         $stmt = $this->db->prepare($sql);
