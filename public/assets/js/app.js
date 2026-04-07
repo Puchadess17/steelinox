@@ -128,7 +128,7 @@ const SIApp = {
             <div class="mt-auto pt-4 border-t border-gray-100">
                 <a href="/steelinox/settings" class="sidebar-item" data-route="settings">
                     ${icons.settings}
-                    <span>Settings</span>
+                    <span>Ajustes</span>
                 </a>
             </div>
         `;

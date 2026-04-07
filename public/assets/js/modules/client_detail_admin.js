@@ -10,6 +10,7 @@ SIModules.clientDetailAdmin = {
     client: null,
     users: [],
     projects: [],
+    projectsLimit: 4,
     stats: null,
     userContext: null,
 
@@ -88,6 +89,7 @@ SIModules.clientDetailAdmin = {
             return;
         }
 
+        this.projectsLimit = 4;
         await this.loadClientData();
     },
 
@@ -220,41 +222,29 @@ SIModules.clientDetailAdmin = {
                              </div>
                              <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Proyectos Vinculados</h2>
                         </div>
-                        <a href="/steelinox/projects" class="text-orange-500 text-xs font-bold hover:underline flex items-center gap-1">
-                            Ver Todos
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                        </a>
+                        <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                            <button onclick="ClientDetailAdmin.openProjectModal()" class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                Añadir Proyecto
+                            </button>
+                        </div>
                     </div>
                     <!-- Desktop: Table -->
-                    <div class="hidden sm:block si-table-wrapper border border-gray-100 rounded-2xl bg-white overflow-hidden shadow-sm">
-                        <table class="w-full si-table">
-                            <thead>
-                                <tr class="bg-gray-50/50">
-                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
-                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
-                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Presupuesto</th>
-                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
-                                    <th class="px-5 py-3.5 w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50/80">
-                                ${this.projects && this.projects.length > 0
-                ? this.projects.map(p => this._renderProjectRow(p)).join('')
-                : '<tr><td colspan="6" class="py-10 text-center text-gray-400 italic">No hay proyectos para este cliente</td></tr>'}
-                            </tbody>
-                        </table>
+                    <div id="projects-desktop-container" class="hidden sm:block si-table-wrapper border border-gray-100 rounded-2xl bg-white overflow-hidden shadow-sm">
+                        <!-- Filled via renderProjectsList -->
                     </div>
                     <!-- Mobile: Cards -->
-                    <div class="sm:hidden space-y-3">
-                        ${this.projects && this.projects.length > 0
-                ? this.projects.map(p => this._renderProjectCard(p)).join('')
-                : '<div class="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 italic shadow-sm">No hay proyectos para este cliente</div>'}
+                    <div id="projects-mobile-container" class="sm:hidden space-y-3">
+                        <!-- Filled via renderProjectsList -->
                     </div>
+                    
+                    <div id="projects-load-more-container"></div>
                 
-                    <div class="mt-6 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer hover:border-orange-300 transition-all hover:bg-orange-50/30">
+                    <div onclick="ClientDetailAdmin.openProjectModal()" class="mt-6 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer hover:border-orange-300 transition-all hover:bg-orange-50/30">
                             <div class="w-12 h-12 bg-white rounded-full border border-gray-100 shadow-sm flex items-center justify-center text-gray-400 group-hover:text-orange-500 group-hover:scale-110 transition-transform">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                <svg class="w-6 h-6 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                                </svg>
                             </div>
                             <div>
                                 <p class="text-sm font-bold text-gray-600 group-hover:text-gray-900">Nuevo Proyecto</p>
@@ -340,7 +330,149 @@ SIModules.clientDetailAdmin = {
                     </div>
                 </div>
             </div>
+
+            <!-- MODAL PROYECTO -->
+            <div id="project-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+                        <h3 class="text-xl font-extrabold text-gray-900">Crear Nuevo Proyecto</h3>
+                        <button onclick="ClientDetailAdmin.closeProjectModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto">
+                        <form id="project-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveProject();" class="space-y-4">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
+                                    <input type="text" id="project-name" name="name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Nave Industrial">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
+                                    <input type="text" id="project-ref" name="reference" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: PRJ-2024-001">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€)</label>
+                                    <input type="number" step="50" id="project-budget" name="budget_amount" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: 150000">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
+                                    <input type="number" step="1" id="project-surface" name="surface" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: 1200">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
+                                    <input type="text" id="project-type" name="project_type" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Estructura, Revestimiento">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Estado Inicial</label>
+                                    <div class="relative">
+                                        <input type="hidden" id="project-status" name="status" value="propuesta">
+                                        <button type="button" onclick="ClientDetailAdmin.toggleDropdown('client-status-dropdown-menu')" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
+                                            <div class="flex items-center gap-2">
+                                               <span id="client-project-status-circle" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                               <span id="client-project-status-display">Propuesta</span>
+                                            </div>
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                                        </button>
+                                        
+                                        <ul id="client-status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
+                                            <li onclick="ClientDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner">
+                                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
+                                                <svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                            </li>
+                                            <li onclick="ClientDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600">
+                                                <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
+                                            </li>
+                                            <li onclick="ClientDetailAdmin.selectCustomStatus('ejecucion', 'En Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600">
+                                                <span class="w-2 h-2 rounded-full bg-orange-400"></span> En Ejecución
+                                            </li>
+                                            <li onclick="ClientDetailAdmin.selectCustomStatus('cerrado', 'Finalizado / Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600">
+                                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Finalizado / Cerrado
+                                            </li>
+                                        </ul>
+                                    </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
+                                <textarea id="project-desc" name="description" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Notas sobre el nuevo proyecto..."></textarea>
+                            </div>
+
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
+                         <button onclick="ClientDetailAdmin.closeProjectModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                         <button onclick="ClientDetailAdmin.saveProject()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center gap-2">
+                             <svg class="w-4 h-4 hidden" id="project-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                             Crear Proyecto
+                         </button>
+                    </div>
+                </div>
+            </div>
         `;
+
+        // Render inner dynamic lists
+        this.renderProjectsList();
+    },
+
+    renderProjectsList() {
+        const desktopContainer = document.getElementById('projects-desktop-container');
+        const mobileContainer = document.getElementById('projects-mobile-container');
+        const loadMoreContainer = document.getElementById('projects-load-more-container');
+
+        if (!desktopContainer || !mobileContainer) return;
+
+        const pArr = this.projects || [];
+        const visibleProjects = pArr.slice(0, this.projectsLimit);
+        const hasMore = pArr.length > this.projectsLimit;
+
+        desktopContainer.innerHTML = `
+            <table class="w-full si-table">
+                <thead>
+                    <tr class="bg-gray-50/50">
+                        <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
+                        <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
+                        <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Presupuesto</th>
+                        <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                        <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                        <th class="px-5 py-3.5 w-12"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50/80">
+                    ${visibleProjects.length > 0
+                ? visibleProjects.map(p => this._renderProjectRow(p)).join('')
+                : '<tr><td colspan="6" class="py-10 text-center text-gray-400 italic">No hay proyectos para este cliente</td></tr>'}
+                </tbody>
+            </table>
+        `;
+
+        mobileContainer.innerHTML = visibleProjects.length > 0
+            ? visibleProjects.map(p => this._renderProjectCard(p)).join('')
+            : '<div class="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 italic shadow-sm">No hay proyectos para este cliente</div>';
+
+        if (loadMoreContainer) {
+            loadMoreContainer.innerHTML = hasMore
+                ? `
+                    <div class="mt-4 flex justify-center fade-in">
+                        <button onclick="ClientDetailAdmin.loadMoreProjects()" class="text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors bg-orange-50 hover:bg-orange-100 rounded-full px-4 py-1.5 flex items-center gap-1">
+                            Cargar más
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                    </div>
+                ` : '';
+        }
+    },
+
+    loadMoreProjects() {
+        this.projectsLimit += 4;
+        this.renderProjectsList();
     },
 
     _renderKPIDash() {
@@ -678,6 +810,112 @@ SIModules.clientDetailAdmin = {
         } catch (e) {
             console.error(e);
             if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', 'No se pudo eliminar el usuario', 'error');
+        }
+    },
+
+    openProjectModal() {
+        const modal = document.getElementById('project-modal');
+        const form = document.getElementById('project-form');
+        form.reset();
+        document.getElementById('project-status').value = 'propuesta';
+
+        modal.classList.remove('hidden');
+        void modal.offsetWidth; // Reflow
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+
+        // Close dropdown when clicking outside
+        const closeFn = (e) => {
+            if (!e.target.closest('.si-custom-dropdown') && !e.target.closest('button[onclick*="toggleDropdown"]')) {
+                document.querySelectorAll('.si-custom-dropdown').forEach(d => d.classList.add('hidden'));
+            }
+        };
+        document.addEventListener('click', closeFn);
+        modal._closeFn = closeFn;
+    },
+
+    toggleDropdown(id) {
+        document.querySelectorAll('.si-custom-dropdown').forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden');
+    },
+
+    selectCustomStatus(val, label, colorClass, liElement) {
+        document.getElementById('project-status').value = val;
+        document.getElementById('client-project-status-display').textContent = label;
+
+        const circle = document.getElementById('client-project-status-circle');
+        circle.className = 'w-2 h-2 rounded-full ' + colorClass;
+
+        if (liElement) {
+            const ul = document.getElementById('client-status-dropdown-menu');
+            const lis = ul.querySelectorAll('li');
+            lis.forEach(li => {
+                li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600';
+                const check = li.querySelector('.status-check');
+                if (check) check.remove();
+            });
+            liElement.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner';
+            liElement.insertAdjacentHTML('beforeend', '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>');
+        }
+
+        this.toggleDropdown('client-status-dropdown-menu');
+    },
+
+    closeProjectModal() {
+        const modal = document.getElementById('project-modal');
+        if (modal._closeFn) {
+            document.removeEventListener('click', modal._closeFn);
+            delete modal._closeFn;
+        }
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    },
+
+    async saveProject() {
+        const form = document.getElementById('project-form');
+        if (!form.reportValidity()) return;
+
+        const spinner = document.getElementById('project-save-spinner');
+
+        const payload = {
+            client_id: this.clientId,
+            name: document.getElementById('project-name').value,
+            reference: document.getElementById('project-ref').value,
+            budget_amount: document.getElementById('project-budget').value || null,
+            surface: document.getElementById('project-surface').value || null,
+            project_type: document.getElementById('project-type').value || null,
+            status: document.getElementById('project-status').value || 'propuesta',
+            description: document.getElementById('project-desc').value || null
+        };
+
+        spinner.classList.remove('hidden');
+        spinner.classList.add('animate-spin');
+
+        try {
+            const res = await API.post('/projects', payload);
+            if (res.success) {
+                if (window.SIApp && SIApp.showToast) SIApp.showToast('Éxito', res.message, 'success');
+                this.closeProjectModal();
+                await this.loadClientData();
+            } else {
+                let errorMsg = res.message || 'Error desconocido';
+                if (res.errors) {
+                    errorMsg += ': ' + Object.values(res.errors).join(', ');
+                }
+                if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', errorMsg, 'error');
+                else alert(errorMsg);
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', e.message, 'error');
+            else alert(e.message);
+        } finally {
+            spinner.classList.add('hidden');
+            spinner.classList.remove('animate-spin');
         }
     }
 };

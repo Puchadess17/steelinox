@@ -47,6 +47,12 @@ SIModules.projectDetailAdmin = {
                     </div>
                     <p class="text-gray-400 text-sm">Gestión y seguimiento detallado de la obra actual.</p>
                 </div>
+                <div class="shrink-0 flex items-center">
+                    <button onclick="SIModules.projectDetailAdmin.openEditProjectModal()" class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm group">
+                        <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Editar Proyecto
+                    </button>
+                </div>
             </div>
 
             <!-- TABS -->
@@ -228,7 +234,7 @@ SIModules.projectDetailAdmin = {
 
                     <!-- Proyecto & Info -->
                     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pr-12">
                              <div>
                                 <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Tipo de Proyecto</span>
                                 <div class="flex items-center gap-3">
@@ -238,14 +244,19 @@ SIModules.projectDetailAdmin = {
                                     <p class="font-bold text-[#1a1b25]">${p.project_type || 'General'}</p>
                                 </div>
                             </div>
-                            <div>
-                                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Fecha de Creación</span>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center border border-blue-100/50">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v14a2 2 0 002 2z"/></svg>
-                                    </div>
-                                    <p class="font-bold text-[#1a1b25]">${SIApp.formatDate(p.created_at)}</p>
-                                </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-8">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                Descripción
+                            </h4>
+                            <div class="relative pl-4">
+                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400 to-orange-200 rounded-full"></div>
+                                <p class="text-sm text-gray-600 leading-loose font-medium">
+                                    ${p.description || '<span class="italic text-gray-400">Sin descripción general definida.</span>'}
+                                </p>
                             </div>
                         </div>
 
@@ -264,57 +275,202 @@ SIModules.projectDetailAdmin = {
                         </div>
                     </div>
 
-                    <!-- Descripción -->
-                    <div class="bg-gray-50/50 border border-gray-100 rounded-2xl p-6">
-                        <h4 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                             <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                             Descripción del Proyecto
-                        </h4>
-                        <p class="text-sm text-gray-600 leading-relaxed italic">
-                            "${p.description || 'No hay descripción disponible para este proyecto.'}"
-                        </p>
-                    </div>
+
                 </div>
 
                 <!-- Barra Lateral Derecha (Sidebar Extra) (4/12) -->
                 <div class="lg:col-span-4 space-y-6">
-                    <!-- Acciones Rápidas -->
-                    <div class="bg-[#fef9f4] border border-[#fdecdb] rounded-2xl p-6 shadow-sm">
-                        <h4 class="text-xs font-bold text-[#a75d1c] uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
-                            Acciones Rápidas
+                    <!-- Fechas y Ciclo de Vida -->
+                    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-bl-full -z-10"></div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Ciclo de Vida
                         </h4>
-                        <div class="space-y-3">
-                            <button class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 text-sm font-bold transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Cambiar Estado
-                            </button>
-                            <button class="w-full bg-white border border-gray-100 hover:bg-gray-50 text-gray-700 rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                Subir Archivos
-                            </button>
-                             <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                                Reabrir Proyecto
-                            </button>
+                        <div class="space-y-4 relative before:absolute before:inset-0 before:left-[11px] before:w-[2px] before:bg-gray-100 before:-z-10 ml-1">
+                            
+                            <!-- Creación -->
+                            <div class="flex items-start gap-4">
+                                <div class="w-6 h-6 rounded-full border-4 border-white bg-blue-500 flex-shrink-0 mt-0.5"></div>
+                                <div>
+                                    <p class="text-xs font-black text-gray-900 uppercase tracking-wide">Creado el</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 font-medium">${SIApp.formatDate(p.created_at)}</p>
+                                </div>
+                            </div>
+
+                            <!-- Modificación -->
+                            <div class="flex items-start gap-4">
+                                <div class="w-6 h-6 rounded-full border-4 border-white bg-amber-500 flex-shrink-0 mt-0.5"></div>
+                                <div>
+                                    <p class="text-xs font-black text-gray-900 uppercase tracking-wide">Última Modificación</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 font-medium">${p.updated_at ? SIApp.formatDate(p.updated_at) : 'Sin cambios'}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Aprobación -->
+                            <div class="flex items-start gap-4">
+                                <div class="w-6 h-6 rounded-full border-4 border-white ${p.approved_at ? 'bg-emerald-500' : 'bg-gray-200'} flex-shrink-0 mt-0.5"></div>
+                                <div>
+                                    <p class="text-xs font-black ${p.approved_at ? 'text-gray-900' : 'text-gray-400'} uppercase tracking-wide">Aprobado</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5 font-medium italic">${p.approved_at ? SIApp.formatDate(p.approved_at) : 'Pendiente'}</p>
+                                </div>
+                            </div>
+
+                            <!-- Cierre -->
+                            <div class="flex items-start gap-4">
+                                <div class="w-6 h-6 rounded-full border-4 border-white ${p.closed_at ? 'bg-purple-500' : 'bg-gray-200'} flex-shrink-0 mt-0.5"></div>
+                                <div>
+                                    <p class="text-xs font-black ${p.closed_at ? 'text-gray-900' : 'text-gray-400'} uppercase tracking-wide">Cerrado</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5 font-medium italic">${p.closed_at ? SIApp.formatDate(p.closed_at) : 'No Finalizado'}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Próximos Pasos (Mock) -->
-                    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                         <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                            PROXIMOS PASOS
-                        </h4>
-                        <div class="space-y-6">
-                            <div class="border-l-4 border-orange-400 pl-4 py-1">
-                                <p class="text-sm font-bold text-gray-900 leading-tight">Validación de Materiales</p>
-                                <p class="text-[11px] text-gray-400 mt-1 font-medium italic">Previsto: 24 May 2024</p>
+                    <!-- Botones de Acción -->
+<div class="space-y-3">
+    <button onclick="SIModules.projectDetailAdmin.openChangeStatusModal()" class="w-full bg-white border border-gray-100 hover:border-orange-500 hover:text-orange-600 text-gray-700 rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-sm flex items-center justify-between group">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4 transition-transform duration-500 group-hover:rotate-[360deg]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+            </div>
+            <span>Cambiar Estado</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+    </button>
+
+    <button class="w-full bg-[#1a1b25] hover:bg-gray-800 text-white rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-md flex items-center justify-between group">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+            </div>
+            <span>Subir Archivo</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+    </button>
+</div>
+                </div>
+            </div>
+
+            <!-- MODAL: EDITAR PROYECTO -->
+            <div id="edit-project-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+                        <h3 class="text-xl font-extrabold text-gray-900">Editar Proyecto</h3>
+                        <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto">
+                        <form id="edit-project-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectEdits();" class="space-y-4">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
+                                    <input type="text" id="edit-project-name" name="name" value="${p.name || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
+                                    <input type="text" id="edit-project-ref" name="reference" value="${p.reference || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
                             </div>
-                            <div class="border-l-4 border-gray-100 pl-4 py-1">
-                                <p class="text-sm font-bold text-gray-400 leading-tight">Inicio Montaje Fachada</p>
-                                <p class="text-[11px] text-gray-300 mt-1 font-medium">Previsto: 02 Jun 2024</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€)</label>
+                                    <input type="number" step="50" id="edit-project-budget" name="budget_amount" value="${p.budget_amount || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
+                                    <input type="number" step="1" id="edit-project-surface" name="surface" value="${p.surface || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
                             </div>
-                        </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
+                                <input type="text" id="edit-project-type" name="project_type" value="${p.project_type || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
+                                <textarea id="edit-project-desc" name="description" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">${p.description || ''}</textarea>
+                            </div>
+
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
+                         <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                         <button onclick="SIModules.projectDetailAdmin.saveProjectEdits()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
+                             <svg class="w-4 h-4 hidden" id="edit-project-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                             Guardar Cambios
+                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: CAMBIAR ESTADO -->
+            <div id="change-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-lg font-extrabold text-gray-900">Cambiar Estado</h3>
+                        <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus();" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nuevo Estado <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="hidden" id="change-status-select" name="status" value="${p.status}">
+                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleDropdown('status-dropdown-menu')" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
+                                        <div class="flex items-center gap-2">
+                                           <span id="change-status-circle" class="w-2 h-2 rounded-full ${p.status === 'propuesta' ? 'bg-amber-400' : (p.status === 'aprobado' ? 'bg-blue-400' : (p.status === 'ejecucion' ? 'bg-orange-400' : 'bg-emerald-400'))}"></span>
+                                           <span id="change-status-display" class="capitalize">${p.status}</span>
+                                        </div>
+                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                                    </button>
+                                    
+                                    <ul id="status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'propuesta' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
+                                            ${p.status === 'propuesta' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
+                                            ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('ejecucion', 'En Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'ejecucion' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> En Ejecución
+                                            ${p.status === 'ejecucion' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Finalizado / Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Finalizado / Cerrado
+                                            ${p.status === 'cerrado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Motivo / Notas</label>
+                                <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Añade un motivo"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 rounded-b-xl">
+                         <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                         <button onclick="SIModules.projectDetailAdmin.saveProjectStatus()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none flex items-center gap-2">
+                             <svg class="w-4 h-4 hidden" id="change-status-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                             Actualizar
+                         </button>
                     </div>
                 </div>
             </div>
@@ -583,7 +739,7 @@ SIModules.projectDetailAdmin = {
             return `<div class="border border-dashed border-gray-200 rounded-2xl p-6 text-center text-sm text-gray-400 font-medium">Ningún comercial asignado.</div>`;
         }
 
-        let html = '<div class="flex flex-wrap gap-2">';
+        let html = '<div class="flex flex-wrap justify-center gap-2">';
 
         this.assignedUsers.forEach(u => {
             html += `
@@ -686,6 +842,171 @@ SIModules.projectDetailAdmin = {
         } catch (e) {
             console.error(e);
             SIApp.showToast('Error', 'Error interno.', 'error');
+        }
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL: EDITAR PROYECTO
+    // ────────────────────────────────────────────────────────────────────────
+
+    openEditProjectModal() {
+        const modal = document.getElementById('edit-project-modal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+    },
+
+    closeEditProjectModal() {
+        const modal = document.getElementById('edit-project-modal');
+        if (!modal) return;
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    },
+
+    async saveProjectEdits() {
+        const form = document.getElementById('edit-project-form');
+        const spinner = document.getElementById('edit-project-save-spinner');
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const btn = spinner.parentElement;
+        const oldText = btn.innerHTML;
+        btn.innerHTML = spinner.outerHTML + ' Guardando...';
+        btn.querySelector('svg').classList.remove('hidden');
+        btn.querySelector('svg').classList.add('animate-spin');
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Convertir strings vacíos a null para floats/ints
+            if (data.budget_amount === '') data.budget_amount = null;
+            if (data.surface === '') data.surface = null;
+
+            const res = await API.put('/projects/' + this.projectId, data);
+
+            if (res && res.success) {
+                if (window.SIApp) SIApp.showToast('Proyecto actualizado', 'Datos guardados correctamente', 'success');
+                this.closeEditProjectModal();
+                await this.loadProjectData(); // Refresca la vista
+            } else {
+                if (window.SIApp) SIApp.showToast('Error al actualizar', res?.message || 'Revisa los campos', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            if (window.SIApp) SIApp.showToast('Error', 'Error al modificar el proyecto', 'error');
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL: CAMBIAR ESTADO
+    // ────────────────────────────────────────────────────────────────────────
+
+    openChangeStatusModal() {
+        const modal = document.getElementById('change-status-modal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+
+        // Cerrar dropdown por si acaso si se hace clic fuera del popovers
+        const closeFn = (e) => {
+            if (!e.target.closest('.si-custom-dropdown') && !e.target.closest('button[onclick*="toggleDropdown"]')) {
+                document.querySelectorAll('.si-custom-dropdown').forEach(d => d.classList.add('hidden'));
+            }
+        };
+        document.addEventListener('click', closeFn);
+        modal._closeFn = closeFn;
+    },
+
+    toggleDropdown(id) {
+        document.querySelectorAll('.si-custom-dropdown').forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden');
+    },
+
+    selectCustomStatus(val, label, colorClass, liElement) {
+        document.getElementById('change-status-select').value = val;
+        document.getElementById('change-status-display').textContent = label;
+
+        const circle = document.getElementById('change-status-circle');
+        circle.className = 'w-2 h-2 rounded-full ' + colorClass;
+
+        if (liElement) {
+            const ul = document.getElementById('status-dropdown-menu');
+            const lis = ul.querySelectorAll('li');
+            lis.forEach(li => {
+                li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600';
+                const check = li.querySelector('.status-check');
+                if (check) check.remove();
+            });
+            liElement.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner';
+            liElement.insertAdjacentHTML('beforeend', '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>');
+        }
+
+        this.toggleDropdown('status-dropdown-menu');
+    },
+
+    closeChangeStatusModal() {
+        const modal = document.getElementById('change-status-modal');
+        if (!modal) return;
+
+        if (modal._closeFn) {
+            document.removeEventListener('click', modal._closeFn);
+            delete modal._closeFn;
+        }
+
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    },
+
+    async saveProjectStatus() {
+        const form = document.getElementById('change-status-form');
+        const spinner = document.getElementById('change-status-spinner');
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const btn = spinner.parentElement;
+        const oldText = btn.innerHTML;
+        btn.innerHTML = spinner.outerHTML + ' Actualizando...';
+        btn.querySelector('svg').classList.remove('hidden');
+        btn.querySelector('svg').classList.add('animate-spin');
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            const res = await API.put('/projects/' + this.projectId + '/status', data);
+
+            if (res && res.success) {
+                if (window.SIApp) SIApp.showToast('Estado actualizado', 'El nuevo estado se ha guardado.', 'success');
+                this.closeChangeStatusModal();
+                await this.loadProjectData(); // Refresca la vista completa (timeline, badges, etc)
+            } else {
+                if (window.SIApp) SIApp.showToast('Error', res?.message || 'No se pudo cambiar el estado', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            if (window.SIApp) SIApp.showToast('Error', 'Error al actualizar el estado', 'error');
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
         }
     }
 };
