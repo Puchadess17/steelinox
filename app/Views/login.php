@@ -108,21 +108,40 @@
                     </div>
 
                     <!-- Submit -->
-                    <button type="submit" id="btn-login"
-                        class="w-full flex items-center justify-center gap-2 py-3 btn-si-primary rounded-xl text-sm font-semibold">
+                    <button type="submit" id="btn-login" class="w-full flex items-center justify-center gap-2 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-orange-500/20">
                         <span>Iniciar sesión</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                    </button>
+                </form>
+
+                <!-- Formulario Olvidé mi Contraseña (Oculto Inicialmente) -->
+                <form id="forgot-password-form" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div class="mb-6">
+                        <label for="forgot-email" class="block text-sm font-medium text-gray-700 mb-1.5">Correo electrónico</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </span>
+                            <input type="email" id="forgot-email" name="email" placeholder="ejemplo@steelinox.com" 
+                                class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all" required>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-2">Le enviaremos un enlace para restablecer su clave.</p>
+                    </div>
+
+                    <button type="submit" id="btn-forgot" class="w-full flex items-center justify-center gap-2 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-orange-500/20">
+                        <span>Enviar enlace de recuperación</span>
+                    </button>
+
+                    <button type="button" onclick="Auth.toggleForgotPassword(false)" class="w-full mt-4 text-sm text-gray-500 hover:text-gray-700 font-medium">
+                        Volver a Iniciar Sesión
                     </button>
                 </form>
             </div>
 
             <!-- Footer del card -->
-            <div class="border-t border-gray-100 px-8 py-4 bg-gray-50/50 text-center">
-                <a href="#" class="text-sm text-orange-500 hover:text-orange-600 font-medium">¿Olvidaste tu
-                    contraseña?</a>
+            <div class="border-t border-gray-100 px-8 py-4 bg-gray-50/50 text-center" id="footer-forgot">
+                <a href="javascript:void(0)" onclick="Auth.toggleForgotPassword(true)" class="text-sm text-orange-500 hover:text-orange-600 font-medium">¿Olvidaste tu contraseña?</a>
             </div>
         </div>
 

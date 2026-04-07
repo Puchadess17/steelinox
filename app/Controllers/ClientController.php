@@ -134,6 +134,12 @@ class ClientController {
             $errors['name'] = 'El nombre de la empresa es obligatorio.';
         }
 
+        if (!empty($input['reference'])) {
+            if (!preg_match('/^CLI-\d{3,}$/', $input['reference'])) {
+                $errors['reference'] = 'La referencia de cliente debe tener el formato CLI-XXX (Ej: CLI-001)';
+            }
+        }
+
         if (!empty($errors)) {
             http_response_code(422); // Unprocessable Entity
             echo json_encode([

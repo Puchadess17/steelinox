@@ -8,6 +8,8 @@ $router->get('/api/csrf-token', 'AuthController@getCsrfToken');
 $router->get('/api/me', 'AuthController@me');
 $router->post('/api/login', 'AuthController@login');
 $router->post('/api/logout', 'AuthController@logout');
+$router->post('/api/password/forgot', 'PasswordResetController@sendResetEmail');
+$router->post('/api/password/reset', 'PasswordResetController@resetPassword');
 
 // proyectos
 $router->get('/api/projects/search', 'ProjectController@search');
@@ -40,6 +42,7 @@ $router->get('/api/projects/(\d+)/documents/(\d+)/download', 'DocumentController
 
 // --- FRONTEND ---
 $router->get('/', 'AuthController@showLogin');
+$router->get('/password/reset', 'PasswordResetController@showResetForm');
 $router->get('/panel', 'DashboardController@index');
 $router->get('/clients', 'DashboardController@index');
 $router->get('/commercials', 'DashboardController@index');

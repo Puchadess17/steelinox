@@ -250,6 +250,17 @@ SIModules.clientFormAdmin = {
                 is_active: document.getElementById('fc-is_active').checked ? 1 : 0
             };
 
+            // Validation for NEW records only
+            if (this.mode === 'create') {
+                const regexRef = /^CLI-\d{3,}$/;
+                if (!regexRef.test(data.reference)) {
+                    if (window.SIApp) SIApp.showToast('Error de Formato', 'La referencia debe ser CLI-XXX (Ej: CLI-001)', 'error');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
             if (this.mode === 'create') {
                 const response = await API.post('/clients', data);
                 if (response.success && response.data && response.data.id) {

@@ -193,29 +193,59 @@ const API = {
     // HANDLERS
     // ──────────────────────────────────────
 
-    /** Redirigir por sesión expirada */
+    /** Redirigir por sesión expirada con modal UI */
     handleUnauthorized() {
-        const isOnLogin = window.location.pathname === '/steelinox/' || 
-                          window.location.pathname.endsWith('/login');
-        if (isOnLogin) return;
-
-        // Evitar múltiples alertas si hay varias llamadas a la vez
         if (this._isRedirecting) return;
         this._isRedirecting = true;
 
         sessionStorage.clear();
-        
-        // Un alert nativo bloquea el hilo de JS, impidiendo que el frontend continúe
-        // renderizando o intentando parsear datos de un usuario desconectado.
-        alert("Tu sesión ha caducado por seguridad. Vuelve a iniciar sesión.");
-        
-        window.location.href = '/steelinox/'; // Redirige al login limpiamente
+
+        // ── Modal de Aviso Premium ──
+        const modalId = 'si-unauthorized-modal';
+        const existing = document.getElementById(modalId);
+        if (existing) existing.remove();
+
+        const modalHtml = `
+            <div id="${modalId}" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+                <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col overflow-hidden">
+                    <div class="p-8 text-center">
+                        <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-gray-900 mb-2">Sesión Finalizada</h3>
+                        <p class="text-sm text-gray-500 font-medium leading-relaxed">Tu sesión ha caducado por seguridad. Por favor, vuelve a iniciar sesión para continuar.</p>
+                    </div>
+                    <div class="p-6 bg-gray-50/50 border-t border-gray-100">
+                        <button id="si-unauthorized-btn" class="w-full py-3.5 text-sm font-black text-white bg-[#1a1b25] rounded-xl hover:bg-gray-800 shadow-lg shadow-gray-400/20 transition-all focus:outline-none uppercase tracking-widest">
+                            Entendido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById(modalId);
+        const btn = document.getElementById('si-unauthorized-btn');
+
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        });
+
+        btn.onclick = () => {
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                window.location.href = '/steelinox/';
+            }, 300);
+        };
     },
 };
 
 
 // ═══════════════════════════════════════════
-// Sistema de Toasts — Notificaciones
+// Sistema de Toasts — Notificaciones Premium
 // ═══════════════════════════════════════════
 const SIToast = {
     container: null,
@@ -223,55 +253,63 @@ const SIToast = {
     init() {
         if (this.container) return;
         this.container = document.createElement('div');
-        this.container.className = 'si-toast-container';
+        this.container.id = 'si-toast-container';
+        this.container.className = 'fixed bottom-6 right-6 z-[250] flex flex-col gap-3 pointer-events-none';
         document.body.appendChild(this.container);
     },
 
-    show(message, type = 'info', duration = 4000) {
+    /** Mostrar notificación flotante */
+    show(title, message = '', type = 'info', duration = 5000) {
         this.init();
 
         const icons = {
-            success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
-            error:   '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
-            warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-            info:    '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-        };
-        const colors = {
-            success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-            error:   'bg-red-50 border-red-200 text-red-800',
-            warning: 'bg-amber-50 border-amber-200 text-amber-800',
-            info:    'bg-blue-50 border-blue-200 text-blue-800',
+            success: '<div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></div>',
+            error:   '<div class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></div>',
+            warning: '<div class="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>',
+            info:    '<div class="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
         };
 
-        const toast = document.createElement('div');
-        toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${colors[type]} fade-in`;
-        toast.style.minWidth = '300px';
-        toast.style.maxWidth = '450px';
-        toast.innerHTML = `
-            <span class="flex-shrink-0">${icons[type]}</span>
-            <span class="text-sm font-medium flex-1">${this.escapeHtml(message)}</span>
-            <button class="flex-shrink-0 opacity-60 hover:opacity-100" onclick="this.parentElement.remove()">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+        const toastHtml = `
+            <div class="pointer-events-auto bg-white border border-gray-100 shadow-2xl rounded-2xl p-5 flex gap-4 items-start transform translate-y-10 opacity-0 transition-all duration-500 min-w-[320px] max-w-md group overflow-hidden relative">
+                <div class="absolute top-0 left-0 w-1 h-full ${type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-red-500' : (type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'))}"></div>
+                ${icons[type] || icons.info}
+                <div class="flex-1 min-w-0 pr-2">
+                    <p class="text-[15px] font-black text-[#1a1b25] leading-tight mb-1">${this.escapeHtml(title)}</p>
+                    ${message ? `<p class="text-xs font-medium text-gray-500 leading-relaxed">${this.escapeHtml(message)}</p>` : ''}
+                </div>
+                <button class="text-gray-300 hover:text-gray-900 transition-colors shrink-0 -mt-1" onclick="this.closest('.pointer-events-auto').remove()">
+                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
         `;
-        this.container.appendChild(toast);
 
+        this.container.insertAdjacentHTML('beforeend', toastHtml);
+        const toastEl = this.container.lastElementChild;
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toastEl.classList.remove('translate-y-10', 'opacity-0');
+        });
+
+        // Autohremove
         setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            toast.style.transition = 'all 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
+            if (toastEl && toastEl.parentElement) {
+                toastEl.classList.add('opacity-0', 'translate-x-12');
+                setTimeout(() => toastEl.remove(), 500);
+            }
         }, duration);
     },
 
     escapeHtml(str) {
+        if (!str) return '';
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
     },
 
-    success(msg) { this.show(msg, 'success'); },
-    error(msg)   { this.show(msg, 'error', 6000); },
-    warning(msg) { this.show(msg, 'warning', 5000); },
-    info(msg)    { this.show(msg, 'info'); },
+    // Atajos semánticos
+    success(title, msg) { this.show(title, msg, 'success'); },
+    error(title, msg)   { this.show(title, msg, 'error', 7000); },
+    warning(title, msg) { this.show(title, msg, 'warning', 6000); },
+    info(title, msg)    { this.show(title, msg, 'info'); },
 };

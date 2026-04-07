@@ -9,8 +9,8 @@ const Auth = {
     // LOGIN
     // ──────────────────────────────────────
 
-    /** Inicializa el formulario de login */
     initLogin() {
+        this.initForgotPassword();
         const form       = document.getElementById('login-form');
         const togglePass = document.getElementById('toggle-password');
         const passInput  = document.getElementById('password');
@@ -98,26 +98,82 @@ const Auth = {
         if (errorBox) {
             errorBox.textContent = message;
             errorBox.classList.remove('hidden');
-            errorBox.classList.add('fade-in');
+        }
+    },
+
+    // ──────────────────────────────────────
+    // FORGOT PASSWORD
+    // ──────────────────────────────────────
+
+    toggleForgotPassword(show) {
+        const loginForm = document.getElementById('login-form');
+        const forgotForm = document.getElementById('forgot-password-form');
+        const footer = document.getElementById('footer-forgot');
+        const errorBox = document.getElementById('login-error');
+
+        if (errorBox) errorBox.classList.add('hidden');
+
+        if (show) {
+            loginForm.classList.add('hidden');
+            forgotForm.classList.remove('hidden');
+            footer.classList.add('opacity-0', 'pointer-events-none');
+            forgotForm.querySelector('input').focus();
+        } else {
+            forgotForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            footer.classList.remove('opacity-0', 'pointer-events-none');
+            loginForm.querySelector('input').focus();
+        }
+    },
+
+    initForgotPassword() {
+        const form = document.getElementById('forgot-password-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-forgot');
+            const emailInput = document.getElementById('forgot-email');
+            const email = emailInput.value.trim();
+
+            if (!email || !this._isValidEmail(email)) {
+                this.showLoginError('Por favor, introduce un correo válido.');
+                return;
+            }
+
+            this._setBtnLoading(btn, true, 'Enviando...');
+
+            try {
+                const result = await API.post('/password/forgot', { email }, { silent: true });
+                if (result.success) {
+                    if (window.SIToast) SIToast.success('Correo enviado', result.message);
+                    this.toggleForgotPassword(false);
+                } else {
+                    this.showLoginError(result.message || 'Error al procesar la solicitud.');
+                }
+            } catch (err) {
+                this.showLoginError('Error de conexión con el servidor.');
+            } finally {
+                this._setBtnLoading(btn, false, 'Enviar enlace de recuperación');
+            }
+        });
+    },
+
+    /** Toggle loading state genérico */
+    _setBtnLoading(btn, loading, text) {
+        if (!btn) return;
+        btn.disabled = loading;
+        if (loading) {
+            btn.dataset.oldHtml = btn.innerHTML;
+            btn.innerHTML = `<span class="si-spinner" style="width:18px;height:18px;border-width:2px;margin-right:8px;"></span> ${text}`;
+        } else {
+            btn.innerHTML = btn.dataset.oldHtml || text;
         }
     },
 
     /** Toggle loading state del botón de login */
     _setLoginLoading(btn, loading) {
-        if (!btn) return;
-        btn.disabled = loading;
-        if (loading) {
-            btn.dataset.originalHtml = btn.innerHTML;
-            btn.innerHTML = `
-                <span class="si-spinner" style="width:20px;height:20px;border-width:2px;"></span>
-                <span>Iniciando sesión...</span>
-            `;
-        } else {
-            btn.innerHTML = btn.dataset.originalHtml || `
-                <span>Iniciar sesión</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            `;
-        }
+        this._setBtnLoading(btn, loading, 'Iniciando sesión...');
     },
 
     /** Validación simple de email */

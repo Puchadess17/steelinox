@@ -485,20 +485,22 @@ SIModules.dashboard = {
 
         // Diseño del status badge exacto a la imagen
         const getCustomBadge = (status) => {
-            const styles = {
-                propuesta: 'bg-[#d28f41] text-[#fff] shadow-sm', // Color anaranjado suave/dorado
-                aprobado: 'bg-emerald-600 font-bold text-white shadow-sm',
-                ejecucion: 'bg-orange-500 font-bold text-white shadow-sm',
-                cerrado: 'bg-gray-600 font-bold text-white shadow-sm',
-            };
             const labels = {
-                propuesta: 'Pendiente Aprobación',
+                propuesta: 'Propuesta',
                 aprobado: 'Aprobado',
-                ejecucion: 'En Proceso',
-                cerrado: 'Finalizado',
+                ejecucion: 'Ejecución',
+                cerrado: 'Cerrado',
             };
+            const styles = {
+                propuesta: 'badge-propuesta',
+                aprobado: 'badge-aprobado',
+                ejecucion: 'badge-ejecucion',
+                cerrado: 'badge-cerrado',
+            };
+            const label = labels[status] || status;
             const style = styles[status] || 'bg-gray-600 text-white';
-            return `<span class="inline-flex items-center px-3 py-1.5 rounded-[5px] text-[7.5px] sm:text-[8px] font-black uppercase tracking-[0.1em] ${style}">${labels[status] || status}</span>`;
+
+            return `<span class="si-badge ${style}">${label}</span>`;
         };
 
         return projects.map(p => `

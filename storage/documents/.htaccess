@@ -1,0 +1,3 @@
+# Impedir el listado de archivos y el acceso directo
+Options -Indexes
+Deny from all

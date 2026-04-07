@@ -10,6 +10,7 @@ SIModules.projectDetailAdmin = {
     project: null,
     userContext: null,
     assignedUsers: [],
+    documents: [],
     activeTab: 'resumen',
 
     async loadProjectDetailSPA() {
@@ -82,10 +83,13 @@ SIModules.projectDetailAdmin = {
                         </button>
                     </div>
                     <div class="p-6 overflow-y-auto" id="commercial-list-container">
-                        <div class="flex justify-center p-8"><div class="si-spinner"></div></div>
+                        <!-- Se llena vía JS -->
                     </div>
                 </div>
             </div>
+
+            <!-- INPUT OCULTO PARA SUBIR ARCHIVOS (Global para el módulo) -->
+            <input type="file" id="si-doc-upload-raw" class="hidden" onchange="SIModules.projectDetailAdmin.handleFileUpload(event)">
         `;
 
         await this.init(projectId, user);
@@ -164,14 +168,14 @@ SIModules.projectDetailAdmin = {
             const labels = {
                 propuesta: 'Propuesta',
                 aprobado: 'Aprobado',
-                ejecucion: 'En Ejecución',
-                cerrado: 'Finalizado',
+                ejecucion: 'Ejecución',
+                cerrado: 'Cerrado',
             };
             const styles = {
-                propuesta: 'bg-amber-100/50 text-amber-700 border-amber-200/50',
-                aprobado: 'bg-blue-100/50 text-blue-700 border-blue-200/50',
-                ejecucion: 'bg-orange-100 text-orange-700 border-orange-200',
-                cerrado: 'bg-emerald-100/50 text-emerald-700 border-emerald-200/50',
+                propuesta: 'badge-propuesta',
+                aprobado: 'badge-aprobado',
+                ejecucion: 'badge-ejecucion',
+                cerrado: 'badge-cerrado',
             };
             const label = labels[this.project.status] || this.project.status;
             const style = styles[this.project.status] || 'bg-gray-100 text-gray-600 border-gray-200';
@@ -343,12 +347,13 @@ SIModules.projectDetailAdmin = {
         </svg>
     </button>
 
-    <button class="w-full bg-[#1a1b25] hover:bg-gray-800 text-white rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-md flex items-center justify-between group">
+    <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#1a1b25] hover:bg-gray-800 text-white rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-md flex items-center justify-between group">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg id="sidebar-upload-icon" class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
+                <div id="sidebar-upload-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
             </div>
             <span>Subir Archivo</span>
         </div>
@@ -448,12 +453,12 @@ SIModules.projectDetailAdmin = {
                                             <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
                                             ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('ejecucion', 'En Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'ejecucion' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> En Ejecución
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('ejecucion', 'Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'ejecucion' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Ejecución
                                             ${p.status === 'ejecucion' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Finalizado / Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Finalizado / Cerrado
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cerrado
                                             ${p.status === 'cerrado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
                                     </ul>
@@ -479,71 +484,42 @@ SIModules.projectDetailAdmin = {
 
     /** PESTAÑA: DOCUMENTOS (Mock) */
     _renderDocumentos() {
+        // Disparar la carga real si no tenemos datos o queremos refrescar
+        setTimeout(() => this.loadProjectDocuments(), 50);
+
         return `
             <div class="space-y-6">
                 <!-- Buscador -->
                 <div class="relative">
                     <svg class="w-5 h-5 text-gray-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input id="doc-search-input" type="text" placeholder="Buscar documentos..." oninput="SIModules.projectDetailAdmin._filterDocs(this.value)" class="w-full bg-white border border-gray-100 text-base rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-[#E57B23]/20 focus:border-[#E57B23] focus:outline-none shadow-sm text-gray-700 font-medium">
+                    <input id="doc-search-input" type="text" placeholder="Buscar documentos por nombre o tipo..." oninput="SIModules.projectDetailAdmin._filterDocs(this.value)" class="w-full bg-white border border-gray-100 text-base rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-[#E57B23]/20 focus:border-[#E57B23] focus:outline-none shadow-sm text-gray-700 font-medium">
                 </div>
 
                 <!-- Botón Principal -->
-                <button class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-full py-4 text-sm font-black shadow-lg shadow-[#E57B23]/20 transition-all flex items-center justify-center gap-2 uppercase tracking-widest">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    Seleccionar Archivo
+                <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-2xl py-4 text-sm font-black shadow-lg shadow-[#E57B23]/20 transition-all flex items-center justify-center gap-2 uppercase tracking-widest group">
+                    <svg id="tab-upload-icon" class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <div id="tab-upload-spinner" class="si-spinner w-5 h-5 border-white/30 border-t-white hidden"></div>
+                    <span id="tab-upload-text">Subir Nuevo Documento</span>
                 </button>
 
                 <!-- Header de Lista -->
                 <div class="flex items-center justify-between pt-2">
-                    <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide">Archivos Recientes</h3>
-                    <button class="p-2 text-gray-400 hover:text-gray-900 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                    </button>
+                    <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide">Expediente del Proyecto</h3>
+<div id="doc-counter" class="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">0 ARCHIVOS</div>
                 </div>
 
-                <!-- Lista de Archivos -->
-                <div class="space-y-3 pb-6" id="doc-cards-container">
-                    ${this._mockDocCard('Plano_Estructural_V1.dwg', 'CAD', 'v2.4 • 12 Oct', 'JD')}
-                    ${this._mockDocCard('Especificaciones_Acero.pdf', 'PDF', 'v1.1 • 10 Oct', 'AL')}
-                    ${this._mockDocCard('Memorias_Calculo_Final.zip', 'ZIP', 'v2.0 • 08 Oct', 'MP')}
-                    ${this._mockDocCard('Cronograma_Suministros.xlsx', 'XLS', 'v3.2 • 05 Oct', 'RS')}
-                    ${this._mockDocCard('Detalle_Soldadura_A3.dwg', 'CAD', 'v1.4 • 02 Oct', 'JD')}
+                <!-- Lista de Archivos Dynamic -->
+                <div class="space-y-3 pb-6 min-h-[200px]" id="doc-cards-container">
+                    <div class="flex flex-col items-center justify-center py-20 text-gray-300">
+                        <div class="si-spinner mb-4"></div>
+                        <p class="text-sm font-bold uppercase tracking-widest">Sincronizando archivo...</p>
+                    </div>
                 </div>
             </div>
         `;
     },
 
     _mockDocCard(title, type, meta, avatar) {
-        const typeProps = {
-            'CAD': { icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>', bg: 'bg-[#e0f2fe]', text: 'text-[#0284c7]', badgeBg: 'bg-[#bae6fd]', badgeText: 'text-[#0369a1]' },
-            'PDF': { icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>', bg: 'bg-[#fee2e2]', text: 'text-[#dc2626]', badgeBg: 'bg-[#fecaca]', badgeText: 'text-[#b91c1c]' },
-            'ZIP': { icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>', bg: 'bg-[#ffedd5]', text: 'text-[#ea580c]', badgeBg: 'bg-[#fed7aa]', badgeText: 'text-[#c2410c]' },
-            'XLS': { icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" clip-rule="evenodd"/></svg>', bg: 'bg-[#dcfce7]', text: 'text-[#16a34a]', badgeBg: 'bg-[#bbf7d0]', badgeText: 'text-[#15803d]' }
-        };
-        const style = typeProps[type] || typeProps['CAD'];
-
-        return `
-            <div class="doc-row flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-100" data-title="${title.toLowerCase()}">
-                <div class="flex items-center gap-4 min-w-0">
-                    <div class="w-[52px] h-[52px] ${style.bg} ${style.text} rounded-[14px] flex items-center justify-center shrink-0">
-                        ${style.icon}
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-[15.5px] font-extrabold text-gray-900 leading-tight mb-1 truncate">${title}</p>
-                        <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded ${style.badgeBg} ${style.badgeText} text-[10px] font-black tracking-widest uppercase">${type}</span>
-                            <span class="text-xs text-gray-400 font-bold uppercase tracking-tighter">${meta}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex flex-col items-center justify-between gap-2 shrink-0 pl-3">
-                    <div class="w-8 h-8 bg-gray-100 rounded-full border border-white shadow-sm flex items-center justify-center text-[10px] uppercase font-black text-gray-500">${avatar}</div>
-                    <button class="text-gray-300 hover:text-gray-700">
-                        <svg class="w-5 h-5 translate-y-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
-                    </button>
-                </div>
-            </div>
-        `;
     },
 
     /** PESTAÑA: COMENTARIOS/CHAT */
@@ -714,6 +690,164 @@ SIModules.projectDetailAdmin = {
             const title = card.dataset.title || '';
             card.style.display = (!q || title.includes(q)) ? 'flex' : 'none';
         });
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // DOCUMENTOS: LÓGICA DE NEGOCIO REAL
+    // ────────────────────────────────────────────────────────────────────────
+
+    /** Cargar documentos desde la API */
+    async loadProjectDocuments() {
+        const container = document.getElementById('doc-cards-container');
+        if (!container) return;
+
+        try {
+            const res = await API.get('/projects/' + this.projectId + '/documents');
+            if (res.success && res.data) {
+                this.documents = res.data;
+                this.renderDocumentList();
+            } else {
+                container.innerHTML = '<p class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Error al sincronizar expedientes.</p>';
+            }
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<p class="text-center py-10 text-red-500 font-bold uppercase tracking-widest text-[10px]">Error de conexión con el servidor.</p>';
+        }
+    },
+
+    /** Renderizar la lista de documentos obtenida */
+    renderDocumentList() {
+        const container = document.getElementById('doc-cards-container');
+        const counter = document.getElementById('doc-counter');
+        if (!container) return;
+
+        if (counter) counter.textContent = `${this.documents.length} ARCHIVOS`;
+
+        if (this.documents.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-center fade-in">
+                    <div class="w-20 h-20 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mb-6 shadow-inner border border-gray-100">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <p class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Expediente Vacío</p>
+                    <p class="text-[11px] text-gray-400 mt-2 font-medium">Aún no se han subido documentos técnicos a este proyecto.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = this.documents.map(doc => {
+            const icon = this.getFileIcon(doc.mime_type);
+            const size = this.formatFileSize(doc.file_size);
+            const date = SIApp.formatDate(doc.uploaded_at);
+            const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
+
+            return `
+                <div class="doc-row flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100 group fade-in" 
+                     data-title="${doc.title.toLowerCase()} ${doc.file_name.toLowerCase()}">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-[52px] h-[52px] ${icon.bg} ${icon.text} rounded-[14px] flex items-center justify-center shrink-0 shadow-sm border border-transparent group-hover:border-current/10 transition-all">
+                            ${icon.svg}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-1 truncate group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase">${icon.label}</span>
+                                <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80">${size} • ${date}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center justify-between gap-2 shrink-0 pl-3">
+                        <div class="w-8 h-8 bg-gray-50 text-gray-400 border border-gray-100 rounded-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest shadow-inner cursor-help" title="Subido por ${doc.uploaded_by_name}">
+                            ${initials}
+                        </div>
+                        <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
+                           target="_blank"
+                           class="p-2 text-gray-300 hover:text-orange-500 transition-colors transform hover:scale-110 active:scale-95" 
+                           title="Descargar Archivo Oficial">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    /** Disparar el selector nativo del sistema */
+    triggerFileUpload() {
+        const input = document.getElementById('si-doc-upload-raw');
+        if (input) input.click();
+    },
+
+    /** Manejar la subida física del archivo vía AJAX/FormData */
+    async handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Visual Feedback: Activar Spinners y estados de carga
+        const sidebarIcon = document.getElementById('sidebar-upload-icon');
+        const sidebarSpinner = document.getElementById('sidebar-upload-spinner');
+        const tabIcon = document.getElementById('tab-upload-icon');
+        const tabSpinner = document.getElementById('tab-upload-spinner');
+        const tabText = document.getElementById('tab-upload-text');
+
+        const setLoading = (loading) => {
+            if (sidebarIcon) sidebarIcon.classList.toggle('hidden', loading);
+            if (sidebarSpinner) sidebarSpinner.classList.toggle('hidden', !loading);
+            if (tabIcon) tabIcon.classList.toggle('hidden', loading);
+            if (tabSpinner) tabSpinner.classList.toggle('hidden', !loading);
+            if (tabText) tabText.textContent = loading ? 'Subiendo archivo...' : 'Subir Nuevo Documento';
+        };
+
+        setLoading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', file.name.split('.').slice(0, -1).join('.'));
+
+            const res = await API.post('/projects/' + this.projectId + '/documents', formData);
+
+            if (res.success) {
+                if (window.SIApp) SIApp.showToast('¡Éxito!', 'Documento añadido al expediente correctamente.', 'success');
+                // Si estamos en la pestaña documentos, recargar la lista
+                if (this.activeTab === 'documentos') {
+                    await this.loadProjectDocuments();
+                }
+            } else {
+                if (window.SIApp) SIApp.showToast('Error', res.message || 'El servidor rechazó el archivo.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.SIApp) SIApp.showToast('Error de red', 'No se pudo contactar con el servidor de archivos.', 'error');
+        } finally {
+            setLoading(false);
+            event.target.value = ''; // Limpiar para permitir re-subida del mismo
+        }
+    },
+
+    /** Helper: Mapeo de iconos Premium por MIME type */
+    getFileIcon(mime) {
+        const types = {
+            'application/pdf': { label: 'PDF', bg: 'bg-red-50', text: 'text-red-500', badgeBg: 'bg-red-100', badgeText: 'text-red-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9h1m1 0h1m-3 4h3m-3 4h3"/></svg>' },
+            'image/jpeg': { label: 'IMG', bg: 'bg-blue-50', text: 'text-blue-500', badgeBg: 'bg-blue-100', badgeText: 'text-blue-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
+            'image/png': { label: 'IMG', bg: 'bg-blue-50', text: 'text-blue-500', badgeBg: 'bg-blue-100', badgeText: 'text-blue-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
+            'application/msword': { label: 'DOC', bg: 'bg-indigo-50', text: 'text-indigo-500', badgeBg: 'bg-indigo-100', badgeText: 'text-indigo-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { label: 'DOC', bg: 'bg-indigo-50', text: 'text-indigo-500', badgeBg: 'bg-indigo-100', badgeText: 'text-indigo-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+            'application/vnd.ms-excel': { label: 'XLS', bg: 'bg-emerald-50', text: 'text-emerald-500', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { label: 'XLS', bg: 'bg-emerald-50', text: 'text-emerald-500', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+        };
+        const defaultIcon = { label: 'FILE', bg: 'bg-gray-50', text: 'text-gray-500', badgeBg: 'bg-gray-100', badgeText: 'text-gray-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>' };
+        return types[mime] || defaultIcon;
+    },
+
+    /** Helper: Formatear tamaño de archivo en KB/MB */
+    formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     },
 
     // ────────────────────────────────────────────────────────────────────────

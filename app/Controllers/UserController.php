@@ -28,7 +28,11 @@ class UserController {
         $errors = [];
 
         if (empty($input['name'])) $errors['name'] = 'El nombre es obligatorio.';
-        if (empty($input['email']) || !filter_var($input['email'], FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Email no válido.';
+        if (empty($input['email'])) {
+            $errors['email'] = 'El email es obligatorio.';
+        } elseif (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $input['email'])) {
+            $errors['email'] = 'El formato del email no es válido.';
+        }
         if (empty($input['password'])) $errors['password'] = 'La contraseña es obligatoria.';
         if (empty($input['client_id'])) $errors['client_id'] = 'ID de cliente obligatorio.';
 

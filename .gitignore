@@ -1,0 +1,6 @@
+.env
+/storage/documents/*
+!/storage/documents/.htaccess
+/vendor
+.DS_Store
+Thumbs.db

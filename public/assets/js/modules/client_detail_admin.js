@@ -370,34 +370,17 @@ SIModules.clientDetailAdmin = {
                                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
                                     <input type="text" id="project-type" name="project_type" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Estructura, Revestimiento">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Estado Inicial</label>
-                                    <div class="relative">
-                                        <input type="hidden" id="project-status" name="status" value="propuesta">
-                                        <button type="button" onclick="ClientDetailAdmin.toggleDropdown('client-status-dropdown-menu')" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
-                                            <div class="flex items-center gap-2">
-                                               <span id="client-project-status-circle" class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                               <span id="client-project-status-display">Propuesta</span>
-                                            </div>
-                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
-                                        </button>
-                                        
-                                        <ul id="client-status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
-                                            <li onclick="ClientDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner">
-                                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
-                                                <svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                            </li>
-                                            <li onclick="ClientDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600">
-                                                <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
-                                            </li>
-                                            <li onclick="ClientDetailAdmin.selectCustomStatus('ejecucion', 'En Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600">
-                                                <span class="w-2 h-2 rounded-full bg-orange-400"></span> En Ejecución
-                                            </li>
-                                            <li onclick="ClientDetailAdmin.selectCustomStatus('cerrado', 'Finalizado / Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600">
-                                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Finalizado / Cerrado
-                                            </li>
-                                        </ul>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Estado</label>
+                                <div class="relative">
+                                    <input type="hidden" id="project-status" name="status" value="propuesta">
+                                    <div class="w-full px-4 py-3 bg-gray-100 border border-gray-200 text-gray-500 rounded-xl font-medium text-sm flex items-center gap-2 cursor-not-allowed">
+                                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                        <span>Propuesta</span>
+                                        <svg class="w-3.5 h-3.5 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                     </div>
+                                    <p class="text-[10px] text-gray-400 mt-1 font-medium italic">Los nuevos proyectos se inician siempre como propuesta.</p>
+                                </div>
                             </div>
 
                             <div>
@@ -758,6 +741,15 @@ SIModules.clientDetailAdmin = {
             payload.password = pwd;
         }
 
+        // Validation for NEW records only
+        if (!id) {
+            const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!regexEmail.test(payload.email)) {
+                if (window.SIApp) SIApp.showToast('Email no válido', 'Por favor, ingrese un correo electrónico con formato correcto.', 'error');
+                return;
+            }
+        }
+
         spinner.classList.remove('hidden');
         spinner.classList.add('animate-spin');
 
@@ -770,7 +762,7 @@ SIModules.clientDetailAdmin = {
             }
 
             if (res.success) {
-                if (window.SIApp && SIApp.showToast) SIApp.showToast('Éxito', res.message, 'success');
+                if (window.SIApp) SIApp.showToast('Éxito', res.message, 'success');
                 this.closeUserModal();
                 await this.loadClientData();
             } else {
@@ -778,13 +770,11 @@ SIModules.clientDetailAdmin = {
                 if (res.errors) {
                     errorMsg += ': ' + Object.values(res.errors).join(', ');
                 }
-                if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', errorMsg, 'error');
-                else alert(errorMsg);
+                if (window.SIApp) SIApp.showToast('Error', errorMsg, 'error');
             }
         } catch (e) {
             console.error(e);
-            if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', e.message, 'error');
-            else alert(e.message);
+            if (window.SIApp) SIApp.showToast('Error', e.message, 'error');
         } finally {
             spinner.classList.add('hidden');
             spinner.classList.remove('animate-spin');
@@ -792,11 +782,9 @@ SIModules.clientDetailAdmin = {
     },
 
     async deleteUser(id) {
-        if (window.SIApp && SIApp.confirm) {
+        if (window.SIApp) {
             const confirmed = await SIApp.confirm('¿Eliminar usuario?', 'Estás seguro de que deseas eliminar a este usuario? Esta acción le impedirá acceder al sistema.');
             if (!confirmed) return;
-        } else {
-            if (!confirm('¿Estás seguro de que deseas eliminar a este usuario? Esta acción le impedirá acceder al sistema.')) return;
         }
 
         try {
@@ -892,13 +880,20 @@ SIModules.clientDetailAdmin = {
             description: document.getElementById('project-desc').value || null
         };
 
+        // Regex Validation (Projects are always new in this modal)
+        const regexPrj = /^PRJ-\d{4}-\d{3,}$/;
+        if (!regexPrj.test(payload.reference)) {
+            if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXX (Ej: PRJ-2024-001)', 'error');
+            return;
+        }
+
         spinner.classList.remove('hidden');
         spinner.classList.add('animate-spin');
 
         try {
             const res = await API.post('/projects', payload);
             if (res.success) {
-                if (window.SIApp && SIApp.showToast) SIApp.showToast('Éxito', res.message, 'success');
+                if (window.SIApp) SIApp.showToast('Éxito', res.message, 'success');
                 this.closeProjectModal();
                 await this.loadClientData();
             } else {
@@ -906,13 +901,11 @@ SIModules.clientDetailAdmin = {
                 if (res.errors) {
                     errorMsg += ': ' + Object.values(res.errors).join(', ');
                 }
-                if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', errorMsg, 'error');
-                else alert(errorMsg);
+                if (window.SIApp) SIApp.showToast('Error', errorMsg, 'error');
             }
         } catch (e) {
             console.error(e);
-            if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', e.message, 'error');
-            else alert(e.message);
+            if (window.SIApp) SIApp.showToast('Error', e.message, 'error');
         } finally {
             spinner.classList.add('hidden');
             spinner.classList.remove('animate-spin');

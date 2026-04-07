@@ -313,7 +313,11 @@ class ProjectController {
         // Validaciones obligatorias
         if (empty($input['client_id'])) $errors['client_id'] = 'El cliente es obligatorio.';
         if (empty($input['name'])) $errors['name'] = 'El nombre del proyecto es obligatorio.';
-        if (empty($input['reference'])) $errors['reference'] = 'La referencia es obligatoria.';
+        if (empty($input['reference'])) {
+            $errors['reference'] = 'La referencia es obligatoria.';
+        } elseif (!preg_match('/^PRJ-\d{4}-\d{3,}$/', $input['reference'])) {
+            $errors['reference'] = 'La referencia de proyecto debe tener el formato PRJ-AAAA-XXX (Ej: PRJ-2024-001)';
+        }
 
         if (!empty($errors)) {
             http_response_code(422);

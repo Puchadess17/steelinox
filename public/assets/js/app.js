@@ -311,50 +311,13 @@ const SIApp = {
         });
     },
 
-    /** Custom Toast Notification */
+    /** Custom Toast Notification (Proxy a SIToast) */
     showToast(title, message, type = 'info') {
-        let container = document.getElementById('si-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'si-toast-container';
-            container.className = 'fixed bottom-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none';
-            document.body.appendChild(container);
+        if (typeof SIToast !== 'undefined') {
+            SIToast.show(title, message, type);
+        } else {
+            console.error('showToast: SIToast no está definido');
         }
-
-        const icons = {
-            success: '<div class="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>',
-            error: '<div class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></div>',
-            info: '<div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
-        };
-
-        const toastHtml = `
-            <div class="pointer-events-auto bg-white border border-gray-100 shadow-xl rounded-xl p-4 flex gap-3 items-start transform translate-y-8 opacity-0 transition-all duration-300 min-w-[300px] max-w-sm">
-                ${icons[type] || icons.info}
-                <div class="flex-1">
-                    <p class="text-sm font-bold text-gray-900">${this.escapeHtml(title)}</p>
-                    ${message ? `<p class="text-[11px] font-medium text-gray-500 mt-0.5 leading-relaxed">${this.escapeHtml(message)}</p>` : ''}
-                </div>
-                <button class="text-gray-400 hover:text-gray-600 transition-colors shrink-0" onclick="this.closest('.pointer-events-auto').remove()">
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-        `;
-
-        container.insertAdjacentHTML('beforeend', toastHtml);
-        const toastEl = container.lastElementChild;
-
-        // Animate in
-        requestAnimationFrame(() => {
-            toastEl.classList.remove('translate-y-8', 'opacity-0');
-        });
-
-        // Remove after 5s
-        setTimeout(() => {
-            if (toastEl && toastEl.parentElement) {
-                toastEl.classList.add('opacity-0', 'translate-x-8');
-                setTimeout(() => toastEl.remove(), 300);
-            }
-        }, 5000);
     }
 };
 

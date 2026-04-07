@@ -12,6 +12,10 @@ define('APP_PATH', ROOT_PATH . '/app');
 define('CORE_PATH', ROOT_PATH . '/core');
 define('STORAGE_PATH', ROOT_PATH . '/storage'); // Fuera de public
 
+// Cargar Loader de variables de entorno
+require_once CORE_PATH . '/DotEnvLoader.php';
+DotEnvLoader::load(ROOT_PATH . '/.env');
+
 // Cargar Router
 require_once CORE_PATH . '/Router.php';
 

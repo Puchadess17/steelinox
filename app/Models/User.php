@@ -135,4 +135,30 @@ class User
 
         return $stmt->fetchAll();
     }
+
+    /** Guarda un token de recuperación */
+    public function setResetToken($email, $token)
+    {
+        // 1 hora de validez
+        $sql = "UPDATE users SET reset_token = :token, reset_token_expires_at = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = :email AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['token' => $token, 'email' => $email]);
+    }
+
+    /** Valida un token de recuperación */
+    public function findByResetToken($token)
+    {
+        $sql = "SELECT id, email FROM users WHERE reset_token = :token AND reset_token_expires_at > NOW() AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['token' => $token]);
+        return $stmt->fetch();
+    }
+
+    /** Limpia los tokens tras el reset exitoso */
+    public function clearResetToken($userId)
+    {
+        $sql = "UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $userId]);
+    }
 }

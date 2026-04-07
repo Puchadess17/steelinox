@@ -38,8 +38,10 @@ const ProjectDetailView = {
         this.user = userContext;
 
         if (!this.projectId) {
-            alert("No se ha especificado un ID de proyecto válido.");
-            window.location.href = '/steelinox/panel';
+            if (window.SIApp) SIApp.showToast('Error', 'No se ha especificado un ID de proyecto válido.', 'error');
+            setTimeout(() => {
+                window.location.href = '/steelinox/panel';
+            }, 3000);
             return;
         }
 
