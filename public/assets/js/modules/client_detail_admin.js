@@ -178,7 +178,7 @@ SIModules.clientDetailAdmin = {
                              <div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                              </div>
-                             <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Usuarios Asociados</h2>
+                             <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Usuarios Cliente Asociados</h2>
                         </div>
                         <button onclick="ClientDetailAdmin.openUserModal()" class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50 w-full sm:w-auto justify-center sm:justify-start">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
@@ -212,7 +212,7 @@ SIModules.clientDetailAdmin = {
                 </section>
 
                 <!-- PROYECTOS VINCULADOS -->
-                <section>
+                <section class="mb-10">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
                              <div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center">
@@ -230,12 +230,12 @@ SIModules.clientDetailAdmin = {
                         <table class="w-full si-table">
                             <thead>
                                 <tr class="bg-gray-50/50">
-                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
-                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
-                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Presupuesto</th>
-                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
-                                    <th class="px-5 py-3.5 text-right w-12"></th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Presupuesto</th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                                    <th class="px-5 py-3.5 w-12"></th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50/80">
@@ -266,7 +266,7 @@ SIModules.clientDetailAdmin = {
 
                 <!-- HISTORIAL Y NOTAS -->
                 <section>
-                    <div class="flex items-center gap-2 mb-6">
+                    <div class="flex items-center gap-2 mb-6 mt-6">
                          <div class="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                          </div>
@@ -441,27 +441,46 @@ SIModules.clientDetailAdmin = {
         const badge = (val) => (window.SIApp && SIApp.statusBadge) ? SIApp.statusBadge(val) : val;
 
         return `
-            <tr class="hover:bg-orange-50/30 transition-colors group">
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <a data-route="project-detail" href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${p.name}</a>
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${p.reference}</span>
-                </td>
-                <td class="px-5 py-4 text-sm font-black text-gray-600 whitespace-nowrap">
-                    ${format(p.budget_amount || 0)}
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap">
+        <tr class="hover:bg-orange-50/30 transition-colors group">
+            <td class="px-5 py-4 whitespace-nowrap text-center">
+                <a data-route="project-detail" href="/steelinox/project/${p.id}" 
+                   class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline inline-block">
+                    ${p.name}
+                </a>
+            </td>
+            
+            <td class="px-5 py-4 whitespace-nowrap">
+                <div class="flex justify-center">
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">
+                        ${p.reference}
+                    </span>
+                </div>
+            </td>
+            
+            <td class="px-5 py-4 text-sm font-black text-gray-600 whitespace-nowrap text-center">
+                ${format(p.budget_amount || 0)}
+            </td>
+            
+            <td class="px-5 py-4 whitespace-nowrap">
+                <div class="flex justify-center">
                     ${badge(p.status)}
-                </td>
-                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase">
-                    ${formatDate(p.created_at)}
-                </td>
-                <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </td>
-            </tr>
-        `;
+                </div>
+            </td>
+            
+            <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase text-center">
+                ${formatDate(p.created_at)}
+            </td>
+            
+            <td class="px-5 py-4 text-center whitespace-nowrap w-12">
+                <a data-route="project-detail" href="/steelinox/project/${p.id}" class="inline-block p-1 transition-all text-gray-300 hover:text-orange-500">
+                    <svg class="w-4 h-4 inline-block opacity-0 group-hover:opacity-100 transition-colors" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </td>
+        </tr>
+    `;
     },
 
     /** Mobile card for a user */
@@ -555,9 +574,9 @@ SIModules.clientDetailAdmin = {
         const modal = document.getElementById('user-modal');
         const form = document.getElementById('user-form');
         const title = document.getElementById('user-modal-title');
-        
+
         form.reset();
-        
+
         if (user) {
             title.textContent = 'Editar Usuario';
             document.getElementById('user-id').value = user.id;
@@ -571,7 +590,7 @@ SIModules.clientDetailAdmin = {
             document.getElementById('user-is-active').checked = true;
             document.getElementById('user-password').required = true;
         }
-        
+
         modal.classList.remove('hidden');
         // trigger reflow
         void modal.offsetWidth;
@@ -594,14 +613,14 @@ SIModules.clientDetailAdmin = {
 
         const id = document.getElementById('user-id').value;
         const spinner = document.getElementById('user-save-spinner');
-        
+
         const payload = {
             client_id: this.clientId,
             name: document.getElementById('user-name').value,
             email: document.getElementById('user-email').value,
             is_active: document.getElementById('user-is-active').checked ? 1 : 0
         };
-        
+
         const pwd = document.getElementById('user-password').value;
         if (pwd) {
             payload.password = pwd;

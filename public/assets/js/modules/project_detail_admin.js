@@ -9,6 +9,7 @@ SIModules.projectDetailAdmin = {
     projectId: null,
     project: null,
     userContext: null,
+    assignedUsers: [],
     activeTab: 'resumen',
 
     async loadProjectDetailSPA() {
@@ -64,6 +65,21 @@ SIModules.projectDetailAdmin = {
                     <div class="si-spinner"></div>
                 </div>
             </div>
+
+            <!-- MODAL ASIGNAR COMERCIAL -->
+            <div id="assign-commercial-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-xl font-extrabold text-gray-900">Asignar Comercial</h3>
+                        <button onclick="SIModules.projectDetailAdmin.closeAssignCommercialModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto" id="commercial-list-container">
+                        <div class="flex justify-center p-8"><div class="si-spinner"></div></div>
+                    </div>
+                </div>
+            </div>
         `;
 
         await this.init(projectId, user);
@@ -92,6 +108,8 @@ SIModules.projectDetailAdmin = {
 
             // Securización vía DTO (Reutilizamos lógica si está disponible o la extendemos aquí)
             this.project = response.data;
+
+            await this.loadAssignedUsers();
 
             // Actualizar Cabecera
             this.renderHeader();
@@ -231,30 +249,17 @@ SIModules.projectDetailAdmin = {
                             </div>
                         </div>
 
-                        <!-- Mock: Comerciales Asignados -->
+                        <!-- Comerciales Asignados -->
                         <div class="mt-8 pt-8 border-t border-gray-50">
-                            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Comerciales Asignados</span>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors group cursor-pointer">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">CM</div>
-                                        <div>
-                                            <p class="text-sm font-bold text-gray-900 leading-tight">Carlos Méndez</p>
-                                            <p class="text-[10px] text-gray-400 font-medium">Principal</p>
-                                        </div>
-                                    </div>
-                                    <svg class="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                                </div>
-                                <div class="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors group cursor-pointer">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">LF</div>
-                                        <div>
-                                            <p class="text-sm font-bold text-gray-900 leading-tight">Lucía Fernández</p>
-                                            <p class="text-[10px] text-gray-400 font-medium">Soporte</p>
-                                        </div>
-                                    </div>
-                                    <svg class="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                                </div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Comerciales Asignados</span>
+                                <button onclick="SIModules.projectDetailAdmin.openAssignCommercialModal()" class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Asignar
+                                </button>
+                            </div>
+                            <div id="assigned-commercials-container">
+                                ${this._renderAssignedCommercials()}
                             </div>
                         </div>
                     </div>
@@ -553,5 +558,134 @@ SIModules.projectDetailAdmin = {
             const title = card.dataset.title || '';
             card.style.display = (!q || title.includes(q)) ? 'flex' : 'none';
         });
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // USUARIOS (COMERCIALES) DEL PROYECTO
+    // ────────────────────────────────────────────────────────────────────────
+
+    async loadAssignedUsers() {
+        try {
+            const res = await API.get('/projects/' + this.projectId + '/users');
+            if (res.success && res.data) {
+                this.assignedUsers = res.data;
+            } else {
+                this.assignedUsers = [];
+            }
+        } catch (e) {
+            console.error('Error cargando comerciales asignados:', e);
+            this.assignedUsers = [];
+        }
+    },
+
+    _renderAssignedCommercials() {
+        if (!this.assignedUsers || this.assignedUsers.length === 0) {
+            return `<div class="border border-dashed border-gray-200 rounded-2xl p-6 text-center text-sm text-gray-400 font-medium">Ningún comercial asignado.</div>`;
+        }
+
+        let html = '<div class="flex flex-wrap gap-2">';
+
+        this.assignedUsers.forEach(u => {
+            html += `
+                <div class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 hover:border-orange-200 hover:bg-orange-50/50 transition-colors rounded-full pl-1.5 pr-3 py-1.5 shadow-sm group">
+                    <div class="w-6 h-6 bg-white border border-gray-200 text-orange-600 rounded-full flex items-center justify-center text-[9px] font-extrabold pb-[1px] shrink-0">
+                        ${SIApp._getInitials(u.name)}
+                    </div>
+                    <span class="text-[13px] font-bold text-gray-700 group-hover:text-orange-700 whitespace-nowrap">${u.name}</span>
+                    <button onclick="SIModules.projectDetailAdmin.removeUser(${u.id})" class="ml-1 text-gray-300 hover:text-red-500 bg-white hover:bg-red-50 rounded-full p-0.5 transition-all shrink-0" title="Eliminar asignación">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        return html;
+    },
+
+    openAssignCommercialModal() {
+        const modal = document.getElementById('assign-commercial-modal');
+        modal.classList.remove('hidden');
+        void modal.offsetWidth; // force reflow
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+
+        this.loadAvailableUsers();
+    },
+
+    closeAssignCommercialModal() {
+        const modal = document.getElementById('assign-commercial-modal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    },
+
+    async loadAvailableUsers() {
+        const container = document.getElementById('commercial-list-container');
+        container.innerHTML = '<div class="flex justify-center p-8"><div class="si-spinner"></div></div>';
+
+        try {
+            const res = await API.get('/projects/' + this.projectId + '/available-users');
+            if (res.success && res.data && res.data.length > 0) {
+                container.innerHTML = res.data.map(u => `
+                    <div onclick="SIModules.projectDetailAdmin.assignUser(${u.id})" class="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-colors group cursor-pointer mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gray-100 group-hover:bg-orange-500 group-hover:text-white rounded-full flex items-center justify-center text-xs font-bold text-gray-500 transition-colors">
+                                ${SIApp._getInitials(u.name)}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-900 leading-tight">${u.name}</p>
+                                <p class="text-[10px] text-gray-400 font-medium">${u.email}</p>
+                            </div>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">No hay comerciales disponibles para asignar.</p>';
+            }
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">Error cargando comerciales.</p>';
+        }
+    },
+
+    async assignUser(userId) {
+        try {
+            const res = await API.post('/projects/' + this.projectId + '/users/' + userId);
+            if (res.success) {
+                SIApp.showToast('Éxito', 'Comercial asignado correctamente.', 'success');
+                this.closeAssignCommercialModal();
+                await this.loadProjectData(); // Recarga usuarios y repinta
+            } else {
+                SIApp.showToast('Error', res.message || 'No se pudo asignar.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            SIApp.showToast('Error', 'Error interno al asignar.', 'error');
+        }
+    },
+
+    async removeUser(userId) {
+        if (window.SIApp && SIApp.confirm) {
+            const confirmed = await SIApp.confirm('¿Desasignar Comercial?', 'Esto quitará el acceso del comercial a este proyecto.');
+            if (!confirmed) return;
+        }
+
+        try {
+            const res = await API.delete('/projects/' + this.projectId + '/users/' + userId);
+            if (res.success) {
+                SIApp.showToast('Éxito', 'Comercial desasignado.', 'success');
+                await this.loadProjectData();
+            } else {
+                SIApp.showToast('Error', res.message || 'No se pudo desasignar.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            SIApp.showToast('Error', 'Error interno.', 'error');
+        }
     }
 };
