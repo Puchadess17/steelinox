@@ -369,4 +369,121 @@ class ProjectController {
             ]);
         }
     }
+
+    // Actualizar datos de un proyecto (PUT /api/projects/{id})
+    public function update($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Clientes bloqueados
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+
+            // Escudo: ¿Está este comercial asignado a este proyecto?
+            $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $errors = [];
+
+            if (empty($input['name'])) $errors['name'] = 'El nombre es obligatorio.';
+            if (empty($input['reference'])) $errors['reference'] = 'La referencia es obligatoria.';
+
+            if (!empty($errors)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
+                return;
+            }
+
+            // Actualizamos, ignorando cualquier 'status' que nos intenten colar
+            $projectModel->update($id, [
+                'name'          => trim($input['name']),
+                'reference'     => trim($input['reference']),
+                'budget_amount' => $input['budget_amount'] ?? null,
+                'description'   => $input['description'] ?? null,
+                'surface'       => $input['surface'] ?? null,
+                'project_type'  => $input['project_type'] ?? null
+            ]);
+
+            echo json_encode(['success' => true, 'message' => 'Proyecto actualizado correctamente', 'data' => ['id' => $id], 'errors' => null]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+        }
+    }
+
+    // Cambiar estado de un proyecto (PUT /api/projects/{id}/status)
+    public function changeStatus($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Clientes bloqueados
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+
+            // Escudo de asignación
+            $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $newStatus = $input['status'] ?? null;
+            $reason = $input['reason'] ?? null; // Opcional: el comercial puede escribir un motivo
+
+            $validStatuses = ['propuesta', 'aprobado', 'ejecucion', 'cerrado'];
+            if (!in_array($newStatus, $validStatuses)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Estado inválido', 'data' => null, 'errors' => ['status' => 'El estado enviado no es reconocido']]);
+                return;
+            }
+
+            $projectModel->updateStatus($id, $newStatus, $userId, $reason);
+
+            echo json_encode(['success' => true, 'message' => 'Estado actualizado y registrado', 'data' => ['status' => $newStatus], 'errors' => null]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error al cambiar el estado', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+        }
+    }
 }

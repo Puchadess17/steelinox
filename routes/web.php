@@ -13,6 +13,8 @@ $router->post('/api/logout', 'AuthController@logout');
 $router->get('/api/projects/search', 'ProjectController@search');
 $router->post('/api/projects', 'ProjectController@store');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
+$router->put('/api/projects/(\d+)', 'ProjectController@update');
+$router->put('/api/projects/(\d+)/status', 'ProjectController@changeStatus');
 
 // Gestión de comerciales en proyectos
 $router->get('/api/projects/(\d+)/users', 'ProjectController@getAssignedUsers');

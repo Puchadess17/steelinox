@@ -147,4 +147,69 @@ class Project {
             throw $e;
         }
     }
+
+    /** Actualiza la información general del proyecto (EXCLUYENDO el estado) */
+    public function update($id, $data) {
+        $sql = "UPDATE projects 
+                SET name = :name, 
+                    reference = :reference, 
+                    budget_amount = :budget_amount, 
+                    description = :description, 
+                    surface = :surface, 
+                    project_type = :project_type 
+                WHERE id = :id AND deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'name'          => $data['name'],
+            'reference'     => $data['reference'],
+            'budget_amount' => !empty($data['budget_amount']) ? (float)$data['budget_amount'] : null,
+            'description'   => $data['description'] ?? null,
+            'surface'       => $data['surface'] ?? null,
+            'project_type'  => $data['project_type'] ?? null,
+            'id'            => $id
+        ]);
+    }
+
+    /** Actualiza exclusivamente el estado del proyecto */
+    public function updateStatus($projectId, $newStatus, $userId, $reason = null) {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Obtener el estado actual antes de cambiarlo
+            $stmtOld = $this->db->prepare("SELECT status FROM projects WHERE id = :id");
+            $stmtOld->execute(['id' => $projectId]);
+            $oldStatus = $stmtOld->fetchColumn();
+
+            // Si el estado es el mismo, no hacemos nada para evitar logs basura
+            if ($oldStatus === $newStatus) {
+                $this->db->rollBack();
+                return true;
+            }
+
+            // 2. Actualizar el estado en el proyecto
+            $stmtUpdate = $this->db->prepare("UPDATE projects SET status = :status WHERE id = :id");
+            $stmtUpdate->execute(['status' => $newStatus, 'id' => $projectId]);
+
+            // 3. Insertar el registro en project_status_logs
+            $sqlLog = "INSERT INTO project_status_logs 
+                        (project_id, changed_by_user_id, old_status, new_status, reason, created_at) 
+                       VALUES (:project_id, :user_id, :old_status, :new_status, :reason, NOW())";
+            $stmtLog = $this->db->prepare($sqlLog);
+            $stmtLog->execute([
+                'project_id' => $projectId,
+                'user_id'    => $userId,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'reason'     => $reason // El comercial puede justificar por qué lo cambia
+            ]);
+
+            $this->db->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }
