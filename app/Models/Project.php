@@ -64,6 +64,20 @@ class Project {
         return $stmt->fetch(); 
     }
 
+    /** Obtiene la lista de comerciales asignados a un proyecto */
+    public function getAssignedUsers($projectId) {
+        $sql = "SELECT u.id, u.name, u.email, u.role, u.is_active, u.last_login_at 
+                FROM users u
+                INNER JOIN project_user pu ON u.id = pu.user_id
+                WHERE pu.project_id = :project_id 
+                  AND u.deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['project_id' => $projectId]);
+        
+        return $stmt->fetchAll();
+    }
+
     /** Asigna un comercial a un proyecto */
     public function assignUser($projectId, $userId) {
         $sql = "INSERT IGNORE INTO project_user (project_id, user_id) 

@@ -13,7 +13,9 @@ $router->post('/api/logout', 'AuthController@logout');
 $router->get('/api/projects/search', 'ProjectController@search');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
 
-// Gestión de personal en proyectos
+// Gestión de comerciales en proyectos
+$router->get('/api/projects/(\d+)/users', 'ProjectController@getAssignedUsers');
+$router->get('/api/projects/(\d+)/available-users', 'ProjectController@getAvailableUsers');
 $router->post('/api/projects/(\d+)/users/(\d+)', 'ProjectController@assignUser');
 $router->delete('/api/projects/(\d+)/users/(\d+)', 'ProjectController@removeUser');
 

@@ -84,6 +84,59 @@ class ProjectController {
         ]);
     }
 
+    // Obtener todos los usuarios asignados a un proyecto (GET /api/projects/{projectId}/users)
+    public function getAssignedUsers($projectId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba GET']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+
+            // Escudo de Autorización: ¿Tiene el usuario permisos para ver este proyecto?
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+            
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Proyecto no encontrado o sin permisos', 
+                    'data'    => null, 
+                    'errors'  => ['project' => 'Recurso inaccesible']
+                ]);
+                return;
+            }
+
+            // Si pasa el escudo, obtenemos los usuarios asignados
+            $assignedUsers = $projectModel->getAssignedUsers((int)$projectId);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Usuarios asignados recuperados correctamente',
+                'data'    => $assignedUsers,
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al recuperar los usuarios asignados',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
+
     // Asignar un comercial a un proyecto (POST /api/projects/{projectId}/users/{userId})
     public function assignUser($projectId, $userId) {
         AuthMiddleware::check();
@@ -173,6 +226,63 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno al desasignar al usuario',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
+
+    // Obtener usuarios disponibles para añadir a un proyecto (GET /api/projects/{projectId}/available-users)
+    public function getAvailableUsers($projectId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Muro de Autorización: Los clientes no pueden ver la lista del personal interno disponible
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba GET']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+
+            // Escudo de Autorización: ¿Tiene acceso a este proyecto?
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+            
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
+                return;
+            }
+
+            // Instanciamos el modelo de Usuario para buscar los disponibles
+            require_once APP_PATH . '/Models/User.php';
+            $userModel = new User();
+            $availableUsers = $userModel->getAvailableForProject((int)$projectId);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Usuarios disponibles recuperados correctamente',
+                'data'    => $availableUsers,
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al recuperar los usuarios disponibles',
                 'data'    => null,
                 'errors'  => ['server' => $e->getMessage()]
             ]);

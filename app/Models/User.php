@@ -103,4 +103,24 @@ class User {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
+
+    /**  Obtiene la lista de comerciales/admins activos que NO están asignados a un proyecto concreto */
+    public function getAvailableForProject($projectId) {
+        // Seleccionamos usuarios que sean comercial (o admin), estén activos y no estén borrados
+        // Y excluimos los IDs que ya existan en la tabla pivote para este proyecto
+        $sql = "SELECT id, name, email, role 
+                FROM users 
+                WHERE role IN ('comercial', 'admin') 
+                  AND is_active = 1 
+                  AND deleted_at IS NULL 
+                  AND id NOT IN (
+                      SELECT user_id FROM project_user WHERE project_id = :project_id
+                  )
+                ORDER BY name ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['project_id' => $projectId]);
+        
+        return $stmt->fetchAll();
+    }
 }
