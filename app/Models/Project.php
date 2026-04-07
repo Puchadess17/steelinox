@@ -63,4 +63,28 @@ class Project {
         
         return $stmt->fetch(); 
     }
+
+    /** Asigna un comercial a un proyecto */
+    public function assignUser($projectId, $userId) {
+        $sql = "INSERT IGNORE INTO project_user (project_id, user_id) 
+                VALUES (:project_id, :user_id)";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'project_id' => $projectId,
+            'user_id'    => $userId
+        ]);
+    }
+
+    /** Elimina la asignación de un usuario a un proyecto específico */
+    public function removeUser($projectId, $userId) {
+        $sql = "DELETE FROM project_user 
+                WHERE project_id = :project_id AND user_id = :user_id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'project_id' => $projectId,
+            'user_id'    => $userId
+        ]);
+    }
 }

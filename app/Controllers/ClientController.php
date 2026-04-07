@@ -53,7 +53,7 @@ class ClientController {
         }
     }
 
-    // Obtener el detalle individual de un cliente (Vista 360)
+    // Obtener el detalle individual de un cliente
     public function show($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');

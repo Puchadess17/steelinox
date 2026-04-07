@@ -13,6 +13,10 @@ $router->post('/api/logout', 'AuthController@logout');
 $router->get('/api/projects/search', 'ProjectController@search');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
 
+// Gestión de personal en proyectos
+$router->post('/api/projects/(\d+)/users/(\d+)', 'ProjectController@assignUser');
+$router->delete('/api/projects/(\d+)/users/(\d+)', 'ProjectController@removeUser');
+
 // clientes
 $router->get('/api/clients', 'ClientController@index');
 $router->get('/api/clients/(\d+)', 'ClientController@show');
@@ -24,7 +28,7 @@ $router->post('/api/users', 'UserController@store');
 $router->put('/api/users/(\d+)', 'UserController@update');
 $router->delete('/api/users/(\d+)', 'UserController@destroy');
 
-// FRONTEND
+// --- FRONTEND ---
 $router->get('/', 'AuthController@showLogin');
 $router->get('/panel', 'DashboardController@index');
 $router->get('/clients', 'DashboardController@index');

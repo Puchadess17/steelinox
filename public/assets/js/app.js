@@ -90,17 +90,17 @@ const SIApp = {
 
         const menus = {
             admin: [
-                { icon: 'grid', label: 'Projects', href: '/steelinox/panel', route: 'dashboard' },
-                { icon: 'users', label: 'Clients', href: '/steelinox/clients', route: 'clients' },
-                { icon: 'briefcase', label: 'Commercials', href: '/steelinox/commercials', route: 'commercials' },
-                { icon: 'shield', label: 'Audit Log', href: '/steelinox/audit-log', route: 'audit-log' },
+                { icon: 'grid', label: 'Proyectos', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'users', label: 'Clientes', href: '/steelinox/clients', route: 'clients' },
+                { icon: 'briefcase', label: 'Comerciales', href: '/steelinox/commercials', route: 'commercials' },
+                { icon: 'shield', label: 'Auditoría', href: '/steelinox/audit-log', route: 'audit-log' },
             ],
             comercial: [
-                { icon: 'grid', label: 'My Projects', href: '/steelinox/panel', route: 'dashboard' },
-                { icon: 'users', label: 'Clients', href: '/steelinox/clients', route: 'clients' },
+                { icon: 'grid', label: 'Mis Proyectos', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'users', label: 'Clientes', href: '/steelinox/clients', route: 'clients' },
             ],
             cliente: [
-                { icon: 'grid', label: 'My Projects', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'grid', label: 'Mis Proyectos', href: '/steelinox/panel', route: 'dashboard' },
             ],
         };
 
