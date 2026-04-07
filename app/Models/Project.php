@@ -102,4 +102,49 @@ class Project {
             'user_id'    => $userId
         ]);
     }
+
+    /** Crea un nuevo proyecto y auto-asigna al creador si es comercial */
+    public function createWithAutoAssign($data, $userId, $role) {
+        try {
+            // Iniciamos la transacción
+            $this->db->beginTransaction();
+
+            $sql = "INSERT INTO projects (client_id, name, reference, status, budget_amount, description, surface, project_type, created_by, created_at) 
+                    VALUES (:client_id, :name, :reference, :status, :budget_amount, :description, :surface, :project_type, :created_by, NOW())";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'client_id'     => $data['client_id'],
+                'name'          => $data['name'],
+                'reference'     => $data['reference'],
+                'status'        => $data['status'] ?? 'propuesta',
+                'budget_amount' => !empty($data['budget_amount']) ? (float)$data['budget_amount'] : null,
+                'description'   => $data['description'] ?? null,
+                'surface'       => $data['surface'] ?? null,
+                'project_type'  => $data['project_type'] ?? null,
+                'created_by'    => $data['created_by']
+            ]);
+
+            $newProjectId = $this->db->lastInsertId();
+
+            // Si es un comercial, lo auto-asignamos a la tabla pivote de inmediato
+            if ($role === 'comercial') {
+                $sqlAssign = "INSERT INTO project_user (project_id, user_id) VALUES (:project_id, :user_id)";
+                $stmtAssign = $this->db->prepare($sqlAssign);
+                $stmtAssign->execute([
+                    'project_id' => $newProjectId,
+                    'user_id'    => $userId
+                ]);
+            }
+
+            // Si todo ha ido bien, consolidamos los cambios
+            $this->db->commit();
+            return $newProjectId;
+
+        } catch (Exception $e) {
+            // Si algo falla, deshacemos todo
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }

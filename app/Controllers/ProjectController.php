@@ -288,4 +288,85 @@ class ProjectController {
             ]);
         }
     }
+
+    // Crear un nuevo proyecto (POST /api/projects)
+    public function store() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Muro de Autorización General
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no pueden crear proyectos directamente']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba POST']]);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $errors = [];
+
+        // Validaciones obligatorias
+        if (empty($input['client_id'])) $errors['client_id'] = 'El cliente es obligatorio.';
+        if (empty($input['name'])) $errors['name'] = 'El nombre del proyecto es obligatorio.';
+        if (empty($input['reference'])) $errors['reference'] = 'La referencia es obligatoria.';
+
+        if (!empty($errors)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+
+            // Muro de Autorización Específico: ¿Puede este usuario operar sobre este cliente?
+            require_once APP_PATH . '/Models/Client.php';
+            $clientModel = new Client();
+            $clientDetails = $clientModel->getDetailsById((int)$input['client_id'], $userId, $role);
+
+            if (!$clientDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado o sin permisos', 'data' => null, 'errors' => ['client_id' => 'No tiene permisos para crear proyectos en este cliente']]);
+                return;
+            }
+
+            // Preparar los datos limpios para la inserción
+            $dataToInsert = [
+                'client_id'     => (int)$input['client_id'],
+                'name'          => trim($input['name']),
+                'reference'     => trim($input['reference']),
+                'status'        => $input['status'] ?? 'propuesta',
+                'budget_amount' => $input['budget_amount'] ?? null,
+                'description'   => $input['description'] ?? null,
+                'surface'       => $input['surface'] ?? null,
+                'project_type'  => $input['project_type'] ?? null,
+                'created_by'    => $userId
+            ];
+
+            $projectModel = new Project();
+            $newProjectId = $projectModel->createWithAutoAssign($dataToInsert, $userId, $role);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Proyecto creado correctamente',
+                'data'    => ['id' => $newProjectId],
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al crear el proyecto',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
 }

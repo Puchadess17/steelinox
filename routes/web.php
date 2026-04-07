@@ -11,6 +11,7 @@ $router->post('/api/logout', 'AuthController@logout');
 
 // proyectos
 $router->get('/api/projects/search', 'ProjectController@search');
+$router->post('/api/projects', 'ProjectController@store');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
 
 // Gestión de comerciales en proyectos
