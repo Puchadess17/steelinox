@@ -260,6 +260,102 @@ const SIApp = {
         div.textContent = str;
         return div.innerHTML;
     },
+
+    /** Custom Confirm Modal Promisified */
+    confirm(title, message = '') {
+        return new Promise((resolve) => {
+            // Remove existing if any
+            const existing = document.getElementById('si-confirm-modal');
+            if (existing) existing.remove();
+
+            const modalHtml = `
+                <div id="si-confirm-modal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 opacity-0 transition-opacity">
+                    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden">
+                        <div class="p-6">
+                            <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-gray-900 mb-2">${this.escapeHtml(title)}</h3>
+                            ${message ? `<p class="text-sm text-gray-500 font-medium">${this.escapeHtml(message)}</p>` : ''}
+                        </div>
+                        <div class="p-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
+                            <button id="si-confirm-btn-cancel" class="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all focus:outline-none">Cancelar</button>
+                            <button id="si-confirm-btn-ok" class="px-4 py-2 text-sm font-bold text-white bg-red-500 rounded-xl hover:bg-red-600 shadow-md shadow-red-500/20 transition-all focus:outline-none">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = document.getElementById('si-confirm-modal');
+            const btnCancel = document.getElementById('si-confirm-btn-cancel');
+            const btnOk = document.getElementById('si-confirm-btn-ok');
+
+            // Animate in
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            });
+
+            const close = (val) => {
+                modal.classList.add('opacity-0');
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.remove();
+                    resolve(val);
+                }, 200);
+            };
+
+            btnCancel.onclick = () => close(false);
+            btnOk.onclick = () => close(true);
+        });
+    },
+
+    /** Custom Toast Notification */
+    showToast(title, message, type = 'info') {
+        let container = document.getElementById('si-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'si-toast-container';
+            container.className = 'fixed bottom-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none';
+            document.body.appendChild(container);
+        }
+
+        const icons = {
+            success: '<div class="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>',
+            error: '<div class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></div>',
+            info: '<div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
+        };
+
+        const toastHtml = `
+            <div class="pointer-events-auto bg-white border border-gray-100 shadow-xl rounded-xl p-4 flex gap-3 items-start transform translate-y-8 opacity-0 transition-all duration-300 min-w-[300px] max-w-sm">
+                ${icons[type] || icons.info}
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-gray-900">${this.escapeHtml(title)}</p>
+                    ${message ? `<p class="text-[11px] font-medium text-gray-500 mt-0.5 leading-relaxed">${this.escapeHtml(message)}</p>` : ''}
+                </div>
+                <button class="text-gray-400 hover:text-gray-600 transition-colors shrink-0" onclick="this.closest('.pointer-events-auto').remove()">
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        const toastEl = container.lastElementChild;
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toastEl.classList.remove('translate-y-8', 'opacity-0');
+        });
+
+        // Remove after 5s
+        setTimeout(() => {
+            if (toastEl && toastEl.parentElement) {
+                toastEl.classList.add('opacity-0', 'translate-x-8');
+                setTimeout(() => toastEl.remove(), 300);
+            }
+        }, 5000);
+    }
 };
 
 // Exportar globalmente para que typeof window.SIApp funcione correctamente

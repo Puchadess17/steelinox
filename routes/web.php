@@ -19,6 +19,11 @@ $router->get('/api/clients/(\d+)', 'ClientController@show');
 $router->post('/api/clients', 'ClientController@store');
 $router->put('/api/clients/(\d+)', 'ClientController@update');
 
+// usuarios
+$router->post('/api/users', 'UserController@store');
+$router->put('/api/users/(\d+)', 'UserController@update');
+$router->delete('/api/users/(\d+)', 'UserController@destroy');
+
 // FRONTEND
 $router->get('/', 'AuthController@showLogin');
 $router->get('/panel', 'DashboardController@index');

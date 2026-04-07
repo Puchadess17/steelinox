@@ -180,9 +180,9 @@ SIModules.clientDetailAdmin = {
                              </div>
                              <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Usuarios Asociados</h2>
                         </div>
-                        <button class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50 w-full sm:w-auto justify-center sm:justify-start">
+                        <button onclick="ClientDetailAdmin.openUserModal()" class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50 w-full sm:w-auto justify-center sm:justify-start">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                            Invitar Usuario
+                            Añadir Usuario
                         </button>
                     </div>
                     <!-- Desktop: Table -->
@@ -295,6 +295,51 @@ SIModules.clientDetailAdmin = {
                     </div>
                 </section>
             </div>
+
+            <!-- MODAL USUARIO -->
+            <div id="user-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h3 id="user-modal-title" class="text-xl font-extrabold text-gray-900">Añadir Usuario</h3>
+                        <button onclick="ClientDetailAdmin.closeUserModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto">
+                        <form id="user-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveUser();" class="space-y-4">
+                            <input type="hidden" id="user-id" name="user_id">
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre</label>
+                                <input type="text" id="user-name" name="name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Juan Pérez">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Email</label>
+                                <input type="email" id="user-email" name="email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="ejemplo@empresa.com">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Contraseña</label>
+                                <input type="password" id="user-password" name="password" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Dejar en blanco para no cambiar (si edita)">
+                                <p class="text-[10px] text-gray-400 mt-1 font-medium">Requerida para nuevos usuarios.</p>
+                            </div>
+
+                            <div class="flex items-center gap-2 mt-2">
+                                <input type="checkbox" id="user-is-active" name="is_active" class="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500">
+                                <label for="user-is-active" class="text-sm font-bold text-gray-700">Usuario Activo</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3">
+                         <button onclick="ClientDetailAdmin.closeUserModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                         <button onclick="ClientDetailAdmin.saveUser()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center gap-2">
+                             <svg class="w-4 h-4 hidden" id="user-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                             Guardar Usuario
+                         </button>
+                    </div>
+                </div>
+            </div>
         `;
     },
 
@@ -382,9 +427,8 @@ SIModules.clientDetailAdmin = {
                 </td>
                 <td class="px-6 py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
-                        <button class="p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
-                        <button class="p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
-                        <button class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
+                        <button onclick='ClientDetailAdmin.openUserModal(${JSON.stringify(u)})' class="p-2 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                        <button onclick="ClientDetailAdmin.deleteUser(${u.id})" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                     </div>
                 </td>
             </tr>
@@ -405,7 +449,7 @@ SIModules.clientDetailAdmin = {
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${p.reference}</span>
                 </td>
                 <td class="px-5 py-4 text-sm font-black text-gray-600 whitespace-nowrap">
-                    ${format(p.budget_amount || 0)} €
+                    ${format(p.budget_amount || 0)}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${badge(p.status)}
@@ -424,7 +468,7 @@ SIModules.clientDetailAdmin = {
     _renderUserCard(u) {
         const initials = (window.SIApp && SIApp._getInitials) ? SIApp._getInitials(u.name) : '??';
         const lastAccess = u.last_login_at ? (SIApp.formatDate ? SIApp.formatDate(u.last_login_at) : u.last_login_at) : 'Sin acceso';
-        const colors = ['bg-blue-100 text-blue-700','bg-emerald-100 text-emerald-700','bg-purple-100 text-purple-700','bg-amber-100 text-amber-700','bg-rose-100 text-rose-700'];
+        const colors = ['bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700'];
         const colorClass = colors[(u.id || u.name.length) % colors.length];
 
         return `
@@ -445,8 +489,8 @@ SIModules.clientDetailAdmin = {
                         ${lastAccess}
                     </div>
                     <div class="flex items-center gap-1">
-                        <button class="p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
-                        <button class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                        <button onclick='ClientDetailAdmin.openUserModal(${JSON.stringify(u)})' class="p-2 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                        <button onclick="ClientDetailAdmin.deleteUser(${u.id})" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                     </div>
                 </div>
             </div>
@@ -469,7 +513,7 @@ SIModules.clientDetailAdmin = {
                     ${badge(p.status)}
                 </div>
                 <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                    <p class="text-sm font-black text-gray-700">${format(p.budget_amount || 0)} €</p>
+                    <p class="text-sm font-black text-gray-700">${format(p.budget_amount || 0)}</p>
                     <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         ${formatDate(p.created_at)}
@@ -505,6 +549,117 @@ SIModules.clientDetailAdmin = {
                 </div>
             </div>
         `;
+    },
+
+    openUserModal(user = null) {
+        const modal = document.getElementById('user-modal');
+        const form = document.getElementById('user-form');
+        const title = document.getElementById('user-modal-title');
+        
+        form.reset();
+        
+        if (user) {
+            title.textContent = 'Editar Usuario';
+            document.getElementById('user-id').value = user.id;
+            document.getElementById('user-name').value = user.name;
+            document.getElementById('user-email').value = user.email;
+            document.getElementById('user-is-active').checked = user.is_active == 1 || user.is_active === true;
+            document.getElementById('user-password').required = false;
+        } else {
+            title.textContent = 'Añadir Usuario';
+            document.getElementById('user-id').value = '';
+            document.getElementById('user-is-active').checked = true;
+            document.getElementById('user-password').required = true;
+        }
+        
+        modal.classList.remove('hidden');
+        // trigger reflow
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+    },
+
+    closeUserModal() {
+        const modal = document.getElementById('user-modal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    },
+
+    async saveUser() {
+        const form = document.getElementById('user-form');
+        if (!form.reportValidity()) return;
+
+        const id = document.getElementById('user-id').value;
+        const spinner = document.getElementById('user-save-spinner');
+        
+        const payload = {
+            client_id: this.clientId,
+            name: document.getElementById('user-name').value,
+            email: document.getElementById('user-email').value,
+            is_active: document.getElementById('user-is-active').checked ? 1 : 0
+        };
+        
+        const pwd = document.getElementById('user-password').value;
+        if (pwd) {
+            payload.password = pwd;
+        }
+
+        spinner.classList.remove('hidden');
+        spinner.classList.add('animate-spin');
+
+        try {
+            let res;
+            if (id) {
+                res = await API.put('/users/' + id, payload);
+            } else {
+                res = await API.post('/users', payload);
+            }
+
+            if (res.success) {
+                if (window.SIApp && SIApp.showToast) SIApp.showToast('Éxito', res.message, 'success');
+                this.closeUserModal();
+                await this.loadClientData();
+            } else {
+                let errorMsg = res.message || 'Error desconocido';
+                if (res.errors) {
+                    errorMsg += ': ' + Object.values(res.errors).join(', ');
+                }
+                if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', errorMsg, 'error');
+                else alert(errorMsg);
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', e.message, 'error');
+            else alert(e.message);
+        } finally {
+            spinner.classList.add('hidden');
+            spinner.classList.remove('animate-spin');
+        }
+    },
+
+    async deleteUser(id) {
+        if (window.SIApp && SIApp.confirm) {
+            const confirmed = await SIApp.confirm('¿Eliminar usuario?', 'Estás seguro de que deseas eliminar a este usuario? Esta acción le impedirá acceder al sistema.');
+            if (!confirmed) return;
+        } else {
+            if (!confirm('¿Estás seguro de que deseas eliminar a este usuario? Esta acción le impedirá acceder al sistema.')) return;
+        }
+
+        try {
+            const res = await API.delete('/users/' + id);
+            if (res.success) {
+                if (window.SIApp && SIApp.showToast) SIApp.showToast('Éxito', res.message, 'success');
+                await this.loadClientData();
+            } else {
+                if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', res.message, 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', 'No se pudo eliminar el usuario', 'error');
+        }
     }
 };
 
