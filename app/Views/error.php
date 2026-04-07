@@ -38,12 +38,7 @@ $errorMessage = ($errorCode == 403)
     <div class="max-w-md w-full text-center">
         <!-- Logo -->
         <div class="flex items-center justify-center gap-2.5 mb-12">
-            <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-            </div>
-            <span class="text-2xl font-bold text-gray-900">Steel Inox</span>
+            <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-12 w-auto">
         </div>
 
         <!-- Error Content -->

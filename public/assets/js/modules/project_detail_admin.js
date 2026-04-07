@@ -12,6 +12,7 @@ SIModules.projectDetailAdmin = {
     assignedUsers: [],
     documents: [],
     activeTab: 'resumen',
+    updatingDocumentId: null,
 
     async loadProjectDetailSPA() {
         const pathParts = window.location.pathname.split('/');
@@ -737,35 +738,149 @@ SIModules.projectDetailAdmin = {
         }
 
         container.innerHTML = this.documents.map(doc => {
-            const icon = this.getFileIcon(doc.mime_type);
-            const size = this.formatFileSize(doc.file_size);
+            const icon = SIApp.getFileIcon(doc.mime_type);
+            const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
             const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
+            const canView = doc.mime_type === 'application/pdf' || doc.mime_type.startsWith('image/');
 
             return `
-                <div class="doc-row flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100 group fade-in" 
-                     data-title="${doc.title.toLowerCase()} ${doc.file_name.toLowerCase()}">
-                    <div class="flex items-center gap-4 min-w-0">
-                        <div class="w-[52px] h-[52px] ${icon.bg} ${icon.text} rounded-[14px] flex items-center justify-center shrink-0 shadow-sm border border-transparent group-hover:border-current/10 transition-all">
-                            ${icon.svg}
+                <div class="doc-row-wrapper mb-3 fade-in">
+                    <div class="doc-row flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100 group" 
+                         data-title="${doc.title.toLowerCase()} ${doc.file_name.toLowerCase()}">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="w-[52px] h-[52px] ${icon.bg} ${icon.text} rounded-[14px] flex items-center justify-center shrink-0 shadow-sm border border-transparent group-hover:border-current/10 transition-all">
+                                ${icon.svg}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-1 truncate group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="SIModules.projectDetailAdmin.toggleVersionHistory(${doc.id}, this)" 
+                                            class="px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-1">
+                                        ${icon.label} (v${doc.version_number})
+                                        <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80">${size} • ${date}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="min-w-0">
-                            <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-1 truncate group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
-                            <div class="flex items-center gap-2">
-                                <span class="px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase">${icon.label}</span>
-                                <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80">${size} • ${date}</span>
+                        <div class="flex items-center gap-4 shrink-0 pl-3">
+                            <div class="flex items-center gap-1 border-r border-gray-100 pr-3 mr-1">
+                                ${canView ? `
+                                <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view" 
+                                   target="_blank"
+                                   class="p-2 text-gray-300 hover:text-blue-500 transition-colors transform hover:scale-110 active:scale-95" 
+                                   title="Visualizar Online">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </a>` : ''}
+                                
+                                <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
+                                   target="_blank"
+                                   class="p-2 text-gray-300 hover:text-orange-500 transition-colors transform hover:scale-110 active:scale-95" 
+                                   title="Descargar Archivo">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                </a>
+
+                                <button onclick="SIModules.projectDetailAdmin.triggerVersionUpload(${doc.id})"
+                                        class="p-2 text-gray-300 hover:text-emerald-500 transition-colors transform hover:scale-110 active:scale-95" 
+                                        title="Subir Nueva Versión">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                </button>
+                            </div>
+
+                            <div class="w-8 h-8 bg-gray-50 text-gray-400 border border-gray-100 rounded-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest shadow-inner cursor-help" title="Subido por ${doc.uploaded_by_name}">
+                                ${initials}
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col items-center justify-between gap-2 shrink-0 pl-3">
-                        <div class="w-8 h-8 bg-gray-50 text-gray-400 border border-gray-100 rounded-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest shadow-inner cursor-help" title="Subido por ${doc.uploaded_by_name}">
-                            ${initials}
+                    <!-- Contenedor para el historial de versiones -->
+                    <div id="versions-container-${doc.id}" class="hidden mt-2 ml-14 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100 transition-all">
+                        <div class="p-4 text-center">
+                            <div class="si-spinner-sm mx-auto"></div>
                         </div>
-                        <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    /** Mostrar/Ocultar el historial de versiones de un documento */
+    async toggleVersionHistory(docId, btn) {
+        const container = document.getElementById(`versions-container-${docId}`);
+        if (!container) return;
+
+        const isHidden = container.classList.contains('hidden');
+        if (isHidden) {
+            container.classList.remove('hidden');
+            btn.querySelector('svg').style.transform = 'rotate(180deg)';
+            await this.loadVersionHistory(docId);
+        } else {
+            container.classList.add('hidden');
+            btn.querySelector('svg').style.transform = 'rotate(0deg)';
+        }
+    },
+
+    /** Cargar historial de versiones desde la API */
+    async loadVersionHistory(docId) {
+        const container = document.getElementById(`versions-container-${docId}`);
+        if (!container) return;
+
+        try {
+            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/versions`);
+            if (res.success) {
+                this.renderVersionList(docId, res.data);
+            } else {
+                container.innerHTML = `<div class="p-4 text-center text-xs text-red-400 font-bold uppercase tracking-widest">Error al cargar historial</div>`;
+            }
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = `<div class="p-4 text-center text-xs text-red-400 font-bold uppercase tracking-widest">Error de conexión</div>`;
+        }
+    },
+
+    /** Pintar la lista de versiones en el contenedor */
+    renderVersionList(docId, versions) {
+        const container = document.getElementById(`versions-container-${docId}`);
+        if (!container) return;
+
+        if (versions.length <= 1) {
+            container.innerHTML = `<div class="p-4 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest italic opacity-60">No hay versiones anteriores disponibles</div>`;
+            return;
+        }
+
+        container.innerHTML = versions.map(v => {
+            const size = SIApp.formatFileSize(v.file_size);
+            const date = SIApp.formatDate(v.uploaded_at);
+            const canView = v.mime_type === 'application/pdf' || v.mime_type.startsWith('image/');
+            const isCurrent = v.is_current == 1;
+
+            return `
+                <div class="flex items-center justify-between px-5 py-3.5 hover:bg-white transition-colors group/ver">
+                    <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-[10px] font-black ${isCurrent ? 'text-emerald-500 border-emerald-100 shadow-sm' : 'text-gray-400'}">
+                            v${v.version_number}
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-bold ${isCurrent ? 'text-gray-900' : 'text-gray-500'} tracking-tight">
+                                ${SIApp.escapeHtml(v.file_name)}
+                                ${isCurrent ? '<span class="ml-1 text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">ACTUAL</span>' : ''}
+                            </p>
+                            <p class="text-[10px] text-gray-400 font-medium uppercase tracking-tighter mt-0.5">
+                                ${size} • ${date} • Subido por ${v.uploaded_by_name || 'Sistema'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-40 group-hover/ver:opacity-100 transition-opacity">
+                        ${canView ? `
+                        <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${v.id}" 
                            target="_blank"
-                           class="p-2 text-gray-300 hover:text-orange-500 transition-colors transform hover:scale-110 active:scale-95" 
-                           title="Descargar Archivo Oficial">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                           class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors" title="Visualizar esta versión">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>` : ''}
+                        <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
+                           target="_blank"
+                           class="p-1.5 text-gray-400 hover:text-orange-500 transition-colors" title="Descargar esta versión">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         </a>
                     </div>
                 </div>
@@ -773,8 +888,16 @@ SIModules.projectDetailAdmin = {
         }).join('');
     },
 
-    /** Disparar el selector nativo del sistema */
+    /** Disparar el selector nativo del sistema para un documento nuevo */
     triggerFileUpload() {
+        this.updatingDocumentId = null; // Subida nueva
+        const input = document.getElementById('si-doc-upload-raw');
+        if (input) input.click();
+    },
+
+    /** Disparar el selector para una nueva versión */
+    triggerVersionUpload(docId) {
+        this.updatingDocumentId = docId; // Subida de versión
         const input = document.getElementById('si-doc-upload-raw');
         if (input) input.click();
     },
@@ -804,12 +927,21 @@ SIModules.projectDetailAdmin = {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('title', file.name.split('.').slice(0, -1).join('.'));
+            
+            let endpoint = '/projects/' + this.projectId + '/documents';
+            let successMsg = 'Documento añadido al expediente correctamente.';
 
-            const res = await API.post('/projects/' + this.projectId + '/documents', formData);
+            if (this.updatingDocumentId) {
+                endpoint += '/' + this.updatingDocumentId + '/versions';
+                successMsg = 'Nueva versión del documento subida correctamente.';
+            } else {
+                formData.append('title', file.name.split('.').slice(0, -1).join('.'));
+            }
+
+            const res = await API.post(endpoint, formData);
 
             if (res.success) {
-                if (window.SIApp) SIApp.showToast('¡Éxito!', 'Documento añadido al expediente correctamente.', 'success');
+                if (window.SIApp) SIApp.showToast('¡Éxito!', successMsg, 'success');
                 // Si estamos en la pestaña documentos, recargar la lista
                 if (this.activeTab === 'documentos') {
                     await this.loadProjectDocuments();
@@ -822,32 +954,9 @@ SIModules.projectDetailAdmin = {
             if (window.SIApp) SIApp.showToast('Error de red', 'No se pudo contactar con el servidor de archivos.', 'error');
         } finally {
             setLoading(false);
+            this.updatingDocumentId = null; // Limpiar estado
             event.target.value = ''; // Limpiar para permitir re-subida del mismo
         }
-    },
-
-    /** Helper: Mapeo de iconos Premium por MIME type */
-    getFileIcon(mime) {
-        const types = {
-            'application/pdf': { label: 'PDF', bg: 'bg-red-50', text: 'text-red-500', badgeBg: 'bg-red-100', badgeText: 'text-red-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9h1m1 0h1m-3 4h3m-3 4h3"/></svg>' },
-            'image/jpeg': { label: 'IMG', bg: 'bg-blue-50', text: 'text-blue-500', badgeBg: 'bg-blue-100', badgeText: 'text-blue-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
-            'image/png': { label: 'IMG', bg: 'bg-blue-50', text: 'text-blue-500', badgeBg: 'bg-blue-100', badgeText: 'text-blue-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
-            'application/msword': { label: 'DOC', bg: 'bg-indigo-50', text: 'text-indigo-500', badgeBg: 'bg-indigo-100', badgeText: 'text-indigo-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { label: 'DOC', bg: 'bg-indigo-50', text: 'text-indigo-500', badgeBg: 'bg-indigo-100', badgeText: 'text-indigo-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-            'application/vnd.ms-excel': { label: 'XLS', bg: 'bg-emerald-50', text: 'text-emerald-500', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { label: 'XLS', bg: 'bg-emerald-50', text: 'text-emerald-500', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-        };
-        const defaultIcon = { label: 'FILE', bg: 'bg-gray-50', text: 'text-gray-500', badgeBg: 'bg-gray-100', badgeText: 'text-gray-700', svg: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>' };
-        return types[mime] || defaultIcon;
-    },
-
-    /** Helper: Formatear tamaño de archivo en KB/MB */
-    formatFileSize(bytes) {
-        if (!bytes || bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     },
 
     // ────────────────────────────────────────────────────────────────────────

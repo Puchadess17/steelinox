@@ -39,6 +39,9 @@ $router->delete('/api/users/(\d+)', 'UserController@destroy');
 $router->get('/api/projects/(\d+)/documents', 'DocumentController@index');
 $router->post('/api/projects/(\d+)/documents', 'DocumentController@store');
 $router->get('/api/projects/(\d+)/documents/(\d+)/download', 'DocumentController@download');
+$router->get('/api/projects/(\d+)/documents/(\d+)/view', 'DocumentController@view');
+$router->get('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentController@versions');
+$router->post('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentController@addVersion');
 
 // --- FRONTEND ---
 $router->get('/', 'AuthController@showLogin');

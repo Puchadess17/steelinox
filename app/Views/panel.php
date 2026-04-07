@@ -46,13 +46,7 @@
                 </button>
                 <!-- Logo -->
                 <a href="javascript:void(0)" onclick="SIRouter.navigate('dashboard')" class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                    </div>
-                    <span class="text-lg font-bold text-orange-500 hidden sm:inline">Steel Inox Extranet</span>
+                    <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-9 w-auto">
                 </a>
             </div>
 
@@ -115,13 +109,7 @@
             <!-- Mobile sidebar header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-100">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                    </div>
-                    <span class="text-lg font-bold text-orange-500">Steel Inox</span>
+                    <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-8 w-auto">
                 </div>
                 <button onclick="SIPanelUI.closeMobileSidebar()" class="p-2 rounded-lg text-gray-400 hover:bg-gray-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -515,9 +515,8 @@ SIModules.dashboard = {
                     
                     <!-- Decoración / Placeholder Logo -->
                     <div class="absolute inset-0 bg-gradient-to-br from-[#26262e] to-[#121216] opacity-80"></div>
-                    <div class="relative z-10 flex items-center gap-3 opacity-30 group-hover:opacity-50 transition-opacity">
-                        <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        <span class="text-2xl font-black text-white tracking-[0.2em] uppercase hidden">PROYECTO</span>
+                    <div class="relative z-10 flex items-center gap-3 opacity-20 group-hover:opacity-40 transition-opacity">
+                        <img src="/steelinox/public/logo-header.svg" class="w-16 h-16 object-contain brightness-0 invert" alt="">
                     </div>
                 </div>
 

@@ -133,12 +133,108 @@ class DocumentController {
             ];
 
             $documentModel = new Document();
-            $newDocId = $documentModel->uploadNewDocument($docData, $versionData);
+            
+            // Deduplicación Automática: ¿Existe ya un documento con este título en el proyecto?
+            $existingId = $documentModel->findDocumentByTitle((int)$projectId, trim($title));
+
+            if ($existingId) {
+                // Si existe, lo tratamos como una nueva VERSIÓN automáticamente
+                $newVersionId = $documentModel->uploadNewVersion((int)$existingId, $versionData);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Se ha detectado un documento con el mismo nombre. Se ha subido como una nueva versión (Auto-Versionado).',
+                    'data'    => ['id' => $existingId, 'version_id' => $newVersionId, 'is_new_version' => true]
+                ]);
+            } else {
+                // Si no existe, creamos un documento NUEVO
+                $newDocId = $documentModel->uploadNewDocument($docData, $versionData);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Documento subido correctamente',
+                    'data'    => ['id' => $newDocId, 'is_new_version' => false]
+                ]);
+            }
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+        }
+    }
+
+    // Subir una nueva versión de un documento existente (POST /api/projects/{projectId}/documents/{documentId}/versions)
+    public function addVersion($projectId, $documentId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba POST']);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            // Escudo de Autorización sobre el Proyecto
+            $projectModel = new Project();
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto']);
+                return;
+            }
+
+            // Validar que se ha enviado un archivo
+            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido']);
+                return;
+            }
+
+            $file = $_FILES['file'];
+
+            // Seguridad: Tipos MIME permitidos
+            $allowedMimes = [
+                'application/pdf', 'image/jpeg', 'image/png', 'application/msword', 
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ];
+
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $realMime = finfo_file($finfo, $file['tmp_name']);
+
+            if (!in_array($realMime, $allowedMimes)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'El formato del archivo no está permitido.']);
+                return;
+            }
+
+            $storageDir = __DIR__ . '/../../storage/documents/';
+            $secureFileName = bin2hex(random_bytes(16)) . '_' . time();
+            $destinationPath = $storageDir . $secureFileName;
+            $checksum = hash_file('sha256', $file['tmp_name']);
+
+            if (!move_uploaded_file($file['tmp_name'], $destinationPath)) {
+                throw new Exception("Error al guardar el archivo.");
+            }
+
+            $versionData = [
+                'file_name'       => $file['name'],
+                'storage_path'    => $secureFileName,
+                'mime_type'       => $realMime,
+                'file_size'       => $file['size'],
+                'checksum_sha256' => $checksum,
+                'uploaded_by'     => $userId
+            ];
+
+            $documentModel = new Document();
+            $versionId = $documentModel->uploadNewVersion((int)$documentId, $versionData);
 
             echo json_encode([
                 'success' => true,
-                'message' => 'Documento subido correctamente',
-                'data'    => ['id' => $newDocId]
+                'message' => 'Nueva versión subida correctamente',
+                'data'    => ['version_id' => $versionId]
             ]);
 
         } catch (Exception $e) {
@@ -147,8 +243,46 @@ class DocumentController {
         }
     }
 
+    // Obtener historial de versiones (GET /api/projects/{projectId}/documents/{documentId}/versions)
+    public function versions($projectId, $documentId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+                return;
+            }
+
+            $documentModel = new Document();
+            $versions = $documentModel->getVersions((int)$documentId);
+
+            echo json_encode(['success' => true, 'data' => $versions]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error al obtener versiones']);
+        }
+    }
+
     // Descargar documento de forma segura (GET /api/projects/{projectId}/documents/{documentId}/download)
     public function download($projectId, $documentId) {
+        $this->serveFile($projectId, $documentId, 'attachment');
+    }
+
+    // Visualizar documento de forma segura (GET /api/projects/{projectId}/documents/{documentId}/view)
+    public function view($projectId, $documentId) {
+        $this->serveFile($projectId, $documentId, 'inline');
+    }
+
+    /** Helper privado para servir archivos con control de modo de acceso */
+    private function serveFile($projectId, $documentId, $disposition) {
         AuthMiddleware::check();
 
         try {
@@ -163,18 +297,31 @@ class DocumentController {
                 die("Proyecto no encontrado o sin permisos.");
             }
 
+            $versionId = $_GET['version_id'] ?? null;
             $documentModel = new Document();
-            $docInfo = $documentModel->getForDownload((int)$documentId, (int)$projectId);
+            $docInfo = $documentModel->getForDownload((int)$documentId, (int)$projectId, $versionId);
 
             if (!$docInfo) {
                 http_response_code(404);
                 die("Documento no encontrado.");
             }
 
-            // Escudo de Autorización sobre el Documento (Si es cliente, comprobar si es visible)
-            if ($role === 'cliente' && $docInfo['is_visible_to_client'] == 0) {
-                http_response_code(403);
-                die("Este documento es confidencial y solo visible para personal interno.");
+            // Escudo de Autorización sobre el Documento
+            if ($role === 'cliente') {
+                if ($docInfo['is_visible_to_client'] == 0) {
+                    http_response_code(403);
+                    die("Este documento es confidencial.");
+                }
+
+                // Aplicar ENFORCEMENT de access_mode
+                if ($disposition === 'attachment' && $docInfo['access_mode'] === 'view') {
+                    http_response_code(403);
+                    die("Este documento solo está disponible para visualización online.");
+                }
+                if ($disposition === 'inline' && $docInfo['access_mode'] === 'download') {
+                    http_response_code(403);
+                    die("Este documento debe ser descargado para su visualización.");
+                }
             }
 
             $storageDir = __DIR__ . '/../../storage/documents/';
@@ -182,25 +329,21 @@ class DocumentController {
 
             if (!file_exists($filePath)) {
                 http_response_code(404);
-                die("El archivo físico no se encuentra en el servidor.");
+                die("Archivo no encontrado en el servidor.");
             }
 
-            // Forzar al navegador a descargar el archivo ocultando la ruta real
-            header('Content-Description: File Transfer');
             header('Content-Type: ' . $docInfo['mime_type']);
-            // Añadir comillas alrededor del nombre de archivo previene errores con espacios
-            header('Content-Disposition: attachment; filename="' . basename($docInfo['file_name']) . '"');
-            header('Expires: 0');
-            header('Cache-Control: must-revalidate');
-            header('Pragma: public');
+            header('Content-Disposition: ' . $disposition . '; filename="' . basename($docInfo['file_name']) . '"');
             header('Content-Length: ' . filesize($filePath));
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
             
             readfile($filePath);
             exit;
 
         } catch (Exception $e) {
             http_response_code(500);
-            die("Error interno en la descarga del documento.");
+            die("Error interno.");
         }
     }
 }
