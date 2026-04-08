@@ -12,6 +12,7 @@ SIModules.projectDetailAdmin = {
     assignedUsers: [],
     documents: [],
     activeTab: 'resumen',
+    activeDocTypeFilter: 'all',
     updatingDocumentId: null,
 
     async loadProjectDetailSPA() {
@@ -62,7 +63,6 @@ SIModules.projectDetailAdmin = {
                 <nav class="flex gap-8" aria-label="Tabs">
                     <button onclick="SIModules.projectDetailAdmin.switchTab('resumen', this)" class="tab-btn active border-orange-500 text-orange-600 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Resumen</button>
                     <button onclick="SIModules.projectDetailAdmin.switchTab('documentos', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Documentos</button>
-                    <button onclick="SIModules.projectDetailAdmin.switchTab('comentarios', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Comentarios</button>
                     <button onclick="SIModules.projectDetailAdmin.switchTab('historial', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Histórico</button>
                 </nav>
             </div>
@@ -85,6 +85,160 @@ SIModules.projectDetailAdmin = {
                     </div>
                     <div class="p-6 overflow-y-auto" id="commercial-list-container">
                         <!-- Se llena vía JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL SUBIR DOCUMENTO (PREMIUM) -->
+            <div id="upload-doc-modal" class="fixed inset-0 bg-black/60 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4 backdrop-blur-sm">
+                <div class="bg-white rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-hidden">
+                    <!-- Header -->
+                    <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-white relative z-10">
+                        <div>
+                            <h3 class="text-2xl font-black text-gray-900 tracking-tight uppercase">Nuevo Documento</h3>
+                            <p class="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-1">Expediente del Proyecto</p>
+                        </div>
+                        <button onclick="SIModules.projectDetailAdmin.closeUploadModal()" class="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                        <form id="upload-doc-form" class="space-y-6">
+                            <!-- Nombre -->
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre del Documento *</label>
+                                <input type="text" id="doc-upload-title" name="title" required 
+                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all placeholder:text-gray-300"
+                                       placeholder="Ej: Planos de Estructura v2">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Tipo (Custom Dropdown) -->
+                                <div class="space-y-2 relative">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Archivo *</label>
+                                    <input type="hidden" id="doc-upload-type" name="type" value="otros">
+                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleCustomDropdown('dropdown-type-menu')" 
+                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 flex items-center justify-between hover:bg-white hover:border-gray-200 transition-all group">
+                                        <span id="doc-upload-type-label">Otros</span>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <!-- Dropdown Menu -->
+                                    <div id="dropdown-type-menu" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <ul class="max-h-[220px] overflow-y-auto custom-scrollbar">
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'propuesta', 'Propuesta')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Propuesta</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'presupuesto', 'Presupuesto')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Presupuesto</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'plano', 'Plano')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Plano</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'documento_tecnico', 'Documento Técnico')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Documento Técnico</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'materiales', 'Materiales')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Materiales</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'pdf', 'PDF Genérico')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">PDF Genérico</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'otros', 'Otros')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Otros</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Modo de Acceso (Custom Dropdown) -->
+                                <div class="space-y-2 relative">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Modo de Acceso Cliente *</label>
+                                    <input type="hidden" id="doc-upload-access" name="access_mode" value="download">
+                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleCustomDropdown('dropdown-access-menu')" 
+                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 flex items-center justify-between hover:bg-white hover:border-gray-200 transition-all group">
+                                        <span id="doc-upload-access-label">Descargar</span>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <div id="dropdown-access-menu" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <ul>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('access', 'view', 'Solo Visualizar')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Solo Visualizar</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('access', 'download', 'Solo Descargar')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Solo Descargar</li>
+                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('access', 'both', 'Visualizar y Descargar')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Visualizar y Descargar</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Visible Switch -->
+                            <div class="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                                <div>
+                                    <p class="text-sm font-black text-gray-900">Visible para el cliente</p>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Permite al cliente ver este documento</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="doc-upload-visible" name="is_visible_to_client" value="1" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                </label>
+                            </div>
+
+                            <!-- Selector de Archivo (Zona Drop) -->
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Archivo del Documento *</label>
+                                <div onclick="document.getElementById('si-doc-upload-raw').click()" 
+                                     id="doc-drop-zone"
+                                     class="border-2 border-dashed border-gray-200 rounded-3xl p-10 flex flex-col items-center justify-center gap-4 hover:border-orange-300 hover:bg-orange-50/30 transition-all cursor-pointer group">
+                                    <div class="w-16 h-16 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center text-gray-300 group-hover:text-orange-500 group-hover:scale-110 transition-all duration-500">
+                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-sm font-black text-gray-600 group-hover:text-gray-900 transition-colors" id="doc-file-selected-name">Haz clic o arrastra un archivo</p>
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1">PDF, Imágenes, Word o Excel (Max 25MB)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-8 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-4">
+                        <button onclick="SIModules.projectDetailAdmin.closeUploadModal()" class="px-6 py-3 text-sm font-black text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">Cancelar</button>
+                        <button onclick="SIModules.projectDetailAdmin.submitUploadForm()" id="btn-submit-upload" class="px-8 py-3 bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-xl text-sm font-black shadow-lg shadow-orange-500/20 transition-all uppercase tracking-widest flex items-center gap-3">
+                            <div id="submit-upload-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
+                            <span>Subir Documento</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL PREVISUALIZACIÓN -->
+            <div id="preview-doc-modal" class="fixed inset-0 bg-black/80 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4 backdrop-blur-md">
+                <div class="bg-white rounded-[2rem] w-full max-w-5xl h-[90vh] shadow-2xl transform scale-95 transition-all duration-300 flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 id="preview-doc-title" class="text-lg font-black text-gray-900 truncate uppercase tracking-tight">Cargando documento...</h3>
+                                <p id="preview-doc-meta" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Expediente Steel Inox</p>
+                            </div>
+                        </div>
+                        <button onclick="SIModules.projectDetailAdmin.closePreviewModal()" class="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Iframe Container -->
+                    <div class="flex-1 bg-gray-100 relative">
+                        <!-- Skeleton Loader -->
+                        <div id="preview-skeleton" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 z-10 transition-opacity duration-500">
+                            <div class="si-spinner w-12 h-12 mb-4 border-orange-500/20 border-t-orange-500"></div>
+                            <p class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Generando vista segura...</p>
+                        </div>
+                        <iframe id="preview-iframe" class="block border-none opacity-0 transition-opacity duration-500" 
+                                style="height: 100%; margin: 0 auto; width: 100%; max-width: 100%;"
+                                allowfullscreen onload="SIModules.projectDetailAdmin.onIframeLoad()"></iframe>
+                    </div>
+
+                    <!-- Footer / Actions -->
+                    <div class="p-6 border-t border-gray-100 flex items-center justify-between bg-white shrink-0">
+                        <div class="flex items-center gap-2">
+                             <span class="text-[10px] text-gray-300 font-bold uppercase">Vista Segura Steel Inox v2.4</span>
+                        </div>
+                        <a id="preview-doc-download" href="#" target="_blank" 
+                           class="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-orange-600 transition-all shadow-lg shadow-gray-900/10 uppercase tracking-widest">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Descargar Original
+                        </a>
                     </div>
                 </div>
             </div>
@@ -194,7 +348,6 @@ SIModules.projectDetailAdmin = {
         switch (this.activeTab) {
             case 'resumen': container.innerHTML = this._renderResumen(); break;
             case 'documentos': container.innerHTML = this._renderDocumentos(); break;
-            case 'comentarios': container.innerHTML = this._renderComentarios(); break;
             case 'historial': container.innerHTML = this._renderHistorial(); break;
             default: container.innerHTML = '<p class="text-center py-20 text-gray-400">Próximamente...</p>';
         }
@@ -497,16 +650,31 @@ SIModules.projectDetailAdmin = {
                 </div>
 
                 <!-- Botón Principal -->
-                <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-2xl py-4 text-sm font-black shadow-lg shadow-[#E57B23]/20 transition-all flex items-center justify-center gap-2 uppercase tracking-widest group">
+                <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-2xl py-4 text-sm font-black shadow-lg shadow-[#E57B23]/20 transition-all flex items-center justify-center gap-2 uppercase tracking-widest group mb-4">
                     <svg id="tab-upload-icon" class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                     <div id="tab-upload-spinner" class="si-spinner w-5 h-5 border-white/30 border-t-white hidden"></div>
                     <span id="tab-upload-text">Subir Nuevo Documento</span>
                 </button>
 
+                <!-- Filtros por Tipo (Chips) -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-4 hide-scrollbar -mx-1 px-1">
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('all', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-orange-500 text-white shadow-md shadow-orange-500/20 active" data-type="all">Todos</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('propuesta', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="propuesta">Propuesta</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('presupuesto', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="presupuesto">Presupuesto</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('plano', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="plano">Plano</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('pdf', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="pdf">PDF</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('documento_tecnico', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="documento_tecnico">Doc. Técnico</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('materiales', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="materiales">Materiales</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('otros', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="otros">Otros</button>
+                </div>
+
                 <!-- Header de Lista -->
-                <div class="flex items-center justify-between pt-2">
-                    <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide">Expediente del Proyecto</h3>
-<div id="doc-counter" class="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">0 ARCHIVOS</div>
+                <!-- Header de Lista -->
+                <div class="flex flex-col pt-2 pb-2 gap-2">
+                    <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide text-center sm:text-left">Expediente del Proyecto</h3>
+                    <div class="flex justify-center sm:justify-start">
+                        <div id="doc-counter" class="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">0 ARCHIVOS</div>
+                    </div>
                 </div>
 
                 <!-- Lista de Archivos Dynamic -->
@@ -520,82 +688,6 @@ SIModules.projectDetailAdmin = {
         `;
     },
 
-    _mockDocCard(title, type, meta, avatar) {
-    },
-
-    /** PESTAÑA: COMENTARIOS/CHAT */
-    _renderComentarios() {
-        return `
-            <div class="flex flex-col bg-transparent -mx-4 sm:mx-0 relative">
-                <!-- Chat Area -->
-                <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 pb-10">
-                    <!-- Date badge -->
-                    <div class="text-center mb-4">
-                        <span class="inline-block px-4 py-1.5 bg-[#f8f9fa] text-gray-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-gray-100">Hoy • 24 Octubre</span>
-                    </div>
-
-                    <!-- Message Other -->
-                    <div class="flex gap-4">
-                        <img src="https://i.pravatar.cc/100?u=ElenaValdes" class="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm border-2 border-white" alt="Elena">
-                        <div class="flex-1 max-w-[85%]">
-                            <div class="flex items-center gap-2 mb-2 px-1">
-                                <span class="text-sm font-black text-[#1a1b25]">Elena Valdés</span>
-                                <span class="text-[11px] text-gray-300 font-bold">09:12 AM</span>
-                            </div>
-                            <!-- Bubble content -->
-                            <div class="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-sm p-5 text-[15px] text-gray-700 leading-relaxed font-medium mb-3">
-                                Buenos días equipo. He subido los nuevos planos de la Fase 2. ¿Podéis revisarlos antes de la reunión de las 11:00?
-                            </div>
-                            
-                            <!-- Attached file card -->
-                            <div class="bg-[#f0f9ff] border border-[#bae6fd] shadow-sm rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-[#e0f2fe] transition-colors w-full max-w-[320px]">
-                                <div class="w-12 h-12 bg-white text-[#0284c7] rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
-                                </div>
-                                <div class="min-w-0">
-                                    <p class="text-xs font-black text-[#0369a1] uppercase tracking-wider truncate">PLANO_ESTRUCTURAL_F2.pdf</p>
-                                    <p class="text-[10px] text-[#0ea5e9] font-black uppercase tracking-tighter">4.2 MB • DOCUMENTO PDF</p>
-                                </div>
-                                <svg class="w-5 h-5 text-[#0ea5e9] ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Message Me -->
-                    <div class="flex gap-4 flex-row-reverse mt-4">
-                        <img src="https://i.pravatar.cc/100?u=Tu" class="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm border-2 border-white" alt="Tu">
-                        <div class="flex-1 max-w-[85%] flex flex-col items-end">
-                            <div class="flex items-center gap-2 mb-2 px-1 flex-row-reverse">
-                                <span class="text-sm font-black text-[#1a1b25]">Tú (Admin)</span>
-                                <span class="text-[11px] text-gray-300 font-bold">09:15 AM</span>
-                            </div>
-                            <div class="bg-[#E57B23] shadow-md shadow-orange-500/10 rounded-2xl rounded-tr-sm p-5 text-[15px] text-white leading-relaxed font-bold">
-                                Recibido, Elena. Los reviso ahora mismo. ¿Hay algún cambio crítico en la sección de vigas de acero?
-                            </div>
-                            <div class="flex items-center gap-1 mt-2 text-[10px] font-black text-[#E57B23] tracking-widest uppercase">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                LEÍDO
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Message Other -->
-                    <div class="flex gap-4 mt-4">
-                         <img src="https://i.pravatar.cc/100?u=ElenaValdes" class="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm border-2 border-white" alt="Elena">
-                         <div class="flex-1 max-w-[85%]">
-                             <div class="flex items-center gap-2 mb-2 px-1">
-                                 <span class="text-sm font-black text-[#1a1b25]">Elena Valdés</span>
-                                 <span class="text-[11px] text-gray-300 font-bold">09:18 AM</span>
-                             </div>
-                             <div class="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-sm p-5 text-[15px] text-gray-700 leading-relaxed font-medium">
-                                 Sí, se ha ajustado el espesor del refuerzo en el nodo C-4 para cumplir con la nueva normativa industrial de resistencia.
-                             </div>
-                         </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
 
     /** PESTAÑA: HISTORIAL (Mock) */
     _renderHistorial() {
@@ -685,12 +777,47 @@ SIModules.projectDetailAdmin = {
     },
 
     /** Filtrar filas de documentos en tiempo real (ahora por tarjetas) */
-    _filterDocs(query) {
-        const q = query.toLowerCase().trim();
-        document.querySelectorAll('.doc-row').forEach(card => {
+    _filterDocs(query = null) {
+        const searchText = (query !== null ? query : document.getElementById('doc-search-input')?.value || '').toLowerCase().trim();
+        const activeType = this.activeDocTypeFilter;
+
+        let visibleCount = 0;
+
+        document.querySelectorAll('.doc-row-wrapper').forEach(wrapper => {
+            const card = wrapper.querySelector('.doc-row');
             const title = card.dataset.title || '';
-            card.style.display = (!q || title.includes(q)) ? 'flex' : 'none';
+            const type = card.dataset.type || '';
+
+            const matchesText = !searchText || title.includes(searchText);
+            const matchesType = activeType === 'all' || type === activeType;
+
+            if (matchesText && matchesType) {
+                wrapper.style.display = 'block';
+                visibleCount++;
+            } else {
+                wrapper.style.display = 'none';
+            }
         });
+
+        const counter = document.getElementById('doc-counter');
+        if (counter) counter.textContent = `${visibleCount} ARCHIVOS`;
+    },
+
+    /** Establecer filtro por tipo documental */
+    setDocTypeFilter(type, btn) {
+        this.activeDocTypeFilter = type;
+
+        // UI Reset
+        document.querySelectorAll('.type-filter-btn').forEach(b => {
+            b.classList.remove('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
+            b.classList.add('bg-white', 'border', 'border-gray-100', 'text-gray-400');
+        });
+
+        // UI Active
+        btn.classList.add('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
+        btn.classList.remove('bg-white', 'border', 'border-gray-100', 'text-gray-400');
+
+        this._filterDocs();
     },
 
     // ────────────────────────────────────────────────────────────────────────
@@ -742,37 +869,41 @@ SIModules.projectDetailAdmin = {
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
             const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
-            const canView = doc.mime_type === 'application/pdf' || doc.mime_type.startsWith('image/');
+            const canView = doc.mime_type === 'application/pdf' || 
+                            doc.mime_type.startsWith('image/') || 
+                            doc.mime_type.startsWith('video/') ||
+                            doc.mime_type.startsWith('text/') ||
+                            doc.mime_type === 'application/json';
 
             return `
                 <div class="doc-row-wrapper mb-3 fade-in">
-                    <div class="doc-row flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100 group" 
+                    <div class="doc-row flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100 group gap-4" 
+                         data-type="${doc.type}"
                          data-title="${doc.title.toLowerCase()} ${doc.file_name.toLowerCase()}">
-                        <div class="flex items-center gap-4 min-w-0">
+                        <div class="flex items-center gap-4 min-w-0 w-full sm:w-auto">
                             <div class="w-[52px] h-[52px] ${icon.bg} ${icon.text} rounded-[14px] flex items-center justify-center shrink-0 shadow-sm border border-transparent group-hover:border-current/10 transition-all">
                                 ${icon.svg}
                             </div>
-                            <div class="min-w-0">
-                                <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-1 truncate group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
-                                <div class="flex items-center gap-2">
+                            <div class="min-w-0 flex-1 w-full">
+                                <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-2 w-full truncate group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                                     <button onclick="SIModules.projectDetailAdmin.toggleVersionHistory(${doc.id}, this)" 
-                                            class="px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-1">
+                                            class="w-max px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-1 shrink-0">
                                         ${icon.label} (v${doc.version_number})
                                         <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
-                                    <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80">${size} • ${date}</span>
+                                    <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80 w-full md:w-auto inline-block">${size} • ${date}</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-4 shrink-0 pl-3">
+                        <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0 sm:pl-3">
                             <div class="flex items-center gap-1 border-r border-gray-100 pr-3 mr-1">
                                 ${canView ? `
-                                <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view" 
-                                   target="_blank"
+                                <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify(doc)})' 
                                    class="p-2 text-gray-300 hover:text-blue-500 transition-colors transform hover:scale-110 active:scale-95" 
                                    title="Visualizar Online">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </a>` : ''}
+                                </button>` : ''}
                                 
                                 <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
                                    target="_blank"
@@ -788,13 +919,13 @@ SIModules.projectDetailAdmin = {
                                 </button>
                             </div>
 
-                            <div class="w-8 h-8 bg-gray-50 text-gray-400 border border-gray-100 rounded-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest shadow-inner cursor-help" title="Subido por ${doc.uploaded_by_name}">
+                            <div class="w-8 h-8 bg-gray-50 text-gray-400 border border-gray-100 rounded-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest shadow-inner cursor-help shrink-0" title="Subido por ${doc.uploaded_by_name}">
                                 ${initials}
                             </div>
                         </div>
                     </div>
                     <!-- Contenedor para el historial de versiones -->
-                    <div id="versions-container-${doc.id}" class="hidden mt-2 ml-14 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100 transition-all">
+                    <div id="versions-container-${doc.id}" class="hidden mt-2 ml-14 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100 transition-all" style="margin: 0 auto;">
                         <div class="p-4 text-center">
                             <div class="si-spinner-sm mx-auto"></div>
                         </div>
@@ -872,11 +1003,10 @@ SIModules.projectDetailAdmin = {
                     </div>
                     <div class="flex items-center gap-1 opacity-40 group-hover/ver:opacity-100 transition-opacity">
                         ${canView ? `
-                        <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${v.id}" 
-                           target="_blank"
+                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal({id: ${docId}, title: "${SIApp.escapeHtml(v.file_name)}"}, ${v.id})'
                            class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors" title="Visualizar esta versión">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        </a>` : ''}
+                        </button>` : ''}
                         <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
                            target="_blank"
                            class="p-1.5 text-gray-400 hover:text-orange-500 transition-colors" title="Descargar esta versión">
@@ -888,11 +1018,153 @@ SIModules.projectDetailAdmin = {
         }).join('');
     },
 
-    /** Disparar el selector nativo del sistema para un documento nuevo */
+    /** Abrir el nuevo modal de subida PREMIUM */
     triggerFileUpload() {
-        this.updatingDocumentId = null; // Subida nueva
-        const input = document.getElementById('si-doc-upload-raw');
-        if (input) input.click();
+        this.openUploadModal();
+    },
+
+    openUploadModal() {
+        const modal = document.getElementById('upload-doc-modal');
+        const form = document.getElementById('upload-doc-form');
+        if (!modal || !form) return;
+
+        this.updatingDocumentId = null;
+        form.reset();
+
+        // Reset custom labels
+        document.getElementById('doc-upload-type-label').textContent = 'Otros';
+        document.getElementById('doc-upload-type').value = 'otros';
+        document.getElementById('doc-upload-access-label').textContent = 'Descargar';
+        document.getElementById('doc-upload-access').value = 'download';
+        document.getElementById('doc-file-selected-name').textContent = 'Haz clic o arrastra un archivo';
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }, 10);
+
+        // Click outside to close dropdowns
+        this._dropdownCloseRef = (e) => {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('[id^="dropdown-"]').forEach(d => d.classList.add('hidden'));
+            }
+        };
+        document.addEventListener('click', this._dropdownCloseRef);
+    },
+
+    closeUploadModal() {
+        const modal = document.getElementById('upload-doc-modal');
+        if (!modal) return;
+
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+
+        if (this._dropdownCloseRef) {
+            document.removeEventListener('click', this._dropdownCloseRef);
+        }
+    },
+
+    /** Dropdowns Personalizados */
+    toggleCustomDropdown(id) {
+        const el = document.getElementById(id);
+        const all = document.querySelectorAll('[id^="dropdown-"]');
+        all.forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
+        if (el) el.classList.toggle('hidden');
+    },
+
+    selectCustomOption(field, value, label) {
+        if (field === 'type') {
+            document.getElementById('doc-upload-type').value = value;
+            document.getElementById('doc-upload-type-label').textContent = label;
+        } else if (field === 'access') {
+            document.getElementById('doc-upload-access').value = value;
+            document.getElementById('doc-upload-access-label').textContent = label;
+        }
+        document.querySelectorAll('[id^="dropdown-"]').forEach(d => d.classList.add('hidden'));
+    },
+
+    /** PREVISUALIZACIÓN */
+    openPreviewModal(doc, versionId = null) {
+        const modal = document.getElementById('preview-doc-modal');
+        const iframe = document.getElementById('preview-iframe');
+        const titleEl = document.getElementById('preview-doc-title');
+        const downloadBtn = document.getElementById('preview-doc-download');
+        const skeleton = document.getElementById('preview-skeleton');
+
+        if (!modal || !iframe) return;
+
+        titleEl.textContent = doc.title;
+        skeleton.classList.remove('opacity-0', 'hidden');
+        iframe.classList.add('opacity-0');
+
+        let viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view`;
+        let downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download`;
+
+        if (versionId) {
+            viewUrl += `?version_id=${versionId}`;
+            downloadUrl += `?version_id=${versionId}`;
+        }
+
+        iframe.src = viewUrl;
+        downloadBtn.href = downloadUrl;
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }, 10);
+    },
+
+    onIframeLoad() {
+        const iframe = document.getElementById('preview-iframe');
+        const skeleton = document.getElementById('preview-skeleton');
+
+        if (iframe && skeleton) {
+            // Intentar inyectar estilos si es una imagen (solo funciona en mismo dominio)
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                if (doc) {
+                    const media = doc.querySelector('img, video');
+                    if (media) {
+                        media.style.height = '100%';
+                        media.style.width = 'auto'; // Mantener proporción
+                        media.style.margin = '0 auto';
+                        media.style.display = 'block';
+                        media.style.maxHeight = '100vh';
+                        media.style.maxWidth = '100%';
+                        
+                        doc.body.style.margin = '0';
+                        doc.body.style.backgroundColor = '#f3f4f6'; // Match bg-gray-100
+                        doc.body.style.display = 'flex';
+                        doc.body.style.justifyContent = 'center';
+                        doc.body.style.alignItems = 'center'; // added vertical center
+                        doc.body.style.height = '100vh';
+                        doc.body.style.overflow = 'hidden';
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo inyectar estilo en el iframe (CORS o No Doc)', e);
+            }
+
+            iframe.classList.remove('opacity-0');
+            skeleton.classList.add('opacity-0');
+            setTimeout(() => skeleton.classList.add('hidden'), 500);
+        }
+    },
+
+    closePreviewModal() {
+        const modal = document.getElementById('preview-doc-modal');
+        const iframe = document.getElementById('preview-iframe');
+        if (!modal) return;
+
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            if (iframe) iframe.src = 'about:blank';
+        }, 300);
     },
 
     /** Disparar el selector para una nueva versión */
@@ -902,24 +1174,44 @@ SIModules.projectDetailAdmin = {
         if (input) input.click();
     },
 
-    /** Manejar la subida física del archivo vía AJAX/FormData */
+    /** Manejar la selección o subida física del archivo */
     async handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Visual Feedback: Activar Spinners y estados de carga
-        const sidebarIcon = document.getElementById('sidebar-upload-icon');
+        // CASO A: Subida de nueva VERSIÓN (Directa, sin modal de metadatos)
+        if (this.updatingDocumentId) {
+            this._performDirectVersionUpload(file);
+            event.target.value = ''; // Limpiar
+            return;
+        }
+
+        // CASO B: Nuevo documento (Solo actualizar UI del modal)
+        const nameDisplay = document.getElementById('doc-file-selected-name');
+        const titleInput = document.getElementById('doc-upload-title');
+        const dropZone = document.getElementById('doc-drop-zone');
+
+        if (nameDisplay) {
+            nameDisplay.textContent = file.name;
+            nameDisplay.classList.add('text-orange-600');
+        }
+        if (titleInput && !titleInput.value) {
+            // Prefill title with filename without extension
+            titleInput.value = file.name.split('.').slice(0, -1).join('.');
+        }
+        if (dropZone) {
+            dropZone.classList.add('bg-orange-50/50', 'border-orange-200');
+        }
+    },
+
+    /** Subida directa para versiones */
+    async _performDirectVersionUpload(file) {
         const sidebarSpinner = document.getElementById('sidebar-upload-spinner');
-        const tabIcon = document.getElementById('tab-upload-icon');
         const tabSpinner = document.getElementById('tab-upload-spinner');
-        const tabText = document.getElementById('tab-upload-text');
 
         const setLoading = (loading) => {
-            if (sidebarIcon) sidebarIcon.classList.toggle('hidden', loading);
             if (sidebarSpinner) sidebarSpinner.classList.toggle('hidden', !loading);
-            if (tabIcon) tabIcon.classList.toggle('hidden', loading);
             if (tabSpinner) tabSpinner.classList.toggle('hidden', !loading);
-            if (tabText) tabText.textContent = loading ? 'Subiendo archivo...' : 'Subir Nuevo Documento';
         };
 
         setLoading(true);
@@ -927,35 +1219,71 @@ SIModules.projectDetailAdmin = {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            
-            let endpoint = '/projects/' + this.projectId + '/documents';
-            let successMsg = 'Documento añadido al expediente correctamente.';
 
-            if (this.updatingDocumentId) {
-                endpoint += '/' + this.updatingDocumentId + '/versions';
-                successMsg = 'Nueva versión del documento subida correctamente.';
-            } else {
-                formData.append('title', file.name.split('.').slice(0, -1).join('.'));
-            }
-
+            const endpoint = `/projects/${this.projectId}/documents/${this.updatingDocumentId}/versions`;
             const res = await API.post(endpoint, formData);
 
             if (res.success) {
-                if (window.SIApp) SIApp.showToast('¡Éxito!', successMsg, 'success');
-                // Si estamos en la pestaña documentos, recargar la lista
-                if (this.activeTab === 'documentos') {
-                    await this.loadProjectDocuments();
-                }
+                if (window.SIApp) SIApp.showToast('¡Éxito!', 'Nueva versión subida correctamente.', 'success');
+                await this.loadProjectDocuments();
             } else {
-                if (window.SIApp) SIApp.showToast('Error', res.message || 'El servidor rechazó el archivo.', 'error');
+                if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al subir versión.', 'error');
             }
         } catch (e) {
             console.error(e);
-            if (window.SIApp) SIApp.showToast('Error de red', 'No se pudo contactar con el servidor de archivos.', 'error');
+            if (window.SIApp) SIApp.showToast('Error', 'No se pudo subir la versión.', 'error');
         } finally {
             setLoading(false);
-            this.updatingDocumentId = null; // Limpiar estado
-            event.target.value = ''; // Limpiar para permitir re-subida del mismo
+            this.updatingDocumentId = null;
+        }
+    },
+
+    /** Enviar el formulario de subida con todos los metadatos */
+    async submitUploadForm() {
+        const form = document.getElementById('upload-doc-form');
+        const inputRaw = document.getElementById('si-doc-upload-raw');
+        const file = inputRaw ? inputRaw.files[0] : null;
+
+        if (!form.reportValidity()) return;
+        if (!file) {
+            if (window.SIApp) SIApp.showToast('Archivo Requerido', 'Por favor selecciona un archivo antes de continuar.', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btn-submit-upload');
+        const spinner = document.getElementById('submit-upload-spinner');
+
+        const setLoading = (loading) => {
+            if (btn) btn.disabled = loading;
+            if (spinner) spinner.classList.toggle('hidden', !loading);
+        };
+
+        setLoading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', document.getElementById('doc-upload-title').value);
+            formData.append('type', document.getElementById('doc-upload-type').value);
+            formData.append('access_mode', document.getElementById('doc-upload-access').value);
+            formData.append('is_visible_to_client', document.getElementById('doc-upload-visible').checked ? 1 : 0);
+
+            const endpoint = `/projects/${this.projectId}/documents`;
+            const res = await API.post(endpoint, formData);
+
+            if (res.success) {
+                if (window.SIApp) SIApp.showToast('¡Éxito!', 'Documento añadido correctamente.', 'success');
+                this.closeUploadModal();
+                await this.loadProjectDocuments();
+            } else {
+                if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al procesar la subida.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.SIApp) SIApp.showToast('Error fatal', 'No se pudo completar la subida.', 'error');
+        } finally {
+            setLoading(false);
+            if (inputRaw) inputRaw.value = ''; // Reset core input
         }
     },
 
@@ -1132,6 +1460,15 @@ SIModules.projectDetailAdmin = {
             // Convertir strings vacíos a null para floats/ints
             if (data.budget_amount === '') data.budget_amount = null;
             if (data.surface === '') data.surface = null;
+
+            // Project Reference Validation
+            const regexPrj = /^PRJ-\d{4}-\d{3,}$/;
+            if (!regexPrj.test(data.reference)) {
+                if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXX (Ej: PRJ-2026-001)', 'error');
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+                return;
+            }
 
             const res = await API.put('/projects/' + this.projectId, data);
 

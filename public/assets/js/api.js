@@ -124,7 +124,7 @@ const API = {
             // ── 401 Unauthorized → sesión expirada ──
             if (response.status === 401) {
                 // Si estamos en login, no redirigir
-                if (!endpoint.includes('/login')) {
+                if (!endpoint.includes('/')) {
                     this.handleUnauthorized();
                 }
                 return result;
@@ -183,11 +183,11 @@ const API = {
     },
 
     // ── Atajos ──
-    get(endpoint, options)           { return this.request('GET', endpoint, null, options); },
-    post(endpoint, data, options)    { return this.request('POST', endpoint, data, options); },
-    put(endpoint, data, options)     { return this.request('PUT', endpoint, data, options); },
-    patch(endpoint, data, options)   { return this.request('PATCH', endpoint, data, options); },
-    delete(endpoint, data, options)  { return this.request('DELETE', endpoint, data, options); },
+    get(endpoint, options) { return this.request('GET', endpoint, null, options); },
+    post(endpoint, data, options) { return this.request('POST', endpoint, data, options); },
+    put(endpoint, data, options) { return this.request('PUT', endpoint, data, options); },
+    patch(endpoint, data, options) { return this.request('PATCH', endpoint, data, options); },
+    delete(endpoint, data, options) { return this.request('DELETE', endpoint, data, options); },
 
     // ──────────────────────────────────────
     // HANDLERS
@@ -264,9 +264,9 @@ const SIToast = {
 
         const icons = {
             success: '<div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></div>',
-            error:   '<div class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></div>',
+            error: '<div class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></div>',
             warning: '<div class="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>',
-            info:    '<div class="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
+            info: '<div class="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
         };
 
         const toastHtml = `
@@ -309,7 +309,7 @@ const SIToast = {
 
     // Atajos semánticos
     success(title, msg) { this.show(title, msg, 'success'); },
-    error(title, msg)   { this.show(title, msg, 'error', 7000); },
+    error(title, msg) { this.show(title, msg, 'error', 7000); },
     warning(title, msg) { this.show(title, msg, 'warning', 6000); },
-    info(title, msg)    { this.show(title, msg, 'info'); },
+    info(title, msg) { this.show(title, msg, 'info'); },
 };

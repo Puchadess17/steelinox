@@ -150,7 +150,7 @@ SIModules.clientFormAdmin = {
                                             <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                                                 <span class="text-gray-400 font-black">#</span> Referencia Interna <span class="text-red-500">*</span>
                                             </label>
-                                            <input type="text" id="fc-reference" value="${this.clientData.reference || ''}" class="w-full bg-transparent border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all" required placeholder="Ej. CLI-2024-089">
+                                            <input type="text" id="fc-reference" value="${this.clientData.reference || ''}" class="w-full bg-transparent border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all" required placeholder="Ej. CLI-2026-089">
                                             <p class="text-[10px] text-gray-400 mt-2 font-medium">Código único de seguimiento (CLI-XXX).</p>
                                         </div>
                                     </div>
@@ -250,15 +250,13 @@ SIModules.clientFormAdmin = {
                 is_active: document.getElementById('fc-is_active').checked ? 1 : 0
             };
 
-            // Validation for NEW records only
-            if (this.mode === 'create') {
-                const regexRef = /^CLI-\d{3,}$/;
-                if (!regexRef.test(data.reference)) {
-                    if (window.SIApp) SIApp.showToast('Error de Formato', 'La referencia debe ser CLI-XXX (Ej: CLI-001)', 'error');
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                    return;
-                }
+            // Validation for reference format (Both Create & Edit)
+            const regexRef = /^CLI-\d{3,}$/;
+            if (!regexRef.test(data.reference)) {
+                if (window.SIApp) SIApp.showToast('Error de Formato', 'La referencia debe ser CLI-XXX (Ej: CLI-001)', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                return;
             }
 
             if (this.mode === 'create') {

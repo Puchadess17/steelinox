@@ -4,9 +4,11 @@
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 
-class ProjectController {
+class ProjectController
+{
 
-    public function search() {
+    public function search()
+    {
         AuthMiddleware::check();
 
         header('Content-Type: application/json; charset=utf-8');
@@ -16,8 +18,8 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Método no permitido',
-                'data'    => null,
-                'errors'  => ['method' => 'Se esperaba una petición GET']
+                'data' => null,
+                'errors' => ['method' => 'Se esperaba una petición GET']
             ]);
             return;
         }
@@ -33,8 +35,8 @@ class ProjectController {
             echo json_encode([
                 'success' => true,
                 'message' => 'Proyectos recuperados correctamente',
-                'data'    => $proyectos,
-                'errors'  => null
+                'data' => $proyectos,
+                'errors' => null
             ]);
 
         } catch (Exception $e) {
@@ -42,13 +44,14 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno del servidor al recuperar los proyectos',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()] // PRODUCCION NO DEVUELVE EL ERROR
+                'data' => null,
+                'errors' => ['server' => $e->getMessage()] // PRODUCCION NO DEVUELVE EL ERROR
             ]);
         }
     }
 
-    public function show($id) {
+    public function show($id)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -70,8 +73,8 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Proyecto no encontrado o no tienes permisos para visualizarlo',
-                'data'    => null,
-                'errors'  => ['project' => 'Recurso inaccesible']
+                'data' => null,
+                'errors' => ['project' => 'Recurso inaccesible']
             ]);
             return;
         }
@@ -79,13 +82,14 @@ class ProjectController {
         echo json_encode([
             'success' => true,
             'message' => 'Detalle del proyecto recuperado correctamente',
-            'data'    => $proyecto,
-            'errors'  => null
+            'data' => $proyecto,
+            'errors' => null
         ]);
     }
 
     // Obtener todos los usuarios asignados a un proyecto (GET /api/projects/{projectId}/users)
-    public function getAssignedUsers($projectId) {
+    public function getAssignedUsers($projectId)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -104,26 +108,26 @@ class ProjectController {
 
             // Escudo de Autorización: ¿Tiene el usuario permisos para ver este proyecto?
             $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
-            
+
             if (!$projectDetails) {
                 http_response_code(404);
                 echo json_encode([
-                    'success' => false, 
-                    'message' => 'Proyecto no encontrado o sin permisos', 
-                    'data'    => null, 
-                    'errors'  => ['project' => 'Recurso inaccesible']
+                    'success' => false,
+                    'message' => 'Proyecto no encontrado o sin permisos',
+                    'data' => null,
+                    'errors' => ['project' => 'Recurso inaccesible']
                 ]);
                 return;
             }
 
             // Si pasa el escudo, obtenemos los usuarios asignados
-            $assignedUsers = $projectModel->getAssignedUsers((int)$projectId);
+            $assignedUsers = $projectModel->getAssignedUsers((int) $projectId);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Usuarios asignados recuperados correctamente',
-                'data'    => $assignedUsers,
-                'errors'  => null
+                'data' => $assignedUsers,
+                'errors' => null
             ]);
 
         } catch (Exception $e) {
@@ -131,14 +135,15 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno al recuperar los usuarios asignados',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
+                'data' => null,
+                'errors' => ['server' => $e->getMessage()]
             ]);
         }
     }
 
     // Asignar un comercial a un proyecto (POST /api/projects/{projectId}/users/{userId})
-    public function assignUser($projectId, $userId) {
+    public function assignUser($projectId, $userId)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -157,14 +162,14 @@ class ProjectController {
 
         try {
             $projectModel = new Project();
-            $added = $projectModel->assignUser((int)$projectId, (int)$userId);
+            $added = $projectModel->assignUser((int) $projectId, (int) $userId);
 
             if ($added) {
                 echo json_encode([
                     'success' => true,
                     'message' => 'Usuario asignado al proyecto correctamente',
-                    'data'    => ['project_id' => $projectId, 'user_id' => $userId],
-                    'errors'  => null
+                    'data' => ['project_id' => $projectId, 'user_id' => $userId],
+                    'errors' => null
                 ]);
             } else {
                 throw new Exception("No se pudo registrar la asignación en la base de datos.");
@@ -175,14 +180,15 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno al asignar el usuario',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
+                'data' => null,
+                'errors' => ['server' => $e->getMessage()]
             ]);
         }
     }
 
     // Eliminar a un comercial de un proyecto (DELETE /api/projects/{projectId}/users/{userId})
-    public function removeUser($projectId, $userId) {
+    public function removeUser($projectId, $userId)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -190,10 +196,10 @@ class ProjectController {
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
             echo json_encode([
-                'success' => false, 
-                'message' => 'Acceso denegado', 
-                'data'    => null, 
-                'errors'  => ['role' => 'Privilegios insuficientes. Solo un administrador puede revocar accesos.']
+                'success' => false,
+                'message' => 'Acceso denegado',
+                'data' => null,
+                'errors' => ['role' => 'Privilegios insuficientes. Solo un administrador puede revocar accesos.']
             ]);
             return;
         }
@@ -206,16 +212,16 @@ class ProjectController {
 
         try {
             $projectModel = new Project();
-            
+
             // Ejecutamos la eliminación en la tabla pivote
-            $removed = $projectModel->removeUser((int)$projectId, (int)$userId);
+            $removed = $projectModel->removeUser((int) $projectId, (int) $userId);
 
             if ($removed) {
                 echo json_encode([
                     'success' => true,
                     'message' => 'Comercial desasignado del proyecto correctamente',
-                    'data'    => null,
-                    'errors'  => null
+                    'data' => null,
+                    'errors' => null
                 ]);
             } else {
                 throw new Exception("No se pudo ejecutar la desasignación en la base de datos.");
@@ -226,14 +232,15 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno al desasignar al usuario',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
+                'data' => null,
+                'errors' => ['server' => $e->getMessage()]
             ]);
         }
     }
 
     // Obtener usuarios disponibles para añadir a un proyecto (GET /api/projects/{projectId}/available-users)
-    public function getAvailableUsers($projectId) {
+    public function getAvailableUsers($projectId)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -259,7 +266,7 @@ class ProjectController {
 
             // Escudo de Autorización: ¿Tiene acceso a este proyecto?
             $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
-            
+
             if (!$projectDetails) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
@@ -269,13 +276,13 @@ class ProjectController {
             // Instanciamos el modelo de Usuario para buscar los disponibles
             require_once APP_PATH . '/Models/User.php';
             $userModel = new User();
-            $availableUsers = $userModel->getAvailableForProject((int)$projectId);
+            $availableUsers = $userModel->getAvailableForProject((int) $projectId);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Usuarios disponibles recuperados correctamente',
-                'data'    => $availableUsers,
-                'errors'  => null
+                'data' => $availableUsers,
+                'errors' => null
             ]);
 
         } catch (Exception $e) {
@@ -283,14 +290,15 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno al recuperar los usuarios disponibles',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
+                'data' => null,
+                'errors' => ['server' => $e->getMessage()]
             ]);
         }
     }
 
     // Crear un nuevo proyecto (POST /api/projects)
-    public function store() {
+    public function store()
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -311,12 +319,14 @@ class ProjectController {
         $errors = [];
 
         // Validaciones obligatorias
-        if (empty($input['client_id'])) $errors['client_id'] = 'El cliente es obligatorio.';
-        if (empty($input['name'])) $errors['name'] = 'El nombre del proyecto es obligatorio.';
+        if (empty($input['client_id']))
+            $errors['client_id'] = 'El cliente es obligatorio.';
+        if (empty($input['name']))
+            $errors['name'] = 'El nombre del proyecto es obligatorio.';
         if (empty($input['reference'])) {
             $errors['reference'] = 'La referencia es obligatoria.';
         } elseif (!preg_match('/^PRJ-\d{4}-\d{3,}$/', $input['reference'])) {
-            $errors['reference'] = 'La referencia de proyecto debe tener el formato PRJ-AAAA-XXX (Ej: PRJ-2024-001)';
+            $errors['reference'] = 'La referencia de proyecto debe tener el formato PRJ-AAAA-XXX (Ej: PRJ-2026-001)';
         }
 
         if (!empty($errors)) {
@@ -332,7 +342,7 @@ class ProjectController {
             // Muro de Autorización Específico: ¿Puede este usuario operar sobre este cliente?
             require_once APP_PATH . '/Models/Client.php';
             $clientModel = new Client();
-            $clientDetails = $clientModel->getDetailsById((int)$input['client_id'], $userId, $role);
+            $clientDetails = $clientModel->getDetailsById((int) $input['client_id'], $userId, $role);
 
             if (!$clientDetails) {
                 http_response_code(404);
@@ -342,15 +352,15 @@ class ProjectController {
 
             // Preparar los datos limpios para la inserción
             $dataToInsert = [
-                'client_id'     => (int)$input['client_id'],
-                'name'          => trim($input['name']),
-                'reference'     => trim($input['reference']),
-                'status'        => $input['status'] ?? 'propuesta',
+                'client_id' => (int) $input['client_id'],
+                'name' => trim($input['name']),
+                'reference' => trim($input['reference']),
+                'status' => $input['status'] ?? 'propuesta',
                 'budget_amount' => $input['budget_amount'] ?? null,
-                'description'   => $input['description'] ?? null,
-                'surface'       => $input['surface'] ?? null,
-                'project_type'  => $input['project_type'] ?? null,
-                'created_by'    => $userId
+                'description' => $input['description'] ?? null,
+                'surface' => $input['surface'] ?? null,
+                'project_type' => $input['project_type'] ?? null,
+                'created_by' => $userId
             ];
 
             $projectModel = new Project();
@@ -359,8 +369,8 @@ class ProjectController {
             echo json_encode([
                 'success' => true,
                 'message' => 'Proyecto creado correctamente',
-                'data'    => ['id' => $newProjectId],
-                'errors'  => null
+                'data' => ['id' => $newProjectId],
+                'errors' => null
             ]);
 
         } catch (Exception $e) {
@@ -368,14 +378,15 @@ class ProjectController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Error interno al crear el proyecto',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
+                'data' => null,
+                'errors' => ['server' => $e->getMessage()]
             ]);
         }
     }
 
     // Actualizar datos de un proyecto (PUT /api/projects/{id})
-    public function update($id) {
+    public function update($id)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -410,8 +421,10 @@ class ProjectController {
             $input = json_decode(file_get_contents('php://input'), true);
             $errors = [];
 
-            if (empty($input['name'])) $errors['name'] = 'El nombre es obligatorio.';
-            if (empty($input['reference'])) $errors['reference'] = 'La referencia es obligatoria.';
+            if (empty($input['name']))
+                $errors['name'] = 'El nombre es obligatorio.';
+            if (empty($input['reference']))
+                $errors['reference'] = 'La referencia es obligatoria.';
 
             if (!empty($errors)) {
                 http_response_code(422);
@@ -421,12 +434,12 @@ class ProjectController {
 
             // Actualizamos, ignorando cualquier 'status' que nos intenten colar
             $projectModel->update($id, [
-                'name'          => trim($input['name']),
-                'reference'     => trim($input['reference']),
+                'name' => trim($input['name']),
+                'reference' => trim($input['reference']),
                 'budget_amount' => $input['budget_amount'] ?? null,
-                'description'   => $input['description'] ?? null,
-                'surface'       => $input['surface'] ?? null,
-                'project_type'  => $input['project_type'] ?? null
+                'description' => $input['description'] ?? null,
+                'surface' => $input['surface'] ?? null,
+                'project_type' => $input['project_type'] ?? null
             ]);
 
             echo json_encode(['success' => true, 'message' => 'Proyecto actualizado correctamente', 'data' => ['id' => $id], 'errors' => null]);
@@ -438,7 +451,8 @@ class ProjectController {
     }
 
     // Cambiar estado de un proyecto (PUT /api/projects/{id}/status)
-    public function changeStatus($id) {
+    public function changeStatus($id)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 

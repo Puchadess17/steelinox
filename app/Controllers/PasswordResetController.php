@@ -13,7 +13,7 @@ class PasswordResetController
     {
         $token = $_GET['token'] ?? null;
         if (!$token) {
-            header('Location: /steelinox/login');
+            header('Location: /steelinox/');
             exit;
         }
 
@@ -22,7 +22,7 @@ class PasswordResetController
 
         if (!$user) {
             // Token inválido o expirado
-            header('Location: /steelinox/login?error=token_invalid');
+            header('Location: /steelinox/?error=token_invalid');
             exit;
         }
 
@@ -58,7 +58,7 @@ class PasswordResetController
 
         // Enviar Email
         $resetLink = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox/password/reset?token=" . $token;
-        
+
         $html = "
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eef2f6; border-radius: 12px;'>
                 <div style='text-align: center; margin-bottom: 24px;'>
@@ -72,7 +72,7 @@ class PasswordResetController
                 </div>
                 <p style='color: #64748b; font-size: 12px; line-height: 1.6;'>Este enlace caducará en 60 minutos. Si no has solicitado este cambio, puedes ignorar este correo con seguridad.</p>
                 <hr style='border: 0; border-top: 1px solid #eef2f6; margin: 24px 0;'>
-                <p style='color: #94a3b8; font-size: 11px; text-align: center;'>© 2024 Steel Inox. Todos los derechos reservados.</p>
+                <p style='color: #94a3b8; font-size: 11px; text-align: center;'>© 2026 Steel Inox. Todos los derechos reservados.</p>
             </div>";
 
         $mailResult = MailService::send($email, "Recuperar Contraseña — Steel Inox", $html);
@@ -92,7 +92,7 @@ class PasswordResetController
     {
         header('Content-Type: application/json');
         $input = json_decode(file_get_contents('php://input'), true);
-        
+
         $token = $input['token'] ?? null;
         $password = $input['password'] ?? null;
 

@@ -75,12 +75,15 @@ class DocumentController {
             // Seguridad: Tipos MIME permitidos
             $allowedMimes = [
                 'application/pdf', 
-                'image/jpeg', 
-                'image/png', 
-                'application/msword', 
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/heic', 'image/heif',
+                'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'text/markdown', 'text/csv', 'text/plain', 'application/json', 'application/x-yaml', 'text/yaml',
+                'image/vnd.adobe.photoshop', 'application/postscript',
+                'image/vnd.dwg', 'image/vnd.dxf', 'application/acad', 'application/dxf',
+                'model/obj', 'model/stl', 'application/octet-stream' // Para formatos propietarios (.fig, .prproj, .dwg, etc)
             ];
 
             // Comprobamos el MIME type real del archivo (no la extensión que puede ser falsificada)
@@ -113,13 +116,15 @@ class DocumentController {
                 throw new Exception("Error al guardar el archivo en el disco.");
             }
 
+            $accessMode = $_POST['access_mode'] ?? 'download';
+
             // Preparar datos para el modelo
             $docData = [
                 'project_id'           => (int)$projectId,
                 'type'                 => $type,
                 'title'                => trim($title),
                 'is_visible_to_client' => $isVisible,
-                'access_mode'          => 'download',
+                'access_mode'          => $accessMode,
                 'created_by'           => $userId
             ];
 
@@ -196,9 +201,16 @@ class DocumentController {
 
             // Seguridad: Tipos MIME permitidos
             $allowedMimes = [
-                'application/pdf', 'image/jpeg', 'image/png', 'application/msword', 
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                'application/pdf', 
+                'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/heic', 'image/heif',
+                'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'text/markdown', 'text/csv', 'text/plain', 'application/json', 'application/x-yaml', 'text/yaml',
+                'image/vnd.adobe.photoshop', 'application/postscript',
+                'image/vnd.dwg', 'image/vnd.dxf', 'application/acad', 'application/dxf',
+                'model/obj', 'model/stl', 'application/octet-stream'
             ];
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);

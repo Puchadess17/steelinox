@@ -19,7 +19,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flyonui@latest/flyonui.min.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/steelinox/public/assets/css/app.css?v=<?php echo filemtime(ROOT_PATH . '/public/assets/css/app.css'); ?>">
+    <link rel="stylesheet"
+        href="/steelinox/public/assets/css/app.css?v=<?php echo filemtime(ROOT_PATH . '/public/assets/css/app.css'); ?>">
 
     <style>
         * {
@@ -142,7 +143,7 @@
     <!-- ═══════════════════════════════════ -->
     <footer class="lg:ml-60 border-t border-gray-100 bg-white">
         <div class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
-            <span>© 2024 Steel Inox Extranet. All rights reserved.</span>
+            <span>© 2026 Steel Inox Extranet. All rights reserved.</span>
             <div class="flex items-center gap-4">
                 <a href="#" class="hover:text-orange-500">Privacy Policy</a>
                 <a href="#" class="hover:text-orange-500">Terms of Service</a>
@@ -154,15 +155,24 @@
     <!-- ═══════════════════════════════════ -->
     <!-- SCRIPTS                             -->
     <!-- ═══════════════════════════════════ -->
-    <script src="/steelinox/public/assets/js/api.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/api.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/auth.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/auth.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/router.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/router.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/app.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/app.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/modules/dashboard.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/dashboard.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/modules/projects.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/projects.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/modules/project_detail_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/project_detail_admin.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/modules/client_detail_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_detail_admin.js'); ?>"></script>
-    <script src="/steelinox/public/assets/js/modules/client_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_form_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/api.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/api.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/auth.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/auth.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/router.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/router.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/app.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/app.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/dashboard.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/dashboard.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/projects.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/projects.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/project_detail_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/project_detail_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/client_detail_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_detail_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/client_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_form_admin.js'); ?>"></script>
 
     <script>
 

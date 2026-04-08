@@ -268,14 +268,14 @@ SIModules.clientDetailAdmin = {
                     type: 'success',
                     author: 'Alberto Sánchez',
                     action: 'Cliente actualizado satisfactoriamente',
-                    time: '15 de Mayo, 2024 • 10:24 AM',
+                    time: '15 de Mayo, 2026 • 10:24 AM',
                     note: 'Se han actualizado los datos de contacto y la dirección fiscal tras el traslado de oficinas.'
                 })}
                             ${this._renderTimelineItem({
                     type: 'info',
                     author: 'Sistema',
-                    action: 'Nuevo proyecto asignado: PRJ-2024-018',
-                    time: '01 de Marzo, 2024 • 09:00 AM',
+                    action: 'Nuevo proyecto asignado: PRJ-2026-018',
+                    time: '01 de Marzo, 2026 • 09:00 AM',
                     note: null
                 })}
                         </div>
@@ -350,7 +350,7 @@ SIModules.clientDetailAdmin = {
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
-                                    <input type="text" id="project-ref" name="reference" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: PRJ-2024-001">
+                                    <input type="text" id="project-ref" name="reference" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: PRJ-2026-001">
                                 </div>
                             </div>
                             
@@ -741,13 +741,11 @@ SIModules.clientDetailAdmin = {
             payload.password = pwd;
         }
 
-        // Validation for NEW records only
-        if (!id) {
-            const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            if (!regexEmail.test(payload.email)) {
-                if (window.SIApp) SIApp.showToast('Email no válido', 'Por favor, ingrese un correo electrónico con formato correcto.', 'error');
-                return;
-            }
+        // Email Validation (Format)
+        const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regexEmail.test(payload.email)) {
+            if (window.SIApp) SIApp.showToast('Email no válido', 'Por favor, ingrese un correo electrónico con formato correcto.', 'error');
+            return;
         }
 
         spinner.classList.remove('hidden');
@@ -883,7 +881,7 @@ SIModules.clientDetailAdmin = {
         // Regex Validation (Projects are always new in this modal)
         const regexPrj = /^PRJ-\d{4}-\d{3,}$/;
         if (!regexPrj.test(payload.reference)) {
-            if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXX (Ej: PRJ-2024-001)', 'error');
+            if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXX (Ej: PRJ-2026-001)', 'error');
             return;
         }
 
