@@ -626,6 +626,26 @@ SIModules.dashboard = {
         return map[name] || '';
     },
 
+    /** KPI Stat Card Flat (Estilo Mockup para Clientes) */
+    _kpiStatFlat(label, value, subtext, iconSvg) {
+        return `
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow relative overflow-hidden group">
+                <div class="flex items-start justify-between relative z-10">
+                    <div>
+                        <span class="block text-sm font-semibold text-gray-400 mb-2 truncate">${label}</span>
+                        <p class="text-4xl font-black text-[#1a1b25] tracking-tight mb-2">${value}</p>
+                        <p class="text-xs font-bold text-gray-500 opacity-60">${subtext}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 shadow-sm border border-orange-100 group-hover:scale-110 transition-transform duration-500">
+                        ${iconSvg}
+                    </div>
+                </div>
+                <!-- Decoración sutil de fondo -->
+                <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+            </div>
+        `;
+    },
+
     // ═══════════════════════════════════════
     // CLIENTS LIST DASHBOARD (ADMIN/COMERCIAL)
     // ═══════════════════════════════════════
@@ -645,11 +665,25 @@ SIModules.dashboard = {
         }
 
         const clients = Array.isArray(result.data) ? result.data : [];
-
-        // Estado para los filtros de clientes
+        
+        // Estado persistente para el listado de clientes
+        this.adminClients = clients;
         this.currentClientFilter = 'all';
         this.currentClientSearch = '';
-        this.adminClients = clients;
+        this.currentClientSort = { field: 'name', dir: 'asc' };
+        this.currentClientPage = 1;
+        this.clientsPerPage = 10;
+
+        // Calcular KPIs rápidos
+        const now = new Date();
+        const firstDayMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const kpis = {
+            total: clients.length,
+            newThisMonth: clients.filter(c => new Date(c.created_at) >= firstDayMonth).length,
+            totalProjects: clients.reduce((sum, c) => sum + parseInt(c.projects_count || 0), 0),
+            totalUsers: clients.reduce((sum, c) => sum + parseInt(c.users_count || 0), 0)
+        };
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -667,6 +701,13 @@ SIModules.dashboard = {
                             Nuevo Cliente
                         </button>
                     </div>
+                </div>
+
+                <!-- KPI Grid Premium (Estilo Flat / Captura) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+                    ${this._kpiStatFlat('Clientes Totales', kpis.total, `+${kpis.newThisMonth} registrados este mes`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>')}
+                    ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, `Vinculados a tu cartera`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>')}
+                    ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>')}
                 </div>
 
                 <!-- Buscador y Tabs -->
@@ -688,10 +729,8 @@ SIModules.dashboard = {
                 </div>
 
                 <!-- Lista de Clientes -->
-                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div id="clients-table-container">
-                        <!-- Renderizado dinámico aquí -->
-                    </div>
+                <div id="clients-table-container">
+                    <!-- Renderizado dinámico aquí -->
                 </div>
             </div>
         `;
@@ -705,69 +744,150 @@ SIModules.dashboard = {
 
         if (data.length === 0) {
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div class="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
                     <p class="text-sm font-semibold text-gray-900">No se encontraron clientes</p>
+                    <p class="text-xs text-gray-400 mt-1">Intenta ajustar los filtros o el término de búsqueda.</p>
                 </div>
             `;
             return;
         }
 
-        const tbody = data.map(c => `
-            <tr class="hover:bg-orange-50/30 transition-colors group">
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold border border-orange-200">
-                            ${SIApp._getInitials(c.name)}
+        // --- LÓGICA DE PAGINACIÓN ---
+        const totalResults = data.length;
+        const totalPages = Math.ceil(totalResults / this.clientsPerPage);
+        const startIdx = (this.currentClientPage - 1) * this.clientsPerPage;
+        const pagedData = data.slice(startIdx, startIdx + this.clientsPerPage);
+        const endIdx = Math.min(startIdx + this.clientsPerPage, totalResults);
+
+        // --- RENDERIZADO DE FILAS (Tbody) ---
+        const tbody = pagedData.map(c => {
+            const initials = SIApp._getInitials(c.name);
+            return `
+                <tr class="hover:bg-orange-50/20 transition-colors group">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-gray-50 text-[#1a1b25] flex items-center justify-center text-[11px] font-black border border-gray-100 shadow-sm overflow-hidden">
+                                ${initials}
+                            </div>
+                            <div class="min-w-0">
+                                <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-orange-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
+                            </div>
                         </div>
-                        ${SIApp.escapeHtml(c.name)}
-                    </a>
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap text-sm font-medium text-gray-500 text-center">
-                    ${SIApp.escapeHtml(c.reference || 'Sin Referencia')}
-                </td>
-                <td class="px-5 py-4 text-sm font-medium text-gray-500 whitespace-nowrap text-center">
-                    ${SIApp.escapeHtml(SIApp.formatDate(c.created_at) || '-')}
-                </td>
-                <td class="px-5 py-4 text-center whitespace-nowrap">
-                    ${window.SIApp ? SIApp.activeBadge(c.is_active) : ''}
-                </td>
-                <td class="px-5 py-4 text-center whitespace-nowrap">
-                    <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a data-route="client-detail" href="/steelinox/client/${c.id}" title="Ver Cliente" class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        </a>
-                        <a data-route="client-edit" href="/steelinox/client/edit/${c.id}" title="Editar Cliente" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center text-[10px] font-black text-gray-500 bg-gray-100 px-2.5 py-1 rounded-[6px] tracking-widest">${SIApp.escapeHtml(c.reference || 'CLI-TEMP')}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-orange-500 text-[10px] font-black">${c.projects_count || '0'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-gray-100 bg-gray-50 text-gray-500 text-[10px] font-black">${c.users_count || '0'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                        ${SIApp.formatDate(c.created_at) || '-'}
+                    </td>
+                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <a data-route="client-detail" href="/steelinox/client/${c.id}" class="p-2 text-gray-400 hover:text-orange-500 transition-all hover:scale-110" title="Ver Detalles">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </a>
+                            <a data-route="client-edit" href="/steelinox/client/edit/${c.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // --- HELPER PARA CABECERA ORDENABLE ---
+        const sortIcon = (field) => {
+            if (this.currentClientSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
+            return this.currentClientSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
+        };
 
         container.innerHTML = `
-            <!-- VISTA MÓVIL: Grid de Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0 mb-6">
-                ${data.map(c => this._renderClientCardAdminMobile(c)).join('')}
-            </div>
-
-            <!-- VISTA DESKTOP: Tabla Extensa -->
-            <div class="hidden lg:block si-table-wrapper bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <!-- VISTA DESKTOP: Tabla Premium -->
+            <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
                     <thead>
-                        <tr class="bg-gray-50/50">
-                            <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fecha Creación</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                            <th class="px-5 py-3.5 text-center w-12"></th>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Nombre de Empresa ${sortIcon('name')}</span>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Referencia</span>
+                            </th>
+                            <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('projects_count')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyectos ${sortIcon('projects_count')}</span>
+                            </th>
+                            <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('users_count')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Usuarios ${sortIcon('users_count')}</span>
+                            </th>
+                            <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('created_at')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Última Actividad ${sortIcon('created_at')}</span>
+                            </th>
+                            <th class="px-6 py-4 text-right w-32">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Acciones</span>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50/80">
+                    <tbody class="divide-y divide-gray-50/50">
                         ${tbody}
                     </tbody>
                 </table>
             </div>
+
+            <!-- VISTA MÓVIL: Cards (Se mantiene diseño anterior para mobile) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-6">
+                ${pagedData.map(c => this._renderClientCardAdminMobile(c)).join('')}
+            </div>
+
+            <!-- FOOTER: Paginación -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+                <p class="text-[13px] font-bold text-gray-400">Mostrando <span class="text-[#1a1b25]">${startIdx + 1}</span> a <span class="text-[#1a1b25]">${endIdx}</span> de <span class="text-[#1a1b25]">${totalResults}</span> resultados</p>
+                
+                <div class="flex items-center gap-1">
+                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentClientPage > 1 ? 'bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50' : 'text-gray-300 pointer-events-none'}" 
+                            onclick="SIModules.dashboard._goToClientsPage(${this.currentClientPage - 1})">
+                        Anterior
+                    </button>
+                    ${this._renderPaginationButtons(totalPages)}
+                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentClientPage < totalPages ? 'bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50' : 'text-gray-300 pointer-events-none'}" 
+                            onclick="SIModules.dashboard._goToClientsPage(${this.currentClientPage + 1})">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
         `;
+    },
+
+    /** Helper para pintar los circulitos de estado */
+    _renderStatusToggle(isActive, id) {
+        const active = isActive == 1 || isActive === true;
+        return `
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-5 rounded-full relative transition-colors duration-300 p-1 flex items-center ${active ? 'bg-orange-500' : 'bg-gray-200'}">
+                    <div class="w-3.5 h-3.5 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${active ? 'translate-x-4.5' : 'translate-x-0'}"></div>
+                </div>
+                <span class="text-xs font-bold ${active ? 'text-gray-900' : 'text-gray-400'}">${active ? 'Activo' : 'Inactivo'}</span>
+            </div>
+        `;
+    },
+
+    /** Helper para botones numéricos de paginación */
+    _renderPaginationButtons(totalPages) {
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+            const isCurrent = i === this.currentClientPage;
+            html += `
+                <button class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition-all ${isCurrent ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50'}"
+                        onclick="SIModules.dashboard._goToClientsPage(${i})">
+                    ${i}
+                </button>
+            `;
+        }
+        return html;
     },
 
     /** Card Mobile para el Listado de Clientes */
@@ -840,13 +960,15 @@ SIModules.dashboard = {
     _applyClientsAdminFilters() {
         if (!this.adminClients) return;
 
-        let filtered = this.adminClients;
+        let filtered = [...this.adminClients]; // Copia para no mutar el original
 
+        // 1. Filtrar por Tab (Estado)
         if (this.currentClientFilter !== 'all') {
             const isActive = this.currentClientFilter === 'activo';
             filtered = filtered.filter(c => (c.is_active == 1 || c.is_active === true) === isActive);
         }
 
+        // 2. Filtrar por Texto (Buscador)
         if (this.currentClientSearch && this.currentClientSearch.trim() !== '') {
             const q = this.currentClientSearch;
             filtered = filtered.filter(c =>
@@ -855,6 +977,48 @@ SIModules.dashboard = {
             );
         }
 
+        // 3. Ordenar dinámicamente
+        const { field, dir } = this.currentClientSort;
+        filtered.sort((a, b) => {
+            let valA = a[field] || '';
+            let valB = b[field] || '';
+            
+            // Caso especial para booleanos/números de estado
+            if (field === 'is_active') {
+                valA = (valA == 1) ? 1 : 0;
+                valB = (valB == 1) ? 1 : 0;
+            }
+
+            if (valA < valB) return dir === 'asc' ? -1 : 1;
+            if (valA > valB) return dir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Al filtrar o buscar, si la página actual excede el nuevo total, reseteamos a 1
+        const totalPages = Math.ceil(filtered.length / this.clientsPerPage);
+        if (this.currentClientPage > totalPages && totalPages > 0) {
+            this.currentClientPage = 1;
+        }
+
         this._renderClientsTable(filtered);
+    },
+
+    /** Handler para cambio de orden en columnas */
+    _sortClients(field) {
+        if (this.currentClientSort.field === field) {
+            this.currentClientSort.dir = this.currentClientSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.currentClientSort.field = field;
+            this.currentClientSort.dir = 'asc';
+        }
+        // Al ordenar solemos querer volver a la primera página para ver el cambio
+        this.currentClientPage = 1;
+        this._applyClientsAdminFilters();
+    },
+
+    /** Handler para paginación */
+    _goToClientsPage(page) {
+        this.currentClientPage = page;
+        this._applyClientsAdminFilters();
     }
 };

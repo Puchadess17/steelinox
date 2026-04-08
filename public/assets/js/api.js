@@ -123,8 +123,11 @@ const API = {
 
             // ── 401 Unauthorized → sesión expirada ──
             if (response.status === 401) {
-                // Si estamos en login, no redirigir
-                if (!endpoint.includes('/')) {
+                // No redirigir si estamos en endpoints de auth o verificación
+                const authEndpoints = ['/login', '/me', '/csrf-token'];
+                const isAuthEndpoint = authEndpoints.some(e => endpoint.includes(e));
+                
+                if (!isAuthEndpoint) {
                     this.handleUnauthorized();
                 }
                 return result;

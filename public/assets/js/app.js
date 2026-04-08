@@ -27,17 +27,20 @@ const SIApp = {
                         sessionStorage.setItem('si_user', JSON.stringify(json.data));
                         this.user = json.data;
                     } else {
-                        // Sesión PHP expirada → ir a login
+                        // Sesión PHP expirada → limpiar local e ir a login
+                        sessionStorage.removeItem('si_user');
                         window.location.href = '/steelinox/';
                         return;
                     }
                 } else {
-                    // 401 u otro error → ir a login
+                    // 401 u otro error → limpiar local e ir a login
+                    sessionStorage.removeItem('si_user');
                     window.location.href = '/steelinox/';
                     return;
                 }
             } catch (e) {
                 console.error('SIApp: Error verificando sesión:', e);
+                sessionStorage.removeItem('si_user');
                 window.location.href = '/steelinox/';
                 return;
             }

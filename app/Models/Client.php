@@ -19,13 +19,17 @@ class Client {
         $params = [];
         
         if ($role === 'admin') {
-            $sql = "SELECT id, name, reference, is_active, created_at 
+            $sql = "SELECT id, name, reference, is_active, created_at,
+                           (SELECT COUNT(*) FROM projects WHERE client_id = clients.id AND deleted_at IS NULL) as projects_count,
+                           (SELECT COUNT(*) FROM users WHERE client_id = clients.id AND deleted_at IS NULL) as users_count
                     FROM clients 
                     WHERE deleted_at IS NULL 
                     ORDER BY created_at DESC";
                     
         } elseif ($role === 'comercial') {
-            $sql = "SELECT DISTINCT c.id, c.name, c.reference, c.is_active, c.created_at 
+            $sql = "SELECT DISTINCT c.id, c.name, c.reference, c.is_active, c.created_at,
+                           (SELECT COUNT(*) FROM projects WHERE client_id = c.id AND deleted_at IS NULL) as projects_count,
+                           (SELECT COUNT(*) FROM users WHERE client_id = c.id AND deleted_at IS NULL) as users_count
                     FROM clients c
                     LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
                     LEFT JOIN project_user pu ON p.id = pu.project_id

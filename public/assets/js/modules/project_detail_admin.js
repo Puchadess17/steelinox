@@ -261,7 +261,7 @@ SIModules.projectDetailAdmin = {
                                     allowfullscreen onload="SIModules.projectDetailAdmin.onIframeLoad()"></iframe>
 
                             <!-- EL VISUALIZADOR DE IMÁGENES NATIVO -->
-                            <img id="preview-img" class="hidden opacity-0 transition-opacity duration-500 object-contain h-full w-full max-h-full max-w-full" 
+                            <img id="preview-img" class="hidden opacity-0 transition-opacity duration-500 object-contain h-full w-auto max-h-full max-w-full mx-auto block" 
                                  onload="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden')">
 
                             <!-- EL REPRODUCTOR DE VIDEO NATIVO (Crucial para Mobile) -->
@@ -322,8 +322,11 @@ SIModules.projectDetailAdmin = {
                                          <select id="chat-version-select" class="hidden" onchange="SIModules.projectDetailAdmin.filterCommentsByVersion()"><option value="">Todas las versiones</option></select>
                                      </div>
                                      <!-- Toggle mostrar/ocultar chat -->
-                                     <button id="chat-toggle-btn" onclick="SIModules.projectDetailAdmin.toggleChatPanel()" title="Mostrar/Ocultar chat" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-700 transition-all">
-                                         <svg id="chat-toggle-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                                     <!-- Toggle mostrar/ocultar chat -->
+                                     <button id="chat-toggle-btn" onclick="SIModules.projectDetailAdmin.toggleChatPanel()" title="Mostrar/Ocultar chat" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-700 transition-all border border-gray-100">
+                                         <svg id="chat-toggle-icon" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                                         </svg>
                                      </button>
                                  </div>
                             </div>
@@ -1239,9 +1242,9 @@ SIModules.projectDetailAdmin = {
         container.innerHTML = versions.map(v => {
             const size = SIApp.formatFileSize(v.file_size);
             const date = SIApp.formatDate(v.uploaded_at);
-            const canView = v.mime_type === 'application/pdf' || 
-                            v.mime_type.startsWith('image/') ||
-                            v.mime_type.startsWith('video/');
+            const canView = v.mime_type === 'application/pdf' ||
+                v.mime_type.startsWith('image/') ||
+                v.mime_type.startsWith('video/');
             const isCurrent = v.is_current == 1;
 
             return `
@@ -1346,10 +1349,10 @@ SIModules.projectDetailAdmin = {
 
     /** PREVISUALIZACIÓN */
     openPreviewModal(doc, versionId = null) {
-        const modal  = document.getElementById('preview-doc-modal');
+        const modal = document.getElementById('preview-doc-modal');
         const iframe = document.getElementById('preview-iframe');
-        const img    = document.getElementById('preview-img');
-        const video  = document.getElementById('preview-video');
+        const img = document.getElementById('preview-img');
+        const video = document.getElementById('preview-video');
         const skeleton = document.getElementById('preview-skeleton');
         const unsupportedDiv = document.getElementById('preview-unsupported');
         const unsupportedDownload = document.getElementById('preview-unsupported-download');
@@ -1359,8 +1362,8 @@ SIModules.projectDetailAdmin = {
 
         // Ocultar todos los visualizadores por defecto para evitar "fantasmas" de previos
         if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
-        if (img)    { img.classList.add('hidden');    img.src = ''; }
-        if (video)  { video.classList.add('hidden');  video.src = ''; video.pause(); }
+        if (img) { img.classList.add('hidden'); img.src = ''; }
+        if (video) { video.classList.add('hidden'); video.src = ''; video.pause(); }
         if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
         if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
 
@@ -1373,9 +1376,9 @@ SIModules.projectDetailAdmin = {
         this._updatePreviewHeader(doc);
 
         // URLs
-        const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view${versionId ? '?version_id='+versionId : ''}`;
-        const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id='+versionId : ''}`;
-        
+        const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view${versionId ? '?version_id=' + versionId : ''}`;
+        const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id=' + versionId : ''}`;
+
         if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
         if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
 
@@ -1383,8 +1386,8 @@ SIModules.projectDetailAdmin = {
         const mime = doc.mime_type || '';
         const isImage = mime.startsWith('image/') && mime !== 'image/vnd.dwg' && mime !== 'image/vnd.adobe.photoshop';
         const isVideo = mime.startsWith('video/');
-        const isPdf   = mime === 'application/pdf';
-        const isText  = mime.startsWith('text/') || mime === 'application/json';
+        const isPdf = mime === 'application/pdf';
+        const isText = mime.startsWith('text/') || mime === 'application/json';
 
         if (isImage && img) {
             img.classList.remove('hidden');
@@ -1422,8 +1425,16 @@ SIModules.projectDetailAdmin = {
         }
         if (reopenBtn) reopenBtn.classList.add('hidden');
         if (icon) {
-            icon.style.transform = (window.innerWidth >= 1024) ? 'rotate(90deg)' : '';
+            // En desktop, si está ABIERTO, la flecha apunta a la DERECHA (indicando "ocultar hacia allá")
+            icon.style.transform = (window.innerWidth >= 1024) ? 'rotate(180deg)' : ''; 
         }
+
+        // Asegurar que el cuerpo del chat sea visible e inicializar label del filtro
+        const chatBody = document.getElementById('chat-collapsible-body');
+        if (chatBody) chatBody.classList.remove('hidden');
+        
+        const chatFilterLabel = document.getElementById('chat-version-filter-label');
+        if (chatFilterLabel) chatFilterLabel.textContent = 'Todas';
 
         // Load versions (populates header dropdown) and comments
         this.loadDocVersionsForChat(doc.id, versionId);
@@ -1544,22 +1555,18 @@ SIModules.projectDetailAdmin = {
             const isCollapsed = panel.dataset.collapsed === 'true';
 
             if (isCollapsed) {
-                // ABRIR
-                panel.style.maxWidth = '';   // vuelve al max-width de la clase (26rem / 30rem)
+                panel.style.maxWidth = '';   
                 panel.style.opacity = '1';
                 panel.dataset.collapsed = 'false';
-                // En desktop, cuando está ABIERTO, la flecha apunta a la DERECHA (indicando "ocultar hacia allá")
-                if (icon) { icon.style.transform = 'rotate(90deg)'; }
+                if (icon) { icon.style.transform = 'rotate(180deg)'; }
                 if (reopenBtn) reopenBtn.classList.add('hidden');
             } else {
-                // CERRAR → slide out to the right
                 panel.style.maxWidth = panel.offsetWidth + 'px';
                 void panel.offsetWidth;
                 panel.style.maxWidth = '0px';
                 panel.style.opacity = '0';
                 panel.dataset.collapsed = 'true';
-                // Al colapsar, la flecha apuntaría a la izquierda (aunque el panel se oculte)
-                if (icon) { icon.style.transform = 'rotate(-90deg)'; }
+                if (icon) { icon.style.transform = 'rotate(0deg)'; }
 
                 setTimeout(() => {
                     if (panel.dataset.collapsed === 'true' && reopenBtn) {
@@ -1594,10 +1601,19 @@ SIModules.projectDetailAdmin = {
         const versionData = this.docVersions ? this.docVersions.find(v => v.id == versionId) : null;
 
         const iframe = document.getElementById('preview-iframe');
+        const img = document.getElementById('preview-img');
+        const video = document.getElementById('preview-video');
         const skeleton = document.getElementById('preview-skeleton');
         const unsupportedDiv = document.getElementById('preview-unsupported');
         const unsupportedDownload = document.getElementById('preview-unsupported-download');
         const headerDownloadBtn = document.getElementById('preview-doc-download');
+
+        // Reset visualizadores
+        if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
+        if (img) { img.classList.add('hidden'); img.src = ''; }
+        if (video) { video.classList.add('hidden'); video.src = ''; video.pause(); }
+        if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
+        if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
 
         // Actualizar metadatos del header con los datos de la versión seleccionada
         if (versionData) {
@@ -1612,11 +1628,10 @@ SIModules.projectDetailAdmin = {
             this._updatePreviewHeader(vDoc);
 
             const mime = vDoc.mime_type || '';
-            const canView = mime === 'application/pdf' ||
-                mime.startsWith('image/') ||
-                mime.startsWith('video/') ||
-                mime.startsWith('text/') ||
-                mime === 'application/json';
+            const isImage = mime.startsWith('image/') && mime !== 'image/vnd.dwg' && mime !== 'image/vnd.adobe.photoshop';
+            const isVideo = mime.startsWith('video/');
+            const isPdf = mime === 'application/pdf';
+            const isText = mime.startsWith('text/') || mime === 'application/json';
 
             const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
             const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
@@ -1624,13 +1639,14 @@ SIModules.projectDetailAdmin = {
             if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
             if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
 
-            // Reset
-            if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
-            iframe.classList.add('opacity-0', 'hidden');
-            iframe.src = '';
-            if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
-
-            if (canView) {
+            if (isImage && img) {
+                img.classList.remove('hidden');
+                img.src = viewUrl;
+            } else if (isVideo && video) {
+                video.classList.remove('hidden');
+                video.src = viewUrl;
+                video.load();
+            } else if ((isPdf || isText) && iframe) {
                 iframe.classList.remove('hidden');
                 iframe.src = viewUrl;
             } else {
@@ -1644,7 +1660,13 @@ SIModules.projectDetailAdmin = {
 
         // Actualizar selector de versiones del chat y filtrar comentarios
         const chatSelect = document.getElementById('chat-version-select');
+        const chatFilterLabel = document.getElementById('chat-version-filter-label');
+        
         if (chatSelect) chatSelect.value = versionId;
+        if (chatFilterLabel) {
+            chatFilterLabel.textContent = versionData ? `v${versionData.version_number}` : 'Todas';
+        }
+
         this.renderDocComments(versionId);
     },
 
@@ -1679,9 +1701,13 @@ SIModules.projectDetailAdmin = {
                         chatSelect.appendChild(opt);
                     }
 
-                    // Sincronizar el campo oculto con la versión activa seleccionada
+                    // Sincronizar el campo oculto y el label del filtro con la versión activa seleccionada
                     if (isSelected) {
                         this._setActiveCommentVersion(v.id, v.version_number);
+                        const chatFilterLabel = document.getElementById('chat-version-filter-label');
+                        if (chatFilterLabel && selectedVersionId) {
+                            chatFilterLabel.textContent = `v${v.version_number}`;
+                        }
                     }
 
                     // Header dropdown row
