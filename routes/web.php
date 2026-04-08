@@ -6,6 +6,8 @@ $router->get('/api/csrf-token', 'AuthController@getCsrfToken');
 
 // Auditoría y Trazabilidad
 $router->get('/api/projects/(\d+)/audit', 'AuditController@getProjectTimeline');
+$router->get('/api/audit', 'AuditController@getGlobalLogs');
+$router->get('/api/audit/filters', 'AuditController@getFiltersData');
 
 // Autenticación
 $router->get('/api/me', 'AuthController@me');

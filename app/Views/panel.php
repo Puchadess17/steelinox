@@ -24,6 +24,9 @@
     <!-- FlyonUI CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flyonui@latest/flyonui.min.css">
 
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <!-- Custom CSS -->
     <link rel="stylesheet"
         href="/steelinox/public/assets/css/app.css?v=<?php echo filemtime(ROOT_PATH . '/public/assets/css/app.css'); ?>">
@@ -156,6 +159,8 @@
     <!-- ═══════════════════════════════════ -->
     <!-- SCRIPTS                             -->
     <!-- ═══════════════════════════════════ -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script
         src="/steelinox/public/assets/js/api.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/api.js'); ?>"></script>
     <script
@@ -174,6 +179,8 @@
         src="/steelinox/public/assets/js/modules/client_detail_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_detail_admin.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/modules/client_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_form_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/audit.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/audit.js'); ?>"></script>
 
     <script>
 

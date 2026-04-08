@@ -268,4 +268,12 @@ class User
         $stmt->execute(['user_id' => $commercialId]);
         return $stmt->fetchAll();
     }
-}
+
+    /** Obtiene todos los usuarios (incluyendo borrados) para filtros de auditoría */
+    public function getAllBasic() {
+        $sql = "SELECT id, name, role, deleted_at FROM users ORDER BY name ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+}

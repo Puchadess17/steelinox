@@ -49,4 +49,63 @@ class AuditController {
             echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
         }
     }
-}
+
+    public function getGlobalLogs() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+        if ($_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado']);
+            return;
+        }
+        try {
+            $filters = [
+                'actor_user_id' => $_GET['actor_user_id'] ?? null,
+                'action_key'    => $_GET['action_key'] ?? null,
+                'entity_type'   => $_GET['entity_type'] ?? null,
+                'date_start'    => $_GET['date_start'] ?? null,
+                'date_end'      => $_GET['date_end'] ?? null,
+            ];
+            $auditModel = new Audit();
+            $logs = $auditModel->getFilteredLogs($filters);
+            foreach ($logs as &$log) {
+                if ($log['metadata_json']) {
+                    $log['metadata'] = json_decode($log['metadata_json'], true);
+                } else {
+                    $log['metadata'] = null;
+                }
+                unset($log['metadata_json']);
+            }
+            echo json_encode(['success' => true, 'data' => $logs]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error al obtener logs', 'errors' => ['server' => $e->getMessage()]]);
+        }
+    }
+
+    public function getFiltersData() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+        if ($_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado']);
+            return;
+        }
+        try {
+            $auditModel = new Audit();
+            require_once APP_PATH . '/Models/User.php';
+            $userModel = new User();
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'actions'  => $auditModel->getUniqueActions(),
+                    'entities' => $auditModel->getUniqueEntities(),
+                    'actors'   => $userModel->getAllBasic()
+                ]
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error al obtener filtros']);
+        }
+    }
+}
