@@ -4,7 +4,7 @@
 require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
-
+require_once APP_PATH . '/Services/AuditLogger.php';
 class DocumentController {
 
     // Listar los documentos de un proyecto (GET /api/projects/{projectId}/documents)
@@ -68,7 +68,7 @@ class DocumentController {
             }
 
             $file = $_FILES['file'];
-            $title = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME); // Por defecto, el nombre del archivo
+            $title = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
             $type = $_POST['type'] ?? 'otros';
             $isVisible = isset($_POST['is_visible_to_client']) ? (int)$_POST['is_visible_to_client'] : 0;
 
@@ -83,10 +83,9 @@ class DocumentController {
                 'text/markdown', 'text/csv', 'text/plain', 'application/json', 'application/x-yaml', 'text/yaml',
                 'image/vnd.adobe.photoshop', 'application/postscript',
                 'image/vnd.dwg', 'image/vnd.dxf', 'application/acad', 'application/dxf',
-                'model/obj', 'model/stl', 'application/octet-stream' // Para formatos propietarios (.fig, .prproj, .dwg, etc)
+                'model/obj', 'model/stl', 'application/octet-stream'
             ];
 
-            // Comprobamos el MIME type real del archivo (no la extensión que puede ser falsificada)
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $realMime = finfo_file($finfo, $file['tmp_name']);
 
@@ -96,29 +95,21 @@ class DocumentController {
                 return;
             }
 
-            // Seguridad: Generar nombre cifrado y preparar ruta
-            // __DIR__ sube dos niveles (desde app/Controllers) hasta la raíz y busca storage/documents
             $storageDir = __DIR__ . '/../../storage/documents/';
-            
-            // Si la carpeta no existe, la creamos de forma segura
             if (!is_dir($storageDir)) {
                 mkdir($storageDir, 0755, true);
             }
 
             $secureFileName = bin2hex(random_bytes(16)) . '_' . time();
             $destinationPath = $storageDir . $secureFileName;
-
-            // Calcular el Checksum (Firma única del archivo para evitar duplicados o manipulación)
             $checksum = hash_file('sha256', $file['tmp_name']);
 
-            // Mover archivo del temporal al storage privado
             if (!move_uploaded_file($file['tmp_name'], $destinationPath)) {
                 throw new Exception("Error al guardar el archivo en el disco.");
             }
 
             $accessMode = $_POST['access_mode'] ?? 'download';
 
-            // Preparar datos para el modelo
             $docData = [
                 'project_id'           => (int)$projectId,
                 'type'                 => $type,
@@ -129,8 +120,8 @@ class DocumentController {
             ];
 
             $versionData = [
-                'file_name'       => $file['name'], // Guardamos el nombre original para cuando se descargue
-                'storage_path'    => $secureFileName, // Guardamos la ruta segura relativa
+                'file_name'       => $file['name'],
+                'storage_path'    => $secureFileName,
                 'mime_type'       => $realMime,
                 'file_size'       => $file['size'],
                 'checksum_sha256' => $checksum,
@@ -138,21 +129,36 @@ class DocumentController {
             ];
 
             $documentModel = new Document();
-            
-            // Deduplicación Automática: ¿Existe ya un documento con este título en el proyecto?
             $existingId = $documentModel->findDocumentByTitle((int)$projectId, trim($title));
 
             if ($existingId) {
-                // Si existe, lo tratamos como una nueva VERSIÓN automáticamente
+                // AUTO-VERSIONADO
                 $newVersionId = $documentModel->uploadNewVersion((int)$existingId, $versionData);
+                
+                // AUDITORÍA: Nueva versión automática
+                AuditLogger::log('document_new_version', 'document_version', $newVersionId, $projectId, [
+                    'file_name'      => $file['name'],
+                    'document_id'    => $existingId,
+                    'file_size'      => $file['size'],
+                    'auto_versioned' => true
+                ]);
+
                 echo json_encode([
                     'success' => true,
                     'message' => 'Se ha detectado un documento con el mismo nombre. Se ha subido como una nueva versión (Auto-Versionado).',
                     'data'    => ['id' => $existingId, 'version_id' => $newVersionId, 'is_new_version' => true]
                 ]);
             } else {
-                // Si no existe, creamos un documento NUEVO
+                // DOCUMENTO NUEVO
                 $newDocId = $documentModel->uploadNewDocument($docData, $versionData);
+                
+                // AUDITORÍA: Subida de documento nuevo
+                AuditLogger::log('document_upload', 'document', $newDocId, $projectId, [
+                    'file_name' => $file['name'],
+                    'file_size' => $file['size'],
+                    'mime_type' => $realMime
+                ]);
+
                 echo json_encode([
                     'success' => true,
                     'message' => 'Documento subido correctamente',
@@ -182,7 +188,6 @@ class DocumentController {
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            // Escudo de Autorización sobre el Proyecto
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
@@ -190,7 +195,6 @@ class DocumentController {
                 return;
             }
 
-            // Validar que se ha enviado un archivo
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido']);
@@ -199,7 +203,6 @@ class DocumentController {
 
             $file = $_FILES['file'];
 
-            // Seguridad: Tipos MIME permitidos
             $allowedMimes = [
                 'application/pdf', 
                 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/heic', 'image/heif',
@@ -242,6 +245,14 @@ class DocumentController {
 
             $documentModel = new Document();
             $versionId = $documentModel->uploadNewVersion((int)$documentId, $versionData);
+
+            // AUDITORÍA: Nueva versión manual
+            AuditLogger::log('document_new_version', 'document_version', $versionId, $projectId, [
+                'file_name'      => $file['name'],
+                'document_id'    => $documentId,
+                'file_size'      => $file['size'],
+                'auto_versioned' => false
+            ]);
 
             echo json_encode([
                 'success' => true,
@@ -302,17 +313,11 @@ class DocumentController {
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            // Escudo de Autorización sobre el Proyecto
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 die("Proyecto no encontrado o sin permisos.");
             }
-
-            // IMPORTANTE: Liberar el bloqueo de sesión de PHP.
-            // Los videos pesados y los Range Requests abren múltiples conexiones.
-            // Si no cerramos la sesión, la segunda petición esperará a que termine la primera, causando buffering infinito.
-            session_write_close();
 
             $versionId = $_GET['version_id'] ?? null;
             $documentModel = new Document();
@@ -323,14 +328,12 @@ class DocumentController {
                 die("Documento no encontrado.");
             }
 
-            // Escudo de Autorización sobre el Documento
             if ($role === 'cliente') {
                 if ($docInfo['is_visible_to_client'] == 0) {
                     http_response_code(403);
                     die("Este documento es confidencial.");
                 }
 
-                // Aplicar ENFORCEMENT de access_mode
                 if ($disposition === 'attachment' && $docInfo['access_mode'] === 'view') {
                     http_response_code(403);
                     die("Este documento solo está disponible para visualización online.");
@@ -341,6 +344,24 @@ class DocumentController {
                 }
             }
 
+            // --- AUDITORÍA (Anti-Spam de Streaming) ---
+            // Solo registramos si NO es una petición fragmentada (Range) o si es la que inicia en bytes=0
+            $isChunked = isset($_SERVER['HTTP_RANGE']);
+            $isFirstChunk = $isChunked ? (strpos($_SERVER['HTTP_RANGE'], 'bytes=0-') !== false) : true;
+
+            if ($isFirstChunk) {
+                $actionKey = ($disposition === 'attachment') ? 'document_download' : 'document_view';
+                AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
+                    'file_name'      => $docInfo['file_name'],
+                    'version_number' => $docInfo['version_number'] ?? null,
+                    'is_specific_version' => $versionId ? true : false
+                ]);
+            }
+            // -------------------------------------------
+
+            // IMPORTANTE: Liberar el bloqueo de sesión de PHP después de hacer el Audit.
+            session_write_close();
+
             $storageDir = __DIR__ . '/../../storage/documents/';
             $filePath = $storageDir . $docInfo['storage_path'];
 
@@ -349,19 +370,16 @@ class DocumentController {
                 die("Archivo no encontrado en el servidor.");
             }
 
-            // Preparar para streaming / Range Requests
             $size = filesize($filePath);
             $start = 0;
             $end = $size - 1;
             
-            // Abrir archivo en modo binario
             $fp = @fopen($filePath, 'rb');
             if (!$fp) {
                 http_response_code(500);
                 die("Error al abrir el archivo.");
             }
 
-            // Soporte de HTTP Range (Crucial para videos en móvil)
             if (isset($_SERVER['HTTP_RANGE'])) {
                 $c_start = $start;
                 $c_end = $end;
@@ -394,17 +412,15 @@ class DocumentController {
                 $length = $size;
             }
 
-            // Headers estándar
             header('Content-Type: ' . $docInfo['mime_type']);
             header('Content-Disposition: ' . $disposition . '; filename="' . basename($docInfo['file_name']) . '"');
             header("Accept-Ranges: bytes");
             header("Content-Range: bytes $start-$end/$size");
             header("Content-Length: " . $length);
-            header('Cache-Control: private, max-age=86400, must-revalidate'); // Cachear un día el recurso estático
+            header('Cache-Control: private, max-age=86400, must-revalidate'); 
             header('Pragma: public');
             
-            // Enviar el archivo por fragmentos (buffer)
-            $buffer = 64 * 1024; // 64kb por ciclo (mejor rendimiento en streaming)
+            $buffer = 64 * 1024; 
             while (!feof($fp) && ($p = ftell($fp)) <= $end) {
                 if ($p + $buffer > $end) {
                     $buffer = $end - $p + 1;

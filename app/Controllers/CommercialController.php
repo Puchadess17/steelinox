@@ -3,6 +3,7 @@
 
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
 
 class CommercialController {
 
@@ -113,6 +114,7 @@ class CommercialController {
             }
 
             $hashedPassword = password_hash($input['password'], PASSWORD_DEFAULT);
+            $isActive = isset($input['is_active']) ? (int)$input['is_active'] : 1;
 
             // Forzando el rol 'comercial'
             $newUserId = $userModel->createInternalUser([
@@ -120,7 +122,15 @@ class CommercialController {
                 'name'          => trim($input['name']),
                 'email'         => strtolower(trim($input['email'])),
                 'password_hash' => $hashedPassword,
-                'is_active'     => isset($input['is_active']) ? (int)$input['is_active'] : 1
+                'is_active'     => $isActive
+            ]);
+
+            // AUDITORÍA: Alta de comercial
+            AuditLogger::log('user_create', 'user', $newUserId, null, [
+                'role'      => 'comercial',
+                'name'      => trim($input['name']),
+                'email'     => strtolower(trim($input['email'])),
+                'is_active' => $isActive
             ]);
 
             http_response_code(201); // 201 Created
@@ -165,6 +175,14 @@ class CommercialController {
 
             $userModel = new User();
 
+            // Obtenemos los datos ANTES de actualizar para la auditoría
+            $oldData = $userModel->getCommercialDetails($id);
+            if (!$oldData) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado', 'errors' => ['id' => 'Usuario inválido']]);
+                return;
+            }
+
             // Comprobar que el email no lo esté usando OTRO usuario
             if (!isset($errors['email']) && $userModel->emailExists($input['email'], $id)) {
                 $errors['email'] = 'Este correo electrónico ya pertenece a otra cuenta.';
@@ -178,6 +196,7 @@ class CommercialController {
 
             // Procesar contraseña opcional
             $hashedPassword = null;
+            $passwordChanged = false;
             if (!empty($input['password'])) {
                 if (strlen($input['password']) < 6) {
                     http_response_code(422);
@@ -185,17 +204,47 @@ class CommercialController {
                     return;
                 }
                 $hashedPassword = password_hash($input['password'], PASSWORD_DEFAULT);
+                $passwordChanged = true;
+            }
+
+            $newName = trim($input['name']);
+            $newEmail = strtolower(trim($input['email']));
+            $newIsActive = isset($input['is_active']) ? (int)$input['is_active'] : (int)$oldData['is_active'];
+
+            // Preparar el array de cambios para la auditoría
+            $changes = [];
+            if ($oldData['name'] !== $newName) {
+                $changes['name'] = ['before' => $oldData['name'], 'after' => $newName];
+            }
+            if ($oldData['email'] !== $newEmail) {
+                $changes['email'] = ['before' => $oldData['email'], 'after' => $newEmail];
+            }
+            if ((int)$oldData['is_active'] !== $newIsActive) {
+                $changes['is_active'] = ['before' => (int)$oldData['is_active'], 'after' => $newIsActive];
+            }
+            if ($passwordChanged) {
+                $changes['password'] = 'changed'; // Dejamos constancia sin revelar la contraseña
             }
 
             // Actualizar en base de datos
             $updated = $userModel->updateInternalUser($id, [
-                'name'          => trim($input['name']),
-                'email'         => strtolower(trim($input['email'])),
+                'name'          => $newName,
+                'email'         => $newEmail,
                 'password_hash' => $hashedPassword,
-                'is_active'     => isset($input['is_active']) ? (int)$input['is_active'] : 1
+                'is_active'     => $newIsActive
             ]);
 
             if ($updated) {
+                
+                // AUDITORÍA: Edición o Desactivación
+                if (!empty($changes)) {
+                    $actionKey = 'user_update';
+                    if (isset($changes['is_active'])) {
+                        $actionKey = ($newIsActive === 0) ? 'user_deactivate' : 'user_reactivate';
+                    }
+                    AuditLogger::log($actionKey, 'user', $id, null, ['changes' => $changes]);
+                }
+
                 echo json_encode(['success' => true, 'message' => 'Comercial actualizado correctamente', 'data' => ['id' => $id]]);
             } else {
                 throw new Exception("No se encontró al comercial o no hubo cambios");
@@ -236,6 +285,10 @@ class CommercialController {
             $deleted = $userModel->softDelete($id);
 
             if ($deleted) {
+                
+                // AUDITORÍA: Borrado lógico
+                AuditLogger::log('user_delete', 'user', $id);
+
                 echo json_encode(['success' => true, 'message' => 'Comercial eliminado correctamente', 'data' => null]);
             } else {
                 throw new Exception("No se pudo eliminar el registro");

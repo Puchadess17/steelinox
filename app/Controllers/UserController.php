@@ -3,6 +3,7 @@
 
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
 
 class UserController {
 
@@ -63,6 +64,14 @@ class UserController {
                 'is_active'     => isset($input['is_active']) ? (int)$input['is_active'] : 1
             ]);
 
+            // AUDITORÍA: Alta de usuario cliente
+            AuditLogger::log('user_create', 'user', $newUserId, null, [
+                'role'      => 'cliente',
+                'client_id' => $input['client_id'],
+                'name'      => trim($input['name']),
+                'email'     => trim($input['email'])
+            ]);
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Usuario creado correctamente',
@@ -98,6 +107,7 @@ class UserController {
 
         try {
             $userModel = new User();
+            // Obtenemos el usuario ANTES de actualizar (clave para la auditoría)
             $user = $userModel->findByIdWithInactive($id);
 
             if (!$user) {
@@ -107,7 +117,7 @@ class UserController {
             }
 
             // Validar email si se está cambiando
-            if (!empty($input['email']) && $input['email'] !== $user['email']) {
+            if (!empty($input['email']) && trim($input['email']) !== $user['email']) {
                 if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
                     http_response_code(422);
                     echo json_encode(['success' => false, 'message' => 'Email no válido', 'data' => null, 'errors' => ['email' => 'Email no válido.']]);
@@ -121,16 +131,50 @@ class UserController {
             }
 
             $updateData = [];
-            if (isset($input['name'])) $updateData['name'] = trim($input['name']);
-            if (isset($input['email'])) $updateData['email'] = trim($input['email']);
-            if (isset($input['is_active'])) $updateData['is_active'] = (int)$input['is_active'];
+            $changes = []; // Array para guardar las diferencias (Auditoría)
+
+            if (isset($input['name'])) {
+                $newName = trim($input['name']);
+                $updateData['name'] = $newName;
+                if ($newName !== $user['name']) {
+                    $changes['name'] = ['before' => $user['name'], 'after' => $newName];
+                }
+            }
+
+            if (isset($input['email'])) {
+                $newEmail = trim($input['email']);
+                $updateData['email'] = $newEmail;
+                if ($newEmail !== $user['email']) {
+                    $changes['email'] = ['before' => $user['email'], 'after' => $newEmail];
+                }
+            }
+
+            if (isset($input['is_active'])) {
+                $newStatus = (int)$input['is_active'];
+                $updateData['is_active'] = $newStatus;
+                if ($newStatus !== (int)$user['is_active']) {
+                    $changes['is_active'] = ['before' => (int)$user['is_active'], 'after' => $newStatus];
+                }
+            }
+
             if (!empty($input['password'])) {
                 $updateData['password_hash'] = password_hash($input['password'], PASSWORD_DEFAULT);
+                $changes['password'] = 'changed'; // No guardamos la clave real
             }
 
             $updated = $userModel->update($id, $updateData);
 
             if ($updated) {
+                
+                // AUDITORÍA: Edición / Activación / Desactivación
+                if (!empty($changes)) {
+                    $actionKey = 'user_update';
+                    if (isset($changes['is_active'])) {
+                        $actionKey = ($updateData['is_active'] === 0) ? 'user_deactivate' : 'user_reactivate';
+                    }
+                    AuditLogger::log($actionKey, 'user', $id, null, ['changes' => $changes]);
+                }
+
                 echo json_encode([
                     'success' => true,
                     'message' => 'Usuario actualizado correctamente',
@@ -170,6 +214,10 @@ class UserController {
             $deleted = $userModel->delete($id);
 
             if ($deleted) {
+
+                // AUDITORÍA: Borrado lógico
+                AuditLogger::log('user_delete', 'user', $id);
+
                 echo json_encode([
                     'success' => true,
                     'message' => 'Usuario eliminado correctamente',

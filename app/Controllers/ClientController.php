@@ -3,6 +3,7 @@
 
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
 
 class ClientController {
 
@@ -162,6 +163,12 @@ class ClientController {
                 'created_by' => $_SESSION['user_id']
             ]);
 
+            // AUDITORÍA: Alta de cliente
+            AuditLogger::log('client_create', 'client', $newClientId, null, [
+                'name'      => trim($input['name']),
+                'reference' => !empty($input['reference']) ? trim($input['reference']) : null
+            ]);
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Cliente creado correctamente',
@@ -205,7 +212,7 @@ class ClientController {
             
             $clientModel = new Client();
             
-            // 1. Escudo de seguridad: ¿Tiene permiso para ver/editar este cliente?
+            // Tiene permiso para ver/editar este cliente?
             $clientDetails = $clientModel->getDetailsById($id, $userId, $role);
             if (!$clientDetails) {
                 http_response_code(404);
@@ -218,24 +225,56 @@ class ClientController {
                 return;
             }
 
-            // 2. Leer los datos enviados
+            // Leer los datos enviados
             $input = json_decode(file_get_contents('php://input'), true);
 
-            // 3. Validación básica
+            // Validación básica
             if (empty($input['name'])) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['name' => 'El nombre es obligatorio']]);
                 return;
             }
 
-            // 4. Actualizar en la base de datos
-            $updated = $clientModel->update($id, [
+            // --- PREPARAR DATOS PARA AUDITORÍA (ANTES DE ACTUALIZAR) ---
+            $oldData = [
+                'name'      => $clientDetails['info']['name'],
+                'reference' => $clientDetails['info']['reference'],
+                'is_active' => (int)$clientDetails['info']['is_active']
+            ];
+
+            $newData = [
                 'name'      => trim($input['name']),
                 'reference' => !empty($input['reference']) ? trim($input['reference']) : null,
-                'is_active' => isset($input['is_active']) ? (int)$input['is_active'] : $clientDetails['info']['is_active']
-            ]);
+                'is_active' => isset($input['is_active']) ? (int)$input['is_active'] : $oldData['is_active']
+            ];
+
+            // Detectar qué campos han cambiado realmente
+            $changes = [];
+            foreach ($newData as $key => $value) {
+                if ($oldData[$key] !== $value) {
+                    $changes[$key] = [
+                        'before' => $oldData[$key],
+                        'after'  => $value
+                    ];
+                }
+            }
+
+            // Actualizar en la base de datos
+            $updated = $clientModel->update($id, $newData);
 
             if ($updated) {
+
+                // AUDITORÍA: Edición o Desactivación
+                if (!empty($changes)) {
+                    // Si el estado activo cambió, le doy un action_key específico, sino, es un simple update
+                    $actionKey = 'client_update';
+                    if (isset($changes['is_active'])) {
+                        $actionKey = ($newData['is_active'] === 0) ? 'client_deactivate' : 'client_reactivate';
+                    }
+
+                    AuditLogger::log($actionKey, 'client', $id, null, ['changes' => $changes]);
+                }
+
                 echo json_encode([
                     'success' => true,
                     'message' => 'Cliente actualizado correctamente',

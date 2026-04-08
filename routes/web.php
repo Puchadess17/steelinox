@@ -4,6 +4,9 @@
 // Token CSRF
 $router->get('/api/csrf-token', 'AuthController@getCsrfToken');
 
+// Auditoría y Trazabilidad
+$router->get('/api/projects/(\d+)/audit', 'AuditController@getProjectTimeline');
+
 // Autenticación
 $router->get('/api/me', 'AuthController@me');
 $router->post('/api/login', 'AuthController@login');

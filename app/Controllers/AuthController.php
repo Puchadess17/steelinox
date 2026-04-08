@@ -2,6 +2,7 @@
 // app/Controllers/AuthController.php
 
 require_once APP_PATH . '/Models/User.php';
+require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
 
 class AuthController {
 
@@ -36,6 +37,11 @@ class AuthController {
         if (isset($_SESSION['last_activity'])) {
             $secondsInactive = time() - $_SESSION['last_activity'];
             if ($secondsInactive >= 1800) {
+                // AUDITORÍA: Timeout de sesión (Lo hacemos ANTES de destruir la sesión)
+                if (isset($_SESSION['user_id'])) {
+                    AuditLogger::log('auth_timeout', 'user', $_SESSION['user_id'], null, ['inactive_seconds' => $secondsInactive]);
+                }
+
                 session_unset();
                 session_destroy();
                 $this->sendResponse(401, false, 'Su sesión ha expirado por inactividad.', null, ['auth' => 'Sesión expirada']);
@@ -96,6 +102,10 @@ class AuthController {
 
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        $input = json_decode(file_get_contents('php://input'), true);
+        $email = $input['email'] ?? '';
+        $password = $input['password'] ?? '';
+
         // --- Rate Limiting
         $ip = $_SERVER['REMOTE_ADDR'];
         $rateKey = 'login_attempts_' . $ip;
@@ -106,26 +116,16 @@ class AuthController {
             $ultimoIntento = $_SESSION[$rateKey]['last_time'];
 
             if ($intentos >= 5 && (time() - $ultimoIntento) < $tiempoBloqueo) {
+                // AUDITORÍA: Bloqueo de IP por demasiados intentos
+                AuditLogger::log('auth_lockout', 'system', null, null, ['ip' => $ip, 'email_attempted' => $email]);
+
                 $this->sendResponse(429, false, 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.', null, ['rate_limit' => 'Inténtelo de nuevo en 15 minutos']);
                 return;
             } elseif ((time() - $ultimoIntento) >= $tiempoBloqueo) {
-                // Una vez pasado el tiempo de bloqueo, reseteo el contador
                 unset($_SESSION[$rateKey]);
             }
         }
         // --- FIN: Rate Limiting
-
-        // Leer el JSON
-        $input = json_decode(file_get_contents('php://input'), true);
-        // php://input: Es un flujo de lectura (stream) interno de PHP que permite acceder al cuerpo de la petición HTTP en bruto.
-        // Ej: "olvídate de procesar nada, dame los datos exactos que han entrado por el cable".
-
-        // file_get_contents(...): Toma ese flujo de datos crudos y lo convierte en una simple cadena de texto (un string).
-        // Ej: '{"email": "admin@steelinox.com", "password": "password"}'.
-
-        // json_decode(..., true): Toma ese string de texto y lo traduce a un array asociativo de PHP. Le dice a la función que quiero un array normal ($input['email']) y no un objeto de PHP ($input->email).
-        $email = $input['email'] ?? '';
-        $password = $input['password'] ?? '';
 
         $validationErrors = [];
         if (empty($email)) $validationErrors['email'] = 'El email es obligatorio';
@@ -151,6 +151,9 @@ class AuthController {
             // last_login_at
             $userModel->updateLastLogin($user['id']);
 
+            // AUDITORÍA: Login exitoso
+            AuditLogger::log('auth_login_success', 'user', $user['id']);
+
             $this->sendResponse(200, true, 'Login correcto', [
                 'id'   => $user['id'],
                 'name' => $user['name'],
@@ -163,7 +166,8 @@ class AuthController {
                 'last_time' => time()
             ];
 
-            // TODO: Registrar en audit_logs como exige el punto 11 del DDS
+            // AUDITORÍA
+            AuditLogger::log('auth_login_failed', 'system', null, null, ['email_attempted' => $email]);
 
             $this->sendResponse(401, false, 'Credenciales incorrectas', null, ['auth' => 'Email o contraseña inválidos']);
         }
@@ -171,6 +175,12 @@ class AuthController {
     
     public function logout() {
         if (session_status() === PHP_SESSION_NONE) session_start();
+        
+        // AUDITORÍA
+        if (isset($_SESSION['user_id'])) {
+            AuditLogger::log('auth_logout', 'user', $_SESSION['user_id']);
+        }
+
         session_unset();
         session_destroy();
         

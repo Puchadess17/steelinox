@@ -3,6 +3,7 @@
 
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Services/MailService.php';
+require_once APP_PATH . '/Services/AuditLogger.php';
 
 class PasswordResetController
 {
@@ -47,6 +48,12 @@ class PasswordResetController
         $user = $userModel->findByEmail($email);
 
         if (!$user) {
+            // AUDITORÍA: Intento de recuperación sobre un email inexistente
+            // Esto es vital para detectar ataques de enumeración (bots buscando correos válidos)
+            AuditLogger::log('password_reset_invalid_email', 'system', null, null, [
+                'email_attempted' => $email
+            ]);
+
             // Por seguridad, no decimos si el email existe o no
             echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.']);
             return;
@@ -78,6 +85,12 @@ class PasswordResetController
         $mailResult = MailService::send($email, "Recuperar Contraseña — Steel Inox", $html);
 
         if ($mailResult['success']) {
+            
+            // AUDITORÍA: Solicitud de cambio de contraseña exitosa
+            AuditLogger::log('password_reset_requested', 'user', $user['id'], null, [
+                'email' => $email
+            ]);
+
             echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.']);
         } else {
             http_response_code(500);
@@ -115,6 +128,10 @@ class PasswordResetController
 
         if ($updated) {
             $userModel->clearResetToken($user['id']);
+
+            // AUDITORÍA: Contraseña cambiada definitivamente
+            AuditLogger::log('password_reset_completed', 'user', $user['id']);
+
             echo json_encode(['success' => true, 'message' => 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'No se pudo actualizar la contraseña.']);

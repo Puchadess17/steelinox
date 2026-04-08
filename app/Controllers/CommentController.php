@@ -5,6 +5,7 @@ require_once APP_PATH . '/Models/Comment.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
 
 class CommentController {
 
@@ -145,16 +146,27 @@ class CommentController {
                 $versionIdToSave = $stmtVer->fetchColumn();
             }
 
+            $safeBody = htmlspecialchars($body);
+
             // Inserción final con la versión correcta
             $newCommentId = $commentModel->create([
                 'project_id'          => (int)$projectId,
                 'document_id'         => (int)$documentId,
                 'document_version_id' => $versionIdToSave, 
                 'author_user_id'      => $userId,
-                'body'                => htmlspecialchars($body)
+                'body'                => $safeBody
             ]);
 
             if ($newCommentId) {
+
+                // AUDITORÍA: Alta de comentario
+                // Guardamos un extracto del body para el timeline y a qué versión pertenece
+                AuditLogger::log('comment_create', 'comment', $newCommentId, $projectId, [
+                    'document_id'  => $documentId,
+                    'version_id'   => $versionIdToSave,
+                    'body_snippet' => mb_substr($safeBody, 0, 50) . (mb_strlen($safeBody) > 50 ? '...' : '')
+                ]);
+
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
