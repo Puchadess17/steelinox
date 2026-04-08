@@ -149,6 +149,19 @@ class CommentController {
                 'body'                => htmlspecialchars($body)
             ]);
 
+            if ($newCommentId) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Comentario publicado correctamente',
+                    'data'    => ['id' => $newCommentId],
+                    'errors'  => null
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'No se pudo guardar el comentario', 'data' => null, 'errors' => null]);
+            }
+
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);

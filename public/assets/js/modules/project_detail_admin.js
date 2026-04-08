@@ -199,46 +199,119 @@ SIModules.projectDetailAdmin = {
             </div>
 
             <!-- MODAL PREVISUALIZACIÓN -->
-            <div id="preview-doc-modal" class="fixed inset-0 bg-black/80 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4 backdrop-blur-md">
-                <div class="bg-white rounded-[2rem] w-full max-w-5xl h-[90vh] shadow-2xl transform scale-95 transition-all duration-300 flex flex-col overflow-hidden">
-                    <!-- Header -->
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-                        <div class="flex items-center gap-4 min-w-0">
+            <div id="preview-doc-modal" class="fixed inset-0 bg-black/80 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4 xl:p-8 backdrop-blur-md">
+                <div class="bg-white rounded-[2rem] w-full max-w-[90rem] h-[95vh] shadow-2xl transform scale-95 transition-all duration-300 flex flex-col overflow-hidden">
+                    <!-- Header Completo -->
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                        <div class="flex items-center gap-4 min-w-0 flex-1">
                             <div class="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </div>
-                            <div class="min-w-0">
-                                <h3 id="preview-doc-title" class="text-lg font-black text-gray-900 truncate uppercase tracking-tight">Cargando documento...</h3>
-                                <p id="preview-doc-meta" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Expediente Steel Inox</p>
+                            <div class="min-w-0 pr-4">
+                                <h3 id="preview-doc-title" class="text-base sm:text-lg font-black text-gray-900 truncate uppercase tracking-tight">Cargando documento...</h3>
+                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                    <span id="preview-meta-type" class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Documento</span>
+                                    <span class="text-gray-300 text-[10px]">•</span>
+                                    <!-- Version Switcher Dropdown -->
+                                    <div class="relative" id="version-switcher-wrapper">
+                                        <button id="preview-version-btn" onclick="SIModules.projectDetailAdmin.toggleVersionSwitcher()" class="inline-flex items-center gap-1 bg-gray-100 hover:bg-orange-50 hover:text-orange-600 border border-transparent hover:border-orange-200 text-gray-700 text-[10px] font-black px-2 py-0.5 rounded-lg transition-all uppercase tracking-widest cursor-pointer group">
+                                            <span id="preview-meta-version">v1</span>
+                                            <svg class="w-3 h-3 transition-transform" id="version-switcher-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                                        </button>
+                                        <!-- Dropdown list -->
+                                        <div id="version-switcher-dropdown" class="hidden absolute top-full left-0 mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                                            <div id="version-switcher-list" class="divide-y divide-gray-50">
+                                                <div class="px-3 py-2 flex justify-center"><div class="si-spinner w-4 h-4 border-orange-500/20 border-t-orange-500"></div></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-gray-300 text-[10px]">•</span>
+                                    <span id="preview-meta-author" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Sistema</span>
+                                    <span class="text-gray-300 text-[10px]">•</span>
+                                    <span id="preview-meta-date" class="text-[10px] text-gray-400 font-medium">...</span>
+                                </div>
                             </div>
                         </div>
-                        <button onclick="SIModules.projectDetailAdmin.closePreviewModal()" class="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-all">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <!-- Descarga directa movida arriba -->
+                            <a id="preview-doc-download" href="#" target="_blank" title="Descargar Documento"
+                               class="hidden sm:flex items-center justify-center w-10 h-10 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-900 hover:text-white transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            </a>
+                            <button onclick="SIModules.projectDetailAdmin.closePreviewModal()" class="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 bg-gray-50 hover:bg-red-50 hover:text-red-500 transition-all">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Iframe Container -->
-                    <div class="flex-1 bg-gray-100 relative">
-                        <!-- Skeleton Loader -->
-                        <div id="preview-skeleton" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 z-10 transition-opacity duration-500">
-                            <div class="si-spinner w-12 h-12 mb-4 border-orange-500/20 border-t-orange-500"></div>
-                            <p class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Generando vista segura...</p>
+                    <!-- Layout Principal Partido (Flex Row) -->
+                    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden bg-gray-50 relative">
+                        <!-- Panel Izquierdo: Iframe o Placeholder (70%) -->
+                        <div id="preview-left-panel" class="flex-1 relative flex flex-col border-b lg:border-b-0 lg:border-r border-gray-200 overflow-hidden bg-gray-100/50">
+                            <!-- Skeleton Loader -->
+                            <div id="preview-skeleton" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10 transition-opacity duration-500 backdrop-blur-sm">
+                                <div class="si-spinner w-12 h-12 mb-4 border-orange-500/20 border-t-orange-500"></div>
+                                <p class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Generando vista segura...</p>
+                            </div>
+                            <!-- El IFRAME -->
+                            <iframe id="preview-iframe" class="block border-none opacity-0 transition-opacity duration-500 relative z-0" 
+                                    style="height: 100%; margin: 0 auto; width: 100%; max-width: 100%;"
+                                    allowfullscreen onload="SIModules.projectDetailAdmin.onIframeLoad()"></iframe>
+                            <!-- Mensaje Archivo No Soportado (Fallback) -->
+                            <div id="preview-unsupported" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-50 p-8 text-center z-20">
+                                <div class="w-20 h-20 bg-white shadow-sm border border-gray-100 rounded-[2rem] flex items-center justify-center mb-6 text-gray-300">
+                                     <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                </div>
+                                <p class="text-xl text-gray-900 font-extrabold mb-2 tracking-tight">Previsualización no disponible</p>
+                                <p class="text-sm text-gray-500 max-w-sm mx-auto mb-8 font-medium leading-relaxed">Por seguridad y formato, no se puede cargar directamente. Pero puedes descargarlo para verlo en tu equipo local.</p>
+                                <a id="preview-unsupported-download" href="#" target="_blank" class="px-8 py-3.5 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-orange-500 transition-all uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-gray-900/10 group">
+                                     <svg class="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> 
+                                     Descargar Archivo Original
+                                </a>
+                            </div>
                         </div>
-                        <iframe id="preview-iframe" class="block border-none opacity-0 transition-opacity duration-500" 
-                                style="height: 100%; margin: 0 auto; width: 100%; max-width: 100%;"
-                                allowfullscreen onload="SIModules.projectDetailAdmin.onIframeLoad()"></iframe>
-                    </div>
 
-                    <!-- Footer / Actions -->
-                    <div class="p-6 border-t border-gray-100 flex items-center justify-between bg-white shrink-0">
-                        <div class="flex items-center gap-2">
-                             <span class="text-[10px] text-gray-300 font-bold uppercase">Vista Segura Steel Inox v2.4</span>
+                        <!-- Panel Derecho: Chat & Comentarios (30%) -->
+                        <div id="preview-right-panel" class="w-full lg:w-[26rem] xl:w-[30rem] bg-white flex flex-col shrink-0 lg:max-h-full max-h-[50vh]">
+                            <!-- Chat Header -->
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                                 <h4 class="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                     <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> 
+                                     Comentarios
+                                 </h4>
+                                 <!-- Selector de versiones -->
+                                 <select id="chat-version-select" onchange="SIModules.projectDetailAdmin.filterCommentsByVersion()" class="text-[11px] font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all uppercase tracking-wider cursor-pointer">
+                                     <option value="">Todas las versiones</option>
+                                 </select>
+                            </div>
+
+                            <!-- Chat Messages (Scrollable) -->
+                            <div id="preview-chat-messages" class="flex-1 overflow-y-auto p-5 space-y-5 bg-[#FAFAFA] relative">
+                                 <!-- Centro loading -->
+                                 <div id="chat-loading" class="absolute inset-0 flex items-center justify-center bg-[#FAFAFA] z-10">
+                                     <div class="si-spinner w-8 h-8 border-orange-500/30 border-t-orange-500"></div>
+                                 </div>
+                                 <!-- Mensajes inyectados dinámicamente -->
+                                 <div id="chat-messages-container" class="space-y-6 flex flex-col min-h-full pb-2">
+                                 </div>
+                            </div>
+
+                            <!-- Chat Input Form -->
+                            <div class="p-4 border-t border-gray-100 bg-white shrink-0 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] relative z-20">
+                                 <form id="preview-chat-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.submitDocComment();">
+                                     <input type="hidden" id="chat-current-doc-id" value="">
+                                     <div class="relative flex items-end gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                                         <textarea id="preview-chat-input" rows="1" placeholder="Escribe un comentario..." required 
+                                             class="w-full pl-3 pr-2 py-2.5 bg-transparent border-none text-gray-900 text-sm resize-none outline-none focus:ring-0 max-h-32 min-h-[44px]"
+                                             oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px';"></textarea>
+                                         <button type="submit" id="preview-chat-submit" class="shrink-0 w-10 h-10 mb-0.5 bg-[#1a1b25] text-white rounded-xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-md group">
+                                             <svg id="preview-chat-send-icon" class="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                             <div id="preview-chat-send-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
+                                         </button>
+                                     </div>
+                                 </form>
+                            </div>
                         </div>
-                        <a id="preview-doc-download" href="#" target="_blank" 
-                           class="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-orange-600 transition-all shadow-lg shadow-gray-900/10 uppercase tracking-widest">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            Descargar Original
-                        </a>
                     </div>
                 </div>
             </div>
@@ -278,6 +351,9 @@ SIModules.projectDetailAdmin = {
 
             // Actualizar Cabecera
             this.renderHeader();
+            
+            // Renderizar modales dinámicos
+            this.renderProjectModals();
 
             // Renderizar la pestaña activa inicial (Resumen)
             this.renderTabContent();
@@ -338,6 +414,134 @@ SIModules.projectDetailAdmin = {
             badgeEl.className = `inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${style}`;
             badgeEl.textContent = label;
         }
+    },
+
+    /** Renderizar Modales Dinámicos que dependen de los datos del proyecto */
+    renderProjectModals() {
+        let container = document.getElementById('si-dynamic-modals');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'si-dynamic-modals';
+            document.body.appendChild(container);
+        }
+        
+        const p = this.project;
+        container.innerHTML = `
+            <!-- MODAL: EDITAR PROYECTO -->
+            <div id="edit-project-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+                        <h3 class="text-xl font-extrabold text-gray-900">Editar Proyecto</h3>
+                        <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto">
+                        <form id="edit-project-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectEdits();" class="space-y-4">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
+                                    <input type="text" id="edit-project-name" name="name" value="${p.name || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
+                                    <input type="text" id="edit-project-ref" name="reference" value="${p.reference || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€)</label>
+                                    <input type="number" step="50" id="edit-project-budget" name="budget_amount" value="${p.budget_amount || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
+                                    <input type="number" step="1" id="edit-project-surface" name="surface" value="${p.surface || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
+                                <input type="text" id="edit-project-type" name="project_type" value="${p.project_type || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
+                                <textarea id="edit-project-desc" name="description" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">${p.description || ''}</textarea>
+                            </div>
+
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
+                         <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                         <button onclick="SIModules.projectDetailAdmin.saveProjectEdits()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
+                             <svg class="w-4 h-4 hidden" id="edit-project-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                             Guardar Cambios
+                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: CAMBIAR ESTADO -->
+            <div id="change-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-lg font-extrabold text-gray-900">Cambiar Estado</h3>
+                        <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus();" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nuevo Estado <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="hidden" id="change-status-select" name="status" value="${p.status}">
+                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleDropdown('status-dropdown-menu')" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
+                                        <div class="flex items-center gap-2">
+                                           <span id="change-status-circle" class="w-2 h-2 rounded-full ${p.status === 'propuesta' ? 'bg-amber-400' : (p.status === 'aprobado' ? 'bg-blue-400' : (p.status === 'ejecucion' ? 'bg-orange-400' : 'bg-emerald-400'))}"></span>
+                                           <span id="change-status-display" class="capitalize">${p.status}</span>
+                                        </div>
+                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                                    </button>
+                                    
+                                    <ul id="status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'propuesta' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
+                                            ${p.status === 'propuesta' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
+                                            ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('ejecucion', 'Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'ejecucion' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Ejecución
+                                            ${p.status === 'ejecucion' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cerrado
+                                            ${p.status === 'cerrado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Motivo / Notas</label>
+                                <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Añade un motivo"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 rounded-b-xl">
+                         <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                         <button onclick="SIModules.projectDetailAdmin.saveProjectStatus()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none flex items-center gap-2">
+                             <svg class="w-4 h-4 hidden" id="change-status-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                             Actualizar
+                         </button>
+                     </div>
+                </div>
+            </div>
+        `;
     },
 
     /** Disparar el renderizado según pestaña activa */
@@ -898,12 +1102,12 @@ SIModules.projectDetailAdmin = {
                         </div>
                         <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0 sm:pl-3">
                             <div class="flex items-center gap-1 border-r border-gray-100 pr-3 mr-1">
-                                ${canView ? `
-                                <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify(doc)})' 
-                                   class="p-2 text-gray-300 hover:text-blue-500 transition-colors transform hover:scale-110 active:scale-95" 
-                                   title="Visualizar Online">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>` : ''}
+                                <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify(doc).replace(/'/g, "&#39;")})' 
+                                   class="p-2 text-gray-300 hover:text-blue-500 transition-colors transform hover:scale-110 active:scale-95 flex items-center justify-center relative group/btn" 
+                                   title="Ver / Comentar">
+                                    <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${canView ? 'opacity-100 group-hover/btn:opacity-0' : 'hidden'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${!canView ? 'opacity-100 group-hover/btn:opacity-0' : 'opacity-0 group-hover/btn:opacity-100'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                </button>
                                 
                                 <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
                                    target="_blank"
@@ -1002,11 +1206,11 @@ SIModules.projectDetailAdmin = {
                         </div>
                     </div>
                     <div class="flex items-center gap-1 opacity-40 group-hover/ver:opacity-100 transition-opacity">
-                        ${canView ? `
-                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal({id: ${docId}, title: "${SIApp.escapeHtml(v.file_name)}"}, ${v.id})'
-                           class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors" title="Visualizar esta versión">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        </button>` : ''}
+                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify({id: docId, title: SIApp.escapeHtml(v.file_name), mime_type: v.mime_type, file_size: v.file_size, version_number: v.version_number, uploaded_by_name: v.uploaded_by_name, uploaded_at: v.uploaded_at}).replace(/'/g, "&#39;")}, ${v.id})'
+                           class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors transform hover:scale-110 relative" title="Visualizar esta versión / Comentar">
+                            <svg class="w-4 h-4 transition-opacity duration-300 ${!canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            <svg class="w-4 h-4 transition-opacity duration-300 ${canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                        </button>
                         <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
                            target="_blank"
                            class="p-1.5 text-gray-400 hover:text-orange-500 transition-colors" title="Descargar esta versión">
@@ -1089,15 +1293,28 @@ SIModules.projectDetailAdmin = {
     openPreviewModal(doc, versionId = null) {
         const modal = document.getElementById('preview-doc-modal');
         const iframe = document.getElementById('preview-iframe');
-        const titleEl = document.getElementById('preview-doc-title');
-        const downloadBtn = document.getElementById('preview-doc-download');
         const skeleton = document.getElementById('preview-skeleton');
+        const unsupportedDiv = document.getElementById('preview-unsupported');
+        const unsupportedDownload = document.getElementById('preview-unsupported-download');
+        const headerDownloadBtn = document.getElementById('preview-doc-download');
 
         if (!modal || !iframe) return;
 
-        titleEl.textContent = doc.title;
-        skeleton.classList.remove('opacity-0', 'hidden');
-        iframe.classList.add('opacity-0');
+        // Store current doc context
+        this.currentDocId = doc.id;
+        this.currentDoc = doc;
+        document.getElementById('chat-current-doc-id').value = doc.id;
+
+        // Populate metadata in header
+        this._updatePreviewHeader(doc);
+
+        // Compute canView
+        const mime = doc.mime_type || '';
+        const canView = mime === 'application/pdf' || 
+                        mime.startsWith('image/') || 
+                        mime.startsWith('video/') ||
+                        mime.startsWith('text/') ||
+                        mime === 'application/json';
 
         let viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view`;
         let downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download`;
@@ -1106,15 +1323,340 @@ SIModules.projectDetailAdmin = {
             viewUrl += `?version_id=${versionId}`;
             downloadUrl += `?version_id=${versionId}`;
         }
+        
+        if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
+        if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
 
-        iframe.src = viewUrl;
-        downloadBtn.href = downloadUrl;
+        // Reset iframe state
+        if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
+        iframe.classList.add('opacity-0', 'hidden');
+        iframe.src = '';
+        if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
+
+        // Layout handling
+        if (canView) {
+            iframe.classList.remove('hidden');
+            iframe.src = viewUrl;
+        } else {
+            if (skeleton) skeleton.classList.add('hidden');
+            if (unsupportedDiv) unsupportedDiv.classList.remove('hidden');
+        }
 
         modal.classList.remove('hidden');
         setTimeout(() => {
             modal.classList.remove('opacity-0');
-            modal.querySelector('div').classList.remove('scale-95');
+            const innerDiv = modal.querySelector('div');
+            if (innerDiv) innerDiv.classList.remove('scale-95');
         }, 10);
+
+        // Load versions (populates header dropdown) and comments
+        this.loadDocVersionsForChat(doc.id, versionId);
+        this.loadDocComments(doc.id, versionId);
+    },
+
+    /** Actualiza la zona de metadatos del header del preview con los datos de una versión */
+    _updatePreviewHeader(doc) {
+        const titleEl  = document.getElementById('preview-doc-title');
+        const metaType = document.getElementById('preview-meta-type');
+        const metaVersion = document.getElementById('preview-meta-version');
+        const metaAuthor = document.getElementById('preview-meta-author');
+        const metaDate = document.getElementById('preview-meta-date');
+
+        if (titleEl) titleEl.textContent = doc.title || doc.file_name || 'Documento';
+        if (metaType) metaType.textContent = doc.type || 'Archivo';
+        if (metaVersion) metaVersion.textContent = 'v' + (doc.version_number || '1');
+        if (metaAuthor) metaAuthor.textContent = doc.uploaded_by_name || 'Desconocido';
+        if (metaDate) metaDate.textContent = doc.uploaded_at ? SIApp.formatDateTime(doc.uploaded_at) : '';
+    },
+
+    /** Mostrar / ocultar el dropdown de versiones en el header */
+    toggleVersionSwitcher() {
+        const dropdown = document.getElementById('version-switcher-dropdown');
+        const arrow = document.getElementById('version-switcher-arrow');
+        if (!dropdown) return;
+        const isOpen = !dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden', isOpen);
+        if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+        // Cerrar al hacer clic fuera
+        if (!isOpen) {
+            const close = (e) => {
+                if (!document.getElementById('version-switcher-wrapper')?.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                    if (arrow) arrow.style.transform = '';
+                    document.removeEventListener('click', close);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', close), 10);
+        }
+    },
+
+    /** Cambia a una versión específica del documento actualmente abierto */
+    async switchDocVersion(versionId) {
+        // Cerrar dropdown
+        const dropdown = document.getElementById('version-switcher-dropdown');
+        const arrow = document.getElementById('version-switcher-arrow');
+        if (dropdown) dropdown.classList.add('hidden');
+        if (arrow) arrow.style.transform = '';
+
+        const docId = this.currentDocId;
+        if (!docId || !versionId) return;
+
+        // Encontrar los datos de la versión en el array cacheado
+        const versionData = this.docVersions ? this.docVersions.find(v => v.id == versionId) : null;
+
+        const iframe = document.getElementById('preview-iframe');
+        const skeleton = document.getElementById('preview-skeleton');
+        const unsupportedDiv = document.getElementById('preview-unsupported');
+        const unsupportedDownload = document.getElementById('preview-unsupported-download');
+        const headerDownloadBtn = document.getElementById('preview-doc-download');
+
+        // Actualizar metadatos del header con los datos de la versión seleccionada
+        if (versionData) {
+            const vDoc = {
+                title: this.currentDoc.title,
+                type: this.currentDoc.type,
+                mime_type: versionData.mime_type || this.currentDoc.mime_type,
+                version_number: versionData.version_number,
+                uploaded_by_name: versionData.uploaded_by_name,
+                uploaded_at: versionData.uploaded_at,
+            };
+            this._updatePreviewHeader(vDoc);
+
+            const mime = vDoc.mime_type || '';
+            const canView = mime === 'application/pdf' ||
+                            mime.startsWith('image/') ||
+                            mime.startsWith('video/') ||
+                            mime.startsWith('text/') ||
+                            mime === 'application/json';
+
+            const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
+            const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
+
+            if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
+            if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
+
+            // Reset
+            if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
+            iframe.classList.add('opacity-0', 'hidden');
+            iframe.src = '';
+            if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
+
+            if (canView) {
+                iframe.classList.remove('hidden');
+                iframe.src = viewUrl;
+            } else {
+                if (skeleton) skeleton.classList.add('hidden');
+                if (unsupportedDiv) unsupportedDiv.classList.remove('hidden');
+            }
+        }
+
+        // Actualizar selector de versiones del chat y filtrar comentarios
+        const chatSelect = document.getElementById('chat-version-select');
+        if (chatSelect) chatSelect.value = versionId;
+        this.renderDocComments(versionId);
+    },
+
+    async loadDocVersionsForChat(docId, selectedVersionId = null) {
+        const chatSelect = document.getElementById('chat-version-select');
+        const headerList = document.getElementById('version-switcher-list');
+        
+        if (chatSelect) {
+            chatSelect.innerHTML = '<option value="">Todas las versiones</option>';
+        }
+        if (headerList) {
+            headerList.innerHTML = '<div class="px-3 py-2 flex justify-center"><div class="si-spinner w-4 h-4 border-orange-500/20 border-t-orange-500"></div></div>';
+        }
+
+        try {
+            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/versions`);
+            if (res.success && res.data) {
+                this.docVersions = res.data; // Cache for switchDocVersion
+
+                let listHtml = '';
+
+                res.data.forEach(v => {
+                    const isCurrent = v.is_current == 1;
+                    const isSelected = selectedVersionId ? v.id == selectedVersionId : isCurrent;
+
+                    // Chat select option
+                    if (chatSelect) {
+                        const opt = document.createElement('option');
+                        opt.value = v.id;
+                        opt.textContent = `v${v.version_number}${isCurrent ? ' (Activa)' : ''}`;
+                        if (isSelected) opt.selected = true;
+                        chatSelect.appendChild(opt);
+                    }
+
+                    // Header dropdown row
+                    const dateStr = v.uploaded_at ? SIApp.formatDateTime(v.uploaded_at) : '';
+                    listHtml += `
+                        <button onclick="SIModules.projectDetailAdmin.switchDocVersion(${v.id})"
+                                class="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-orange-50 transition-colors group ${
+                                    isSelected ? 'bg-orange-50/60' : ''
+                                }">
+                            <div class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[10px] font-black border ${
+                                isCurrent
+                                    ? 'bg-emerald-500 text-white border-emerald-500'
+                                    : 'bg-white border-gray-200 text-gray-500 group-hover:border-orange-300'
+                            }">
+                                v${v.version_number}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[11px] font-bold text-gray-900 truncate">${SIApp.escapeHtml(v.file_name || '')}</p>
+                                <p class="text-[10px] text-gray-400 font-medium mt-0.5">${v.uploaded_by_name || 'Sistema'} · ${dateStr}</p>
+                            </div>
+                            ${isCurrent ? '<span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 shrink-0 self-center">ACTIVA</span>' : ''}
+                        </button>
+                    `;
+                });
+
+                if (headerList) headerList.innerHTML = listHtml || '<p class="px-4 py-3 text-xs text-gray-400 font-medium">Sin versiones disponibles</p>';
+            }
+        } catch (e) {
+            console.error('Error versiones:', e);
+            if (headerList) headerList.innerHTML = '<p class="px-4 py-3 text-xs text-red-400 font-bold">Error al cargar versiones</p>';
+        }
+    },
+
+    async loadDocComments(docId, versionId = null) {
+        const loading = document.getElementById('chat-loading');
+        const container = document.getElementById('chat-messages-container');
+        if (!loading || !container) return;
+        
+        loading.classList.remove('hidden');
+        container.innerHTML = '';
+        try {
+            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/comments`);
+            if (res.success && res.data) {
+                this.currentComments = res.data;
+                this.renderDocComments(versionId);
+            } else {
+                this.currentComments = [];
+                this.renderDocComments(versionId);
+            }
+        } catch (e) {
+            console.error('Error comentarios:', e);
+            container.innerHTML = '<p class="text-xs text-red-500 text-center py-4 font-bold border border-red-100 bg-red-50 rounded-lg">Error al cargar historial del chat</p>';
+        } finally {
+            loading.classList.add('hidden');
+        }
+    },
+
+    filterCommentsByVersion() {
+        const vid = document.getElementById('chat-version-select').value;
+        this.renderDocComments(vid === '' ? null : parseInt(vid));
+    },
+
+    renderDocComments(versionId = null) {
+        const container = document.getElementById('chat-messages-container');
+        if (!container) return;
+
+        if (!this.currentComments || this.currentComments.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 opacity-60">
+                     <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 text-gray-400">
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> 
+                     </div>
+                     <p class="text-[11px] font-black text-gray-500 uppercase tracking-widest text-center px-4">No hay comentarios aún<br><span class="font-medium text-gray-400 capitalize tracking-normal">Sé el primero en aportar feedback</span></p>
+                </div>
+            `;
+            return;
+        }
+
+        let filtered = this.currentComments;
+        if (versionId) {
+             filtered = filtered.filter(c => c.version_id == versionId);
+        }
+
+        if (filtered.length === 0) {
+             container.innerHTML = '<p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center py-8">No hay comentarios en esta versión</p>';
+             return;
+        }
+
+        container.innerHTML = filtered.map(c => {
+             const isMe = this.user && this.user.id == c.author_id;
+             const time = SIApp.formatDateTime(c.created_at);
+             const initials = SIApp._getInitials(c.author_name || '??');
+             
+             if (isMe) {
+                 return `
+                     <div class="flex gap-3 justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
+                         <div class="flex flex-col items-end max-w-[85%]">
+                             <div class="flex items-center gap-2 mb-1 px-1">
+                                 <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest bg-gray-200/50 px-1.5 py-0.5 rounded">v${c.version_number}</span>
+                                 <span class="text-[10px] text-gray-400 font-bold">${time}</span>
+                             </div>
+                             <div class="bg-gradient-to-tl from-orange-600 to-orange-500 text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-md shadow-orange-500/20 text-[13px] leading-relaxed break-words whitespace-pre-wrap">
+                                 ${SIApp.escapeHtml(c.body)}
+                             </div>
+                         </div>
+                     </div>
+                 `;
+             } else {
+                 return `
+                     <div class="flex gap-3 justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                         <div class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-600 flex flex-col items-center justify-center text-[10px] font-black shrink-0 mt-5 shadow-sm">
+                             ${initials}
+                         </div>
+                         <div class="flex flex-col items-start max-w-[85%]">
+                             <div class="flex items-center gap-2 mb-1 px-1">
+                                 <span class="text-[11px] font-black text-gray-700 tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
+                                 <span class="text-[9px] font-black uppercase text-white tracking-widest bg-orange-400 px-1.5 py-0.5 rounded">v${c.version_number}</span>
+                                 <span class="text-[10px] text-gray-400 font-medium">${time}</span>
+                             </div>
+                             <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-[4px] shadow-sm border border-gray-100 text-[#1a1b25] text-[13px] leading-relaxed break-words whitespace-pre-wrap">
+                                 ${SIApp.escapeHtml(c.body)}
+                             </div>
+                         </div>
+                     </div>
+                 `;
+             }
+        }).join('');
+
+        const scrollContainer = document.getElementById('preview-chat-messages');
+        if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    },
+
+    async submitDocComment() {
+        const docId = document.getElementById('chat-current-doc-id').value;
+        const input = document.getElementById('preview-chat-input');
+        const submitBtn = document.getElementById('preview-chat-submit');
+        const spinner = document.getElementById('preview-chat-send-spinner');
+        const icon = document.getElementById('preview-chat-send-icon');
+        const versionSelect = document.getElementById('chat-version-select');
+        
+        if (!docId) return;
+
+        const bodyText = input.value.trim();
+        if (!bodyText) return;
+
+        submitBtn.disabled = true;
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+
+        try {
+            const data = { body: bodyText };
+            if (versionSelect && versionSelect.value !== "") {
+                 data.version_id = parseInt(versionSelect.value);
+            }
+
+            const res = await API.post(`/projects/${this.projectId}/documents/${docId}/comments`, data);
+            
+            if (res.success) {
+                 input.value = '';
+                 input.style.height = ''; 
+                 await this.loadDocComments(docId, data.version_id || null);
+            } else {
+                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al enviar el comentario', 'error');
+            }
+        } catch (e) {
+            console.error('Error enviando comentario:', e);
+            if (window.SIApp) SIApp.showToast('Error', 'No se pudo comunicar con el servidor', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            icon.classList.remove('hidden');
+            spinner.classList.add('hidden');
+        }
     },
 
     onIframeLoad() {

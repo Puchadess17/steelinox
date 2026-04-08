@@ -153,6 +153,15 @@ const SIApp = {
         return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
     },
 
+    /** Formatear fecha con hora */
+    formatDateTime(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+             + ' · '
+             + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    },
+
     /** Formatear moneda (12.345,67 €) */
     formatCurrency(amount) {
         if (amount === null || amount === undefined || isNaN(amount)) return '-';
