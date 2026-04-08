@@ -1,17 +1,17 @@
 <?php
 // routes/web.php
 
-// token CSRF
+// Token CSRF
 $router->get('/api/csrf-token', 'AuthController@getCsrfToken');
 
-// autenticación
+// Autenticación
 $router->get('/api/me', 'AuthController@me');
 $router->post('/api/login', 'AuthController@login');
 $router->post('/api/logout', 'AuthController@logout');
 $router->post('/api/password/forgot', 'PasswordResetController@sendResetEmail');
 $router->post('/api/password/reset', 'PasswordResetController@resetPassword');
 
-// proyectos
+// Proyectos
 $router->get('/api/projects/search', 'ProjectController@search');
 $router->post('/api/projects', 'ProjectController@store');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
@@ -28,16 +28,23 @@ $router->get('/api/projects/(\d+)/available-users', 'ProjectController@getAvaila
 $router->post('/api/projects/(\d+)/users/(\d+)', 'ProjectController@assignUser');
 $router->delete('/api/projects/(\d+)/users/(\d+)', 'ProjectController@removeUser');
 
-// clientes
+// Clientes
 $router->get('/api/clients', 'ClientController@index');
 $router->get('/api/clients/(\d+)', 'ClientController@show');
 $router->post('/api/clients', 'ClientController@store');
 $router->put('/api/clients/(\d+)', 'ClientController@update');
 
-// usuarios
+// Usuarios
 $router->post('/api/users', 'UserController@store');
 $router->put('/api/users/(\d+)', 'UserController@update');
 $router->delete('/api/users/(\d+)', 'UserController@destroy');
+
+// Comerciales
+$router->get('/api/commercials', 'CommercialController@index');
+$router->post('/api/commercials', 'CommercialController@store');
+$router->get('/api/commercials/(\d+)', 'CommercialController@show');
+$router->put('/api/commercials/(\d+)', 'CommercialController@update');
+$router->delete('/api/commercials/(\d+)', 'CommercialController@destroy');
 
 // Documentos de proyectos (API Segura)
 $router->get('/api/projects/(\d+)/documents', 'DocumentController@index');

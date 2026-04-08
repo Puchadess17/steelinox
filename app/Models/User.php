@@ -57,6 +57,16 @@ class User
         return $stmt->fetch() !== false;
     }
 
+    /** Soft Delete de un usuario */
+    public function softDelete($id) {
+        $sql = "UPDATE users 
+                SET deleted_at = NOW(), is_active = 0 
+                WHERE id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
+
     public function create($data)
     {
         $sql = "INSERT INTO users (client_id, role, name, email, password_hash, is_active, created_at, updated_at) 
@@ -162,6 +172,8 @@ class User
         return $stmt->execute(['id' => $userId]);
     }
 
+    /** ---COMERCIALES--- */
+
     /** La lista de todos los comerciales y estadísticas de sus proyectos asignados */
     public function getCommercialsWithStats() {
         // Obtenemos los datos del comercial y cruzamos para contar sus proyectos
@@ -179,6 +191,81 @@ class User
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         
+        return $stmt->fetchAll();
+    }
+
+    /** Crea un usuario comercial */
+    public function createInternalUser($data) {
+        $sql = "INSERT INTO users (client_id, role, name, email, password_hash, is_active, created_at) 
+                VALUES (NULL, :role, :name, :email, :password_hash, :is_active, NOW())";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'role'          => $data['role'],
+            'name'          => $data['name'],
+            'email'         => $data['email'],
+            'password_hash' => $data['password_hash'],
+            'is_active'     => isset($data['is_active']) ? (int)$data['is_active'] : 1
+        ]);
+        
+        return $this->db->lastInsertId();
+    }
+
+    /** Update comercial */
+    public function updateInternalUser($id, $data) {
+        $sql = "UPDATE users 
+                SET name = :name, 
+                    email = :email, 
+                    is_active = :is_active";
+        
+        // Solo actualizamos la contraseña si nos envían una nueva
+        if (!empty($data['password_hash'])) {
+            $sql .= ", password_hash = :password_hash";
+        }
+        
+        $sql .= " WHERE id = :id AND role = 'comercial' AND deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        
+        $params = [
+            'name'      => $data['name'],
+            'email'     => $data['email'],
+            'is_active' => $data['is_active'],
+            'id'        => $id
+        ];
+        
+        if (!empty($data['password_hash'])) {
+            $params['password_hash'] = $data['password_hash'];
+        }
+        
+        return $stmt->execute($params);
+    }
+
+    /** Obtiene los detalles básicos de un comercial por su ID */
+    public function getCommercialDetails($id) {
+        $sql = "SELECT id, name, email, is_active, last_login_at, created_at
+                FROM users 
+                WHERE id = :id AND role = 'comercial' AND deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    /** Lista de proyectos asignados a un comercial */
+    public function getCommercialProjects($commercialId) {
+        $sql = "SELECT p.id, p.name, p.reference, p.status, p.budget_amount, p.created_at, 
+                       c.name AS client_name
+                FROM projects p
+                INNER JOIN project_user pu ON p.id = pu.project_id
+                INNER JOIN clients c ON p.client_id = c.id
+                WHERE pu.user_id = :user_id 
+                  AND p.deleted_at IS NULL 
+                  AND c.deleted_at IS NULL
+                ORDER BY p.created_at DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['user_id' => $commercialId]);
         return $stmt->fetchAll();
     }
 }
