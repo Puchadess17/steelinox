@@ -20,6 +20,7 @@ $router->put('/api/projects/(\d+)/status', 'ProjectController@changeStatus');
 
 // Comentarios de documentos
 $router->get('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@index');
+$router->post('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@store');
 
 // Gestión de comerciales en proyectos
 $router->get('/api/projects/(\d+)/users', 'ProjectController@getAssignedUsers');

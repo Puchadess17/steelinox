@@ -27,4 +27,21 @@ class Comment {
         
         return $stmt->fetchAll();
     }
+
+    /** Inserta un nuevo comentario en la base de datos */
+    public function create($data) {
+        $sql = "INSERT INTO comments (project_id, document_id, document_version_id, author_user_id, body, created_at) 
+                VALUES (:project_id, :document_id, :document_version_id, :author_user_id, :body, NOW())";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'project_id'          => $data['project_id'],
+            'document_id'         => $data['document_id'],
+            'document_version_id' => $data['document_version_id'],
+            'author_user_id'      => $data['author_user_id'],
+            'body'                => $data['body']
+        ]);
+        
+        return $this->db->lastInsertId();
+    }
 }
