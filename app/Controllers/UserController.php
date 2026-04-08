@@ -188,4 +188,65 @@ class UserController {
         }
     }
 
+    // Obtener la lista completa de comerciales para el Panel Admin (GET /api/commercials)
+    public function getCommercials() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Muro de Autorización Máxima: SOLO ADMINISTRADORES
+        if ($_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Acceso denegado', 
+                'data'    => null, 
+                'errors'  => ['role' => 'Se requiere rol admin para ver la gestión de equipo']
+            ]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        try {
+            $userModel = new User();
+            $commercialsList = $userModel->getCommercialsWithStats();
+
+            // Calcular KPIs globales en milisegundos para enviarlos empaquetados
+            $total = count($commercialsList);
+            $activos = 0;
+            
+            foreach ($commercialsList as $comercial) {
+                if ($comercial['is_active']) {
+                    $activos++;
+                }
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Lista de comerciales recuperada correctamente',
+                'data'    => [
+                    'kpis' => [
+                        'total'    => $total,
+                        'activos'  => $activos,
+                        'inactivos'=> $total - $activos
+                    ],
+                    'list' => $commercialsList
+                ],
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al recuperar los comerciales',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
 }

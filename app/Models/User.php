@@ -161,4 +161,24 @@ class User
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $userId]);
     }
+
+    /** La lista de todos los comerciales y estadísticas de sus proyectos asignados */
+    public function getCommercialsWithStats() {
+        // Obtenemos los datos del comercial y cruzamos para contar sus proyectos
+        $sql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at,
+                       COUNT(DISTINCT pu.project_id) as total_projects,
+                       COUNT(DISTINCT CASE WHEN p.status != 'cerrado' THEN p.id ELSE NULL END) as active_projects
+                FROM users u
+                LEFT JOIN project_user pu ON u.id = pu.user_id
+                LEFT JOIN projects p ON pu.project_id = p.id AND p.deleted_at IS NULL
+                WHERE u.role = 'comercial' 
+                  AND u.deleted_at IS NULL
+                GROUP BY u.id
+                ORDER BY u.name ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    }
 }

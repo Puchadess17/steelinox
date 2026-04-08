@@ -149,11 +149,11 @@
     <!-- ═══════════════════════════════════ -->
     <footer class="lg:ml-60 border-t border-gray-100 bg-white">
         <div class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
-            <span>© 2026 Steel Inox Extranet. All rights reserved.</span>
+            <span>© <?= date('Y') ?> Steel Inox Extranet. Todos los derechos reservados.</span>
             <div class="flex items-center gap-4">
-                <a href="#" class="hover:text-orange-500">Privacy Policy</a>
-                <a href="#" class="hover:text-orange-500">Terms of Service</a>
-                <a href="#" class="hover:text-orange-500">Support</a>
+                <a href="#" class="hover:text-orange-500">Políticas de privacidad</a>
+                <a href="#" class="hover:text-orange-500">Términos de servicio</a>
+                <a href="#" class="hover:text-orange-500">Soporte</a>
             </div>
         </div>
     </footer>

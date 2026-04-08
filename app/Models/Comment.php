@@ -10,20 +10,29 @@ class Comment {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    /** Hilo de comentarios de un documento con los datos del autor y la versión */
-    public function getByDocument($documentId) {
+    /** Hilo de comentarios de un documento con los datos del autor y la versión, filtrando por version especifica */
+    public function getByDocument($documentId, $versionId = null) {
         $sql = "SELECT c.id, c.body, c.created_at, c.updated_at,
                        u.id AS author_id, u.name AS author_name, u.role AS author_role,
-                       dv.version_number
+                       dv.version_number, dv.id AS version_id
                 FROM comments c
                 INNER JOIN users u ON c.author_user_id = u.id
                 LEFT JOIN document_versions dv ON c.document_version_id = dv.id
                 WHERE c.document_id = :document_id 
-                  AND c.deleted_at IS NULL
-                ORDER BY c.created_at ASC"; // ASC = Los más antiguos arriba, los nuevos abajo
+                  AND c.deleted_at IS NULL";
+        
+        $params = ['document_id' => $documentId];
+
+        // Si se pasa un ID de versión, aplicamos el filtro
+        if ($versionId !== null) {
+            $sql .= " AND c.document_version_id = :version_id";
+            $params['version_id'] = $versionId;
+        }
+
+        $sql .= " ORDER BY c.created_at ASC";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['document_id' => $documentId]);
+        $stmt->execute($params);
         
         return $stmt->fetchAll();
     }

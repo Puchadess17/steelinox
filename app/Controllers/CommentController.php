@@ -49,9 +49,14 @@ class CommentController {
                 return;
             }
 
-            // 3. Obtener el hilo de comentarios
+            // Capturar el parámetro de la URL si existe (?version_id=X)
+            $versionId = isset($_GET['version_id']) && is_numeric($_GET['version_id']) 
+                            ? (int)$_GET['version_id'] 
+                            : null;
+
+            // 3. Obtener el hilo de comentarios (filtrado o completo)
             $commentModel = new Comment();
-            $comments = $commentModel->getByDocument((int)$documentId);
+            $comments = $commentModel->getByDocument((int)$documentId, $versionId);
 
             echo json_encode([
                 'success' => true,
