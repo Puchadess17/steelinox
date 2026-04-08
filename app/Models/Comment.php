@@ -34,7 +34,16 @@ class Comment {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Castear campos numéricos para que el JSON los devuelva como enteros, no strings
+        return array_map(function($row) {
+            $row['id']             = (int) $row['id'];
+            $row['author_id']      = (int) $row['author_id'];
+            $row['version_number'] = isset($row['version_number']) ? (int) $row['version_number'] : null;
+            $row['version_id']     = isset($row['version_id'])     ? (int) $row['version_id']     : null;
+            return $row;
+        }, $rows);
     }
 
     /** Inserta un nuevo comentario en la base de datos */

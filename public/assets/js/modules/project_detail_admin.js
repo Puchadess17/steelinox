@@ -8,12 +8,15 @@ window.SIModules = window.SIModules || {};
 SIModules.projectDetailAdmin = {
     projectId: null,
     project: null,
-    userContext: null,
+    userContext: null,  // se inicializa en init()
     assignedUsers: [],
     documents: [],
     activeTab: 'resumen',
     activeDocTypeFilter: 'all',
     updatingDocumentId: null,
+
+    /** Shortcut: usuario de sesión activo (siempre legible desde SIApp) */
+    get user() { return window.SIApp ? SIApp.user : null; },
 
     async loadProjectDetailSPA() {
         const pathParts = window.location.pathname.split('/');
@@ -218,8 +221,8 @@ SIModules.projectDetailAdmin = {
                                             <span id="preview-meta-version">v1</span>
                                             <svg class="w-3 h-3 transition-transform" id="version-switcher-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
                                         </button>
-                                        <!-- Dropdown list -->
-                                        <div id="version-switcher-dropdown" class="hidden absolute top-full left-0 mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                                        <!-- Dropdown list: right-0 en mobile para no salirse, sm:left-0 -->
+                                        <div id="version-switcher-dropdown" class="hidden absolute top-full right-0 sm:right-auto sm:left-0 mt-1.5 w-[min(14rem,calc(100vw-2rem))] bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
                                             <div id="version-switcher-list" class="divide-y divide-gray-50">
                                                 <div class="px-3 py-2 flex justify-center"><div class="si-spinner w-4 h-4 border-orange-500/20 border-t-orange-500"></div></div>
                                             </div>
@@ -253,10 +256,18 @@ SIModules.projectDetailAdmin = {
                                 <div class="si-spinner w-12 h-12 mb-4 border-orange-500/20 border-t-orange-500"></div>
                                 <p class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Generando vista segura...</p>
                             </div>
-                            <!-- El IFRAME -->
-                            <iframe id="preview-iframe" class="block border-none opacity-0 transition-opacity duration-500 relative z-0" 
-                                    style="height: 100%; margin: 0 auto; width: 100%; max-width: 100%;"
+                            <!-- El IFRAME (para PDF, Textos, etc) -->
+                            <iframe id="preview-iframe" class="hidden border-none opacity-0 transition-opacity duration-500 relative z-0 h-full w-full" 
                                     allowfullscreen onload="SIModules.projectDetailAdmin.onIframeLoad()"></iframe>
+
+                            <!-- EL VISUALIZADOR DE IMÁGENES NATIVO -->
+                            <img id="preview-img" class="hidden opacity-0 transition-opacity duration-500 object-contain h-full w-full max-h-full max-w-full" 
+                                 onload="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden')">
+
+                            <!-- EL REPRODUCTOR DE VIDEO NATIVO (Crucial para Mobile) -->
+                            <video id="preview-video" class="hidden opacity-0 transition-opacity duration-500 h-full w-full max-h-full max-w-full bg-black shadow-inner" 
+                                   controls playsinline webkit-playsinline preload="metadata" 
+                                   onloadedmetadata="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden')"></video>
                             <!-- Mensaje Archivo No Soportado (Fallback) -->
                             <div id="preview-unsupported" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-50 p-8 text-center z-20">
                                 <div class="w-20 h-20 bg-white shadow-sm border border-gray-100 rounded-[2rem] flex items-center justify-center mb-6 text-gray-300">
@@ -269,47 +280,89 @@ SIModules.projectDetailAdmin = {
                                      Descargar Archivo Original
                                 </a>
                             </div>
+                            <!-- Botón flotante para reabrir el chat (visible en desktop cuando está colapsado) -->
+                            <button id="chat-reopen-btn"
+                                onclick="SIModules.projectDetailAdmin.toggleChatPanel()"
+                                title="Abrir Comentarios"
+                                class="hidden absolute right-0 top-1/2 -translate-y-1/2 z-30 w-7 h-14 bg-white border border-gray-200 border-r-0 rounded-l-xl shadow-md flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-orange-500 hover:border-orange-200 transition-all">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                                <svg class="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            </button>
                         </div>
 
                         <!-- Panel Derecho: Chat & Comentarios (30%) -->
-                        <div id="preview-right-panel" class="w-full lg:w-[26rem] xl:w-[30rem] bg-white flex flex-col shrink-0 lg:max-h-full max-h-[50vh]">
+                        <div id="preview-right-panel"
+                             class="w-full lg:w-[26rem] xl:w-[30rem] bg-white flex flex-col shrink-0 lg:max-h-full max-h-[50vh] lg:overflow-hidden"
+                             style="transition: max-width 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;">
                             <!-- Chat Header -->
-                            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-                                 <h4 class="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                     <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> 
-                                     Comentarios
-                                 </h4>
-                                 <!-- Selector de versiones -->
-                                 <select id="chat-version-select" onchange="SIModules.projectDetailAdmin.filterCommentsByVersion()" class="text-[11px] font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all uppercase tracking-wider cursor-pointer">
-                                     <option value="">Todas las versiones</option>
-                                 </select>
-                            </div>
-
-                            <!-- Chat Messages (Scrollable) -->
-                            <div id="preview-chat-messages" class="flex-1 overflow-y-auto p-5 space-y-5 bg-[#FAFAFA] relative">
-                                 <!-- Centro loading -->
-                                 <div id="chat-loading" class="absolute inset-0 flex items-center justify-center bg-[#FAFAFA] z-10">
-                                     <div class="si-spinner w-8 h-8 border-orange-500/30 border-t-orange-500"></div>
+                            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                                 <div class="flex items-center gap-2">
+                                     <svg class="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                     <span class="text-xs font-black text-gray-900 uppercase tracking-widest">Comentarios</span>
                                  </div>
-                                 <!-- Mensajes inyectados dinámicamente -->
-                                 <div id="chat-messages-container" class="space-y-6 flex flex-col min-h-full pb-2">
-                                 </div>
-                            </div>
-
-                            <!-- Chat Input Form -->
-                            <div class="p-4 border-t border-gray-100 bg-white shrink-0 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] relative z-20">
-                                 <form id="preview-chat-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.submitDocComment();">
-                                     <input type="hidden" id="chat-current-doc-id" value="">
-                                     <div class="relative flex items-end gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
-                                         <textarea id="preview-chat-input" rows="1" placeholder="Escribe un comentario..." required 
-                                             class="w-full pl-3 pr-2 py-2.5 bg-transparent border-none text-gray-900 text-sm resize-none outline-none focus:ring-0 max-h-32 min-h-[44px]"
-                                             oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px';"></textarea>
-                                         <button type="submit" id="preview-chat-submit" class="shrink-0 w-10 h-10 mb-0.5 bg-[#1a1b25] text-white rounded-xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-md group">
-                                             <svg id="preview-chat-send-icon" class="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                                             <div id="preview-chat-send-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
+                                 <div class="flex items-center gap-2">
+                                     <!-- Custom Version Filter Dropdown -->
+                                     <div class="relative" id="chat-version-filter-wrapper">
+                                         <button id="chat-version-filter-btn" onclick="SIModules.projectDetailAdmin.toggleChatVersionFilter()" class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-50 hover:bg-orange-50 hover:text-orange-600 border border-gray-200 hover:border-orange-200 px-2.5 py-1.5 rounded-lg transition-all">
+                                             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+                                             <span id="chat-version-filter-label">Todas</span>
+                                             <svg class="w-3 h-3 transition-transform" id="chat-version-filter-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
                                          </button>
+                                         <!-- Dropdown custom -->
+                                         <div id="chat-version-filter-dropdown" class="hidden absolute top-full right-0 mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                                             <div id="chat-version-filter-list" class="divide-y divide-gray-50 max-h-52 overflow-y-auto">
+                                                 <!-- Opción por defecto -->
+                                                 <button onclick="SIModules.projectDetailAdmin.setChatVersionFilter(null, 'Todas')" class="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-orange-50 transition-colors group">
+                                                     <div class="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center text-[9px] font-black text-gray-500 shrink-0">∞</div>
+                                                     <span class="text-[11px] font-bold text-gray-700">Todas las versiones</span>
+                                                 </button>
+                                             </div>
+                                         </div>
+                                         <!-- Select oculto para compatibilidad con filterCommentsByVersion -->
+                                         <select id="chat-version-select" class="hidden" onchange="SIModules.projectDetailAdmin.filterCommentsByVersion()"><option value="">Todas las versiones</option></select>
                                      </div>
-                                 </form>
+                                     <!-- Toggle mostrar/ocultar chat -->
+                                     <button id="chat-toggle-btn" onclick="SIModules.projectDetailAdmin.toggleChatPanel()" title="Mostrar/Ocultar chat" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-700 transition-all">
+                                         <svg id="chat-toggle-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                                     </button>
+                                 </div>
+                            </div>
+
+                            <!-- Collapsible area (open by default) -->
+                            <div id="chat-collapsible-body" class="flex flex-col flex-1 overflow-hidden transition-all duration-300">
+                                <!-- Chat Messages (Scrollable) -->
+                                <div id="preview-chat-messages" class="flex-1 overflow-y-auto p-5 bg-[#FAFAFA] relative">
+                                     <!-- Centro loading -->
+                                     <div id="chat-loading" class="absolute inset-0 flex items-center justify-center bg-[#FAFAFA] z-10">
+                                         <div class="si-spinner w-8 h-8 border-orange-500/30 border-t-orange-500"></div>
+                                     </div>
+                                     <!-- Mensajes inyectados dinámicamente -->
+                                     <div id="chat-messages-container" class="space-y-6 flex flex-col min-h-full pb-2">
+                                     </div>
+                                </div>
+
+                                <!-- Chat Input Form -->
+                                <div class="p-4 border-t border-gray-100 bg-white shrink-0 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] relative z-20">
+                                     <form id="preview-chat-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.submitDocComment();">
+                                         <input type="hidden" id="chat-current-doc-id" value="">
+                                         <input type="hidden" id="chat-current-version-id" value="">
+                                         <!-- Indicador de versión activa al comentar -->
+                                         <div id="chat-version-indicator" class="hidden mb-2 flex items-center gap-1.5 px-1">
+                                             <div class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></div>
+                                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Comentando en: <span id="chat-version-indicator-label" class="text-orange-500">v1</span></span>
+                                         </div>
+                                         <div class="relative flex items-end gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                                             <textarea id="preview-chat-input" rows="1" placeholder="Escribe un comentario..." required 
+                                                 class="w-full pl-3 pr-2 py-2.5 bg-transparent border-none text-gray-900 text-sm resize-none outline-none focus:ring-0 max-h-32 min-h-[44px]"
+                                                 oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px';"
+                                                 onkeydown="if(event.key==='Enter' && !event.ctrlKey && !event.shiftKey){ event.preventDefault(); SIModules.projectDetailAdmin.submitDocComment(); }"></textarea>
+                                             <button type="submit" id="preview-chat-submit" class="shrink-0 w-10 h-10 mb-0.5 bg-[#1a1b25] text-white rounded-xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-md group">
+                                                 <svg id="preview-chat-send-icon" class="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                                 <div id="preview-chat-send-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
+                                             </button>
+                                         </div>
+                                     </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -351,7 +404,7 @@ SIModules.projectDetailAdmin = {
 
             // Actualizar Cabecera
             this.renderHeader();
-            
+
             // Renderizar modales dinámicos
             this.renderProjectModals();
 
@@ -424,7 +477,7 @@ SIModules.projectDetailAdmin = {
             container.id = 'si-dynamic-modals';
             document.body.appendChild(container);
         }
-        
+
         const p = this.project;
         container.innerHTML = `
             <!-- MODAL: EDITAR PROYECTO -->
@@ -1073,11 +1126,11 @@ SIModules.projectDetailAdmin = {
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
             const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
-            const canView = doc.mime_type === 'application/pdf' || 
-                            doc.mime_type.startsWith('image/') || 
-                            doc.mime_type.startsWith('video/') ||
-                            doc.mime_type.startsWith('text/') ||
-                            doc.mime_type === 'application/json';
+            const canView = doc.mime_type === 'application/pdf' ||
+                doc.mime_type.startsWith('image/') ||
+                doc.mime_type.startsWith('video/') ||
+                doc.mime_type.startsWith('text/') ||
+                doc.mime_type === 'application/json';
 
             return `
                 <div class="doc-row-wrapper mb-3 fade-in">
@@ -1186,7 +1239,9 @@ SIModules.projectDetailAdmin = {
         container.innerHTML = versions.map(v => {
             const size = SIApp.formatFileSize(v.file_size);
             const date = SIApp.formatDate(v.uploaded_at);
-            const canView = v.mime_type === 'application/pdf' || v.mime_type.startsWith('image/');
+            const canView = v.mime_type === 'application/pdf' || 
+                            v.mime_type.startsWith('image/') ||
+                            v.mime_type.startsWith('video/');
             const isCurrent = v.is_current == 1;
 
             return `
@@ -1206,7 +1261,7 @@ SIModules.projectDetailAdmin = {
                         </div>
                     </div>
                     <div class="flex items-center gap-1 opacity-40 group-hover/ver:opacity-100 transition-opacity">
-                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify({id: docId, title: SIApp.escapeHtml(v.file_name), mime_type: v.mime_type, file_size: v.file_size, version_number: v.version_number, uploaded_by_name: v.uploaded_by_name, uploaded_at: v.uploaded_at}).replace(/'/g, "&#39;")}, ${v.id})'
+                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify({ id: docId, title: SIApp.escapeHtml(v.file_name), mime_type: v.mime_type, file_size: v.file_size, version_number: v.version_number, uploaded_by_name: v.uploaded_by_name, uploaded_at: v.uploaded_at }).replace(/'/g, "&#39;")}, ${v.id})'
                            class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors transform hover:scale-110 relative" title="Visualizar esta versión / Comentar">
                             <svg class="w-4 h-4 transition-opacity duration-300 ${!canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             <svg class="w-4 h-4 transition-opacity duration-300 ${canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -1291,14 +1346,23 @@ SIModules.projectDetailAdmin = {
 
     /** PREVISUALIZACIÓN */
     openPreviewModal(doc, versionId = null) {
-        const modal = document.getElementById('preview-doc-modal');
+        const modal  = document.getElementById('preview-doc-modal');
         const iframe = document.getElementById('preview-iframe');
+        const img    = document.getElementById('preview-img');
+        const video  = document.getElementById('preview-video');
         const skeleton = document.getElementById('preview-skeleton');
         const unsupportedDiv = document.getElementById('preview-unsupported');
         const unsupportedDownload = document.getElementById('preview-unsupported-download');
         const headerDownloadBtn = document.getElementById('preview-doc-download');
 
-        if (!modal || !iframe) return;
+        if (!modal) return;
+
+        // Ocultar todos los visualizadores por defecto para evitar "fantasmas" de previos
+        if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
+        if (img)    { img.classList.add('hidden');    img.src = ''; }
+        if (video)  { video.classList.add('hidden');  video.src = ''; video.pause(); }
+        if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
+        if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
 
         // Store current doc context
         this.currentDocId = doc.id;
@@ -1308,35 +1372,33 @@ SIModules.projectDetailAdmin = {
         // Populate metadata in header
         this._updatePreviewHeader(doc);
 
-        // Compute canView
-        const mime = doc.mime_type || '';
-        const canView = mime === 'application/pdf' || 
-                        mime.startsWith('image/') || 
-                        mime.startsWith('video/') ||
-                        mime.startsWith('text/') ||
-                        mime === 'application/json';
-
-        let viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view`;
-        let downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download`;
-
-        if (versionId) {
-            viewUrl += `?version_id=${versionId}`;
-            downloadUrl += `?version_id=${versionId}`;
-        }
+        // URLs
+        const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view${versionId ? '?version_id='+versionId : ''}`;
+        const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id='+versionId : ''}`;
         
         if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
         if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
 
-        // Reset iframe state
-        if (skeleton) skeleton.classList.remove('hidden', 'opacity-0');
-        iframe.classList.add('opacity-0', 'hidden');
-        iframe.src = '';
-        if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
+        // MIME handling específico (Estrategia Pro para Mobile)
+        const mime = doc.mime_type || '';
+        const isImage = mime.startsWith('image/') && mime !== 'image/vnd.dwg' && mime !== 'image/vnd.adobe.photoshop';
+        const isVideo = mime.startsWith('video/');
+        const isPdf   = mime === 'application/pdf';
+        const isText  = mime.startsWith('text/') || mime === 'application/json';
 
-        // Layout handling
-        if (canView) {
+        if (isImage && img) {
+            img.classList.remove('hidden');
+            img.src = viewUrl;
+            // skeleton se oculta en el onload del img en el HTML
+        } else if (isVideo && video) {
+            video.classList.remove('hidden');
+            video.src = viewUrl;
+            video.load(); // Vital para que empiece el streaming en Range
+            // skeleton se oculta en onloadedmetadata en el HTML
+        } else if ((isPdf || isText) && iframe) {
             iframe.classList.remove('hidden');
             iframe.src = viewUrl;
+            // skeleton se oculta en onIframeLoad
         } else {
             if (skeleton) skeleton.classList.add('hidden');
             if (unsupportedDiv) unsupportedDiv.classList.remove('hidden');
@@ -1349,14 +1411,35 @@ SIModules.projectDetailAdmin = {
             if (innerDiv) innerDiv.classList.remove('scale-95');
         }, 10);
 
+        // Reset panel state to expanded and icon rotation
+        const panel = document.getElementById('preview-right-panel');
+        const icon = document.getElementById('chat-toggle-icon');
+        const reopenBtn = document.getElementById('chat-reopen-btn');
+        if (panel) {
+            panel.dataset.collapsed = 'false';
+            panel.style.maxWidth = '';
+            panel.style.opacity = '1';
+        }
+        if (reopenBtn) reopenBtn.classList.add('hidden');
+        if (icon) {
+            icon.style.transform = (window.innerWidth >= 1024) ? 'rotate(90deg)' : '';
+        }
+
         // Load versions (populates header dropdown) and comments
         this.loadDocVersionsForChat(doc.id, versionId);
         this.loadDocComments(doc.id, versionId);
+
+        // Sync hidden field + indicator with the initial version
+        // Will be re-synced precisely after loadDocVersionsForChat resolves
+        this._setActiveCommentVersion(
+            versionId || null,
+            doc.version_number || null
+        );
     },
 
     /** Actualiza la zona de metadatos del header del preview con los datos de una versión */
     _updatePreviewHeader(doc) {
-        const titleEl  = document.getElementById('preview-doc-title');
+        const titleEl = document.getElementById('preview-doc-title');
         const metaType = document.getElementById('preview-meta-type');
         const metaVersion = document.getElementById('preview-meta-version');
         const metaAuthor = document.getElementById('preview-meta-author');
@@ -1367,6 +1450,24 @@ SIModules.projectDetailAdmin = {
         if (metaVersion) metaVersion.textContent = 'v' + (doc.version_number || '1');
         if (metaAuthor) metaAuthor.textContent = doc.uploaded_by_name || 'Desconocido';
         if (metaDate) metaDate.textContent = doc.uploaded_at ? SIApp.formatDateTime(doc.uploaded_at) : '';
+    },
+
+    /** Actualiza el campo oculto y el indicador de "Comentando en: vX" del chat */
+    _setActiveCommentVersion(versionId, versionNumber) {
+        const hiddenField = document.getElementById('chat-current-version-id');
+        const indicator = document.getElementById('chat-version-indicator');
+        const label = document.getElementById('chat-version-indicator-label');
+
+        if (hiddenField) hiddenField.value = versionId || '';
+
+        if (indicator && label) {
+            if (versionId) {
+                indicator.classList.remove('hidden');
+                label.textContent = 'v' + (versionNumber || versionId);
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
     },
 
     /** Mostrar / ocultar el dropdown de versiones en el header */
@@ -1387,6 +1488,94 @@ SIModules.projectDetailAdmin = {
                 }
             };
             setTimeout(() => document.addEventListener('click', close), 10);
+        }
+    },
+
+    /** Abre / cierra el dropdown custom de filtro de versiones del chat */
+    toggleChatVersionFilter() {
+        const dropdown = document.getElementById('chat-version-filter-dropdown');
+        const arrow = document.getElementById('chat-version-filter-arrow');
+        if (!dropdown) return;
+        const isOpen = !dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden', isOpen);
+        if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+        if (!isOpen) {
+            const close = (e) => {
+                if (!document.getElementById('chat-version-filter-wrapper')?.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                    if (arrow) arrow.style.transform = '';
+                    document.removeEventListener('click', close);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', close), 10);
+        }
+    },
+
+    /** Aplica el filtro de versión seleccionado en el dropdown custom del chat */
+    setChatVersionFilter(versionId, label) {
+        // Cerrar dropdown
+        const dropdown = document.getElementById('chat-version-filter-dropdown');
+        const arrow = document.getElementById('chat-version-filter-arrow');
+        if (dropdown) dropdown.classList.add('hidden');
+        if (arrow) arrow.style.transform = '';
+
+        // Actualizar label del botón
+        const labelEl = document.getElementById('chat-version-filter-label');
+        if (labelEl) labelEl.textContent = label || 'Todas';
+
+        // Sincronizar select oculto y re-renderizar
+        const select = document.getElementById('chat-version-select');
+        if (select) select.value = versionId || '';
+        this.renderDocComments(versionId ? parseInt(versionId) : null);
+    },
+
+    /** Colapsa / expande el panel de chat.
+     *  - Desktop (≥1024px): desliza el panel completo fuera hacia la derecha liberando ancho para el preview.
+     *  - Mobile (<1024px): colapsa solo el cuerpo (mensajes + input), dejando el header visible.
+     */
+    toggleChatPanel() {
+        const isDesktop = window.innerWidth >= 1024;
+        const panel = document.getElementById('preview-right-panel');
+        const icon = document.getElementById('chat-toggle-icon');
+        const reopenBtn = document.getElementById('chat-reopen-btn');
+
+        if (isDesktop) {
+            // ── DESKTOP: colapsar/expandir el panel completo con animación de ancho ──
+            const isCollapsed = panel.dataset.collapsed === 'true';
+
+            if (isCollapsed) {
+                // ABRIR
+                panel.style.maxWidth = '';   // vuelve al max-width de la clase (26rem / 30rem)
+                panel.style.opacity = '1';
+                panel.dataset.collapsed = 'false';
+                // En desktop, cuando está ABIERTO, la flecha apunta a la DERECHA (indicando "ocultar hacia allá")
+                if (icon) { icon.style.transform = 'rotate(90deg)'; }
+                if (reopenBtn) reopenBtn.classList.add('hidden');
+            } else {
+                // CERRAR → slide out to the right
+                panel.style.maxWidth = panel.offsetWidth + 'px';
+                void panel.offsetWidth;
+                panel.style.maxWidth = '0px';
+                panel.style.opacity = '0';
+                panel.dataset.collapsed = 'true';
+                // Al colapsar, la flecha apuntaría a la izquierda (aunque el panel se oculte)
+                if (icon) { icon.style.transform = 'rotate(-90deg)'; }
+
+                setTimeout(() => {
+                    if (panel.dataset.collapsed === 'true' && reopenBtn) {
+                        reopenBtn.classList.remove('hidden');
+                        reopenBtn.classList.add('flex');
+                    }
+                }, 360);
+            }
+        } else {
+            // ── MOBILE: solo colapsar el cuerpo (mensajes + input) ──
+            const body = document.getElementById('chat-collapsible-body');
+            if (!body) return;
+            const isBodyCollapsed = body.classList.contains('hidden');
+            body.classList.toggle('hidden', !isBodyCollapsed);
+            // En mobile: punta arriba si abierto, punta abajo (180deg) si cerrado
+            if (icon) icon.style.transform = isBodyCollapsed ? '' : 'rotate(180deg)';
         }
     },
 
@@ -1424,10 +1613,10 @@ SIModules.projectDetailAdmin = {
 
             const mime = vDoc.mime_type || '';
             const canView = mime === 'application/pdf' ||
-                            mime.startsWith('image/') ||
-                            mime.startsWith('video/') ||
-                            mime.startsWith('text/') ||
-                            mime === 'application/json';
+                mime.startsWith('image/') ||
+                mime.startsWith('video/') ||
+                mime.startsWith('text/') ||
+                mime === 'application/json';
 
             const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
             const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
@@ -1450,6 +1639,9 @@ SIModules.projectDetailAdmin = {
             }
         }
 
+        // Actualizar campo oculto de versión activa y el indicador del chat
+        this._setActiveCommentVersion(versionId, versionData ? versionData.version_number : null);
+
         // Actualizar selector de versiones del chat y filtrar comentarios
         const chatSelect = document.getElementById('chat-version-select');
         if (chatSelect) chatSelect.value = versionId;
@@ -1459,7 +1651,7 @@ SIModules.projectDetailAdmin = {
     async loadDocVersionsForChat(docId, selectedVersionId = null) {
         const chatSelect = document.getElementById('chat-version-select');
         const headerList = document.getElementById('version-switcher-list');
-        
+
         if (chatSelect) {
             chatSelect.innerHTML = '<option value="">Todas las versiones</option>';
         }
@@ -1487,18 +1679,21 @@ SIModules.projectDetailAdmin = {
                         chatSelect.appendChild(opt);
                     }
 
+                    // Sincronizar el campo oculto con la versión activa seleccionada
+                    if (isSelected) {
+                        this._setActiveCommentVersion(v.id, v.version_number);
+                    }
+
                     // Header dropdown row
                     const dateStr = v.uploaded_at ? SIApp.formatDateTime(v.uploaded_at) : '';
                     listHtml += `
                         <button onclick="SIModules.projectDetailAdmin.switchDocVersion(${v.id})"
-                                class="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-orange-50 transition-colors group ${
-                                    isSelected ? 'bg-orange-50/60' : ''
-                                }">
-                            <div class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[10px] font-black border ${
-                                isCurrent
-                                    ? 'bg-emerald-500 text-white border-emerald-500'
-                                    : 'bg-white border-gray-200 text-gray-500 group-hover:border-orange-300'
-                            }">
+                                class="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-orange-50 transition-colors group ${isSelected ? 'bg-orange-50/60' : ''
+                        }">
+                            <div class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[10px] font-black border ${isCurrent
+                            ? 'bg-emerald-500 text-white border-emerald-500'
+                            : 'bg-white border-gray-200 text-gray-500 group-hover:border-orange-300'
+                        }">
                                 v${v.version_number}
                             </div>
                             <div class="min-w-0 flex-1">
@@ -1511,6 +1706,15 @@ SIModules.projectDetailAdmin = {
                 });
 
                 if (headerList) headerList.innerHTML = listHtml || '<p class="px-4 py-3 text-xs text-gray-400 font-medium">Sin versiones disponibles</p>';
+
+                // Poblar también el dropdown custom del filtro de chat
+                let chatFilterHtml = `<button onclick="SIModules.projectDetailAdmin.setChatVersionFilter(null,'Todas')" class="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-orange-50 transition-colors"><div class="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center text-[9px] font-black text-gray-500 shrink-0">\u221e</div><span class="text-[11px] font-bold text-gray-700">Todas las versiones</span></button>`;
+                res.data.forEach(v => {
+                    const isCur = v.is_current == 1;
+                    chatFilterHtml += `<button onclick="SIModules.projectDetailAdmin.setChatVersionFilter(${v.id},'v${v.version_number}')" class="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-orange-50 transition-colors"><div class="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black shrink-0 ${isCur ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600'}">v${v.version_number}</div><div class="min-w-0 flex-1"><p class="text-[11px] font-bold text-gray-800 truncate">v${v.version_number}${isCur ? ' \u00b7 Activa' : ''}</p><p class="text-[10px] text-gray-400 truncate">${SIApp.escapeHtml(v.file_name || '')}</p></div></button>`;
+                });
+                const chatFilterList = document.getElementById('chat-version-filter-list');
+                if (chatFilterList) chatFilterList.innerHTML = chatFilterHtml;
             }
         } catch (e) {
             console.error('Error versiones:', e);
@@ -1522,7 +1726,7 @@ SIModules.projectDetailAdmin = {
         const loading = document.getElementById('chat-loading');
         const container = document.getElementById('chat-messages-container');
         if (!loading || !container) return;
-        
+
         loading.classList.remove('hidden');
         container.innerHTML = '';
         try {
@@ -1565,52 +1769,78 @@ SIModules.projectDetailAdmin = {
 
         let filtered = this.currentComments;
         if (versionId) {
-             filtered = filtered.filter(c => c.version_id == versionId);
+            filtered = filtered.filter(c => c.version_id == versionId);
         }
 
         if (filtered.length === 0) {
-             container.innerHTML = '<p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center py-8">No hay comentarios en esta versión</p>';
-             return;
+            container.innerHTML = '<p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center py-8">No hay comentarios en esta versión</p>';
+            return;
         }
 
         container.innerHTML = filtered.map(c => {
-             const isMe = this.user && this.user.id == c.author_id;
-             const time = SIApp.formatDateTime(c.created_at);
-             const initials = SIApp._getInitials(c.author_name || '??');
-             
-             if (isMe) {
-                 return `
-                     <div class="flex gap-3 justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-                         <div class="flex flex-col items-end max-w-[85%]">
-                             <div class="flex items-center gap-2 mb-1 px-1">
-                                 <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest bg-gray-200/50 px-1.5 py-0.5 rounded">v${c.version_number}</span>
-                                 <span class="text-[10px] text-gray-400 font-bold">${time}</span>
+            const me = this.user; // → SIApp.user via getter
+            const isMe = me && (
+                Number(me.id) === Number(c.author_id) ||
+                (me.email && c.author_email && me.email === c.author_email)
+            );
+            const time = SIApp.formatDateTime(c.created_at);
+            const initials = SIApp._getInitials(c.author_name || '??');
+            const role = c.author_role || 'cliente';
+
+            // ── Colores corporativos por rol ──────────────────────────────
+            // admin     → naranja corporativo
+            // comercial → azul índigo
+            // cliente   → esmeralda
+            const roleConfig = {
+                admin: { label: 'Admin', nameCss: 'text-orange-600', badgeCss: 'bg-orange-100 text-orange-700 border-orange-200', avatarCss: 'bg-orange-50 text-orange-600 border-orange-200' },
+                comercial: { label: 'Comercial', nameCss: 'text-indigo-600', badgeCss: 'bg-indigo-100 text-indigo-700 border-indigo-200', avatarCss: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
+                cliente: { label: 'Cliente', nameCss: 'text-emerald-600', badgeCss: 'bg-emerald-100 text-emerald-700 border-emerald-200', avatarCss: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+            };
+            const rc = roleConfig[role] || roleConfig.cliente;
+
+            if (isMe) {
+                // ────── MIS MENSAJES (derecha) ──────
+                const myRole = (me && me.role) || 'admin';
+                const myRc = roleConfig[myRole] || roleConfig.admin;
+                return `
+                     <div class="flex gap-2 justify-end">
+                         <div class="flex flex-col items-end max-w-[88%]">
+                             <!-- Nombre + Rol + Versión -->
+                             <div class="flex items-center gap-1.5 mb-1.5 px-1 flex-wrap justify-end">
+                                 <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${myRc.badgeCss}">${myRc.label}</span>
+                                 <span class="text-[11px] font-black ${myRc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
+                                 <span class="text-[9px] font-black uppercase tracking-widest bg-[#1a1b25]/10 text-[#1a1b25] px-1.5 py-0.5 rounded border border-[#1a1b25]/10">v${c.version_number}</span>
                              </div>
-                             <div class="bg-gradient-to-tl from-orange-600 to-orange-500 text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-md shadow-orange-500/20 text-[13px] leading-relaxed break-words whitespace-pre-wrap">
-                                 ${SIApp.escapeHtml(c.body)}
-                             </div>
+                             <!-- Burbuja -->
+                             <div class="bg-gradient-to-br from-[#1e1f2e] to-[#1a1b25] text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-lg text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
+                             <!-- Timestamp (abajo a la derecha) -->
+                             <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium">${time}</div>
                          </div>
                      </div>
                  `;
-             } else {
-                 return `
-                     <div class="flex gap-3 justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                         <div class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-600 flex flex-col items-center justify-center text-[10px] font-black shrink-0 mt-5 shadow-sm">
+            } else {
+                // ────── MENSAJES AJENOS (izquierda) ──────
+                return `
+                     <div class="flex gap-2.5 justify-start">
+                         <!-- Avatar con color de rol -->
+                         <div class="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 mt-6 border shadow-sm ${rc.avatarCss}">
                              ${initials}
                          </div>
-                         <div class="flex flex-col items-start max-w-[85%]">
-                             <div class="flex items-center gap-2 mb-1 px-1">
-                                 <span class="text-[11px] font-black text-gray-700 tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
-                                 <span class="text-[9px] font-black uppercase text-white tracking-widest bg-orange-400 px-1.5 py-0.5 rounded">v${c.version_number}</span>
-                                 <span class="text-[10px] text-gray-400 font-medium">${time}</span>
+                         <div class="flex flex-col items-start max-w-[88%]">
+                             <!-- Nombre + Rol + Versión -->
+                             <div class="flex items-center gap-1.5 mb-1.5 px-1 flex-wrap">
+                                 <span class="text-[11px] font-black ${rc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
+                                 <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${rc.badgeCss}">${rc.label}</span>
+                                 <span class="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">v${c.version_number}</span>
                              </div>
-                             <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-[4px] shadow-sm border border-gray-100 text-[#1a1b25] text-[13px] leading-relaxed break-words whitespace-pre-wrap">
-                                 ${SIApp.escapeHtml(c.body)}
-                             </div>
+                             <!-- Burbuja -->
+                             <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-[#1a1b25] text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
+                             <!-- Timestamp (abajo a la izquierda) -->
+                             <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium">${time}</div>
                          </div>
                      </div>
                  `;
-             }
+            }
         }).join('');
 
         const scrollContainer = document.getElementById('preview-chat-messages');
@@ -1623,8 +1853,10 @@ SIModules.projectDetailAdmin = {
         const submitBtn = document.getElementById('preview-chat-submit');
         const spinner = document.getElementById('preview-chat-send-spinner');
         const icon = document.getElementById('preview-chat-send-icon');
-        const versionSelect = document.getElementById('chat-version-select');
-        
+        // La version_id SIEMPRE la dictamina el header dropdown (versión del visualizador),
+        // no el select de filtrado del chat que solo controla la vista.
+        const activeVersionId = document.getElementById('chat-current-version-id')?.value;
+
         if (!docId) return;
 
         const bodyText = input.value.trim();
@@ -1636,18 +1868,21 @@ SIModules.projectDetailAdmin = {
 
         try {
             const data = { body: bodyText };
-            if (versionSelect && versionSelect.value !== "") {
-                 data.version_id = parseInt(versionSelect.value);
+            if (activeVersionId && activeVersionId !== '') {
+                data.version_id = parseInt(activeVersionId);
             }
 
             const res = await API.post(`/projects/${this.projectId}/documents/${docId}/comments`, data);
-            
+
             if (res.success) {
-                 input.value = '';
-                 input.style.height = ''; 
-                 await this.loadDocComments(docId, data.version_id || null);
+                input.value = '';
+                input.style.height = '';
+                // Recargar todos los comentarios y mantener el filtro actual del chat select
+                const chatSelect = document.getElementById('chat-version-select');
+                const filterVid = chatSelect && chatSelect.value !== '' ? parseInt(chatSelect.value) : null;
+                await this.loadDocComments(docId, filterVid);
             } else {
-                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al enviar el comentario', 'error');
+                if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al enviar el comentario', 'error');
             }
         } catch (e) {
             console.error('Error enviando comentario:', e);
@@ -1664,32 +1899,6 @@ SIModules.projectDetailAdmin = {
         const skeleton = document.getElementById('preview-skeleton');
 
         if (iframe && skeleton) {
-            // Intentar inyectar estilos si es una imagen (solo funciona en mismo dominio)
-            try {
-                const doc = iframe.contentDocument || iframe.contentWindow.document;
-                if (doc) {
-                    const media = doc.querySelector('img, video');
-                    if (media) {
-                        media.style.height = '100%';
-                        media.style.width = 'auto'; // Mantener proporción
-                        media.style.margin = '0 auto';
-                        media.style.display = 'block';
-                        media.style.maxHeight = '100vh';
-                        media.style.maxWidth = '100%';
-                        
-                        doc.body.style.margin = '0';
-                        doc.body.style.backgroundColor = '#f3f4f6'; // Match bg-gray-100
-                        doc.body.style.display = 'flex';
-                        doc.body.style.justifyContent = 'center';
-                        doc.body.style.alignItems = 'center'; // added vertical center
-                        doc.body.style.height = '100vh';
-                        doc.body.style.overflow = 'hidden';
-                    }
-                }
-            } catch (e) {
-                console.warn('No se pudo inyectar estilo en el iframe (CORS o No Doc)', e);
-            }
-
             iframe.classList.remove('opacity-0');
             skeleton.classList.add('opacity-0');
             setTimeout(() => skeleton.classList.add('hidden'), 500);

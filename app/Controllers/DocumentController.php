@@ -293,7 +293,7 @@ class DocumentController {
         $this->serveFile($projectId, $documentId, 'inline');
     }
 
-    /** Helper privado para servir archivos con control de modo de acceso */
+    /** Helper privado para servir archivos con control de modo de acceso y soporte de streaming (Range) */
     private function serveFile($projectId, $documentId, $disposition) {
         AuthMiddleware::check();
 
@@ -308,6 +308,11 @@ class DocumentController {
                 http_response_code(404);
                 die("Proyecto no encontrado o sin permisos.");
             }
+
+            // IMPORTANTE: Liberar el bloqueo de sesión de PHP.
+            // Los videos pesados y los Range Requests abren múltiples conexiones.
+            // Si no cerramos la sesión, la segunda petición esperará a que termine la primera, causando buffering infinito.
+            session_write_close();
 
             $versionId = $_GET['version_id'] ?? null;
             $documentModel = new Document();
@@ -344,13 +349,72 @@ class DocumentController {
                 die("Archivo no encontrado en el servidor.");
             }
 
+            // Preparar para streaming / Range Requests
+            $size = filesize($filePath);
+            $start = 0;
+            $end = $size - 1;
+            
+            // Abrir archivo en modo binario
+            $fp = @fopen($filePath, 'rb');
+            if (!$fp) {
+                http_response_code(500);
+                die("Error al abrir el archivo.");
+            }
+
+            // Soporte de HTTP Range (Crucial para videos en móvil)
+            if (isset($_SERVER['HTTP_RANGE'])) {
+                $c_start = $start;
+                $c_end = $end;
+
+                list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
+                if (strpos($range, ',') !== false) {
+                    header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                    header("Content-Range: bytes $start-$end/$size");
+                    exit;
+                }
+                if ($range[0] == '-') {
+                    $c_start = $size - substr($range, 1);
+                } else {
+                    $range = explode('-', $range);
+                    $c_start = $range[0];
+                    $c_end = (isset($range[1]) && is_numeric($range[1])) ? $range[1] : $size - 1;
+                }
+                $c_end = ($c_end > $end) ? $end : $c_end;
+                if ($c_start > $c_end || $c_start > $size - 1 || $c_end >= $size) {
+                    header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                    header("Content-Range: bytes $start-$end/$size");
+                    exit;
+                }
+                $start = $c_start;
+                $end = $c_end;
+                $length = $end - $start + 1;
+                fseek($fp, $start);
+                header('HTTP/1.1 206 Partial Content');
+            } else {
+                $length = $size;
+            }
+
+            // Headers estándar
             header('Content-Type: ' . $docInfo['mime_type']);
             header('Content-Disposition: ' . $disposition . '; filename="' . basename($docInfo['file_name']) . '"');
-            header('Content-Length: ' . filesize($filePath));
-            header('Cache-Control: private, max-age=0, must-revalidate');
+            header("Accept-Ranges: bytes");
+            header("Content-Range: bytes $start-$end/$size");
+            header("Content-Length: " . $length);
+            header('Cache-Control: private, max-age=86400, must-revalidate'); // Cachear un día el recurso estático
             header('Pragma: public');
             
-            readfile($filePath);
+            // Enviar el archivo por fragmentos (buffer)
+            $buffer = 64 * 1024; // 64kb por ciclo (mejor rendimiento en streaming)
+            while (!feof($fp) && ($p = ftell($fp)) <= $end) {
+                if ($p + $buffer > $end) {
+                    $buffer = $end - $p + 1;
+                }
+                set_time_limit(0); 
+                echo fread($fp, $buffer);
+                flush(); 
+            }
+
+            fclose($fp);
             exit;
 
         } catch (Exception $e) {
