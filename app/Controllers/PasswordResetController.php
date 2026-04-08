@@ -49,8 +49,8 @@ class PasswordResetController
 
         if (!$user) {
             // AUDITORÍA: Intento de recuperación sobre un email inexistente
-            // Esto es vital para detectar ataques de enumeración (bots buscando correos válidos)
-            AuditLogger::log('password_reset_invalid_email', 'system', null, null, [
+            // Cambiado a 0 para que no rompa la inserción en MySQL
+            AuditLogger::log('password_reset_invalid_email', 'system', 0, null, [
                 'email_attempted' => $email
             ]);
 
