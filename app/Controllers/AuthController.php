@@ -2,7 +2,8 @@
 // app/Controllers/AuthController.php
 
 require_once APP_PATH . '/Models/User.php';
-require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
+require_once APP_PATH . '/Models/Audit.php'; // <-- INYECTAMOS EL MODELO DE AUDITORÍA
+require_once APP_PATH . '/Services/AuditLogger.php';
 
 class AuthController {
 
@@ -105,27 +106,20 @@ class AuthController {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = $input['email'] ?? '';
         $password = $input['password'] ?? '';
-
-        // --- Rate Limiting
         $ip = $_SERVER['REMOTE_ADDR'];
-        $rateKey = 'login_attempts_' . $ip;
-        
-        if (isset($_SESSION[$rateKey])) {
-            $tiempoBloqueo = 900; // 15 minutos
-            $intentos = $_SESSION[$rateKey]['attempts'];
-            $ultimoIntento = $_SESSION[$rateKey]['last_time'];
 
-            if ($intentos >= 5 && (time() - $ultimoIntento) < $tiempoBloqueo) {
-                // AUDITORÍA: Bloqueo de IP por demasiados intentos
-                AuditLogger::log('auth_lockout', 'system', null, null, ['ip' => $ip, 'email_attempted' => $email]);
+        // --- RATE LIMITING REAL (A prueba de Bots) ---
+        $auditModel = new Audit();
+        $failedAttempts = $auditModel->countRecentFailedLogins($ip, 15);
 
-                $this->sendResponse(429, false, 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.', null, ['rate_limit' => 'Inténtelo de nuevo en 15 minutos']);
-                return;
-            } elseif ((time() - $ultimoIntento) >= $tiempoBloqueo) {
-                unset($_SESSION[$rateKey]);
-            }
+        if ($failedAttempts >= 5) {
+            // AUDITORÍA: Bloqueo de IP (entity_id = 0 para no dar error en MySQL)
+            AuditLogger::log('auth_lockout', 'system', 0, null, ['ip' => $ip, 'email_attempted' => $email]);
+
+            $this->sendResponse(429, false, 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.', null, ['rate_limit' => 'Inténtelo de nuevo en 15 minutos']);
+            return;
         }
-        // --- FIN: Rate Limiting
+        // --- FIN RATE LIMITING ---
 
         $validationErrors = [];
         if (empty($email)) $validationErrors['email'] = 'El email es obligatorio';
@@ -141,7 +135,6 @@ class AuthController {
 
         if ($user && password_verify($password, $user['password_hash'])) {
             
-            unset($_SESSION[$rateKey]);
             session_regenerate_id(true);
 
             $_SESSION['user_id'] = $user['id'];
@@ -160,14 +153,9 @@ class AuthController {
                 'role' => $user['role']
             ], null);
         } else {
-            // Login fallido--> Sumar un intento
-            $_SESSION[$rateKey] = [
-                'attempts' => ($_SESSION[$rateKey]['attempts'] ?? 0) + 1,
-                'last_time' => time()
-            ];
-
-            // AUDITORÍA
-            AuditLogger::log('auth_login_failed', 'system', null, null, ['email_attempted' => $email]);
+            // AUDITORÍA: Login fallido (entity_id = 0). 
+            // Al guardar esto, el $failedAttempts de la próxima petición sumará 1 real.
+            AuditLogger::log('auth_login_failed', 'system', 0, null, ['email_attempted' => $email]);
 
             $this->sendResponse(401, false, 'Credenciales incorrectas', null, ['auth' => 'Email o contraseña inválidos']);
         }

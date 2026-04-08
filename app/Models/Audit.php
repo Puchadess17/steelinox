@@ -39,4 +39,24 @@ class Audit {
         
         return $stmt->fetchAll();
     }
+
+    /** * Cuenta los intentos de login fallidos de una IP en un periodo de tiempo.
+     * Usado para el Rate Limiting persistente (Anti-Fuerza Bruta).
+     */
+    public function countRecentFailedLogins($ip, $minutes = 15) {
+        $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));
+        
+        $sql = "SELECT COUNT(*) FROM audit_logs 
+                WHERE action_key = 'auth_login_failed' 
+                  AND ip = :ip 
+                  AND created_at >= :time_limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'ip'         => $ip,
+            'time_limit' => $timeLimit
+        ]);
+        
+        return (int) $stmt->fetchColumn();
+    }
 }
