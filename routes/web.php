@@ -18,6 +18,9 @@ $router->get('/api/projects/(\d+)', 'ProjectController@show');
 $router->put('/api/projects/(\d+)', 'ProjectController@update');
 $router->put('/api/projects/(\d+)/status', 'ProjectController@changeStatus');
 
+// Comentarios de documentos
+$router->get('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@index');
+
 // Gestión de comerciales en proyectos
 $router->get('/api/projects/(\d+)/users', 'ProjectController@getAssignedUsers');
 $router->get('/api/projects/(\d+)/available-users', 'ProjectController@getAvailableUsers');

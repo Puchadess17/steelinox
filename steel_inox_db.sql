@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 30-03-2026 a las 10:37:59
+-- Tiempo de generación: 08-04-2026 a las 10:16:26
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.4.19
 
@@ -63,7 +63,8 @@ CREATE TABLE `clients` (
 --
 
 INSERT INTO `clients` (`id`, `name`, `reference`, `is_active`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'Empresa Demo S.L.', 'CLI-001', 1, 1, '2026-03-27 11:25:19', '2026-03-27 11:25:19', NULL);
+(1, 'Empresa Demo S.L.', 'CLI-032', 0, 1, '2026-03-27 11:25:19', '2026-04-08 10:08:36', NULL),
+(2, 'Nike S.L.', 'CLI-033', 1, 1, '2026-04-08 09:15:52', '2026-04-08 10:15:01', NULL);
 
 -- --------------------------------------------------------
 
@@ -103,6 +104,13 @@ CREATE TABLE `documents` (
   `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `documents`
+--
+
+INSERT INTO `documents` (`id`, `project_id`, `type`, `title`, `is_visible_to_client`, `access_mode`, `current_version_id`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(1, 1, 'otros', 'entrega-de-premios-sergio-header', 0, 'download', 2, 1, '2026-04-08 09:11:06', '2026-04-08 09:20:28', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -123,6 +131,14 @@ CREATE TABLE `document_versions` (
   `uploaded_at` datetime DEFAULT current_timestamp(),
   `archived_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `document_versions`
+--
+
+INSERT INTO `document_versions` (`id`, `document_id`, `version_number`, `file_name`, `storage_path`, `mime_type`, `file_size`, `checksum_sha256`, `is_current`, `uploaded_by`, `uploaded_at`, `archived_at`) VALUES
+(1, 1, 1, 'entrega-de-premios-sergio-header.jpg', '517ea46179459d7ea5da1dd773b1964d_1775632266', 'image/jpeg', 92693, '2cc89113a1cae0509db30156d2fde21b06ee3ff122e9c1ee04a893ebf32a2ae2', 0, 1, '2026-04-08 09:11:06', NULL),
+(2, 1, 2, 'excursion-en-familia-1.jpg', 'e0000593199b6f85b386b8c20c8fbea8_1775632828', 'image/jpeg', 96024, '4508d27c0b5c5fffa39944040a0d8a156fc00b663c8ee345217f7d77ca9b8e23', 1, 1, '2026-04-08 09:20:28', NULL);
 
 -- --------------------------------------------------------
 
@@ -215,6 +231,8 @@ CREATE TABLE `users` (
   `name` varchar(150) NOT NULL,
   `email` varchar(190) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expires_at` datetime DEFAULT NULL,
   `is_active` tinyint(4) DEFAULT 1,
   `last_login_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
@@ -226,9 +244,9 @@ CREATE TABLE `users` (
 -- Volcado de datos para la tabla `users`
 --
 
-INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `is_active`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, '2026-03-30 08:19:26', '2026-03-26 17:18:25', '2026-03-30 08:19:26', NULL),
-(2, 1, 'cliente', 'Cliente Empresa \r\n        demo', 'empresa@cliente.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, '2026-03-30 09:15:07', '2026-03-30 09:12:24', '2026-03-30 09:15:07', NULL);
+INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `reset_token`, `reset_token_expires_at`, `is_active`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-08 10:01:12', '2026-03-26 17:18:25', '2026-04-08 10:01:12', NULL),
+(2, 1, 'cliente', 'Cliente Empresa         demo', 'empresa@cliente.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-07 08:34:25', '2026-03-30 09:12:24', '2026-04-07 09:39:20', NULL);
 
 --
 -- Índices para tablas volcadas
@@ -247,7 +265,9 @@ ALTER TABLE `audit_logs`
 -- Indices de la tabla `clients`
 --
 ALTER TABLE `clients`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `reference` (`reference`),
+  ADD KEY `created_by` (`created_by`);
 
 --
 -- Indices de la tabla `comments`
@@ -289,6 +309,7 @@ ALTER TABLE `notifications_queue`
 --
 ALTER TABLE `projects`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `reference` (`reference`),
   ADD KEY `idx_projects_client_status` (`client_id`,`status`),
   ADD KEY `idx_projects_reference` (`reference`),
   ADD KEY `idx_projects_created_at` (`created_at`),
@@ -331,7 +352,7 @@ ALTER TABLE `audit_logs`
 -- AUTO_INCREMENT de la tabla `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `comments`
@@ -343,13 +364,13 @@ ALTER TABLE `comments`
 -- AUTO_INCREMENT de la tabla `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `document_versions`
 --
 ALTER TABLE `document_versions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `notifications_queue`
@@ -385,6 +406,12 @@ ALTER TABLE `users`
 ALTER TABLE `audit_logs`
   ADD CONSTRAINT `audit_logs_ibfk_1` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `audit_logs_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `clients`
+--
+ALTER TABLE `clients`
+  ADD CONSTRAINT `clients_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
 
 --
 -- Filtros para la tabla `comments`
