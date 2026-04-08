@@ -18,6 +18,12 @@ $errorMessage = ($errorCode == 403)
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/steelinox/public/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/steelinox/public/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/steelinox/public/assets/img/favicon-16x16.png">
+    <link rel="manifest" href="/steelinox/public/assets/img/site.webmanifest">
+
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -28,6 +34,7 @@ $errorMessage = ($errorCode == 403)
         * { font-family: 'Inter', sans-serif; }
         .error-num {
             background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
