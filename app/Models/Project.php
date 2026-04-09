@@ -12,7 +12,7 @@ class Project {
 
     // Lista de proyectos dashboard, filtrada por rol y usuario
     public function getListByUser($userId, $role, $clientId) {
-        $sql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, c.name AS client_name 
+        $sql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name 
                 FROM projects p
                 LEFT JOIN clients c ON p.client_id = c.id
                 WHERE p.deleted_at IS NULL";

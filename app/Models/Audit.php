@@ -12,7 +12,7 @@ class Audit {
 
     /** Obtiene el historial de un proyecto específico */
     public function getByProject($projectId) {
-        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.metadata_json, a.created_at,
+        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
@@ -27,7 +27,7 @@ class Audit {
 
     /** Obtiene el log global del sistema (Solo para Superadmins) */
     public function getGlobalLogs($limit = 100) {
-        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.metadata_json, a.ip, a.created_at,
+        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
@@ -74,7 +74,7 @@ class Audit {
 
         $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
-        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.metadata_json, a.ip, a.user_agent, a.created_at,
+        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.user_agent, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id

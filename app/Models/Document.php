@@ -90,7 +90,7 @@ class Document {
         // Si no pedimos una versión concreta, buscamos la vigente
         if (!$versionId) {
             $sql = "SELECT d.id, d.title, d.is_visible_to_client, d.access_mode,
-                           v.file_name, v.storage_path, v.mime_type, v.file_size 
+                           v.id AS version_id, v.version_number, v.file_name, v.storage_path, v.mime_type, v.file_size 
                     FROM documents d
                     INNER JOIN document_versions v ON d.current_version_id = v.id
                     WHERE d.id = :document_id 
@@ -100,7 +100,7 @@ class Document {
         } else {
             // Si pedimos una versión concreta, verificamos que pertenezca a este documento/proyecto
             $sql = "SELECT d.id, d.title, d.is_visible_to_client, d.access_mode,
-                           v.file_name, v.storage_path, v.mime_type, v.file_size 
+                           v.id AS version_id, v.version_number, v.file_name, v.storage_path, v.mime_type, v.file_size 
                     FROM documents d
                     INNER JOIN document_versions v ON d.id = v.document_id
                     WHERE d.id = :document_id 

@@ -63,7 +63,6 @@ SIModules.dashboard = {
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Panel Administrador</h1>
                             <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">SUPER-ADMIN</span>
                         </div>
-                        <p class="text-gray-400">Bienvenido ${SIApp.escapeHtml(user.name)}. Gestiona todos los proyectos globalmente.</p>
                     </div>
                 </div>
 
@@ -139,13 +138,17 @@ SIModules.dashboard = {
         const tbody = data.map(p => `
             <tr class="hover:bg-orange-50/30 transition-colors group">
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <a data-route="project-detail" href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(p.name)}</a>
+                    <a data-route="project-detail" href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(p.name)}</a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
                 </td>
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    ${SIApp.escapeHtml(p.client_name || 'Sin Asignar')}
+                    ${p.client_id ? `
+                        <a data-route="client-detail" href="/steelinox/client/${p.client_id}" class="text-gray-600 group-hover:text-orange-600 transition-colors no-underline">
+                            ${SIApp.escapeHtml(p.client_name)}
+                        </a>
+                    ` : 'Sin Asignar'}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
@@ -665,7 +668,7 @@ SIModules.dashboard = {
         }
 
         const clients = Array.isArray(result.data) ? result.data : [];
-        
+
         // Estado persistente para el listado de clientes
         this.adminClients = clients;
         this.currentClientFilter = 'all';
@@ -677,7 +680,7 @@ SIModules.dashboard = {
         // Calcular KPIs rápidos
         const now = new Date();
         const firstDayMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        
+
         const kpis = {
             total: clients.length,
             newThisMonth: clients.filter(c => new Date(c.created_at) >= firstDayMonth).length,
@@ -693,7 +696,6 @@ SIModules.dashboard = {
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Directorio de Clientes</h1>
                         </div>
-                        <p class="text-gray-400">Gestiona la cartera de clientes y accede a sus proyectos asociados.</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="SIRouter.navigate('client-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
@@ -982,7 +984,7 @@ SIModules.dashboard = {
         filtered.sort((a, b) => {
             let valA = a[field] || '';
             let valB = b[field] || '';
-            
+
             // Caso especial para booleanos/números de estado
             if (field === 'is_active') {
                 valA = (valA == 1) ? 1 : 0;

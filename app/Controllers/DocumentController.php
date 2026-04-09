@@ -352,9 +352,10 @@ class DocumentController {
             if ($isFirstChunk) {
                 $actionKey = ($disposition === 'attachment') ? 'document_download' : 'document_view';
                 AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
-                    'file_name'      => $docInfo['file_name'],
-                    'version_number' => $docInfo['version_number'] ?? null,
-                    'is_specific_version' => $versionId ? true : false
+                    'file_name'           => $docInfo['file_name'],
+                    'version_number'      => $docInfo['version_number'] ?? null,
+                    'is_specific_version' => $versionId ? true : false,
+                    'version_id'          => $versionId ?: $docInfo['version_id'] ?? null
                 ]);
             }
             // -------------------------------------------
@@ -417,8 +418,9 @@ class DocumentController {
             header("Accept-Ranges: bytes");
             header("Content-Range: bytes $start-$end/$size");
             header("Content-Length: " . $length);
-            header('Cache-Control: private, max-age=86400, must-revalidate'); 
-            header('Pragma: public');
+            header('Cache-Control: no-cache, no-store, must-revalidate'); 
+            header('Pragma: no-cache');
+            header('Expires: 0');
             
             $buffer = 64 * 1024; 
             while (!feof($fp) && ($p = ftell($fp)) <= $end) {

@@ -1376,7 +1376,7 @@ SIModules.projectDetailAdmin = {
         this._updatePreviewHeader(doc);
 
         // URLs
-        const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view${versionId ? '?version_id=' + versionId : ''}`;
+        const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view?${versionId ? 'version_id=' + versionId + '&' : ''}_t=${Date.now()}`;
         const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id=' + versionId : ''}`;
 
         if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;

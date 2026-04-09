@@ -14,7 +14,7 @@ window.SIModules.audit = {
     /** Punto de entrada desde el router */
     async initAuditLog() {
         const container = SIRouter.contentContainer;
-        
+
         // Renderizar estructura básica (Skeleton)
         container.innerHTML = this._skeletonTemplate();
 
@@ -56,21 +56,21 @@ window.SIModules.audit = {
         const res = await API.get('/audit/filters');
         if (res.success && res.data) {
             const { actions, entities, actors } = res.data;
-            
+
             // Poblar dropdowns personalizados
-            this._populateCustomDropdown('actor', actors.map(a => ({ 
-                value: a.id, 
-                label: `${a.name}${a.deleted_at ? ' [ELIMINADO]' : ''}` 
+            this._populateCustomDropdown('actor', actors.map(a => ({
+                value: a.id,
+                label: `${a.name}${a.deleted_at ? ' [ELIMINADO]' : ''}`
             })), 'Todos los actores');
 
-            this._populateCustomDropdown('action', actions.map(a => ({ 
-                value: a, 
-                label: this._humanizeAction(a) 
+            this._populateCustomDropdown('action', actions.map(a => ({
+                value: a,
+                label: this._humanizeAction(a)
             })), 'Todas las acciones');
 
-            this._populateCustomDropdown('entity', entities.map(e => ({ 
-                value: e, 
-                label: this._humanizeEntity(e) 
+            this._populateCustomDropdown('entity', entities.map(e => ({
+                value: e,
+                label: this._humanizeEntity(e)
             })), 'Todas las entidades');
         }
     },
@@ -93,7 +93,7 @@ window.SIModules.audit = {
         });
 
         const res = await API.get(`/audit?${params.toString()}`);
-        
+
         if (res.success && res.data) {
             this._renderLogs(res.data);
         } else {
@@ -119,7 +119,8 @@ window.SIModules.audit = {
         }
 
         const html = `
-            <div class="overflow-x-auto">
+            <!-- VISTA DESKTOP: Tabla -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] border-b border-gray-100 bg-gray-50/50">
@@ -136,8 +137,87 @@ window.SIModules.audit = {
                     </tbody>
                 </table>
             </div>
+
+            <!-- VISTA MOBILE: Tarjetas -->
+            <div class="md:hidden divide-y divide-gray-100">
+                ${logs.map(log => this._logCardTemplate(log)).join('')}
+            </div>
         `;
         listContainer.innerHTML = html;
+    },
+
+    _logCardTemplate(log) {
+        const actorName = log.actor_name || 'Sistema';
+        const actorRole = log.actor_role || 'system';
+        const actionLabel = this._humanizeAction(log.action_key);
+        const actionStyles = this._getActionStyles(log.action_key);
+        const entityLabel = this._humanizeEntity(log.entity_type);
+        const dateStr = SIApp.formatDateTime(log.created_at);
+        const timeAgo = SIApp.timeAgo(log.created_at);
+
+        return `
+            <div class="p-5 flex flex-col gap-4 bg-white active:bg-gray-50 transition-colors">
+                <!-- Header: Actor & Tiempo -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="avatar-initials w-9 h-9 text-[10px] shadow-sm ring-2 ring-white">${SIApp._getInitials(actorName)}</div>
+                        <div>
+                            <p class="text-[13px] font-black text-gray-900">${actorName}</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-orange-500/70">${actorRole}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[11px] font-black text-gray-800 tracking-tight">${timeAgo}</p>
+                        <p class="text-[9px] text-gray-400 font-medium">${dateStr}</p>
+                    </div>
+                </div>
+
+                <!-- Body: Acción & Entidad -->
+                <div class="flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-xl ${actionStyles.bg} ${actionStyles.text} border ${actionStyles.border} shadow-sm w-fit">
+                            ${actionLabel}
+                        </span>
+                        ${this._renderEntityLink(log)}
+                    </div>
+                </div>
+
+                <!-- Footer: IP & Acciones -->
+                <div class="flex items-center justify-between pt-2 border-t border-gray-50">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-mono font-bold text-gray-400">${log.ip || '—'}</span>
+                    </div>
+                    ${log.metadata ? `
+                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-4 py-2 bg-gray-50 hover:bg-orange-50 text-[10px] font-black text-gray-400 hover:text-orange-500 rounded-xl transition-all border border-gray-100 flex items-center gap-2">
+                            VER DETALLES
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                    ` : ''}
+                </div>
+
+                <!-- Metadata Mobile -->
+                ${log.metadata ? `
+                    <div id="meta-mobile-${log.id}" class="hidden mt-2">
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                             <div class="flex items-center gap-2 mb-3">
+                                <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                                <h4 class="text-[9px] font-black text-gray-900 uppercase tracking-widest">Contexto Técnico</h4>
+                            </div>
+                            <div class="space-y-3">
+                                ${Object.entries(log.metadata)
+                                    .filter(([k]) => k !== 'version_id')
+                                    .map(([k, v]) => `
+                                    <div class="bg-white/50 p-3 rounded-xl border border-white">
+                                        <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">${this._humanizeMetadataKey(k)}</span>
+                                        <span class="text-xs text-gray-900 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
     },
 
     _logRowTemplate(log) {
@@ -166,10 +246,7 @@ window.SIModules.audit = {
                     </span>
                 </td>
                 <td class="px-6 py-5">
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-bold text-gray-600">${entityLabel}</span>
-                        ${log.entity_id ? `<span class="bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] font-black font-mono text-gray-400">#${log.entity_id}</span>` : ''}
-                    </div>
+                    ${this._renderEntityLink(log)}
                 </td>
                 <td class="px-6 py-5">
                     <div class="flex flex-col gap-0.5">
@@ -200,10 +277,12 @@ window.SIModules.audit = {
                                 <h4 class="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Contexto Técnico del Evento</h4>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                ${Object.entries(log.metadata).map(([k, v]) => `
+                                ${Object.entries(log.metadata)
+                                    .filter(([k]) => k !== 'version_id')
+                                    .map(([k, v]) => `
                                     <div class="bg-gray-50 p-4 rounded-2xl border border-gray-50">
-                                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">${k}</span>
-                                        <span class="text-sm text-gray-900 font-bold break-all">${typeof v === 'object' ? JSON.stringify(v) : v}</span>
+                                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">${this._humanizeMetadataKey(k)}</span>
+                                        <span class="text-sm text-gray-900 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -216,19 +295,26 @@ window.SIModules.audit = {
 
     toggleMetadata(id, btn) {
         const el = document.getElementById(`meta-${id}`);
-        if (!el) return;
-        const isHidden = el.classList.contains('hidden');
+        const elMobile = document.getElementById(`meta-mobile-${id}`);
         
-        // Cerrar otros metadatos abiertos (opcional para limpieza)
-        // document.querySelectorAll('[id^="meta-"]').forEach(m => m.classList.add('hidden'));
+        const toggle = (element, button) => {
+            if (!element) return;
+            const isHidden = element.classList.contains('hidden');
+            if (isHidden) {
+                element.classList.remove('hidden');
+                button.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-100');
+                const svg = button.querySelector('svg');
+                if (svg) svg.style.transform = 'rotate(180deg)';
+            } else {
+                element.classList.add('hidden');
+                button.classList.remove('bg-orange-50', 'text-orange-600', 'border-orange-100');
+                const svg = button.querySelector('svg');
+                if (svg) svg.style.transform = 'rotate(0deg)';
+            }
+        };
 
-        if (isHidden) {
-            el.classList.remove('hidden');
-            btn.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-100');
-        } else {
-            el.classList.add('hidden');
-            btn.classList.remove('bg-orange-50', 'text-orange-600', 'border-orange-100');
-        }
+        toggle(el, btn);
+        toggle(elMobile, btn);
     },
 
     _skeletonTemplate() {
@@ -243,7 +329,6 @@ window.SIModules.audit = {
                             </div>
                             <h1 class="text-3xl font-black text-gray-900 tracking-tight">Centro de Trazabilidad</h1>
                         </div>
-                        <p class="text-sm text-gray-400 font-medium ml-13">Supervisión en tiempo real de la integridad y acciones del sistema.</p>
                     </div>
                     <div class="flex items-center gap-4">
                         <button onclick="window.SIModules.audit.loadLogs()" class="px-6 py-3 bg-white border border-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest rounded-2xl hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm">
@@ -330,7 +415,7 @@ window.SIModules.audit = {
     toggleDropdown(id) {
         const el = document.getElementById(id);
         const isOpen = !el.classList.contains('hidden');
-        
+
         // Cerrar todos primero
         document.querySelectorAll('[id^="drop-"]').forEach(d => d.classList.add('hidden'));
         document.querySelectorAll('[id^="btn-drop-"]').forEach(btn => btn.querySelector('svg').style.transform = 'rotate(0deg)');
@@ -376,8 +461,8 @@ window.SIModules.audit = {
             if (!e.target.closest('.relative')) {
                 document.querySelectorAll('[id^="drop-"]').forEach(d => d.classList.add('hidden'));
                 document.querySelectorAll('[id^="btn-drop-"]').forEach(btn => {
-                   const svg = btn.querySelector('svg');
-                   if (svg) svg.style.transform = 'rotate(0deg)';
+                    const svg = btn.querySelector('svg');
+                    if (svg) svg.style.transform = 'rotate(0deg)';
                 });
             }
         });
@@ -427,5 +512,106 @@ window.SIModules.audit = {
             return { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' };
         }
         return { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' };
+    },
+
+    _humanizeMetadataKey(key) {
+        const map = {
+            'file_name': 'Nombre del archivo',
+            'version_number': 'Número de versión',
+            'is_specific_version': 'Versión específica',
+            'project_id': 'ID del proyecto',
+            'old_status': 'Estado anterior',
+            'new_status': 'Estado nuevo',
+            'reason': 'Motivo / Razón',
+            'email_attempted': 'Email intentado',
+            'client_id': 'ID del cliente',
+            'name': 'Nombre',
+            'reference': 'Referencia',
+            'file_size': 'Tamaño del archivo',
+            'mime_type': 'Tipo MIME',
+            'auto_versioned': 'Auto-versionado',
+            'document_id': 'ID del documento'
+        };
+        return map[key] || key;
+    },
+
+    _renderMetadataValue(key, value, log) {
+        if (typeof value === 'object') return JSON.stringify(value);
+        
+        const style = "text-gray-900 group-hover:text-orange-500 transition-colors no-underline font-bold";
+        
+        // Manejo de IDs técnicos
+        if (key === 'client_id') {
+            return `<a href="/steelinox/client/${value}" data-route="client-detail" class="${style}">#${value}</a>`;
+        }
+        
+        if (key === 'project_id') {
+            return `<a href="/steelinox/project/${value}" data-route="project-detail" class="${style}">#${value}</a>`;
+        }
+        
+        if (key === 'document_id') {
+            const pid = log.metadata?.project_id || log.project_id || log.entity_id;
+            return `<a href="/steelinox/project/${pid}" data-route="project-detail" class="${style}">#${value}</a>`;
+        }
+
+        // Manejo de nombres (Strings)
+        if (key === 'name' || key === 'title') {
+            if (log.entity_type === 'project') {
+                return `<a href="/steelinox/project/${log.entity_id}" data-route="project-detail" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+            }
+            if (log.entity_type === 'client') {
+                return `<a href="/steelinox/client/${log.entity_id}" data-route="client-detail" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+            }
+        }
+
+        if (key === 'file_name' && log.entity_type === 'document') {
+            const pid = log.metadata?.project_id || log.project_id;
+            if (pid) {
+                return `<a href="/steelinox/project/${pid}" data-route="project-detail" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+            }
+        }
+
+        return value;
+    },
+
+    _renderEntityLink(log) {
+        const entityLabel = this._humanizeEntity(log.entity_type);
+        const style = "group/link inline-flex items-center gap-2 transition-colors no-underline";
+        const textStyle = "text-sm font-bold text-gray-600 group-hover/link:text-orange-500 transition-colors";
+        
+        let href = null;
+        let route = null;
+        
+        if (log.entity_type === 'project') {
+            href = `/steelinox/project/${log.entity_id}`;
+            route = 'project-detail';
+        } else if (log.entity_type === 'client') {
+            href = `/steelinox/client/${log.entity_id}`;
+            route = 'client-detail';
+        } else if (log.entity_type === 'document') {
+            const pid = log.project_id || log.metadata?.project_id;
+            if (pid) {
+                href = `/steelinox/project/${pid}`;
+                route = 'project-detail';
+            }
+        }
+        
+        const badge = log.entity_id ? `<span class="bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] font-black font-mono text-gray-400 group-hover/link:bg-orange-50 group-hover/link:text-orange-500 transition-colors">#${log.entity_id}</span>` : '';
+        
+        if (href) {
+            return `
+                <a href="${href}" data-route="${route}" class="${style}">
+                    <span class="${textStyle}">${entityLabel}</span>
+                    ${badge}
+                </a>
+            `;
+        }
+        
+        return `
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-gray-600">${entityLabel}</span>
+                ${badge}
+            </div>
+        `;
     }
 };
