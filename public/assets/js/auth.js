@@ -11,12 +11,12 @@ const Auth = {
 
     initLogin() {
         this.initForgotPassword();
-        const form       = document.getElementById('login-form');
+        const form = document.getElementById('login-form');
         const togglePass = document.getElementById('toggle-password');
-        const passInput  = document.getElementById('password');
+        const passInput = document.getElementById('password');
         const emailInput = document.getElementById('email');
-        const submitBtn  = document.getElementById('btn-login');
-        const errorBox   = document.getElementById('login-error');
+        const submitBtn = document.getElementById('btn-login');
+        const errorBox = document.getElementById('login-error');
 
         if (!form) return;
 
@@ -25,9 +25,9 @@ const Auth = {
             togglePass.addEventListener('click', () => {
                 const isPass = passInput.type === 'password';
                 passInput.type = isPass ? 'text' : 'password';
-                const eyeOpen   = togglePass.querySelector('.eye-open');
+                const eyeOpen = togglePass.querySelector('.eye-open');
                 const eyeClosed = togglePass.querySelector('.eye-closed');
-                if (eyeOpen)   eyeOpen.classList.toggle('hidden', !isPass);
+                if (eyeOpen) eyeOpen.classList.toggle('hidden', !isPass);
                 if (eyeClosed) eyeClosed.classList.toggle('hidden', isPass);
             });
         }
@@ -42,7 +42,7 @@ const Auth = {
                 errorBox.textContent = '';
             }
 
-            const email    = emailInput?.value?.trim();
+            const email = emailInput?.value?.trim();
             const password = passInput?.value;
 
             // ── Validación client-side ──

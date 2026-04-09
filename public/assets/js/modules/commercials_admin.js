@@ -30,9 +30,8 @@ SIModules.commercialsAdmin = {
 
             this.adminCommercials = result.data.list || [];
             const kpis = result.data.kpis || { total: 0, activos: 0, inactivos: 0 };
-            
+
             // Calculate dynamic mock KPIs
-            const efectividad = kpis.total > 0 ? ((kpis.activos / kpis.total) * 100).toFixed(1) + '%' : '0%';
             const totalProyectosActivos = this.adminCommercials.reduce((acc, c) => acc + (parseInt(c.active_projects) || 0), 0);
             const cargaMedia = kpis.activos > 0 ? (totalProyectosActivos / kpis.activos).toFixed(1) : '0';
 
@@ -55,9 +54,9 @@ SIModules.commercialsAdmin = {
 
                     <!-- KPI Grid Premium (Estilo Flat / Captura) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-                        ${this._renderKpiCard('Comerciales Totales', kpis.total, '+2 este mes', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>')}
-                        ${this._renderKpiCard('Proyectos en Curso', totalProyectosActivos, 'Carga media: ' + cargaMedia, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
-                        ${this._renderKpiCard('Comerciales Activos', kpis.activos, efectividad + ' de efectividad', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
+                        ${this._renderKpiCard('Comerciales Totales', kpis.total, 'Red comercial completa', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>')}
+                        ${this._renderKpiCard('Proyectos en Curso', totalProyectosActivos, 'Carga media: ' + cargaMedia + ' proy/com', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
+                        ${this._renderKpiCard('Comerciales Activos', kpis.activos, 'Cuentas con acceso', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
                     </div>
 
                     <!-- Buscador y Tabs -->
@@ -76,6 +75,11 @@ SIModules.commercialsAdmin = {
                             <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             <input type="text" oninput="SIModules.commercialsAdmin._search(this.value)" placeholder="Buscar por nombre o email..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                         </div>
+                    </div>
+
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Gestores</h2>
+                        <span id="commercial-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
                     </div>
 
                     <!-- Lista de Comerciales -->
@@ -120,8 +124,8 @@ SIModules.commercialsAdmin = {
             const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
 
-            const lastAccessText = u.last_login_at 
-                ? `<span class="text-[14px] font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>` 
+            const lastAccessText = u.last_login_at
+                ? `<span class="text-[14px] font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>`
                 : '<span class="text-[14px] font-medium text-gray-400">Sin acceso</span>';
 
             return `
@@ -140,7 +144,7 @@ SIModules.commercialsAdmin = {
                         <span class="inline-flex items-center text-[10px] font-black text-gray-500 bg-gray-100 px-2.5 py-1 rounded-[6px] tracking-widest">${SIApp.escapeHtml(u.email)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-orange-500 text-[10px] font-black">${u.active_projects || 0}</span>
+                        <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-orange-500 text-[13px] font-black">${u.active_projects || 0}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         ${statusBadge}
@@ -329,11 +333,11 @@ SIModules.commercialsAdmin = {
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-bold text-gray-500">Proyectos Totales</span>
-                                        <span class="text-sm font-black text-[#1a1b25]">${projects.length}</span>
+                                        <span class="text-base font-black text-[#1a1b25]">${projects.length}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-bold text-gray-500">Proyectos Activos</span>
-                                        <span class="text-sm font-black text-orange-500">${projects.filter(p => p.status !== 'cerrado').length}</span>
+                                        <span class="text-base font-black text-orange-500">${projects.filter(p => p.status !== 'cerrado').length}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-bold text-gray-500">Última actividad</span>

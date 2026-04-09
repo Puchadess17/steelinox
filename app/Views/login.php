@@ -153,8 +153,16 @@
         </div>
 
         <!-- Footer global -->
-        <div class="mt-8 text-center">
-            <p class="text-xs text-gray-400">© 2026 Steel Inox Extranet. Todos los derechos reservados.</p>
+        <div class="mt-8 text-center flex flex-col items-center gap-4">
+            <p class="text-xs text-white pb-2 font-medium">© 2026 Steel Inox Extranet. Todos los derechos reservados.
+            </p>
+
+            <div class="opacity-70 hover:opacity-100 transition-opacity">
+                <a href="https://unanimecreativos.com" target="_blank">
+                    <img class="h-5 w-auto" src="https://workspace.unanimecreativos.com/img/unanime/by-unanime.svg"
+                        alt="UNANIME" loading="lazy">
+                </a>
+            </div>
         </div>
 
         <!-- Scripts -->

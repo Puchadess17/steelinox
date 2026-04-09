@@ -106,6 +106,10 @@ class User
             $updates[] = "is_active = :is_active";
             $params['is_active'] = (int) $data['is_active'];
         }
+        if (isset($data['client_id'])) {
+            $updates[] = "client_id = :client_id";
+            $params['client_id'] = (int) $data['client_id'];
+        }
 
         if (empty($updates))
             return false;

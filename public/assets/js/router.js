@@ -35,8 +35,11 @@ const SIRouter = {
 
             e.preventDefault();
 
-            // Determinar la vista: si la URL contiene /project/ o /client/, pushear el href y recalcular
-            if (href.includes('/project/') || href.includes('/client/')) {
+            // Determinar la vista: si la URL contiene patrones de detalle/nuevo/edición, manejamos SPA
+            const spaPatterns = ['/project/', '/client/', '/commercial/', '/user/'];
+            const isSpaPath = spaPatterns.some(p => href.includes(p));
+
+            if (isSpaPath) {
                 window.history.pushState(null, '', href);
                 this.handleRoute(this.getViewFromUrl());
             } else {
@@ -94,6 +97,13 @@ const SIRouter = {
             return 'commercial-detail';
         }
 
+        // Si la URL empieza por "user/", cargamos la vista correspondiente para usuarios cliente
+        if (cleanPath.startsWith('user/')) {
+            if (cleanPath === 'user/new') return 'user-new';
+            if (cleanPath.startsWith('user/edit/')) return 'user-edit';
+            return 'users';
+        }
+
         return cleanPath;
     },
 
@@ -112,6 +122,10 @@ const SIRouter = {
             'commercial-detail': { module: 'commercialsAdmin', method: 'loadDetailSPA', roles: ['admin'], title: 'Detalle Comercial' },
             'commercial-new': { module: 'commercialFormAdmin', method: 'loadCreateSPA', roles: ['admin'], title: 'Nuevo Comercial' },
             'commercial-edit': { module: 'commercialFormAdmin', method: 'loadEditSPA', roles: ['admin'], title: 'Editar Comercial' },
+
+            'users': { module: 'clientUsersAdmin', method: 'loadList', roles: ['admin', 'comercial'], title: 'Usuarios Cliente' },
+            'user-new': { module: 'clientUserFormAdmin', method: 'loadCreateSPA', roles: ['admin', 'comercial'], title: 'Nuevo Usuario Cliente' },
+            'user-edit': { module: 'clientUserFormAdmin', method: 'loadEditSPA', roles: ['admin', 'comercial'], title: 'Editar Usuario Cliente' },
 
             'audit-log': { module: 'audit', method: 'initAuditLog', roles: ['admin'], title: 'Registro de Actividad' },
             'settings': { module: 'settings', method: 'dummyMethod', roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
@@ -179,7 +193,7 @@ const SIRouter = {
             item.classList.remove('active');
             let route = item.dataset.route;
             // Para el dashboard manejamos también la vista panel
-            if (route === view || (view === 'dashboard' && route === 'dashboard') || (view.startsWith('project-detail') && route === 'dashboard') || (view === 'client-detail' && route === 'clients')) {
+            if (route === view || (view === 'dashboard' && route === 'dashboard') || (view.startsWith('project-detail') && route === 'dashboard') || (view === 'client-detail' && route === 'clients') || (view.startsWith('user-') && route === 'users')) {
                 item.classList.add('active');
             }
         });
@@ -209,7 +223,23 @@ const SIRouter = {
         }
 
         // Si la vista es dashboard, la URL amigable es 'panel'
-        const urlPath = view === 'dashboard' ? 'panel' : view;
+        let urlPath = view === 'dashboard' ? 'panel' : view;
+
+        // MAPEO: Convertir nombres de vista (guiones) a paths de URL (barras) 
+        // para que coincidan con web.php en caso de refresco de página.
+        const viewToPathMap = {
+            'client-new': 'client/new',
+            'client-edit': 'client/edit',
+            'commercial-new': 'commercial/new',
+            'commercial-edit': 'commercial/edit',
+            'user-new': 'user/new',
+            'user-edit': 'user/edit'
+        };
+
+        if (viewToPathMap[view]) {
+            urlPath = viewToPathMap[view];
+        }
+
         const finalUrl = basePath + urlPath;
 
         // Cambiamos la URL en el navegador SIN recargar la página

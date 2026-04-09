@@ -151,8 +151,16 @@
     <!-- FOOTER                              -->
     <!-- ═══════════════════════════════════ -->
     <footer class="lg:ml-60 border-t border-gray-100 bg-white">
-        <div class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
+        <div class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
             <span>© <?= date('Y') ?> Steel Inox Extranet. Todos los derechos reservados.</span>
+
+            <div class="opacity-50 hover:opacity-100 transition-opacity">
+                <a href="https://unanimecreativos.com" target="_blank" class="flex items-center gap-2">
+                    <img class="h-5 w-auto invert"
+                        src="https://workspace.unanimecreativos.com/img/unanime/by-unanime.svg" alt="UNANIME"
+                        loading="lazy">
+                </a>
+            </div>
         </div>
     </footer>
 
@@ -185,6 +193,10 @@
         src="/steelinox/public/assets/js/modules/commercials_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/commercials_admin.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/modules/commercial_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/commercial_form_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/client_users_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_users_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/client_user_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_user_form_admin.js'); ?>"></script>
 
     <script>
 

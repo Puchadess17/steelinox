@@ -26,7 +26,20 @@ class UserController {
             $userModel = new User();
             $users = $userModel->getClientUsersList($actorUserId, $actorRole);
 
-            echo json_encode(['success' => true, 'data' => $users]);
+            // Calcular KPIs para las tarjetas superiores
+            $kpis = [
+                'total'     => count($users),
+                'activos'   => count(array_filter($users, fn($u) => $u['is_active'] == 1)),
+                'inactivos' => count(array_filter($users, fn($u) => $u['is_active'] == 0))
+            ];
+
+            echo json_encode([
+                'success' => true, 
+                'data' => [
+                    'list' => $users,
+                    'kpis' => $kpis
+                ]
+            ]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
@@ -233,6 +246,20 @@ class UserController {
                 $updateData['email'] = $newEmail;
                 if ($newEmail !== $user['email']) {
                     $changes['email'] = ['antes' => $user['email'], 'despues' => $newEmail];
+                }
+            }
+
+            if (isset($input['client_id']) && !empty($input['client_id'])) {
+                $newClientId = (int)$input['client_id'];
+                if ($newClientId !== (int)$user['client_id']) {
+                    // Validar permisos sobre la NUEVA empresa
+                    if (!$clientModel->getDetailsById($newClientId, $actorUserId, $actorRole)) {
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la nueva empresa seleccionada']);
+                        return;
+                    }
+                    $updateData['client_id'] = $newClientId;
+                    $changes['client_id'] = ['antes' => (int)$user['client_id'], 'despues' => $newClientId];
                 }
             }
 

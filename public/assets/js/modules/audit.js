@@ -11,6 +11,17 @@ window.SIModules.audit = {
         date_end: ''
     },
 
+    // Instancias de Flatpickr para resetear
+    fpStart: null,
+    fpEnd: null,
+
+    // Datos para filtrado interno de dropdowns
+    dropdown_data: {
+        actor: [],
+        action: [],
+        entity: []
+    },
+
     /** Punto de entrada desde el router */
     async initAuditLog() {
         const container = SIRouter.contentContainer;
@@ -48,8 +59,8 @@ window.SIModules.audit = {
             }
         };
 
-        flatpickr("#filter-start", config);
-        flatpickr("#filter-end", config);
+        this.fpStart = flatpickr("#filter-start", config);
+        this.fpEnd = flatpickr("#filter-end", config);
     },
 
     async loadFiltersData() {
@@ -58,20 +69,26 @@ window.SIModules.audit = {
             const { actions, entities, actors } = res.data;
 
             // Poblar dropdowns personalizados
-            this._populateCustomDropdown('actor', actors.map(a => ({
+            const actorsData = actors.map(a => ({
                 value: a.id,
                 label: `${a.name}${a.deleted_at ? ' [ELIMINADO]' : ''}`
-            })), 'Todos los actores');
+            }));
+            this.dropdown_data.actor = actorsData;
+            this._populateCustomDropdown('actor', actorsData, 'Todos los actores');
 
-            this._populateCustomDropdown('action', actions.map(a => ({
+            const actionsData = actions.map(a => ({
                 value: a,
                 label: this._humanizeAction(a)
-            })), 'Todas las acciones');
+            }));
+            this.dropdown_data.action = actionsData;
+            this._populateCustomDropdown('action', actionsData, 'Todas las acciones');
 
-            this._populateCustomDropdown('entity', entities.map(e => ({
+            const entitiesData = entities.map(e => ({
                 value: e,
                 label: this._humanizeEntity(e)
-            })), 'Todas las entidades');
+            }));
+            this.dropdown_data.entity = entitiesData;
+            this._populateCustomDropdown('entity', entitiesData, 'Todas las entidades');
         }
     },
 
@@ -331,6 +348,10 @@ window.SIModules.audit = {
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
+                        <button onclick="window.SIModules.audit.resetFilters()" class="px-6 py-3 bg-gray-50 border border-gray-100 text-gray-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Limpiar
+                        </button>
                         <button onclick="window.SIModules.audit.loadLogs()" class="px-6 py-3 bg-white border border-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest rounded-2xl hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                             Refrescar
@@ -349,8 +370,18 @@ window.SIModules.audit = {
                                 <span id="label-actor" class="truncate">Todos los actores</span>
                                 <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div id="drop-actor" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                <ul id="list-actor"></ul>
+                            <div id="drop-actor" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
+                                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
+                                    <div class="relative">
+                                        <input type="text" 
+                                               id="search-actor" 
+                                               oninput="window.SIModules.audit.filterDropdown('actor', this.value)"
+                                               placeholder="Buscar actor..."
+                                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-orange-500 transition-all">
+                                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </div>
+                                </div>
+                                <ul id="list-actor" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
                             </div>
                         </div>
 
@@ -361,8 +392,18 @@ window.SIModules.audit = {
                                 <span id="label-action" class="truncate">Todas las acciones</span>
                                 <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div id="drop-action" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                <ul id="list-action"></ul>
+                            <div id="drop-action" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
+                                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
+                                    <div class="relative">
+                                        <input type="text" 
+                                               id="search-action" 
+                                               oninput="window.SIModules.audit.filterDropdown('action', this.value)"
+                                               placeholder="Buscar acción..."
+                                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-orange-500 transition-all">
+                                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </div>
+                                </div>
+                                <ul id="list-action" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
                             </div>
                         </div>
 
@@ -373,8 +414,18 @@ window.SIModules.audit = {
                                 <span id="label-entity" class="truncate">Todas las entidades</span>
                                 <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div id="drop-entity" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                <ul id="list-entity"></ul>
+                            <div id="drop-entity" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
+                                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
+                                    <div class="relative">
+                                        <input type="text" 
+                                               id="search-entity" 
+                                               oninput="window.SIModules.audit.filterDropdown('entity', this.value)"
+                                               placeholder="Buscar entidad..."
+                                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-orange-500 transition-all">
+                                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </div>
+                                </div>
+                                <ul id="list-entity" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
                             </div>
                         </div>
 
@@ -424,7 +475,57 @@ window.SIModules.audit = {
             el.classList.remove('hidden');
             const btn = document.getElementById(`btn-${id}`);
             if (btn) btn.querySelector('svg').style.transform = 'rotate(180deg)';
+
+            // Focus al buscador correspondiente si existe
+            const key = id.replace('drop-', '');
+            const searchInput = document.getElementById(`search-${key}`);
+            if (searchInput) {
+                searchInput.value = ''; // Limpiar al abrir
+                this.filterDropdown(key, ''); // Reset list
+                setTimeout(() => searchInput.focus(), 50);
+            }
         }
+    },
+
+    filterDropdown(key, val) {
+        const term = val.toLowerCase().trim();
+        const items = this.dropdown_data[key];
+        const defaultLabels = {
+            actor: 'Todos los actores',
+            action: 'Todas las acciones',
+            entity: 'Todas las entidades'
+        };
+
+        const filtered = term 
+            ? items.filter(i => i.label.toLowerCase().includes(term))
+            : items;
+
+        this._populateCustomDropdown(key, filtered, defaultLabels[key], true);
+    },
+
+    resetFilters() {
+        // 1. Resetear objeto de filtros
+        this.filters = {
+            actor_user_id: '',
+            action_key: '',
+            entity_type: '',
+            date_start: '',
+            date_end: ''
+        };
+
+        // 2. Resetear labels visuales
+        document.getElementById('label-actor').textContent = 'Todos los actores';
+        document.getElementById('label-action').textContent = 'Todas las acciones';
+        document.getElementById('label-entity').textContent = 'Todas las entidades';
+
+        // 3. Limpiar Flatpickr
+        if (this.fpStart) this.fpStart.clear();
+        if (this.fpEnd) this.fpEnd.clear();
+
+        // 4. Recargar logs
+        this.loadLogs();
+        
+        SIApp.showToast('Filtros limpiados', 'Se han restablecido todos los criterios de búsqueda.', 'info');
     },
 
     selectOption(filterKey, value, label) {
@@ -435,7 +536,7 @@ window.SIModules.audit = {
         this.loadLogs();
     },
 
-    _populateCustomDropdown(key, items, defaultLabel) {
+    _populateCustomDropdown(key, items, defaultLabel, isFiltering = false) {
         const list = document.getElementById(`list-${key}`);
         if (!list) return;
 
@@ -446,12 +547,16 @@ window.SIModules.audit = {
             </li>
         `;
 
-        html += items.map(item => `
-            <li onclick="window.SIModules.audit.selectOption('${key}', '${item.value}', '${SIApp.escapeHtml(item.label)}')" 
-                class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">
-                ${SIApp.escapeHtml(item.label)}
-            </li>
-        `).join('');
+        if (items.length === 0) {
+            html += `<li class="px-5 py-4 text-xs font-bold text-gray-300 text-center italic">Sin resultados</li>`;
+        } else {
+            html += items.map(item => `
+                <li onclick="window.SIModules.audit.selectOption('${key}', '${item.value}', '${SIApp.escapeHtml(item.label)}')" 
+                    class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">
+                    ${SIApp.escapeHtml(item.label)}
+                </li>
+            `).join('');
+        }
 
         list.innerHTML = html;
     },

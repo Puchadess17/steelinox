@@ -317,7 +317,12 @@ body {
 
 /* --- Login page background --- */
 .login-bg {
-    background: linear-gradient(135deg, #FFF7ED 0%, #F9FAFB 50%, #FFF7ED 100%);
+    background: linear-gradient(rgba(17, 24, 39, 0.4), rgba(17, 24, 39, 0.4)), 
+                url('/steelinox/public/assets/img/steel-inox-nosotros-v3.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     min-height: 100vh;
 }
 
