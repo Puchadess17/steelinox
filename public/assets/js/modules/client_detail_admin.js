@@ -13,6 +13,7 @@ SIModules.clientDetailAdmin = {
     projectsLimit: 4,
     stats: null,
     userContext: null,
+    activeTab: 'resumen',
 
     async loadClientDetailSPA() {
         console.log("[ClientDetailAdmin] Loading SPA view...");
@@ -44,7 +45,7 @@ SIModules.clientDetailAdmin = {
             </div>
 
             <!-- Header Cliente -->
-            <div class="bg-white border border-gray-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 mb-8 shadow-sm flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-center relative overflow-hidden fade-in" style="animation-delay: 0.1s">
+            <div class="bg-white border border-gray-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 mb-0 shadow-sm flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-center relative overflow-hidden fade-in" style="animation-delay: 0.1s">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 
                 <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-[1.5rem] bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-white shadow-sm flex items-center justify-center shrink-0 relative z-10" id="client-avatar">
@@ -60,20 +61,31 @@ SIModules.clientDetailAdmin = {
                 </div>
 
                 <div class="relative sm:absolute sm:top-6 sm:right-6 z-20 w-full sm:w-auto">
-                    <a data-route="client-edit" href="/steelinox/client/edit/${clientId}" class="flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-orange-500 hover:border-orange-500 shadow-sm transition-all hover:shadow-md w-full sm:w-auto">
+                    <a href="/steelinox/client/edit/${clientId}" class="flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-orange-500 hover:border-orange-500 shadow-sm transition-all hover:shadow-md w-full sm:w-auto">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         Editar Cliente
                     </a>
                 </div>
             </div>
 
-            <!-- Contenedor Dinámico: Info, KPIs, Proyectos y Usuarios -->
-            <div id="client-detail-content" class="fade-in" style="animation-delay: 0.2s">
+            <!-- TABS -->
+            <div class="border-b border-gray-200 mb-8 overflow-x-auto hide-scrollbar">
+                <nav class="flex gap-8" aria-label="Tabs">
+                    <button onclick="SIModules.clientDetailAdmin.switchTab('resumen', this)" class="client-tab-btn active border-orange-500 text-orange-600 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Resumen</button>
+                    <button onclick="SIModules.clientDetailAdmin.switchTab('historial', this)" class="client-tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Histórico</button>
+                </nav>
+            </div>
+
+            <!-- TAB CONTENT -->
+            <div id="client-detail-content" class="fade-in">
                 <div class="py-20 flex flex-col items-center justify-center text-gray-400">
                     <div class="si-spinner mb-4"></div>
                     <p class="text-sm font-medium">Cargando información del cliente...</p>
                 </div>
             </div>
+
+            <!-- MODALS CONTAINER -->
+            <div id="client-modals-container"></div>
         `;
 
         console.log("[ClientDetailAdmin] Skeleton injected. Initializing data...");
@@ -114,7 +126,8 @@ SIModules.clientDetailAdmin = {
 
             console.log("[ClientDetailAdmin] Rendering components...");
             this.renderHeader();
-            this.renderContent();
+            this.renderModals();
+            this.renderTabContent();
             console.log("[ClientDetailAdmin] Load complete.");
 
         } catch (error) {
@@ -161,12 +174,35 @@ SIModules.clientDetailAdmin = {
         }
     },
 
-    /** Render main sections */
-    renderContent() {
+    /** Switch active tab */
+    switchTab(tabId, btn) {
+        document.querySelectorAll('.client-tab-btn').forEach(t => {
+            t.classList.remove('active', 'border-orange-500', 'text-orange-600');
+            t.classList.add('border-transparent', 'text-gray-400');
+        });
+        btn.classList.add('active', 'border-orange-500', 'text-orange-600');
+        btn.classList.remove('border-transparent', 'text-gray-400');
+        this.activeTab = tabId;
+        this.renderTabContent();
+    },
+
+    /** Render the active tab content */
+    renderTabContent() {
         const container = document.getElementById('client-detail-content');
         if (!container) return;
+        switch (this.activeTab) {
+            case 'resumen':   container.innerHTML = this._renderResumen(); break;
+            case 'historial': container.innerHTML = this._renderHistorial(); break;
+            default:          container.innerHTML = '<p class="text-center py-20 text-gray-400">Próximamente...</p>';
+        }
+        if (this.activeTab === 'resumen') {
+            this.renderProjectsList();
+        }
+    },
 
-        container.innerHTML = `
+    /** TAB: RESUMEN */
+    _renderResumen() {
+        return `
             <div class="space-y-10">
                 <!-- KPI SECTION -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -254,38 +290,318 @@ SIModules.clientDetailAdmin = {
                     </div>
                 </section>
 
-                <!-- HISTORIAL Y NOTAS -->
-                <section>
-                    <div class="flex items-center gap-2 mb-6 mt-6">
-                         <div class="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                         </div>
-                         <h2 class="text-xl font-extrabold text-gray-900">Historial y Notas</h2>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <div class="space-y-8 relative before:absolute before:left-6 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-50">
-                            ${this._renderTimelineItem({
-                    type: 'success',
-                    author: 'Alberto Sánchez',
-                    action: 'Cliente actualizado satisfactoriamente',
-                    time: '15 de Mayo, 2026 • 10:24 AM',
-                    note: 'Se han actualizado los datos de contacto y la dirección fiscal tras el traslado de oficinas.'
-                })}
-                            ${this._renderTimelineItem({
-                    type: 'info',
-                    author: 'Sistema',
-                    action: 'Nuevo proyecto asignado: PRJ-2026-018',
-                    time: '01 de Marzo, 2026 • 09:00 AM',
-                    note: null
-                })}
-                        </div>
-                        <div class="mt-8 pt-6 border-t border-gray-50 text-center">
-                            <button class="text-xs font-bold text-orange-500 hover:text-orange-600 uppercase tracking-widest">Ver historial completo de auditoría</button>
-                        </div>
-                    </div>
-                </section>
             </div>
+        `;
+    },
 
+    /** TAB: HISTÓRICO (Dinámico) */
+    _renderHistorial() {
+        setTimeout(() => this.loadClientTimeline(), 50);
+        return `
+            <div class="space-y-6 pb-6 w-full max-w-full">
+                <!-- Header -->
+                <div class="pt-2 px-1">
+                    <h3 class="text-[11px] font-black text-[#E57B23] uppercase tracking-[0.2em] mb-2">${SIApp.escapeHtml(this.client?.name || 'CLIENTE')}</h3>
+                    <h1 class="text-3xl font-black text-[#1a1b25] tracking-tight">Historial de Actividad</h1>
+                    <p class="text-sm text-gray-400 mt-2 font-medium">Cronología completa de eventos del cliente y sus proyectos</p>
+                </div>
+
+                <!-- Timeline Container -->
+                <div class="relative pl-4 sm:pl-8 space-y-10 mt-6" id="client-historial-timeline">
+                    <div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100 hidden sm:block"></div>
+                    <div class="flex flex-col items-center justify-center py-20 text-gray-300">
+                        <div class="si-spinner mb-4"></div>
+                        <p class="text-sm font-bold uppercase tracking-widest">Sincronizando historial...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async loadClientTimeline() {
+        try {
+            const res = await API.get('/clients/' + this.clientId + '/audit');
+            const container = document.getElementById('client-historial-timeline');
+            if (!container) return;
+
+            if (!res.success) {
+                container.innerHTML = `<div class="text-center text-red-500 py-10 font-bold">${res.message}</div>`;
+                return;
+            }
+
+            const logs = res.data || [];
+
+            if (logs.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20 text-gray-300">
+                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <p class="text-sm font-bold uppercase tracking-widest">Sin actividad registrada</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Remove vertical line for rendering
+            container.innerHTML = '<div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100 hidden sm:block"></div>';
+            logs.forEach(log => {
+                container.insertAdjacentHTML('beforeend', this._buildClientHistoryNode(log));
+            });
+
+        } catch (err) {
+            console.error('[ClientDetailAdmin] Timeline error:', err);
+            const container = document.getElementById('client-historial-timeline');
+            if (container) container.innerHTML = `<div class="text-center text-red-500 py-10">Error al cargar el historial: ${err.message}</div>`;
+        }
+    },
+
+    _buildClientHistoryNode(log) {
+        let title = '';
+        let content = '';
+        let type = 'edit';
+        let actionTitle = 'ACCIÓN';
+        let isAttachment = false;
+
+        const timeFormat = window.SIApp ? SIApp.timeAgo(log.created_at) + ' · ' + SIApp.formatDate(log.created_at) : log.created_at;
+        const actor = log.actor_name || 'Sistema';
+
+        switch (log.action_key) {
+            // ── CLIENTE ──────────────────────────────────────────────
+            case 'client_create':
+                type = 'status';
+                actionTitle = 'CLIENTE CREADO';
+                title = 'Alta del Cliente en el Sistema';
+                content = `El cliente fue registrado por primera vez en la plataforma.`;
+                break;
+            case 'client_update':
+            case 'client_updated':
+                type = 'edit';
+                actionTitle = 'DATOS ACTUALIZADOS';
+                title = 'Ficha del Cliente Modificada';
+                content = 'Se han actualizado los datos del cliente.';
+                if (log.metadata?.changes) {
+                    content += '<br><span class="text-xs text-gray-400 mt-1 block">Campos modificados registrados.</span>';
+                }
+                break;
+            case 'client_activate':
+                type = 'status';
+                actionTitle = 'CLIENTE ACTIVADO';
+                title = 'El Cliente fue Activado';
+                content = 'La cuenta del cliente está activa y operativa.';
+                break;
+            case 'client_deactivate':
+                type = 'status';
+                actionTitle = 'CLIENTE DESACTIVADO';
+                title = 'El Cliente fue Desactivado';
+                content = 'La cuenta ha sido suspendida temporalmente.';
+                break;
+
+            // ── USUARIO ──────────────────────────────────────────────
+            case 'user_create':
+                type = 'user';
+                actionTitle = 'NUEVO USUARIO';
+                title = log.metadata?.name || log.metadata?.email || 'Usuario Creado';
+                content = `Alta de usuario para el cliente.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.email || ''}</span>`;
+                break;
+            case 'user_update':
+            case 'user_updated':
+                type = 'user';
+                actionTitle = 'USUARIO EDITADO';
+                title = log.metadata?.name || 'Datos de Usuario Actualizados';
+                content = 'Se han modificado los datos de credenciales del usuario.';
+                break;
+            case 'user_activate':
+                type = 'user';
+                actionTitle = 'USUARIO ACTIVADO';
+                title = log.metadata?.name || 'Usuario Activado';
+                content = 'El acceso del usuario a la plataforma fue habilitado.';
+                break;
+            case 'user_deactivate':
+                type = 'user';
+                actionTitle = 'USUARIO DESACTIVADO';
+                title = log.metadata?.name || 'Usuario Desactivado';
+                content = 'El acceso del usuario fue bloqueado.';
+                break;
+            case 'user_delete':
+                type = 'edit';
+                actionTitle = 'USUARIO ELIMINADO';
+                title = log.metadata?.name || 'Usuario Removido';
+                content = `El usuario fue eliminado permanentemente del sistema.`;
+                break;
+
+            // ── PROYECTO ─────────────────────────────────────────────
+            case 'project_create':
+                type = 'project';
+                actionTitle = 'NUEVO PROYECTO';
+                title = log.metadata?.name || 'Proyecto Creado';
+                content = `Nuevo proyecto vinculado al cliente.<br><span class="text-[10px] font-black text-orange-400 uppercase tracking-tighter mt-1 block">${log.metadata?.reference || ''}</span>`;
+                break;
+            case 'project_update':
+                type = 'project';
+                actionTitle = 'PROYECTO EDITADO';
+                title = log.metadata?.name || 'Datos de Proyecto Actualizados';
+                content = 'Se han modificado los detalles del proyecto.';
+                break;
+            case 'project_status_change':
+            case 'project_status_changed':
+                type = 'project';
+                actionTitle = 'ESTADO DE PROYECTO';
+                title = log.metadata?.name || 'Cambio de Estado';
+                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || '-'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
+                if (log.metadata?.reason) {
+                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
+                }
+                break;
+            case 'project_reopen':
+                type = 'project';
+                actionTitle = 'PROYECTO REABIERTO';
+                title = log.metadata?.name || 'Proyecto Reabierto';
+                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || 'CERRADO'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
+                break;
+            case 'project_user_assigned':
+                type = 'user';
+                actionTitle = 'COMERCIAL ASIGNADO';
+                title = log.metadata?.user_name || 'Comercial Asignado al Proyecto';
+                content = `Comercial asignado para gestionar el proyecto.`;
+                break;
+            case 'project_user_removed':
+                type = 'edit';
+                actionTitle = 'COMERCIAL REMOVIDO';
+                title = log.metadata?.user_name || 'Comercial Removido del Proyecto';
+                content = `El comercial fue desasignado del proyecto.`;
+                break;
+
+            // ── DOCUMENTO ────────────────────────────────────────────
+            case 'document_upload':
+                type = 'document';
+                actionTitle = 'NUEVO DOCUMENTO';
+                title = log.metadata?.title || log.metadata?.file_name || 'Documento Subido';
+                isAttachment = true;
+                content = `Archivo subido al expediente del proyecto.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
+                break;
+            case 'document_new_version':
+                type = 'document';
+                actionTitle = 'NUEVA VERSIÓN';
+                title = log.metadata?.title || log.metadata?.file_name || 'Versión de Documento';
+                isAttachment = true;
+                content = `Nueva versión del documento subida.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || '-'}</span>`;
+                break;
+            case 'document_download':
+                type = 'document';
+                actionTitle = 'DESCARGA';
+                title = log.metadata?.file_name || log.metadata?.title || 'Documento Descargado';
+                isAttachment = true;
+                content = `El documento fue descargado.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
+                break;
+            case 'document_view':
+                type = 'document';
+                actionTitle = 'CONSULTA';
+                title = log.metadata?.file_name || log.metadata?.title || 'Documento Consultado';
+                isAttachment = true;
+                content = `El documento fue visualizado en el portal.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
+                break;
+            case 'document_deleted':
+                type = 'edit';
+                actionTitle = 'DOCUMENTO ELIMINADO';
+                title = log.metadata?.title || log.metadata?.file_name || 'Documento Removido';
+                content = `El archivo fue eliminado del expediente.`;
+                break;
+            case 'comment_create':
+                type = 'chat';
+                actionTitle = 'COMENTARIO';
+                title = '';
+                content = `"${SIApp.escapeHtml(log.metadata?.comment || log.metadata?.text || '')}"`;
+                break;
+
+            // ── DEFAULT ──────────────────────────────────────────────
+            default:
+                actionTitle = log.action_key?.replace(/_/g, ' ').toUpperCase() || 'EVENTO';
+                title = log.metadata?.title || log.metadata?.file_name || log.metadata?.name || 'Actividad Registrada';
+                let defaultContent = [];
+                if (log.metadata && typeof log.metadata === 'object') {
+                    for (const [k, v] of Object.entries(log.metadata)) {
+                        if (typeof v !== 'object' && v !== null && v !== '') {
+                            const valStr = String(v).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            defaultContent.push(`<span class="block text-[11px] text-gray-600 mt-1"><strong class="uppercase text-[9px] text-gray-400 tracking-wider mr-1">${k.replace(/_/g, ' ')}:</strong> ${valStr}</span>`);
+                        }
+                    }
+                }
+                content = defaultContent.length > 0 ? defaultContent.join('') : `<span class="text-[11px] text-gray-400 italic">Sin metadata adicional (${log.action_key}).</span>`;
+                break;
+        }
+
+        const icons = {
+            status:   { color: 'bg-[#E57B23]',  icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
+            document: { color: 'bg-[#0284c7]',  icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+            project:  { color: 'bg-amber-500',   icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>' },
+            user:     { color: 'bg-violet-500',  icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' },
+            chat:     { color: 'bg-gray-100',    icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clip-rule="evenodd"/></svg>' },
+            edit:     { color: 'bg-amber-100',   icon: '<svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' },
+        };
+        const node = icons[type] || icons.edit;
+
+        let contentHtml = '';
+        if (isAttachment) {
+            contentHtml = `
+                <div class="mt-3 p-5 bg-[#f8faff] border border-[#e0e7ff] rounded-2xl flex items-center gap-4 shadow-sm w-full lg:w-3/4 xl:w-2/3">
+                    <div class="w-12 h-12 bg-white border border-[#c7d2fe] rounded-xl shadow-sm flex items-center justify-center text-[#4338ca] shrink-0">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0 pr-4">
+                        <p class="text-[15px] font-black text-[#1e1b4b] leading-tight mb-1 truncate">${title}</p>
+                        <p class="text-xs text-gray-500">${content}</p>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'chat') {
+            contentHtml = `
+                <div class="mt-2.5">
+                    <div class="inline-block px-6 py-4 bg-[#f8f9fa] rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm relative w-full lg:w-2/3">
+                        <p class="text-[14px] text-gray-700 font-medium leading-relaxed italic">${content}</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            contentHtml = `
+                <div class="mt-2 text-sm w-full lg:w-3/4">
+                    <h5 class="text-[14px] font-black text-gray-900 leading-tight">${title}</h5>
+                    <p class="text-[12px] text-gray-500 mt-1 font-medium leading-relaxed">${content}</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="relative flex items-start gap-4 sm:gap-5 group fade-in w-full">
+                <!-- Desktop Actor Name -->
+                <div class="hidden sm:flex w-24 lg:w-32 flex-col items-end pt-1 shrink-0">
+                    <span class="text-[10px] lg:text-[11px] font-black text-[#1a1b25] uppercase tracking-tight text-right leading-tight pr-1" title="${actor}">${actor}</span>
+                </div>
+                <!-- Icon -->
+                <div class="relative z-10 w-10 h-10 sm:w-11 sm:h-11 ${node.color} rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform flex-shrink-0 ring-4 ring-white mt-1 sm:mt-0">
+                    ${node.icon}
+                </div>
+                <!-- Content -->
+                <div class="flex-1 min-w-0 pb-5 sm:pb-3 border-b border-gray-50/50">
+                    <div class="mb-2 sm:mb-1 flex flex-wrap items-center gap-2">
+                        <span class="text-[9px] font-black tracking-widest uppercase text-orange-500 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">${actionTitle}</span>
+                        <span class="text-[9px] lg:text-[10px] text-gray-400 font-medium">${timeFormat}</span>
+                    </div>
+                    <!-- Mobile Actor -->
+                    <div class="sm:hidden mb-2 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span class="text-[10px] font-black uppercase tracking-tight text-gray-900">${actor}</span>
+                    </div>
+                    ${contentHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    /** Render modals into a persistent container so they survive tab switching */
+    renderModals() {
+        const modalsEl = document.getElementById('client-modals-container');
+        if (!modalsEl) return;
+
+        modalsEl.innerHTML = `
             <!-- MODAL USUARIO -->
             <div id="user-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
@@ -400,9 +716,6 @@ SIModules.clientDetailAdmin = {
                 </div>
             </div>
         `;
-
-        // Render inner dynamic lists
-        this.renderProjectsList();
     },
 
     renderProjectsList() {
@@ -558,8 +871,8 @@ SIModules.clientDetailAdmin = {
         return `
         <tr class="hover:bg-orange-50/30 transition-colors group">
             <td class="px-5 py-4 whitespace-nowrap text-center">
-                <a data-route="project-detail" href="/steelinox/project/${p.id}" 
-                   class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors hover:underline inline-block">
+                <a href="/steelinox/project/${p.id}" 
+                   class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline inline-block">
                     ${p.name}
                 </a>
             </td>
@@ -587,7 +900,7 @@ SIModules.clientDetailAdmin = {
             </td>
             
             <td class="px-5 py-4 text-center whitespace-nowrap w-12">
-                <a data-route="project-detail" href="/steelinox/project/${p.id}" class="inline-block p-1 transition-all text-gray-300 hover:text-orange-500">
+                <a href="/steelinox/project/${p.id}" class="inline-block p-1 transition-all text-gray-300 hover:text-orange-500">
                     <svg class="w-4 h-4 inline-block opacity-0 group-hover:opacity-100 transition-colors" 
                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -638,7 +951,7 @@ SIModules.clientDetailAdmin = {
         const badge = (val) => (window.SIApp && SIApp.statusBadge) ? SIApp.statusBadge(val) : val;
 
         return `
-            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="block bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group">
+            <a href="/steelinox/project/${p.id}" class="block bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group">
                 <div class="flex items-start justify-between mb-3 gap-2">
                     <div class="min-w-0">
                         <p class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors leading-tight truncate">${p.name}</p>

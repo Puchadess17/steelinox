@@ -138,14 +138,14 @@ SIModules.dashboard = {
         const tbody = data.map(p => `
             <tr class="hover:bg-orange-50/30 transition-colors group">
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <a data-route="project-detail" href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(p.name)}</a>
+                    <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(p.name)}</a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
                 </td>
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
                     ${p.client_id ? `
-                        <a data-route="client-detail" href="/steelinox/client/${p.client_id}" class="text-gray-600 group-hover:text-orange-600 transition-colors no-underline">
+                        <a href="/steelinox/client/${p.client_id}" class="text-gray-600 group-hover:text-orange-600 transition-colors no-underline">
                             ${SIApp.escapeHtml(p.client_name)}
                         </a>
                     ` : 'Sin Asignar'}
@@ -496,7 +496,7 @@ SIModules.dashboard = {
         };
 
         return projects.map(p => `
-            <a data-route="project-detail" href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-all hover:shadow-lg block group">
+            <a href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-all hover:shadow-lg block group">
                 
                 <!-- Cabecera Oscura / Imagen Placeholder -->
                 <div class="h-36 sm:h-40 bg-[#1e1e24] relative flex items-center justify-center overflow-hidden">
@@ -772,7 +772,7 @@ SIModules.dashboard = {
                                 ${initials}
                             </div>
                             <div class="min-w-0">
-                                <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-orange-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
+                                <a href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-orange-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
                             </div>
                         </div>
                     </td>
@@ -790,10 +790,10 @@ SIModules.dashboard = {
                     </td>
                     <td class="px-6 py-4 text-right whitespace-nowrap">
                         <div class="flex items-center justify-end gap-1.5">
-                            <a data-route="client-detail" href="/steelinox/client/${c.id}" class="p-2 text-gray-400 hover:text-orange-500 transition-all hover:scale-110" title="Ver Detalles">
+                            <a href="/steelinox/client/${c.id}" class="p-2 text-gray-400 hover:text-orange-500 transition-all hover:scale-110" title="Ver Detalles">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </a>
-                            <a data-route="client-edit" href="/steelinox/client/edit/${c.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
+                            <a href="/steelinox/client/edit/${c.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </a>
                         </div>
@@ -817,8 +817,8 @@ SIModules.dashboard = {
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Nombre de Empresa ${sortIcon('name')}</span>
                             </th>
-                            <th class="px-6 py-4 text-left">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Referencia</span>
+                            <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('reference')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Referencia ${sortIcon('reference')}</span>
                             </th>
                             <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('projects_count')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyectos ${sortIcon('projects_count')}</span>
@@ -908,7 +908,7 @@ SIModules.dashboard = {
                                 ${initials}
                             </div>
                             <div>
-                                <a data-route="client-detail" href="/steelinox/client/${c.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors hover:underline block">${SIApp.escapeHtml(c.name)}</a>
+                                <a href="/steelinox/client/${c.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(c.name)}</a>
                                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1">${SIApp.escapeHtml(c.reference || 'Sin Referencia')}</span>
                             </div>
                         </div>
@@ -928,11 +928,11 @@ SIModules.dashboard = {
 
                 <!-- Footer buttons -->
                 <div class="mt-auto px-6 pb-6 pt-1 flex justify-center gap-2">
-                    <a data-route="client-detail" href="/steelinox/client/${c.id}" class="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                    <a href="/steelinox/client/${c.id}" class="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         Ver
                     </a>
-                    <a data-route="client-edit" href="/steelinox/client/edit/${c.id}" class="px-4 py-2 bg-gray-100 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                    <a href="/steelinox/client/edit/${c.id}" class="px-4 py-2 bg-gray-100 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         Editar
                     </a>

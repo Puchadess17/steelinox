@@ -8,6 +8,7 @@ window.SIModules = window.SIModules || {};
 SIModules.projectDetailAdmin = {
     projectId: null,
     project: null,
+    auditLogs: [],
     userContext: null,  // se inicializa en init()
     assignedUsers: [],
     documents: [],
@@ -394,14 +395,17 @@ SIModules.projectDetailAdmin = {
     /** Cargar datos de la API */
     async loadProjectData() {
         try {
-            const response = await API.get('/projects/' + this.projectId);
+            const [response, auditRes] = await Promise.all([
+                API.get('/projects/' + this.projectId),
+                API.get('/projects/' + this.projectId + '/audit')
+            ]);
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Error al cargar el proyecto.');
             }
 
-            // Securización vía DTO (Reutilizamos lógica si está disponible o la extendemos aquí)
             this.project = response.data;
+            this.auditLogs = (auditRes.success && auditRes.data) ? auditRes.data : [];
 
             await this.loadAssignedUsers();
 
@@ -698,7 +702,7 @@ SIModules.projectDetailAdmin = {
 
                 <!-- Barra Lateral Derecha (Sidebar Extra) (4/12) -->
                 <div class="lg:col-span-4 space-y-6">
-                    <!-- Fechas y Ciclo de Vida -->
+                    <!-- Fechas y Ciclo de Vida (Dinámico desde Audit Logs) -->
                     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-bl-full -z-10"></div>
                         <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -706,42 +710,7 @@ SIModules.projectDetailAdmin = {
                             Ciclo de Vida
                         </h4>
                         <div class="space-y-4 relative before:absolute before:inset-0 before:left-[11px] before:w-[2px] before:bg-gray-100 before:-z-10 ml-1">
-                            
-                            <!-- Creación -->
-                            <div class="flex items-start gap-4">
-                                <div class="w-6 h-6 rounded-full border-4 border-white bg-blue-500 flex-shrink-0 mt-0.5"></div>
-                                <div>
-                                    <p class="text-xs font-black text-gray-900 uppercase tracking-wide">Creado el</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5 font-medium">${SIApp.formatDate(p.created_at)}</p>
-                                </div>
-                            </div>
-
-                            <!-- Modificación -->
-                            <div class="flex items-start gap-4">
-                                <div class="w-6 h-6 rounded-full border-4 border-white bg-amber-500 flex-shrink-0 mt-0.5"></div>
-                                <div>
-                                    <p class="text-xs font-black text-gray-900 uppercase tracking-wide">Última Modificación</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5 font-medium">${p.updated_at ? SIApp.formatDate(p.updated_at) : 'Sin cambios'}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Aprobación -->
-                            <div class="flex items-start gap-4">
-                                <div class="w-6 h-6 rounded-full border-4 border-white ${p.approved_at ? 'bg-emerald-500' : 'bg-gray-200'} flex-shrink-0 mt-0.5"></div>
-                                <div>
-                                    <p class="text-xs font-black ${p.approved_at ? 'text-gray-900' : 'text-gray-400'} uppercase tracking-wide">Aprobado</p>
-                                    <p class="text-[11px] text-gray-400 mt-0.5 font-medium italic">${p.approved_at ? SIApp.formatDate(p.approved_at) : 'Pendiente'}</p>
-                                </div>
-                            </div>
-
-                            <!-- Cierre -->
-                            <div class="flex items-start gap-4">
-                                <div class="w-6 h-6 rounded-full border-4 border-white ${p.closed_at ? 'bg-purple-500' : 'bg-gray-200'} flex-shrink-0 mt-0.5"></div>
-                                <div>
-                                    <p class="text-xs font-black ${p.closed_at ? 'text-gray-900' : 'text-gray-400'} uppercase tracking-wide">Cerrado</p>
-                                    <p class="text-[11px] text-gray-400 mt-0.5 font-medium italic">${p.closed_at ? SIApp.formatDate(p.closed_at) : 'No Finalizado'}</p>
-                                </div>
-                            </div>
+                            ${this._renderCicloDeVida()}
                         </div>
                     </div>
 
@@ -835,61 +804,117 @@ SIModules.projectDetailAdmin = {
                 </div>
             </div>
 
-            <!-- MODAL: CAMBIAR ESTADO -->
+            <!-- MODAL: CAMBIAR ESTADO (Stepper Vertical Linear) -->
             <div id="change-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                        <h3 class="text-lg font-extrabold text-gray-900">Cambiar Estado</h3>
+                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-white relative z-10">
+                        <h3 class="text-lg font-extrabold text-gray-900">Gestión de Estado</h3>
                         <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
-                    <div class="p-6">
-                        <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus();" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nuevo Estado <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <input type="hidden" id="change-status-select" name="status" value="${p.status}">
-                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleDropdown('status-dropdown-menu')" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
-                                        <div class="flex items-center gap-2">
-                                           <span id="change-status-circle" class="w-2 h-2 rounded-full ${p.status === 'propuesta' ? 'bg-amber-400' : (p.status === 'aprobado' ? 'bg-blue-400' : (p.status === 'ejecucion' ? 'bg-orange-400' : 'bg-emerald-400'))}"></span>
-                                           <span id="change-status-display" class="capitalize">${p.status}</span>
+
+                    <div class="p-8 overflow-y-auto max-h-[70vh]">
+                        ${(() => {
+                            const currentStatus = p.status;
+                            const steps = [
+                                { id: 'propuesta', label: 'Propuesta', color: 'bg-amber-400' },
+                                { id: 'aprobado',  label: 'Aprobado',  color: 'bg-blue-400' },
+                                { id: 'ejecucion', label: 'Ejecución', color: 'bg-orange-400' },
+                                { id: 'cerrado',   label: 'Cerrado',   color: 'bg-emerald-400' }
+                            ];
+
+                            const currentIndex = steps.findIndex(s => s.id === currentStatus);
+
+                            // CASO ESPECIAL: CERRADO (Finish / Reopen Loop)
+                            if (currentStatus === 'cerrado') {
+                                return `
+                                    <div class="flex flex-col items-center text-center py-4">
+                                        <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-emerald-50/50">
+                                            <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         </div>
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
-                                    </button>
-                                    
-                                    <ul id="status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'propuesta' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
-                                            ${p.status === 'propuesta' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                                        </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
-                                            ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                                        </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('ejecucion', 'Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'ejecucion' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Ejecución
-                                            ${p.status === 'ejecucion' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                                        </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cerrado
-                                            ${p.status === 'cerrado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                                        </li>
-                                    </ul>
+                                        <h4 class="text-xl font-black text-gray-900 mb-2">Proyecto Finalizado</h4>
+                                        <p class="text-sm text-gray-500 mb-8 px-4 leading-relaxed">El proyecto ha sido completado y cerrado. Toda la documentación está archivada.</p>
+                                        
+                                        <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('propuesta');" class="w-full space-y-4">
+                                            <input type="hidden" name="status" value="propuesta">
+                                            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Motivo de Reapertura (Opcional)</label>
+                                                <textarea name="reason" rows="2" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm text-left" placeholder="¿Por qué se reabre el proyecto?"></textarea>
+                                            </div>
+                                            <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl py-4 px-6 text-sm font-black transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 group">
+                                                <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                Reabrir Proyecto
+                                                <div id="reopen-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
+                                            </button>
+                                        </form>
+                                    </div>
+                                `;
+                            }
+
+                            // STEPPER NORMAL
+                            return `
+                                <div class="relative space-y-12 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-100">
+                                    ${steps.map((step, index) => {
+                                        const isPast = index < currentIndex;
+                                        const isCurrent = index === currentIndex;
+                                        const isNext = index === currentIndex + 1;
+                                        const isFuture = index > currentIndex + 1;
+
+                                        let statusClass = '';
+                                        let dotContent = '';
+
+                                        if (isPast) {
+                                            statusClass = 'opacity-60 grayscale-[0.5]';
+                                            dotContent = `<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>`;
+                                        } else if (isCurrent) {
+                                            statusClass = 'scale-105';
+                                            dotContent = `<div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"></div>`;
+                                        } else if (isFuture) {
+                                            statusClass = 'opacity-30 pointer-events-none';
+                                            dotContent = '';
+                                        }
+
+                                        const dotColor = isPast ? 'bg-gray-400' : (isCurrent || isNext ? step.color : 'bg-gray-100');
+
+                                        return `
+                                            <div class="relative flex items-start gap-6 group transition-all duration-500 ${statusClass}">
+                                                <!-- Dot -->
+                                                <div class="relative z-10 w-6 h-6 rounded-full ${dotColor} flex items-center justify-center shrink-0 ${isCurrent ? 'ring-4 ring-orange-50' : ''} transition-all duration-300">
+                                                    ${dotContent}
+                                                </div>
+
+                                                <!-- Content -->
+                                                <div class="flex-1 -mt-0.5">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <span class="text-[10px] font-black uppercase tracking-[0.2em] ${isCurrent ? 'text-orange-500' : (isPast ? 'text-gray-400' : (isNext ? 'text-gray-900' : 'text-gray-300'))}">${step.id}</span>
+                                                        ${isCurrent ? '<span class="bg-orange-50 text-orange-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-orange-100">ACTUAL</span>' : ''}
+                                                    </div>
+                                                    <h5 class="text-sm font-black ${isPast ? 'line-through text-gray-400' : (isCurrent ? 'text-gray-900' : (isNext ? 'text-gray-700' : 'text-gray-300'))} transition-colors">${step.label}</h5>
+                                                    
+                                                    ${isNext ? `
+                                                        <div class="mt-4 p-5 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-2">
+                                                            <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('${step.id}');" class="space-y-4">
+                                                                <input type="hidden" name="status" value="${step.id}">
+                                                                <div>
+                                                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Motivo / Notas del Cambio</label>
+                                                                    <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Opcional: detalla el avance del proyecto..."></textarea>
+                                                                </div>
+                                                                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 px-4 text-xs font-black transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 group">
+                                                                    Mover a ${step.label}
+                                                                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                                                                    <div id="change-status-spinner" class="si-spinner w-3 h-3 border-white/30 border-t-white hidden"></div>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Motivo / Notas</label>
-                                <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Añade un motivo"></textarea>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 rounded-b-xl">
-                         <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
-                         <button onclick="SIModules.projectDetailAdmin.saveProjectStatus()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none flex items-center gap-2">
-                             <svg class="w-4 h-4 hidden" id="change-status-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                             Actualizar
-                         </button>
+                            `;
+                        })()}
                     </div>
                 </div>
             </div>
@@ -948,33 +973,256 @@ SIModules.projectDetailAdmin = {
         `;
     },
 
+    /** Genera los nodos del Ciclo de Vida a partir de los audit logs reales */
+    _renderCicloDeVida() {
+        const p = this.project;
+        const logs = this.auditLogs || [];
+        const nodes = [];
 
-    /** PESTAÑA: HISTORIAL (Mock) */
+        const dot = (color, active) => active
+            ? `<div class="w-6 h-6 rounded-full border-4 border-white ${color} flex-shrink-0 mt-0.5 shadow-sm"></div>`
+            : `<div class="w-6 h-6 rounded-full border-4 border-white bg-gray-200 flex-shrink-0 mt-0.5"></div>`;
+
+        const entry = (dotHtml, label, dateStr, sublabel = null, textColor = 'text-gray-900') => `
+            <div class="flex items-start gap-4">
+                ${dotHtml}
+                <div>
+                    <p class="text-xs font-black ${textColor} uppercase tracking-wide">${label}</p>
+                    <p class="text-[11px] text-gray-500 mt-0.5 font-medium leading-snug">${dateStr}</p>
+                    ${sublabel ? `<p class="text-[10px] text-gray-400 mt-0.5 font-medium italic">${sublabel}</p>` : ''}
+                </div>
+            </div>
+        `;
+
+        const fmt = (d) => d ? SIApp.formatDate(d) + ' · ' + SIApp.timeAgo(d) : '-';
+        const fmtFull = (d) => {
+            if (!d) return '-';
+            try {
+                const dt = new Date(d.replace(' ', 'T'));
+                return dt.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+                    + ' ' + dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            } catch { return d; }
+        };
+
+        // 1. Creación
+        const createLog = logs.find(l => l.action_key === 'project_create' || l.action_key === 'project_created');
+        nodes.push(entry(
+            dot('bg-amber-400', true),
+            'Creado el',
+            fmtFull(createLog?.created_at || p.created_at),
+            createLog?.actor_name ? `por ${createLog.actor_name}` : null
+        ));
+
+        // 2. Aprobación (first transition TO "aprobado")
+        const approvalLog = [...logs].reverse().find(l =>
+            (l.action_key === 'project_status_change' || l.action_key === 'project_status_changed') &&
+            l.metadata?.new_status === 'aprobado'
+        );
+        nodes.push(entry(
+            dot('bg-blue-400', !!approvalLog),
+            'Aprobado',
+            approvalLog ? fmtFull(approvalLog.created_at) : 'Pendiente de aprobación',
+            approvalLog?.actor_name ? `por ${approvalLog.actor_name}` : null,
+            approvalLog ? 'text-gray-900' : 'text-gray-400'
+        ));
+
+        // 3. En Ejecución (transition TO "ejecucion")
+        const ejecucionLog = [...logs].reverse().find(l =>
+            (l.action_key === 'project_status_change' || l.action_key === 'project_status_changed') &&
+            l.metadata?.new_status === 'ejecucion'
+        );
+        nodes.push(entry(
+            dot('bg-orange-400', !!ejecucionLog),
+            'En Ejecución',
+            ejecucionLog ? fmtFull(ejecucionLog.created_at) : 'No iniciado aún',
+            ejecucionLog?.actor_name ? `por ${ejecucionLog.actor_name}` : null,
+            ejecucionLog ? 'text-gray-900' : 'text-gray-400'
+        ));
+
+        // 4. Ciclos de Cierre / Reapertura (puede haber varios)
+        const cycleEvents = logs.filter(l =>
+            l.action_key === 'project_reopen' ||
+            ((l.action_key === 'project_status_change' || l.action_key === 'project_status_changed') &&
+              l.metadata?.new_status === 'cerrado')
+        ).reverse(); // oldest first
+
+        if (cycleEvents.length === 0) {
+            nodes.push(entry(
+                dot('bg-emerald-400', p.status === 'cerrado'),
+                'Cerrado',
+                p.status === 'cerrado' ? fmt(p.updated_at) : 'No finalizado',
+                null,
+                p.status === 'cerrado' ? 'text-gray-900' : 'text-gray-400'
+            ));
+        } else {
+            cycleEvents.forEach(l => {
+                const isClosed = l.action_key !== 'project_reopen' && l.metadata?.new_status === 'cerrado';
+                nodes.push(entry(
+                    dot(isClosed ? 'bg-emerald-400' : 'bg-violet-400', true),
+                    isClosed ? 'Cerrado' : 'Reabierto',
+                    fmtFull(l.created_at),
+                    l.actor_name ? `por ${l.actor_name}` : null
+                ));
+            });
+        }
+
+        return nodes.join('');
+    },
+
+    /** PESTAÑA: HISTORIAL (Dinámico) */
     _renderHistorial() {
+        // Disparar carga de datos
+        setTimeout(() => this.loadProjectTimeline(), 50);
+
         return `
-            <div class="space-y-6 pb-6">
+            <div class="space-y-6 pb-6 w-full max-w-full">
                 <!-- Header -->
                 <div class="pt-2 px-1">
-                     <h3 class="text-[11px] font-black text-[#E57B23] uppercase tracking-[0.2em] mb-2">INDUSTRIAL STEEL CO.</h3>
+                     <h3 class="text-[11px] font-black text-[#E57B23] uppercase tracking-[0.2em] mb-2">${SIApp.escapeHtml(this.project.client_name || 'STEELINOX')}</h3>
                      <h1 class="text-3xl font-black text-[#1a1b25] tracking-tight">Historial de Actividad</h1>
-                     <p class="text-sm text-gray-400 mt-2 font-medium">Cronología completa de eventos en el Proyecto Nave A24</p>
+                     <p class="text-sm text-gray-400 mt-2 font-medium">Cronología completa de eventos en el Proyecto ${SIApp.escapeHtml(this.project.name || '')}</p>
                 </div>
 
                 <!-- Timeline Container -->
-                <div class="relative pl-8 space-y-10 mt-10">
-                    <!-- Linea vertical -->
+                <div class="relative pl-8 space-y-10 mt-10" id="historial-timeline-container">
                     <div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>
-
-                    ${this._mockHistoryNode('status', 'Carlos Ruiz', 'Hoy, 10:45 AM', 'CAMBIO DE ESTADO', 'Fase de Montaje: Iniciada', 'Se ha verificado la recepción de las vigas maestras y se procede al izaje según el plan de seguridad.')}
-                    ${this._mockHistoryNode('document', 'Elena Soler', 'Ayer, 04:20 PM', 'NUEVO DOCUMENTO', 'Planos_Detalle_V5.pdf', 'Archivo PDF (12.4 MB)<br><span class="text-[11px] font-black text-blue-400 uppercase tracking-tighter">OFICINA TÉCNICA</span>', true)}
-                    ${this._mockHistoryNode('chat', 'Marcos Peña', '22 Oct, 09:15 AM', 'COMENTARIO INTERNO', '', '"Confirmada la revisión estructural del nodo B-12. Podemos proceder con el torqueado final de pernos grado 8."')}
-                    ${this._mockHistoryNode('edit', 'Ana Martínez', '21 Oct, 02:30 PM', 'EDICIÓN DE DATOS', 'Ajuste de Cronograma', 'El hito de cimentación se ha desplazado debido a condiciones climáticas.<br><strong class="text-orange-500">Nueva fecha: 28/10/2023</strong>')}
+                    <div class="flex flex-col items-center justify-center py-20 text-gray-300">
+                        <div class="si-spinner mb-4"></div>
+                        <p class="text-sm font-bold uppercase tracking-widest">Sincronizando historial...</p>
+                    </div>
                 </div>
             </div>
         `;
     },
 
-    _mockHistoryNode(type, user, time, actionTitle, title, content, isAttachment = false) {
+    async loadProjectTimeline() {
+        try {
+            const res = await API.get('/projects/' + this.projectId + '/audit');
+            const container = document.getElementById('historial-timeline-container');
+            if (!container) return;
+
+            if (!res.success) {
+                container.innerHTML = `<div class="text-center text-red-500 py-10">${res.message}</div>`;
+                return;
+            }
+
+            const logs = res.data || [];
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest text-xs">No hay actividad registrada aún.</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>' + 
+                                  logs.map(log => this._buildHistoryNode(log)).join('');
+        } catch (e) {
+            console.error('Error loadProjectTimeline:', e);
+        }
+    },
+
+    _buildHistoryNode(log) {
+        let title = '';
+        let content = '';
+        let type = 'edit';
+        let actionTitle = 'ACCIÓN';
+        let isAttachment = false;
+
+        const timeFormat = window.SIApp ? SIApp.timeAgo(log.created_at) + ' · ' + SIApp.formatDate(log.created_at) : log.created_at;
+        const actor = log.actor_name || 'Sistema';
+
+        switch(log.action_key) {
+            case 'project_created':
+                type = 'status';
+                actionTitle = 'NUEVO PROYECTO';
+                title = 'Creación del Proyecto';
+                content = `Proyecto ${SIApp.escapeHtml(log.metadata?.name || '')} registrado en plataforma.`;
+                break;
+            case 'project_updated':
+                type = 'edit';
+                actionTitle = 'EDICIÓN DE DATOS';
+                title = 'Actualización del Proyecto';
+                content = 'Se han modificado los detalles del proyecto.';
+                if(log.metadata?.changes) {
+                    content += '<br><span class="text-xs text-gray-400 mt-1 block">Cambios aplicados</span>';
+                }
+                break;
+            case 'project_status_change':
+            case 'project_status_changed':
+                type = 'status';
+                actionTitle = 'CAMBIO DE ESTADO';
+                title = 'Actualización de Estado';
+                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || '-'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
+                if(log.metadata?.reason) {
+                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
+                }
+                break;
+            case 'project_reopen':
+                type = 'status';
+                actionTitle = 'PROYECTO REABIERTO';
+                title = 'El Proyecto fue Reabierto';
+                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || 'CERRADO'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
+                if(log.metadata?.reason) {
+                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
+                }
+                break;
+            case 'document_upload':
+                type = 'document';
+                actionTitle = 'NUEVO DOCUMENTO';
+                title = log.metadata?.title || log.metadata?.new_title || log.metadata?.file_name || 'Documento Innombrado';
+                isAttachment = true;
+                content = `Archivo subido al sistema<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
+                break;
+            case 'document_new_version':
+                type = 'document';
+                actionTitle = 'NUEVA VERSIÓN';
+                title = log.metadata?.title || log.metadata?.new_title || log.metadata?.file_name || 'Actualización de Documento';
+                isAttachment = true;
+                content = `Versión actualizada del documento<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.version_number ? 'v' + log.metadata.version_number : 'General'}</span>`;
+                break;
+            case 'document_download':
+                type = 'document';
+                actionTitle = 'DESCARGA DE DOCUMENTO';
+                title = log.metadata?.file_name || log.metadata?.title || 'Documento Descargado';
+                isAttachment = true;
+                content = `El documento fue descargado localmente por el usuario.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
+                break;
+            case 'document_view':
+                type = 'document';
+                actionTitle = 'CONSULTA DE DOCUMENTO';
+                title = log.metadata?.file_name || log.metadata?.title || 'Documento Visualizado';
+                isAttachment = true;
+                content = `El documento ha sido previsualizado en el navegador.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
+                break;
+            case 'document_comment':
+                type = 'chat';
+                actionTitle = 'COMENTARIO INTERNO';
+                title = '';
+                content = `"${SIApp.escapeHtml(log.metadata?.comment || '')}"`;
+                break;
+            case 'document_deleted':
+                type = 'edit';
+                actionTitle = 'DOCUMENTO ELIMINADO';
+                title = 'Documento Removido';
+                content = `El archivo ${(log.metadata?.title || log.metadata?.file_name || '')} ha sido eliminado.`;
+                break;
+            default:
+                actionTitle = log.action_key?.replace(/_/g, ' ').toUpperCase() || 'EVENTO DE SISTEMA';
+                title = log.metadata?.title || log.metadata?.file_name || log.metadata?.name || 'Actividad Registrada';
+                
+                let defaultContent = [];
+                if (log.metadata && typeof log.metadata === 'object') {
+                    for (const [k, v] of Object.entries(log.metadata)) {
+                        if (typeof v !== 'object') {
+                            const valStr = String(v).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            defaultContent.push(`<span class="block text-[11px] text-gray-600 mt-1"><strong class="uppercase text-[9px] text-gray-400 tracking-wider mr-1">${k.replace(/_/g, ' ')}:</strong> ${valStr}</span>`);
+                        }
+                    }
+                }
+                
+                content = defaultContent.length > 0 ? defaultContent.join('') : `<span class="text-[11px] text-gray-400 italic break-all">Sin metadata adicional asociada al evento ${log.action_key}.</span>`;
+                break;
+        }
+
         const icons = {
             'status': { color: 'bg-[#E57B23]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
             'document': { color: 'bg-[#0284c7]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
@@ -986,49 +1234,57 @@ SIModules.projectDetailAdmin = {
         let contentHtml = '';
         if (isAttachment) {
             contentHtml = `
-                <div class="mt-4 p-4 bg-[#f8faff] border border-[#e0e7ff] rounded-2xl flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white border border-[#c7d2fe] rounded-xl shadow-sm flex items-center justify-center text-[#4338ca]">
+                <div class="mt-3 p-5 bg-[#f8faff] border border-[#e0e7ff] rounded-2xl flex items-center gap-4 shadow-sm w-full lg:w-3/4 xl:w-2/3">
+                    <div class="w-12 h-12 bg-white border border-[#c7d2fe] rounded-xl shadow-sm flex items-center justify-center text-[#4338ca] shrink-0">
                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/></svg>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-black text-[#1e1b4b] leading-tight mb-1 truncate">${content.split('<br>')[0]}</p>
-                        ${content.split('<br>')[1] || ''}
+                    <div class="flex-1 min-w-0 pr-4">
+                        <p class="text-[15px] font-black text-[#1e1b4b] leading-tight mb-1 truncate">${title}</p>
+                        <p class="text-xs text-gray-500">${content}</p>
                     </div>
-                    <button class="text-gray-400 hover:text-gray-900 shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
                 </div>
             `;
         } else if (type === 'chat') {
             contentHtml = `
-                <div class="mt-4 text-[15px] text-gray-500 font-medium italic relative pl-4 border-l-3 border-[#E57B23]/30 leading-relaxed bg-[#fff9f4] py-3 rounded-r-xl">
-                    ${content}
+                <div class="mt-2.5">
+                    <div class="inline-block px-6 py-4 bg-[#f8f9fa] rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm relative w-full lg:w-2/3">
+                        <p class="text-[14px] text-gray-700 font-medium leading-relaxed italic">${content}</p>
+                    </div>
                 </div>
             `;
         } else {
             contentHtml = `
-                <p class="text-[15px] text-gray-600 mt-3 leading-relaxed font-medium">${content}</p>
-                ${type === 'status' ? '<div class="mt-4"><span class="inline-flex items-center text-[10px] font-black text-white bg-[#E57B23] px-3 py-1 rounded-lg uppercase tracking-widest cursor-pointer hover:bg-[#c9661c]">Ver Detalles</span></div>' : ''}
+                <div class="mt-2 text-sm w-full lg:w-3/4">
+                    <h5 class="text-[14px] font-black text-gray-900 leading-tight">${title}</h5>
+                    <p class="text-[12px] text-gray-500 mt-1 font-medium leading-relaxed">${content}</p>
+                </div>
             `;
         }
 
         return `
-            <div class="relative pl-6 z-10">
-                <!-- Node Icon -->
-                <div class="absolute left-[-11px] top-6 w-12 h-12 ${node.color} rounded-full border-4 border-white flex items-center justify-center shadow-md z-20">
+            <div class="relative flex items-start gap-4 sm:gap-5 group fade-in w-full">
+                <!-- Desktop Actor Name -->
+                <div class="hidden sm:flex w-24 lg:w-32 flex-col items-end pt-1 shrink-0">
+                    <span class="text-[10px] lg:text-[11px] font-black text-[#1a1b25] uppercase tracking-tight text-right leading-tight pr-1" title="${actor}">${actor}</span>
+                </div>
+                
+                <!-- Timeline dot / icon -->
+                <div class="relative z-10 w-10 h-10 sm:w-11 sm:h-11 ${node.color} rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform flex-shrink-0 ring-4 ring-white mt-1 sm:mt-0">
                     ${node.icon}
                 </div>
                 
-                <!-- Card -->
-                <div class="bg-white border text-left border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <img src="https://i.pravatar.cc/100?u=${user.replace(' ', '')}" alt="avatar" class="w-8 h-8 rounded-full border border-gray-200">
-                            <span class="text-[15px] font-black text-[#1a1b25]">${user}</span>
-                        </div>
-                        <span class="px-3 py-1 bg-gray-50 text-gray-400 text-[10px] font-black rounded-full uppercase tracking-tighter border border-gray-100">${time}</span>
+                <!-- Content -->
+                <div class="flex-1 min-w-0 pb-5 sm:pb-3 border-b border-gray-50/50">
+                    <div class="mb-2 sm:mb-1 flex flex-wrap items-center gap-2">
+                        <span class="text-[9px] font-black tracking-widest uppercase text-orange-500 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">${actionTitle}</span>
+                        <span class="text-[9px] lg:text-[10px] text-gray-400 font-medium">${timeFormat}</span>
                     </div>
                     
-                    <h5 class="text-[11px] font-black text-orange-400 tracking-[0.15em] uppercase mb-1.5">${actionTitle}</h5>
-                    ${title ? `<h4 class="text-[17px] font-black text-[#1a1b25] leading-tight">${title}</h4>` : ''}
+                    <!-- Mobile Actor Name -->
+                    <div class="sm:hidden mb-2 flex items-center gap-1.5 text-gray-900">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span class="text-[10px] font-black uppercase tracking-tight leading-none">${actor}</span>
+                    </div>
                     
                     ${contentHtml}
                 </div>
@@ -2266,7 +2522,7 @@ SIModules.projectDetailAdmin = {
     },
 
     // ────────────────────────────────────────────────────────────────────────
-    // MODAL: CAMBIAR ESTADO
+    // MODAL: CAMBIAR ESTADO (Stepper Vertical Linear)
     // ────────────────────────────────────────────────────────────────────────
 
     openChangeStatusModal() {
@@ -2276,73 +2532,38 @@ SIModules.projectDetailAdmin = {
         void modal.offsetWidth;
         modal.classList.remove('opacity-0');
         modal.querySelector('div').classList.remove('scale-95');
-
-        // Cerrar dropdown por si acaso si se hace clic fuera del popovers
-        const closeFn = (e) => {
-            if (!e.target.closest('.si-custom-dropdown') && !e.target.closest('button[onclick*="toggleDropdown"]')) {
-                document.querySelectorAll('.si-custom-dropdown').forEach(d => d.classList.add('hidden'));
-            }
-        };
-        document.addEventListener('click', closeFn);
-        modal._closeFn = closeFn;
-    },
-
-    toggleDropdown(id) {
-        document.querySelectorAll('.si-custom-dropdown').forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('hidden');
-    },
-
-    selectCustomStatus(val, label, colorClass, liElement) {
-        document.getElementById('change-status-select').value = val;
-        document.getElementById('change-status-display').textContent = label;
-
-        const circle = document.getElementById('change-status-circle');
-        circle.className = 'w-2 h-2 rounded-full ' + colorClass;
-
-        if (liElement) {
-            const ul = document.getElementById('status-dropdown-menu');
-            const lis = ul.querySelectorAll('li');
-            lis.forEach(li => {
-                li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600';
-                const check = li.querySelector('.status-check');
-                if (check) check.remove();
-            });
-            liElement.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner';
-            liElement.insertAdjacentHTML('beforeend', '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>');
-        }
-
-        this.toggleDropdown('status-dropdown-menu');
     },
 
     closeChangeStatusModal() {
         const modal = document.getElementById('change-status-modal');
         if (!modal) return;
 
-        if (modal._closeFn) {
-            document.removeEventListener('click', modal._closeFn);
-            delete modal._closeFn;
-        }
-
         modal.classList.add('opacity-0');
         modal.querySelector('div').classList.add('scale-95');
         setTimeout(() => modal.classList.add('hidden'), 300);
     },
 
-    async saveProjectStatus() {
-        const form = document.getElementById('change-status-form');
-        const spinner = document.getElementById('change-status-spinner');
+    async saveProjectStatus(newStatusVal) {
+        // Encontramos el formulario activo según el valor de status enviado
+        // (En el stepper cada paso tiene su propio form con el input hidden correspondiente)
+        const form = Array.from(document.querySelectorAll('#change-status-form')).find(f => {
+            const input = f.querySelector('input[name="status"]');
+            return input && input.value === newStatusVal;
+        });
 
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
+        if (!form) return;
 
-        const btn = spinner.parentElement;
+        // Spinner dinámico: puede ser reopen-spinner o change-status-spinner
+        const spinner = form.querySelector('.si-spinner');
+        const btn = form.querySelector('button[type="submit"]');
+
+        if (!btn) return;
+        
         const oldText = btn.innerHTML;
-        btn.innerHTML = spinner.outerHTML + ' Actualizando...';
-        btn.querySelector('svg').classList.remove('hidden');
-        btn.querySelector('svg').classList.add('animate-spin');
+        if (spinner) {
+            spinner.classList.remove('hidden');
+            spinner.classList.add('animate-spin');
+        }
         btn.disabled = true;
 
         try {
@@ -2352,9 +2573,9 @@ SIModules.projectDetailAdmin = {
             const res = await API.put('/projects/' + this.projectId + '/status', data);
 
             if (res && res.success) {
-                if (window.SIApp) SIApp.showToast('Estado actualizado', 'El nuevo estado se ha guardado.', 'success');
+                if (window.SIApp) SIApp.showToast('Estado actualizado', 'El proyecto ha avanzado en el flujo.', 'success');
                 this.closeChangeStatusModal();
-                await this.loadProjectData(); // Refresca la vista completa (timeline, badges, etc)
+                await this.loadProjectData(); // Refresca la vista completa (incluyendo el sidebar de Ciclo de Vida)
             } else {
                 if (window.SIApp) SIApp.showToast('Error', res?.message || 'No se pudo cambiar el estado', 'error');
             }
@@ -2362,8 +2583,10 @@ SIModules.projectDetailAdmin = {
             console.error(error);
             if (window.SIApp) SIApp.showToast('Error', 'Error al actualizar el estado', 'error');
         } finally {
-            btn.innerHTML = oldText;
-            btn.disabled = false;
+            if (btn) {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            }
         }
     }
 };

@@ -542,32 +542,32 @@ window.SIModules.audit = {
         
         // Manejo de IDs técnicos
         if (key === 'client_id') {
-            return `<a href="/steelinox/client/${value}" data-route="client-detail" class="${style}">#${value}</a>`;
+            return `<a href="/steelinox/client/${value}" class="${style}">#${value}</a>`;
         }
         
         if (key === 'project_id') {
-            return `<a href="/steelinox/project/${value}" data-route="project-detail" class="${style}">#${value}</a>`;
+            return `<a href="/steelinox/project/${value}" class="${style}">#${value}</a>`;
         }
         
         if (key === 'document_id') {
             const pid = log.metadata?.project_id || log.project_id || log.entity_id;
-            return `<a href="/steelinox/project/${pid}" data-route="project-detail" class="${style}">#${value}</a>`;
+            return `<a href="/steelinox/project/${pid}" class="${style}">#${value}</a>`;
         }
 
         // Manejo de nombres (Strings)
         if (key === 'name' || key === 'title') {
             if (log.entity_type === 'project') {
-                return `<a href="/steelinox/project/${log.entity_id}" data-route="project-detail" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+                return `<a href="/steelinox/project/${log.entity_id}" class="${style}">${SIApp.escapeHtml(value)}</a>`;
             }
             if (log.entity_type === 'client') {
-                return `<a href="/steelinox/client/${log.entity_id}" data-route="client-detail" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+                return `<a href="/steelinox/client/${log.entity_id}" class="${style}">${SIApp.escapeHtml(value)}</a>`;
             }
         }
 
         if (key === 'file_name' && log.entity_type === 'document') {
             const pid = log.metadata?.project_id || log.project_id;
             if (pid) {
-                return `<a href="/steelinox/project/${pid}" data-route="project-detail" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+                return `<a href="/steelinox/project/${pid}" class="${style}">${SIApp.escapeHtml(value)}</a>`;
             }
         }
 
@@ -600,7 +600,7 @@ window.SIModules.audit = {
         
         if (href) {
             return `
-                <a href="${href}" data-route="${route}" class="${style}">
+                <a href="${href}" class="${style}">
                     <span class="${textStyle}">${entityLabel}</span>
                     ${badge}
                 </a>

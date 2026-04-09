@@ -87,6 +87,13 @@ const SIRouter = {
             return 'client-detail';
         }
 
+        // Si la URL empieza por "commercial/", le decimos al router que cargue la vista correspondiente
+        if (cleanPath.startsWith('commercial/')) {
+            if (cleanPath === 'commercial/new') return 'commercial-new';
+            if (cleanPath.startsWith('commercial/edit/')) return 'commercial-edit';
+            return 'commercial-detail';
+        }
+
         return cleanPath;
     },
 
@@ -101,7 +108,11 @@ const SIRouter = {
             'client-new': { module: 'clientFormAdmin', method: 'loadCreateSPA', roles: ['admin', 'comercial'], title: 'Nuevo Cliente' },
             'client-edit': { module: 'clientFormAdmin', method: 'loadEditSPA', roles: ['admin', 'comercial'], title: 'Editar Cliente' },
 
-            'commercials': { module: 'users', method: 'dummyMethod', roles: ['admin'], title: 'Comerciales' },
+            'commercials': { module: 'commercialsAdmin', method: 'loadList', roles: ['admin'], title: 'Comerciales' },
+            'commercial-detail': { module: 'commercialsAdmin', method: 'loadDetailSPA', roles: ['admin'], title: 'Detalle Comercial' },
+            'commercial-new': { module: 'commercialFormAdmin', method: 'loadCreateSPA', roles: ['admin'], title: 'Nuevo Comercial' },
+            'commercial-edit': { module: 'commercialFormAdmin', method: 'loadEditSPA', roles: ['admin'], title: 'Editar Comercial' },
+
             'audit-log': { module: 'audit', method: 'initAuditLog', roles: ['admin'], title: 'Registro de Actividad' },
             'settings': { module: 'settings', method: 'dummyMethod', roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
             'projects-new': { module: 'projects', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Nuevo Proyecto' }

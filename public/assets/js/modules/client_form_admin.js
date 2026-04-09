@@ -92,7 +92,7 @@ SIModules.clientFormAdmin = {
         container.innerHTML = `
             <div class="max-w-6xl mx-auto w-full pb-10 fade-in px-2 sm:px-0">
                 <div class="mb-8">
-                    <a data-route="${isEdit ? 'client-detail' : 'clients'}" href="${isEdit ? '/steelinox/client/' + this.clientId : '/steelinox/clients'}" class="inline-flex items-center text-sm text-gray-500 hover:text-orange-500 font-medium transition-colors">
+                    <a href="${isEdit ? '/steelinox/client/' + this.clientId : '/steelinox/clients'}" class="inline-flex items-center text-sm text-gray-500 hover:text-orange-500 font-medium transition-colors">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         Volver ${isEdit ? 'al detalle del cliente' : 'a la lista de clientes'}
                     </a>

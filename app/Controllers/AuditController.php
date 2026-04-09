@@ -3,6 +3,7 @@
 
 require_once APP_PATH . '/Models/Audit.php';
 require_once APP_PATH . '/Models/Project.php';
+require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 
 class AuditController {

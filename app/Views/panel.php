@@ -181,6 +181,10 @@
         src="/steelinox/public/assets/js/modules/client_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/client_form_admin.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/modules/audit.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/audit.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/commercials_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/commercials_admin.js'); ?>"></script>
+    <script
+        src="/steelinox/public/assets/js/modules/commercial_form_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/commercial_form_admin.js'); ?>"></script>
 
     <script>
 
