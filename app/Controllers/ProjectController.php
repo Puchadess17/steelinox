@@ -527,7 +527,7 @@ class ProjectController
 
             $input = json_decode(file_get_contents('php://input'), true);
             $newStatus = $input['status'] ?? null;
-            $reason = $input['reason'] ?? null; // Opcional: el comercial puede escribir un motivo
+            $reason = $input['reason'] ?? null;
 
             $validStatuses = ['propuesta', 'aprobado', 'ejecucion', 'cerrado'];
             if (!in_array($newStatus, $validStatuses)) {
@@ -540,17 +540,40 @@ class ProjectController
 
             // --- ESCUDO ANTI-REDUNDANCIA ---
             if ($oldStatus === $newStatus) {
-                http_response_code(422); // 422 Unprocessable Entity
+                http_response_code(422); 
                 echo json_encode([
                     'success' => false, 
                     'message' => 'El proyecto ya se encuentra en estado "' . ucfirst($newStatus) . '".', 
-                    'data' => null, 
-                    'errors' => ['status' => 'El nuevo estado no puede ser igual al actual.']
+                    'data'    => null, 
+                    'errors'  => ['status' => 'El nuevo estado no puede ser igual al actual.']
                 ]);
                 return;
             }
 
-            // Si pasa el escudo, actualizamos en base de datos
+            // --- MÁQUINA DE ESTADOS (Muro de Saltos Lógicos) ---
+            $allowedTransitions = [
+                'propuesta' => ['aprobado'],         // De propuesta solo puede pasar a aprobado
+                'aprobado'  => ['ejecucion'],        // De aprobado solo puede pasar a ejecucion
+                'ejecucion' => ['cerrado'],          // De ejecucion solo puede pasar a cerrado
+                'cerrado'   => ['propuesta']         // REAPERTURA: De cerrado vuelve a propuesta para rehacer
+            ];
+
+            // Verificamos si el salto está permitido
+            if (!isset($allowedTransitions[$oldStatus]) || !in_array($newStatus, $allowedTransitions[$oldStatus])) {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Transición de estado no permitida', 
+                    'data'    => null, 
+                    'errors'  => [
+                        'status' => "No se puede pasar directamente de '" . ucfirst($oldStatus) . "' a '" . ucfirst($newStatus) . "'."
+                    ]
+                ]);
+                return;
+            }
+            // ----------------------------------------------------
+
+            // Si pasa todos los escudos, actualizamos en base de datos
             $projectModel->updateStatus($id, $newStatus, $userId, $reason);
 
             // AUDITORÍA: Si pasa de "cerrado" a cualquier otro, es una reapertura
