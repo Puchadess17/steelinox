@@ -11,7 +11,6 @@ class Client {
     }
 
     public function getListByUser($userId, $role) {
-        // ... (existing code stays the same)
         if ($role === 'cliente') {
             return [];
         }

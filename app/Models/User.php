@@ -125,11 +125,9 @@ class User
         return $stmt->execute(['id' => $id]);
     }
 
-    /**  Obtiene la lista de comerciales/admins activos que NO están asignados a un proyecto concreto */
+    /** Obtiene la lista de comerciales/admins activos que NO están asignados a un proyecto concreto */
     public function getAvailableForProject($projectId)
     {
-        // Seleccionamos usuarios que sean comercial (o admin), estén activos y no estén borrados
-        // Y excluimos los IDs que ya existan en la tabla pivote para este proyecto
         $sql = "SELECT id, name, email, role 
                 FROM users 
                 WHERE role = 'comercial'    
@@ -176,7 +174,6 @@ class User
 
     /** La lista de todos los comerciales y estadísticas de sus proyectos asignados */
     public function getCommercialsWithStats() {
-        // Obtenemos los datos del comercial y cruzamos para contar sus proyectos
         $sql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at,
                        COUNT(DISTINCT pu.project_id) as total_projects,
                        COUNT(DISTINCT CASE WHEN p.status != 'cerrado' THEN p.id ELSE NULL END) as active_projects
@@ -218,7 +215,6 @@ class User
                     email = :email, 
                     is_active = :is_active";
         
-        // Solo actualizamos la contraseña si nos envían una nueva
         if (!empty($data['password_hash'])) {
             $sql .= ", password_hash = :password_hash";
         }
@@ -276,4 +272,32 @@ class User
         $stmt->execute();
         return $stmt->fetchAll();
     }
-}
+
+    /** ---CLIENTES (USUARIOS)--- */
+
+    /** Listado de usuarios 'cliente'. Admin: Ve todos. Comercial: Ve solo los de las empresas a las que tiene acceso. */
+    public function getClientUsersList($actorUserId, $actorRole) {
+        $sql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at, 
+                       c.name AS company_name, c.id AS client_id
+                FROM users u
+                INNER JOIN clients c ON u.client_id = c.id
+                WHERE u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL";
+        
+        $params = [];
+
+        if ($actorRole === 'comercial') {
+            $sql .= " AND (c.created_by = :user_id OR c.id IN (
+                        SELECT p.client_id FROM projects p 
+                        INNER JOIN project_user pu ON p.id = pu.project_id 
+                        WHERE pu.user_id = :user_id AND p.deleted_at IS NULL
+                      ))";
+            $params['user_id'] = $actorUserId;
+        }
+
+        $sql .= " ORDER BY u.created_at DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+}

@@ -2,18 +2,87 @@
 // app/Controllers/UserController.php
 
 require_once APP_PATH . '/Models/User.php';
+require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
-require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
+require_once APP_PATH . '/Services/AuditLogger.php'; 
 
 class UserController {
+
+    // Listar usuarios clientes (GET /api/users)
+    public function index() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $actorUserId = $_SESSION['user_id'];
+        $actorRole = $_SESSION['role'];
+
+        if ($actorRole === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'errors' => ['role' => 'Privilegios insuficientes']]);
+            return;
+        }
+
+        try {
+            $userModel = new User();
+            $users = $userModel->getClientUsersList($actorUserId, $actorRole);
+
+            echo json_encode(['success' => true, 'data' => $users]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+        }
+    }
+
+    // Ver detalles de un usuario cliente (GET /api/users/{id})
+    public function show($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $actorUserId = $_SESSION['user_id'];
+        $actorRole = $_SESSION['role'];
+
+        if ($actorRole === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado']);
+            return;
+        }
+
+        try {
+            $userModel = new User();
+            $user = $userModel->findByIdWithInactive($id);
+
+            if (!$user || $user['role'] !== 'cliente') {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
+                return;
+            }
+
+            // ESCUDO DE PERMISOS
+            $clientModel = new Client();
+            if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la empresa de este usuario']);
+                return;
+            }
+
+            unset($user['password_hash']); // Nunca enviamos el hash al front
+
+            echo json_encode(['success' => true, 'data' => $user]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno']);
+        }
+    }
 
     // Crear un nuevo usuario (POST /api/users)
     public function store() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización: Solo Admin o Comercial pueden crear
-        if ($_SESSION['role'] === 'cliente') {
+        $actorUserId = $_SESSION['user_id'];
+        $actorRole = $_SESSION['role'];
+
+        if ($actorRole === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Permisos insuficientes']]);
             return;
@@ -44,6 +113,14 @@ class UserController {
         }
 
         try {
+            // ESCUDO DE PERMISOS: Validar que el comercial tiene acceso a la empresa
+            $clientModel = new Client();
+            if (!$clientModel->getDetailsById($input['client_id'], $actorUserId, $actorRole)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre esta empresa']);
+                return;
+            }
+
             $userModel = new User();
 
             // Verificar si el email ya existe
@@ -57,14 +134,14 @@ class UserController {
 
             $newUserId = $userModel->create([
                 'client_id'     => $input['client_id'],
-                'role'          => 'cliente',
+                'role'          => 'cliente', // Forzado por seguridad
                 'name'          => trim($input['name']),
                 'email'         => trim($input['email']),
                 'password_hash' => $hashedPassword,
                 'is_active'     => isset($input['is_active']) ? (int)$input['is_active'] : 1
             ]);
 
-            // AUDITORÍA: Alta de usuario cliente
+            // AUDITORÍA
             AuditLogger::log('user_create', 'user', $newUserId, null, [
                 'role'      => 'cliente',
                 'client_id' => $input['client_id'],
@@ -82,7 +159,7 @@ class UserController {
         } catch (Exception $e) {
             error_log('UserController::store - ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al crear el usuario. Por favor, inténtelo de nuevo más tarde.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => false, 'message' => 'Error al crear el usuario.', 'data' => null, 'errors' => null]);
         }
     }
 
@@ -91,7 +168,10 @@ class UserController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        $actorUserId = $_SESSION['user_id'];
+        $actorRole = $_SESSION['role'];
+
+        if ($actorRole === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Permisos insuficientes']]);
             return;
@@ -107,12 +187,19 @@ class UserController {
 
         try {
             $userModel = new User();
-            // Obtenemos el usuario ANTES de actualizar (clave para la auditoría)
             $user = $userModel->findByIdWithInactive($id);
 
             if (!$user) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Usuario no encontrado', 'data' => null, 'errors' => ['user' => 'Recurso inaccesible']]);
+                return;
+            }
+
+            // ESCUDO DE PERMISOS
+            $clientModel = new Client();
+            if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la empresa de este usuario']);
                 return;
             }
 
@@ -131,7 +218,7 @@ class UserController {
             }
 
             $updateData = [];
-            $changes = []; // Array para guardar las diferencias (Auditoría)
+            $changes = [];
 
             if (isset($input['name'])) {
                 $newName = trim($input['name']);
@@ -159,14 +246,13 @@ class UserController {
 
             if (!empty($input['password'])) {
                 $updateData['password_hash'] = password_hash($input['password'], PASSWORD_DEFAULT);
-                $changes['password'] = 'changed'; // No guardamos la clave real
+                $changes['password'] = 'changed';
             }
 
             $updated = $userModel->update($id, $updateData);
 
             if ($updated) {
-                
-                // AUDITORÍA: Edición / Activación / Desactivación
+                // AUDITORÍA
                 if (!empty($changes)) {
                     $actionKey = 'user_update';
                     if (isset($changes['is_active'])) {
@@ -188,7 +274,7 @@ class UserController {
         } catch (Exception $e) {
             error_log('UserController::update - ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar el usuario. Por favor, inténtelo de nuevo más tarde.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar el usuario.', 'data' => null, 'errors' => null]);
         }
     }
 
@@ -197,7 +283,10 @@ class UserController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        $actorUserId = $_SESSION['user_id'];
+        $actorRole = $_SESSION['role'];
+
+        if ($actorRole === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Permisos insuficientes']]);
             return;
@@ -211,11 +300,26 @@ class UserController {
 
         try {
             $userModel = new User();
+            $user = $userModel->findByIdWithInactive($id);
+
+            if (!$user) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado o ya eliminado', 'data' => null, 'errors' => null]);
+                return;
+            }
+
+            // ESCUDO DE PERMISOS
+            $clientModel = new Client();
+            if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre este usuario']);
+                return;
+            }
+
             $deleted = $userModel->delete($id);
 
             if ($deleted) {
-
-                // AUDITORÍA: Borrado lógico
+                // AUDITORÍA
                 AuditLogger::log('user_delete', 'user', $id);
 
                 echo json_encode([
@@ -225,14 +329,13 @@ class UserController {
                     'errors'  => null
                 ]);
             } else {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado o ya eliminado', 'data' => null, 'errors' => null]);
+                throw new Exception("Error interno en base de datos al borrar");
             }
 
         } catch (Exception $e) {
             error_log('UserController::destroy - ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al eliminar usuario. Por favor, inténtelo de nuevo más tarde.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => false, 'message' => 'Error al eliminar usuario.', 'data' => null, 'errors' => null]);
         }
     }
 }

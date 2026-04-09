@@ -40,7 +40,9 @@ $router->get('/api/clients/(\d+)', 'ClientController@show');
 $router->post('/api/clients', 'ClientController@store');
 $router->put('/api/clients/(\d+)', 'ClientController@update');
 
-// Usuarios
+// Usuarios (Clientes)
+$router->get('/api/users', 'UserController@index');
+$router->get('/api/users/(\d+)', 'UserController@show');
 $router->post('/api/users', 'UserController@store');
 $router->put('/api/users/(\d+)', 'UserController@update');
 $router->delete('/api/users/(\d+)', 'UserController@destroy');
@@ -64,14 +66,25 @@ $router->post('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentControlle
 $router->get('/', 'AuthController@showLogin');
 $router->get('/password/reset', 'PasswordResetController@showResetForm');
 $router->get('/panel', 'DashboardController@index');
+
 $router->get('/clients', 'DashboardController@index');
+$router->get('/client/(\d+)', 'DashboardController@index');
+$router->get('/client/edit/(\d+)', 'DashboardController@index');
+$router->get('/client/new', 'DashboardController@index');
+
 $router->get('/commercials', 'DashboardController@index');
+$router->get('/commercial/(\d+)', 'DashboardController@index');
+$router->get('/commercial/edit/(\d+)', 'DashboardController@index');
+$router->get('/commercial/new', 'DashboardController@index');
+
+$router->get('/users', 'DashboardController@index');
+$router->get('/user/(\d+)', 'DashboardController@index');
+$router->get('/user/edit/(\d+)', 'DashboardController@index');
+$router->get('/user/new', 'DashboardController@index');
+
 $router->get('/audit-log', 'DashboardController@index');
 $router->get('/settings', 'DashboardController@index');
 $router->get('/projects-new', 'DashboardController@index');
 
 $router->get('/project/(\d+)', 'DashboardController@index');
 
-$router->get('/client/(\d+)', 'DashboardController@index');
-$router->get('/client/edit/(\d+)', 'DashboardController@index');
-$router->get('/client/new', 'DashboardController@index');
