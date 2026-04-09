@@ -25,6 +25,28 @@ class Audit {
         return $stmt->fetchAll();
     }
 
+    /** Obtiene el historial completo de un cliente específico (Cambios en el cliente, en sus usuarios y en sus proyectos) */
+    public function getByClient($clientId) {
+        $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.metadata_json, a.created_at,
+                       u.name AS actor_name, a.actor_role
+                FROM audit_logs a
+                LEFT JOIN users u ON a.actor_user_id = u.id
+                WHERE (a.entity_type = 'client' AND a.entity_id = :client_id1)
+                   OR (a.entity_type = 'user' AND a.entity_id IN (SELECT id FROM users WHERE client_id = :client_id2))
+                   OR (a.entity_type = 'project' AND a.entity_id IN (SELECT id FROM projects WHERE client_id = :client_id3))
+                ORDER BY a.created_at DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        // Pasamos el ID tres veces para evitar problemas de compatibilidad en PDO con parámetros repetidos
+        $stmt->execute([
+            'client_id1' => $clientId,
+            'client_id2' => $clientId,
+            'client_id3' => $clientId
+        ]);
+        
+        return $stmt->fetchAll();
+    }
+
     /** Obtiene el log global del sistema (Solo para Superadmins) */
     public function getGlobalLogs($limit = 100) {
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.created_at,
