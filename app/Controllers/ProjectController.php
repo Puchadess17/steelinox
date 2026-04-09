@@ -383,7 +383,7 @@ class ProjectController
             AuditLogger::log('proyecto_creado', 'project', $newProjectId, $newProjectId, [
                 'nombre'      => $dataToInsert['name'],
                 'referencia' => $dataToInsert['reference'],
-                'cliente_id' => $dataToInsert['client_id'],
+                'cliente'    => $clientDetails['info']['name'],
                 'estado'    => $dataToInsert['status']
             ]);
 
