@@ -295,4 +295,76 @@ class ClientController {
             ]);
         }
     }
+
+    // Borrado lógico de un cliente (DELETE /api/clients/(\d+))
+    public function destroy($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Muro de Autorización General
+        if ($_SESSION['role'] === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba DELETE']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            
+            $clientModel = new Client();
+            
+            // Escudo de seguridad: ¿Tiene permiso el Comercial sobre este cliente?
+            $clientDetails = $clientModel->getDetailsById($id, $userId, $role);
+            if (!$clientDetails) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Cliente no encontrado o sin permisos de borrado',
+                    'data'    => null,
+                    'errors'  => ['client' => 'Recurso inaccesible']
+                ]);
+                return;
+            }
+
+            // Proceder con el Soft Delete
+            $deleted = $clientModel->delete($id);
+
+            if ($deleted) {
+                
+                // AUDITORÍA: Borrado lógico
+                AuditLogger::log('client_delete', 'client', $id);
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cliente eliminado correctamente',
+                    'data'    => ['id' => $id],
+                    'errors'  => null
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'El cliente no se pudo eliminar o ya estaba borrado', 
+                    'data' => null, 
+                    'errors' => null
+                ]);
+            }
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno al eliminar el cliente',
+                'data'    => null,
+                'errors'  => ['server' => $e->getMessage()]
+            ]);
+        }
+    }
 }

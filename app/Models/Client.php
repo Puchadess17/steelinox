@@ -165,4 +165,14 @@ class Client {
             'id'        => $id
         ]);
     }
+
+    /** Borrado lógico de un cliente (Soft Delete) */
+    public function delete($id) {
+        $sql = "UPDATE clients 
+                SET deleted_at = NOW(), is_active = 0 
+                WHERE id = :id AND deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
 }

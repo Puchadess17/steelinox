@@ -538,19 +538,29 @@ class ProjectController
 
             $oldStatus = $projectDetails['status'] ?? 'desconocido';
 
-            // Solo actualizamos y auditamos si el estado realmente cambia
-            if ($oldStatus !== $newStatus) {
-                $projectModel->updateStatus($id, $newStatus, $userId, $reason);
-
-                // AUDITORÍA: Si pasa de "cerrado" a cualquier otro, es una reapertura
-                $actionKey = ($oldStatus === 'cerrado') ? 'project_reopen' : 'project_status_change';
-
-                AuditLogger::log($actionKey, 'project', $id, $id, [
-                    'previous_status' => $oldStatus,
-                    'new_status'      => $newStatus,
-                    'reason'          => $reason
+            // --- ESCUDO ANTI-REDUNDANCIA ---
+            if ($oldStatus === $newStatus) {
+                http_response_code(422); // 422 Unprocessable Entity
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'El proyecto ya se encuentra en estado "' . ucfirst($newStatus) . '".', 
+                    'data' => null, 
+                    'errors' => ['status' => 'El nuevo estado no puede ser igual al actual.']
                 ]);
+                return;
             }
+
+            // Si pasa el escudo, actualizamos en base de datos
+            $projectModel->updateStatus($id, $newStatus, $userId, $reason);
+
+            // AUDITORÍA: Si pasa de "cerrado" a cualquier otro, es una reapertura
+            $actionKey = ($oldStatus === 'cerrado') ? 'project_reopen' : 'project_status_change';
+
+            AuditLogger::log($actionKey, 'project', $id, $id, [
+                'previous_status' => $oldStatus,
+                'new_status'      => $newStatus,
+                'reason'          => $reason
+            ]);
 
             echo json_encode(['success' => true, 'message' => 'Estado actualizado y registrado', 'data' => ['status' => $newStatus], 'errors' => null]);
 

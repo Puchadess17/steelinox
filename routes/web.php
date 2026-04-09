@@ -39,6 +39,7 @@ $router->get('/api/clients', 'ClientController@index');
 $router->get('/api/clients/(\d+)', 'ClientController@show');
 $router->post('/api/clients', 'ClientController@store');
 $router->put('/api/clients/(\d+)', 'ClientController@update');
+$router->delete('/api/clients/(\d+)', 'ClientController@destroy');
 
 // Usuarios (Clientes)
 $router->get('/api/users', 'UserController@index');
