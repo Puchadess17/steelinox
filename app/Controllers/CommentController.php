@@ -161,8 +161,8 @@ class CommentController {
 
                 // AUDITORÍA: Alta de comentario
                 // Guardamos un extracto del body para el timeline y a qué versión pertenece
-                AuditLogger::log('comment_create', 'comment', $newCommentId, $projectId, [
-                    'document_id'  => $documentId,
+                AuditLogger::log('comentario_creado', 'comment', $newCommentId, $projectId, [
+                    'documento_id'  => $documentId,
                     'version_id'   => $versionIdToSave,
                     'body_snippet' => mb_substr($safeBody, 0, 50) . (mb_strlen($safeBody) > 50 ? '...' : '')
                 ]);

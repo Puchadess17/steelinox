@@ -142,10 +142,10 @@ class UserController {
             ]);
 
             // AUDITORÍA
-            AuditLogger::log('user_create', 'user', $newUserId, null, [
+            AuditLogger::log('usuario_creado', 'user', $newUserId, null, [
                 'role'      => 'cliente',
                 'client_id' => $input['client_id'],
-                'name'      => trim($input['name']),
+                'nombre'      => trim($input['name']),
                 'email'     => trim($input['email'])
             ]);
 
@@ -224,7 +224,7 @@ class UserController {
                 $newName = trim($input['name']);
                 $updateData['name'] = $newName;
                 if ($newName !== $user['name']) {
-                    $changes['name'] = ['before' => $user['name'], 'after' => $newName];
+                    $changes['name'] = ['antes' => $user['name'], 'despues' => $newName];
                 }
             }
 
@@ -232,7 +232,7 @@ class UserController {
                 $newEmail = trim($input['email']);
                 $updateData['email'] = $newEmail;
                 if ($newEmail !== $user['email']) {
-                    $changes['email'] = ['before' => $user['email'], 'after' => $newEmail];
+                    $changes['email'] = ['antes' => $user['email'], 'despues' => $newEmail];
                 }
             }
 
@@ -240,13 +240,13 @@ class UserController {
                 $newStatus = (int)$input['is_active'];
                 $updateData['is_active'] = $newStatus;
                 if ($newStatus !== (int)$user['is_active']) {
-                    $changes['is_active'] = ['before' => (int)$user['is_active'], 'after' => $newStatus];
+                    $changes['is_active'] = ['antes' => (int)$user['is_active'], 'despues' => $newStatus];
                 }
             }
 
             if (!empty($input['password'])) {
                 $updateData['password_hash'] = password_hash($input['password'], PASSWORD_DEFAULT);
-                $changes['password'] = 'changed';
+                $changes['password'] = 'cambiada';
             }
 
             $updated = $userModel->update($id, $updateData);
@@ -254,9 +254,9 @@ class UserController {
             if ($updated) {
                 // AUDITORÍA
                 if (!empty($changes)) {
-                    $actionKey = 'user_update';
+                    $actionKey = 'usuario_actualizado';
                     if (isset($changes['is_active'])) {
-                        $actionKey = ($updateData['is_active'] === 0) ? 'user_deactivate' : 'user_reactivate';
+                        $actionKey = ($updateData['is_active'] === 0) ? 'usuario_desactivado' : 'usuario_reactivado';
                     }
                     AuditLogger::log($actionKey, 'user', $id, null, ['changes' => $changes]);
                 }
@@ -320,7 +320,7 @@ class UserController {
 
             if ($deleted) {
                 // AUDITORÍA
-                AuditLogger::log('user_delete', 'user', $id);
+                AuditLogger::log('usuario_eliminado', 'user', $id);
 
                 echo json_encode([
                     'success' => true,

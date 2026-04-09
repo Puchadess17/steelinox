@@ -136,11 +136,11 @@ class DocumentController {
                 $newVersionId = $documentModel->uploadNewVersion((int)$existingId, $versionData);
                 
                 // AUDITORÍA: Nueva versión automática
-                AuditLogger::log('document_new_version', 'document_version', $newVersionId, $projectId, [
-                    'file_name'      => $file['name'],
-                    'document_id'    => $existingId,
-                    'file_size'      => $file['size'],
-                    'auto_versioned' => true
+                AuditLogger::log('documento_nueva_version', 'document_version', $newVersionId, $projectId, [
+                    'nombre_archivo'      => $file['name'],
+                    'documento_id'    => $existingId,
+                    'tamaño_archivo'      => $file['size'],
+                    'auto_versionado' => true
                 ]);
 
                 echo json_encode([
@@ -153,9 +153,9 @@ class DocumentController {
                 $newDocId = $documentModel->uploadNewDocument($docData, $versionData);
                 
                 // AUDITORÍA: Subida de documento nuevo
-                AuditLogger::log('document_upload', 'document', $newDocId, $projectId, [
-                    'file_name' => $file['name'],
-                    'file_size' => $file['size'],
+                AuditLogger::log('documento_subido', 'document', $newDocId, $projectId, [
+                    'nombre_archivo' => $file['name'],
+                    'tamaño_archivo' => $file['size'],
                     'mime_type' => $realMime
                 ]);
 
@@ -247,10 +247,10 @@ class DocumentController {
             $versionId = $documentModel->uploadNewVersion((int)$documentId, $versionData);
 
             // AUDITORÍA: Nueva versión manual
-            AuditLogger::log('document_new_version', 'document_version', $versionId, $projectId, [
-                'file_name'      => $file['name'],
+            AuditLogger::log('documento_nueva_version', 'document_version', $versionId, $projectId, [
+                'nombre_archivo'      => $file['name'],
                 'document_id'    => $documentId,
-                'file_size'      => $file['size'],
+                'tamaño_archivo'      => $file['size'],
                 'auto_versioned' => false
             ]);
 
@@ -435,13 +435,13 @@ class DocumentController {
             $isFirstChunk = $isChunked ? (strpos($_SERVER['HTTP_RANGE'], 'bytes=0-') !== false) : true;
 
             if (!$aborted && $isFirstChunk) {
-                $actionKey = ($disposition === 'attachment') ? 'document_download' : 'document_view';
+                $actionKey = ($disposition === 'attachment') ? 'documento_descargado' : 'documento_visualizado';
                 
                 // Reconectamos a la base de datos para hacer el log de forma segura porque cerramos la sesión arriba
                 AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
-                    'file_name'           => $docInfo['file_name'],
-                    'version_number'      => $docInfo['version_number'] ?? null,
-                    'is_specific_version' => $versionId ? true : false,
+                    'nombre_archivo'           => $docInfo['file_name'],
+                    'numero_version'      => $docInfo['version_number'] ?? null,
+                    'es_version_especifica' => $versionId ? true : false,
                     'version_id'          => $versionId ?: ($docInfo['version_id'] ?? null)
                 ]);
             }

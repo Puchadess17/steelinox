@@ -129,7 +129,7 @@ class Audit {
         $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));
         
         $sql = "SELECT COUNT(*) FROM audit_logs 
-                WHERE action_key = 'auth_login_failed' 
+                WHERE action_key = 'login_fallido' 
                   AND ip = :ip 
                   AND created_at >= :time_limit";
         

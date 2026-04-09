@@ -1005,7 +1005,7 @@ SIModules.projectDetailAdmin = {
         };
 
         // 1. Creación
-        const createLog = logs.find(l => l.action_key === 'project_create' || l.action_key === 'project_created');
+        const createLog = logs.find(l => l.action_key === 'proyecto_creado' || l.action_key === 'proyecto_creadod');
         nodes.push(entry(
             dot('bg-amber-400', true),
             'Creado el',
@@ -1015,7 +1015,7 @@ SIModules.projectDetailAdmin = {
 
         // 2. Aprobación (first transition TO "aprobado")
         const approvalLog = [...logs].reverse().find(l =>
-            (l.action_key === 'project_status_change' || l.action_key === 'project_status_changed') &&
+            (l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod') &&
             l.metadata?.new_status === 'aprobado'
         );
         nodes.push(entry(
@@ -1028,7 +1028,7 @@ SIModules.projectDetailAdmin = {
 
         // 3. En Ejecución (transition TO "ejecucion")
         const ejecucionLog = [...logs].reverse().find(l =>
-            (l.action_key === 'project_status_change' || l.action_key === 'project_status_changed') &&
+            (l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod') &&
             l.metadata?.new_status === 'ejecucion'
         );
         nodes.push(entry(
@@ -1041,8 +1041,8 @@ SIModules.projectDetailAdmin = {
 
         // 4. Ciclos de Cierre / Reapertura (puede haber varios)
         const cycleEvents = logs.filter(l =>
-            l.action_key === 'project_reopen' ||
-            ((l.action_key === 'project_status_change' || l.action_key === 'project_status_changed') &&
+            l.action_key === 'proyecto_reabierto' ||
+            ((l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod') &&
               l.metadata?.new_status === 'cerrado')
         ).reverse(); // oldest first
 
@@ -1056,7 +1056,7 @@ SIModules.projectDetailAdmin = {
             ));
         } else {
             cycleEvents.forEach(l => {
-                const isClosed = l.action_key !== 'project_reopen' && l.metadata?.new_status === 'cerrado';
+                const isClosed = l.action_key !== 'proyecto_reabierto' && l.metadata?.new_status === 'cerrado';
                 nodes.push(entry(
                     dot(isClosed ? 'bg-emerald-400' : 'bg-violet-400', true),
                     isClosed ? 'Cerrado' : 'Reabierto',
@@ -1131,13 +1131,13 @@ SIModules.projectDetailAdmin = {
         const actor = log.actor_name || 'Sistema';
 
         switch(log.action_key) {
-            case 'project_created':
+            case 'proyecto_creadod':
                 type = 'status';
                 actionTitle = 'NUEVO PROYECTO';
                 title = 'Creación del Proyecto';
                 content = `Proyecto ${SIApp.escapeHtml(log.metadata?.name || '')} registrado en plataforma.`;
                 break;
-            case 'project_updated':
+            case 'proyecto_actualizadod':
                 type = 'edit';
                 actionTitle = 'EDICIÓN DE DATOS';
                 title = 'Actualización del Proyecto';
@@ -1146,8 +1146,8 @@ SIModules.projectDetailAdmin = {
                     content += '<br><span class="text-xs text-gray-400 mt-1 block">Cambios aplicados</span>';
                 }
                 break;
-            case 'project_status_change':
-            case 'project_status_changed':
+            case 'proyecto_cambio_estado':
+            case 'proyecto_cambio_estadod':
                 type = 'status';
                 actionTitle = 'CAMBIO DE ESTADO';
                 title = 'Actualización de Estado';
@@ -1156,7 +1156,7 @@ SIModules.projectDetailAdmin = {
                     content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
                 }
                 break;
-            case 'project_reopen':
+            case 'proyecto_reabierto':
                 type = 'status';
                 actionTitle = 'PROYECTO REABIERTO';
                 title = 'El Proyecto fue Reabierto';
@@ -1165,28 +1165,28 @@ SIModules.projectDetailAdmin = {
                     content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
                 }
                 break;
-            case 'document_upload':
+            case 'documento_subido':
                 type = 'document';
                 actionTitle = 'NUEVO DOCUMENTO';
                 title = log.metadata?.title || log.metadata?.new_title || log.metadata?.file_name || 'Documento Innombrado';
                 isAttachment = true;
                 content = `Archivo subido al sistema<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
                 break;
-            case 'document_new_version':
+            case 'documento_nueva_version':
                 type = 'document';
                 actionTitle = 'NUEVA VERSIÓN';
                 title = log.metadata?.title || log.metadata?.new_title || log.metadata?.file_name || 'Actualización de Documento';
                 isAttachment = true;
                 content = `Versión actualizada del documento<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.version_number ? 'v' + log.metadata.version_number : 'General'}</span>`;
                 break;
-            case 'document_download':
+            case 'documento_descargado':
                 type = 'document';
                 actionTitle = 'DESCARGA DE DOCUMENTO';
                 title = log.metadata?.file_name || log.metadata?.title || 'Documento Descargado';
                 isAttachment = true;
                 content = `El documento fue descargado localmente por el usuario.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
                 break;
-            case 'document_view':
+            case 'documento_visualizado':
                 type = 'document';
                 actionTitle = 'CONSULTA DE DOCUMENTO';
                 title = log.metadata?.file_name || log.metadata?.title || 'Documento Visualizado';

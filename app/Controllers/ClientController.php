@@ -164,9 +164,9 @@ class ClientController {
             ]);
 
             // AUDITORÍA: Alta de cliente
-            AuditLogger::log('client_create', 'client', $newClientId, null, [
-                'name'      => trim($input['name']),
-                'reference' => !empty($input['reference']) ? trim($input['reference']) : null
+            AuditLogger::log('cliente_creado', 'client', $newClientId, null, [
+                'nombre'      => trim($input['name']),
+                'referencia' => !empty($input['reference']) ? trim($input['reference']) : null
             ]);
 
             echo json_encode([
@@ -267,12 +267,12 @@ class ClientController {
                 // AUDITORÍA: Edición o Desactivación
                 if (!empty($changes)) {
                     // Si el estado activo cambió, le doy un action_key específico, sino, es un simple update
-                    $actionKey = 'client_update';
+                    $actionKey = 'cliente_actualizado';
                     if (isset($changes['is_active'])) {
-                        $actionKey = ($newData['is_active'] === 0) ? 'client_deactivate' : 'client_reactivate';
+                        $actionKey = ($newData['is_active'] === 0) ? 'cliente_desactivado' : 'cliente_reactivado';
                     }
 
-                    AuditLogger::log($actionKey, 'client', $id, null, ['changes' => $changes]);
+                    AuditLogger::log($actionKey, 'client', $id, null, ['cambios' => $changes]);
                 }
 
                 echo json_encode([
@@ -339,7 +339,7 @@ class ClientController {
             if ($deleted) {
                 
                 // AUDITORÍA: Borrado lógico
-                AuditLogger::log('client_delete', 'client', $id);
+                AuditLogger::log('cliente_eliminado', 'client', $id);
 
                 echo json_encode([
                     'success' => true,

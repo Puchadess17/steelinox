@@ -168,8 +168,8 @@ class ProjectController
             if ($added) {
                 
                 // AUDITORÍA: Asignación de personal
-                AuditLogger::log('project_user_assigned', 'project', $projectId, $projectId, [
-                    'assigned_user_id' => $userId
+                AuditLogger::log('proyecto_comercial_asignado', 'project', $projectId, $projectId, [
+                    'usuario_asignado_id' => $userId
                 ]);
 
                 echo json_encode([
@@ -226,8 +226,8 @@ class ProjectController
             if ($removed) {
                 
                 // AUDITORÍA: Revocación de acceso a proyecto
-                AuditLogger::log('project_user_removed', 'project', $projectId, $projectId, [
-                    'removed_user_id' => $userId
+                AuditLogger::log('proyecto_comercial_removido', 'project', $projectId, $projectId, [
+                    'usuario_removido_id' => $userId
                 ]);
 
                 echo json_encode([
@@ -380,11 +380,11 @@ class ProjectController
             $newProjectId = $projectModel->createWithAutoAssign($dataToInsert, $userId, $role);
 
             // AUDITORÍA: Alta de proyecto
-            AuditLogger::log('project_create', 'project', $newProjectId, $newProjectId, [
-                'name'      => $dataToInsert['name'],
-                'reference' => $dataToInsert['reference'],
-                'client_id' => $dataToInsert['client_id'],
-                'status'    => $dataToInsert['status']
+            AuditLogger::log('proyecto_creado', 'project', $newProjectId, $newProjectId, [
+                'nombre'      => $dataToInsert['name'],
+                'referencia' => $dataToInsert['reference'],
+                'cliente_id' => $dataToInsert['client_id'],
+                'estado'    => $dataToInsert['status']
             ]);
 
             echo json_encode([
@@ -469,8 +469,8 @@ class ProjectController
                 // Comparamos, casteando a string para evitar falsos positivos con nulls/vacíos
                 if ((string)$oldValue !== (string)$newValue) {
                     $changes[$key] = [
-                        'before' => $oldValue,
-                        'after'  => $newValue
+                        'antes' => $oldValue,
+                        'despues'  => $newValue
                     ];
                 }
             }
@@ -480,7 +480,7 @@ class ProjectController
 
             // AUDITORÍA: Edición de proyecto
             if (!empty($changes)) {
-                AuditLogger::log('project_update', 'project', $id, $id, ['changes' => $changes]);
+                AuditLogger::log('proyecto_actualizado', 'project', $id, $id, ['cambios' => $changes]);
             }
 
             echo json_encode(['success' => true, 'message' => 'Proyecto actualizado correctamente', 'data' => ['id' => $id], 'errors' => null]);
@@ -577,12 +577,12 @@ class ProjectController
             $projectModel->updateStatus($id, $newStatus, $userId, $reason);
 
             // AUDITORÍA: Si pasa de "cerrado" a cualquier otro, es una reapertura
-            $actionKey = ($oldStatus === 'cerrado') ? 'project_reopen' : 'project_status_change';
+            $actionKey = ($oldStatus === 'cerrado') ? 'proyecto_reabierto' : 'proyecto_cambio_estado';
 
             AuditLogger::log($actionKey, 'project', $id, $id, [
-                'previous_status' => $oldStatus,
-                'new_status'      => $newStatus,
-                'reason'          => $reason
+                'estado_anterior' => $oldStatus,
+                'estado_nuevo'      => $newStatus,
+                'motivo'          => $reason
             ]);
 
             echo json_encode(['success' => true, 'message' => 'Estado actualizado y registrado', 'data' => ['status' => $newStatus], 'errors' => null]);

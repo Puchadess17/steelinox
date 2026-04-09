@@ -22,7 +22,7 @@ class AuthMiddleware {
                 // AUDITORÍA: Registrar el timeout antes de matar la sesión
                 if (isset($_SESSION['user_id'])) {
                     require_once APP_PATH . '/Services/AuditLogger.php';
-                    AuditLogger::log('auth_timeout', 'user', $_SESSION['user_id'], null, ['inactive_seconds' => $secondsInactive]);
+                    AuditLogger::log('sesion_expirada', 'user', $_SESSION['user_id'], null, ['inactive_seconds' => $secondsInactive]);
                 }
 
                 // Si ha pasado el tiempo, destroy session

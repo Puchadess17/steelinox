@@ -470,22 +470,22 @@ window.SIModules.audit = {
 
     _humanizeAction(key) {
         const map = {
-            'auth_login_success': 'Inicio de sesión',
-            'auth_login_failed': 'Error de login',
-            'auth_logout': 'Cierre de sesión',
-            'auth_lockout': 'Bloqueo de IP',
-            'auth_timeout': 'Sesión caducada',
-            'password_reset_requested': 'Solicitud recuperación',
-            'password_reset_completed': 'Contraseña cambiada',
-            'password_reset_invalid_email': 'Email recuperación inválido',
-            'project_create': 'Creación de proyecto',
-            'project_update': 'Edición de proyecto',
-            'project_status_change': 'Cambio de estado',
-            'document_upload': 'Documento subido',
-            'document_download': 'Documento descargado',
-            'document_view': 'Documento visualizado',
-            'client_create': 'Creación de cliente',
-            'client_update': 'Edición de cliente'
+            'login_exitoso': 'Inicio de sesión',
+            'login_fallido': 'Error de login',
+            'logout': 'Cierre de sesión',
+            'ip_bloqueada': 'Bloqueo de IP',
+            'sesion_expirada': 'Sesión caducada',
+            'recuperacion_clave_solicitada': 'Solicitud recuperación',
+            'clave_actualizada': 'Contraseña cambiada',
+            'recuperacion_clave_fallida': 'Email recuperación inválido',
+            'proyecto_creado': 'Creación de proyecto',
+            'proyecto_actualizado': 'Edición de proyecto',
+            'proyecto_cambio_estado': 'Cambio de estado',
+            'documento_subido': 'Documento subido',
+            'documento_descargado': 'Documento descargado',
+            'documento_visualizado': 'Documento visualizado',
+            'cliente_creado': 'Creación de cliente',
+            'cliente_actualizado': 'Edición de cliente'
         };
         return map[key] || key;
     },

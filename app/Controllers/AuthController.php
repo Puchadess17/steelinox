@@ -40,7 +40,7 @@ class AuthController {
             if ($secondsInactive >= 1800) {
                 // AUDITORÍA: Timeout de sesión (Lo hacemos ANTES de destruir la sesión)
                 if (isset($_SESSION['user_id'])) {
-                    AuditLogger::log('auth_timeout', 'user', $_SESSION['user_id'], null, ['inactive_seconds' => $secondsInactive]);
+                    AuditLogger::log('sesion_expirada', 'user', $_SESSION['user_id'], null, ['segundos_inactivo' => $secondsInactive]);
                 }
 
                 session_unset();
@@ -114,7 +114,7 @@ class AuthController {
 
         if ($failedAttempts >= 5) {
             // AUDITORÍA: Bloqueo de IP (entity_id = 0 para no dar error en MySQL)
-            AuditLogger::log('auth_lockout', 'system', 0, null, ['ip' => $ip, 'email_attempted' => $email]);
+            AuditLogger::log('ip_bloqueada', 'system', 0, null, ['ip' => $ip, 'email_intentado' => $email]);
 
             $this->sendResponse(429, false, 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.', null, ['rate_limit' => 'Inténtelo de nuevo en 15 minutos']);
             return;
@@ -145,7 +145,7 @@ class AuthController {
             $userModel->updateLastLogin($user['id']);
 
             // AUDITORÍA: Login exitoso
-            AuditLogger::log('auth_login_success', 'user', $user['id']);
+            AuditLogger::log('login_exitoso', 'user', $user['id']);
 
             $this->sendResponse(200, true, 'Login correcto', [
                 'id'   => $user['id'],
@@ -155,7 +155,7 @@ class AuthController {
         } else {
             // AUDITORÍA: Login fallido (entity_id = 0). 
             // Al guardar esto, el $failedAttempts de la próxima petición sumará 1 real.
-            AuditLogger::log('auth_login_failed', 'system', 0, null, ['email_attempted' => $email]);
+            AuditLogger::log('login_fallido', 'system', 0, null, ['email_intentado' => $email]);
 
             $this->sendResponse(401, false, 'Credenciales incorrectas', null, ['auth' => 'Email o contraseña inválidos']);
         }
@@ -166,7 +166,7 @@ class AuthController {
         
         // AUDITORÍA
         if (isset($_SESSION['user_id'])) {
-            AuditLogger::log('auth_logout', 'user', $_SESSION['user_id']);
+            AuditLogger::log('logout', 'user', $_SESSION['user_id']);
         }
 
         session_unset();

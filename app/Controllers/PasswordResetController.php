@@ -50,8 +50,8 @@ class PasswordResetController
         if (!$user) {
             // AUDITORÍA: Intento de recuperación sobre un email inexistente
             // Cambiado a 0 para que no rompa la inserción en MySQL
-            AuditLogger::log('password_reset_invalid_email', 'system', 0, null, [
-                'email_attempted' => $email
+            AuditLogger::log('recuperacion_clave_fallida', 'system', 0, null, [
+                'email_intentado' => $email
             ]);
 
             // Por seguridad, no decimos si el email existe o no
@@ -87,7 +87,7 @@ class PasswordResetController
         if ($mailResult['success']) {
             
             // AUDITORÍA: Solicitud de cambio de contraseña exitosa
-            AuditLogger::log('password_reset_requested', 'user', $user['id'], null, [
+            AuditLogger::log('recuperacion_clave_solicitada', 'user', $user['id'], null, [
                 'email' => $email
             ]);
 
@@ -130,7 +130,7 @@ class PasswordResetController
             $userModel->clearResetToken($user['id']);
 
             // AUDITORÍA: Contraseña cambiada definitivamente
-            AuditLogger::log('password_reset_completed', 'user', $user['id']);
+            AuditLogger::log('clave_actualizada', 'user', $user['id']);
 
             echo json_encode(['success' => true, 'message' => 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.']);
         } else {

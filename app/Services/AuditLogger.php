@@ -7,7 +7,7 @@ class AuditLogger {
 
     /**
      * Registra un evento en la base de datos de auditoría
-     * * @param string $actionKey Ej: 'document_download', 'project_status_change'
+     * * @param string $actionKey Ej: 'documento_descargado', 'proyecto_cambio_estado'
      * @param string $entityType Ej: 'document', 'project', 'user'
      * @param int $entityId El ID de la entidad afectada
      * @param int|null $projectId (Opcional) Para vincularlo a la línea temporal del proyecto

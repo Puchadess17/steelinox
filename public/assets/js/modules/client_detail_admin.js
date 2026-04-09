@@ -366,14 +366,14 @@ SIModules.clientDetailAdmin = {
 
         switch (log.action_key) {
             // ── CLIENTE ──────────────────────────────────────────────
-            case 'client_create':
+            case 'cliente_creado':
                 type = 'status';
                 actionTitle = 'CLIENTE CREADO';
                 title = 'Alta del Cliente en el Sistema';
                 content = `El cliente fue registrado por primera vez en la plataforma.`;
                 break;
-            case 'client_update':
-            case 'client_updated':
+            case 'cliente_actualizado':
+            case 'cliente_actualizadod':
                 type = 'edit';
                 actionTitle = 'DATOS ACTUALIZADOS';
                 title = 'Ficha del Cliente Modificada';
@@ -388,7 +388,7 @@ SIModules.clientDetailAdmin = {
                 title = 'El Cliente fue Activado';
                 content = 'La cuenta del cliente está activa y operativa.';
                 break;
-            case 'client_deactivate':
+            case 'cliente_desactivado':
                 type = 'status';
                 actionTitle = 'CLIENTE DESACTIVADO';
                 title = 'El Cliente fue Desactivado';
@@ -396,14 +396,14 @@ SIModules.clientDetailAdmin = {
                 break;
 
             // ── USUARIO ──────────────────────────────────────────────
-            case 'user_create':
+            case 'usuario_creado':
                 type = 'user';
                 actionTitle = 'NUEVO USUARIO';
                 title = log.metadata?.name || log.metadata?.email || 'Usuario Creado';
                 content = `Alta de usuario para el cliente.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.email || ''}</span>`;
                 break;
-            case 'user_update':
-            case 'user_updated':
+            case 'usuario_actualizado':
+            case 'usuario_actualizadod':
                 type = 'user';
                 actionTitle = 'USUARIO EDITADO';
                 title = log.metadata?.name || 'Datos de Usuario Actualizados';
@@ -415,13 +415,13 @@ SIModules.clientDetailAdmin = {
                 title = log.metadata?.name || 'Usuario Activado';
                 content = 'El acceso del usuario a la plataforma fue habilitado.';
                 break;
-            case 'user_deactivate':
+            case 'usuario_desactivado':
                 type = 'user';
                 actionTitle = 'USUARIO DESACTIVADO';
                 title = log.metadata?.name || 'Usuario Desactivado';
                 content = 'El acceso del usuario fue bloqueado.';
                 break;
-            case 'user_delete':
+            case 'usuario_eliminado':
                 type = 'edit';
                 actionTitle = 'USUARIO ELIMINADO';
                 title = log.metadata?.name || 'Usuario Removido';
@@ -429,20 +429,20 @@ SIModules.clientDetailAdmin = {
                 break;
 
             // ── PROYECTO ─────────────────────────────────────────────
-            case 'project_create':
+            case 'proyecto_creado':
                 type = 'project';
                 actionTitle = 'NUEVO PROYECTO';
                 title = log.metadata?.name || 'Proyecto Creado';
                 content = `Nuevo proyecto vinculado al cliente.<br><span class="text-[10px] font-black text-orange-400 uppercase tracking-tighter mt-1 block">${log.metadata?.reference || ''}</span>`;
                 break;
-            case 'project_update':
+            case 'proyecto_actualizado':
                 type = 'project';
                 actionTitle = 'PROYECTO EDITADO';
                 title = log.metadata?.name || 'Datos de Proyecto Actualizados';
                 content = 'Se han modificado los detalles del proyecto.';
                 break;
-            case 'project_status_change':
-            case 'project_status_changed':
+            case 'proyecto_cambio_estado':
+            case 'proyecto_cambio_estadod':
                 type = 'project';
                 actionTitle = 'ESTADO DE PROYECTO';
                 title = log.metadata?.name || 'Cambio de Estado';
@@ -451,19 +451,19 @@ SIModules.clientDetailAdmin = {
                     content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
                 }
                 break;
-            case 'project_reopen':
+            case 'proyecto_reabierto':
                 type = 'project';
                 actionTitle = 'PROYECTO REABIERTO';
                 title = log.metadata?.name || 'Proyecto Reabierto';
                 content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || 'CERRADO'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
                 break;
-            case 'project_user_assigned':
+            case 'proyecto_comercial_asignado':
                 type = 'user';
                 actionTitle = 'COMERCIAL ASIGNADO';
                 title = log.metadata?.user_name || 'Comercial Asignado al Proyecto';
                 content = `Comercial asignado para gestionar el proyecto.`;
                 break;
-            case 'project_user_removed':
+            case 'proyecto_comercial_removido':
                 type = 'edit';
                 actionTitle = 'COMERCIAL REMOVIDO';
                 title = log.metadata?.user_name || 'Comercial Removido del Proyecto';
@@ -471,28 +471,28 @@ SIModules.clientDetailAdmin = {
                 break;
 
             // ── DOCUMENTO ────────────────────────────────────────────
-            case 'document_upload':
+            case 'documento_subido':
                 type = 'document';
                 actionTitle = 'NUEVO DOCUMENTO';
                 title = log.metadata?.title || log.metadata?.file_name || 'Documento Subido';
                 isAttachment = true;
                 content = `Archivo subido al expediente del proyecto.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
                 break;
-            case 'document_new_version':
+            case 'documento_nueva_version':
                 type = 'document';
                 actionTitle = 'NUEVA VERSIÓN';
                 title = log.metadata?.title || log.metadata?.file_name || 'Versión de Documento';
                 isAttachment = true;
                 content = `Nueva versión del documento subida.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || '-'}</span>`;
                 break;
-            case 'document_download':
+            case 'documento_descargado':
                 type = 'document';
                 actionTitle = 'DESCARGA';
                 title = log.metadata?.file_name || log.metadata?.title || 'Documento Descargado';
                 isAttachment = true;
                 content = `El documento fue descargado.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
                 break;
-            case 'document_view':
+            case 'documento_visualizado':
                 type = 'document';
                 actionTitle = 'CONSULTA';
                 title = log.metadata?.file_name || log.metadata?.title || 'Documento Consultado';
@@ -505,7 +505,7 @@ SIModules.clientDetailAdmin = {
                 title = log.metadata?.title || log.metadata?.file_name || 'Documento Removido';
                 content = `El archivo fue eliminado del expediente.`;
                 break;
-            case 'comment_create':
+            case 'comentario_creado':
                 type = 'chat';
                 actionTitle = 'COMENTARIO';
                 title = '';

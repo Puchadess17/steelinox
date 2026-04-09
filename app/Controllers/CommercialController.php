@@ -126,11 +126,11 @@ class CommercialController {
             ]);
 
             // AUDITORÍA: Alta de comercial
-            AuditLogger::log('user_create', 'user', $newUserId, null, [
+            AuditLogger::log('usuario_creado', 'user', $newUserId, null, [
                 'role'      => 'comercial',
-                'name'      => trim($input['name']),
+                'nombre'      => trim($input['name']),
                 'email'     => strtolower(trim($input['email'])),
-                'is_active' => $isActive
+                'es_activo' => $isActive
             ]);
 
             http_response_code(201); // 201 Created
@@ -238,11 +238,11 @@ class CommercialController {
                 
                 // AUDITORÍA: Edición o Desactivación
                 if (!empty($changes)) {
-                    $actionKey = 'user_update';
+                    $actionKey = 'usuario_actualizado';
                     if (isset($changes['is_active'])) {
-                        $actionKey = ($newIsActive === 0) ? 'user_deactivate' : 'user_reactivate';
+                        $actionKey = ($newIsActive === 0) ? 'usuario_desactivado' : 'usuario_reactivado';
                     }
-                    AuditLogger::log($actionKey, 'user', $id, null, ['changes' => $changes]);
+                    AuditLogger::log($actionKey, 'user', $id, null, ['cambios' => $changes]);
                 }
 
                 echo json_encode(['success' => true, 'message' => 'Comercial actualizado correctamente', 'data' => ['id' => $id]]);
@@ -287,7 +287,7 @@ class CommercialController {
             if ($deleted) {
                 
                 // AUDITORÍA: Borrado lógico
-                AuditLogger::log('user_delete', 'user', $id);
+                AuditLogger::log('usuario_borrado', 'user', $id);
 
                 echo json_encode(['success' => true, 'message' => 'Comercial eliminado correctamente', 'data' => null]);
             } else {
