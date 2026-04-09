@@ -344,23 +344,7 @@ class DocumentController {
                 }
             }
 
-            // --- AUDITORÍA (Anti-Spam de Streaming) ---
-            // Solo registramos si NO es una petición fragmentada (Range) o si es la que inicia en bytes=0
-            $isChunked = isset($_SERVER['HTTP_RANGE']);
-            $isFirstChunk = $isChunked ? (strpos($_SERVER['HTTP_RANGE'], 'bytes=0-') !== false) : true;
-
-            if ($isFirstChunk) {
-                $actionKey = ($disposition === 'attachment') ? 'document_download' : 'document_view';
-                AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
-                    'file_name'           => $docInfo['file_name'],
-                    'version_number'      => $docInfo['version_number'] ?? null,
-                    'is_specific_version' => $versionId ? true : false,
-                    'version_id'          => $versionId ?: $docInfo['version_id'] ?? null
-                ]);
-            }
-            // -------------------------------------------
-
-            // IMPORTANTE: Liberar el bloqueo de sesión de PHP después de hacer el Audit.
+            // IMPORTANTE: Liberar el bloqueo de sesión de PHP ANTES del bucle de descarga.
             session_write_close();
 
             $storageDir = __DIR__ . '/../../storage/documents/';
@@ -423,16 +407,45 @@ class DocumentController {
             header('Expires: 0');
             
             $buffer = 64 * 1024; 
+            $aborted = false; // Variable para controlar si el usuario cancela
+
+            // Bucle de streaming
             while (!feof($fp) && ($p = ftell($fp)) <= $end) {
                 if ($p + $buffer > $end) {
                     $buffer = $end - $p + 1;
                 }
                 set_time_limit(0); 
                 echo fread($fp, $buffer);
+                
+                // Forzamos a PHP a empujar los datos por la red para que detecte si el cliente se ha desconectado
+                ob_flush(); 
                 flush(); 
+                
+                // Si el usuario le dio a "Cancelar descarga" o cerró la pestaña
+                if (connection_aborted()) {
+                    $aborted = true;
+                    break;
+                }
             }
 
             fclose($fp);
+
+            // --- AUDITORÍA (Solo si la descarga/visualización se completó con éxito) ---
+            $isChunked = isset($_SERVER['HTTP_RANGE']);
+            $isFirstChunk = $isChunked ? (strpos($_SERVER['HTTP_RANGE'], 'bytes=0-') !== false) : true;
+
+            if (!$aborted && $isFirstChunk) {
+                $actionKey = ($disposition === 'attachment') ? 'document_download' : 'document_view';
+                
+                // Reconectamos a la base de datos para hacer el log de forma segura porque cerramos la sesión arriba
+                AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
+                    'file_name'           => $docInfo['file_name'],
+                    'version_number'      => $docInfo['version_number'] ?? null,
+                    'is_specific_version' => $versionId ? true : false,
+                    'version_id'          => $versionId ?: ($docInfo['version_id'] ?? null)
+                ]);
+            }
+            
             exit;
 
         } catch (Exception $e) {
