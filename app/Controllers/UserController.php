@@ -110,16 +110,22 @@ class UserController {
         $input = json_decode(file_get_contents('php://input'), true);
         $errors = [];
 
-        if (empty($input['name'])) $errors['name'] = 'El nombre es obligatorio.';
-        if (empty($input['email'])) {
+        // --- SANITIZACIÓN PRE-VALIDACIÓN ---
+        $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+        $cleanEmail = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+        // -----------------------------------
+
+        if (empty($cleanName)) $errors['name'] = 'El nombre es obligatorio.';
+        if (empty($cleanEmail)) {
             $errors['email'] = 'El email es obligatorio.';
-        } elseif (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $input['email'])) {
+        } elseif (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $cleanEmail)) {
             $errors['email'] = 'El formato del email no es válido.';
         }
+        
         if (empty($input['password'])) {
             $errors['password'] = 'La contraseña es obligatoria.';
         } else {
-            $pwdCheck = $this->validatePasswordPolicy($input['password'], $input['email'] ?? '');
+            $pwdCheck = $this->validatePasswordPolicy($input['password'], $cleanEmail);
             if ($pwdCheck !== true) {
                 $errors['password'] = $pwdCheck;
             }
@@ -143,8 +149,8 @@ class UserController {
 
             $userModel = new User();
 
-            // Verificar si el email ya existe
-            if ($userModel->emailExists($input['email'])) {
+            // Verificar si el email ya existe usando el email sanitizado
+            if ($userModel->emailExists($cleanEmail)) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['email' => 'El email ya está en uso.']]);
                 return;
@@ -155,8 +161,8 @@ class UserController {
             $newUserId = $userModel->create([
                 'client_id'     => $input['client_id'],
                 'role'          => 'cliente', // Forzado por seguridad
-                'name'          => trim($input['name']),
-                'email'         => trim($input['email']),
+                'name'          => $cleanName,
+                'email'         => $cleanEmail,
                 'password_hash' => $hashedPassword,
                 'is_active'     => isset($input['is_active']) ? (int)$input['is_active'] : 1
             ]);
@@ -165,8 +171,8 @@ class UserController {
             AuditLogger::log('usuario_creado', 'user', $newUserId, null, [
                 'role'      => 'cliente',
                 'client_id' => $input['client_id'],
-                'nombre'      => trim($input['name']),
-                'email'     => trim($input['email'])
+                'nombre'    => $cleanName,
+                'email'     => $cleanEmail
             ]);
 
             echo json_encode([
@@ -223,25 +229,17 @@ class UserController {
                 return;
             }
 
-            // Validar email si se está cambiando
-            if (!empty($input['email']) && trim($input['email']) !== $user['email']) {
-                if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
-                    http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Email no válido', 'data' => null, 'errors' => ['email' => 'Email no válido.']]);
-                    return;
-                }
-                if ($userModel->emailExists($input['email'], $id)) {
-                    http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Email en uso', 'data' => null, 'errors' => ['email' => 'El email ya está en uso.']]);
-                    return;
-                }
-            }
-
             $updateData = [];
             $changes = [];
 
+            // --- SANITIZACIÓN Y VALIDACIÓN AL ACTUALIZAR ---
             if (isset($input['name'])) {
-                $newName = trim($input['name']);
+                $newName = $this->sanitizeName($input['name']);
+                if (empty($newName)) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['name' => 'El nombre es obligatorio.']]);
+                    return;
+                }
                 $updateData['name'] = $newName;
                 if ($newName !== $user['name']) {
                     $changes['name'] = ['antes' => $user['name'], 'despues' => $newName];
@@ -249,9 +247,19 @@ class UserController {
             }
 
             if (isset($input['email'])) {
-                $newEmail = trim($input['email']);
-                $updateData['email'] = $newEmail;
+                $newEmail = strtolower(trim($input['email']));
+                if (empty($newEmail) || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Email no válido', 'data' => null, 'errors' => ['email' => 'Email no válido.']]);
+                    return;
+                }
                 if ($newEmail !== $user['email']) {
+                    if ($userModel->emailExists($newEmail, $id)) {
+                        http_response_code(422);
+                        echo json_encode(['success' => false, 'message' => 'Email en uso', 'data' => null, 'errors' => ['email' => 'El email ya está en uso.']]);
+                        return;
+                    }
+                    $updateData['email'] = $newEmail;
                     $changes['email'] = ['antes' => $user['email'], 'despues' => $newEmail];
                 }
             }
@@ -279,7 +287,7 @@ class UserController {
             }
 
             if (!empty($input['password'])) {
-                $emailToCompare = !empty($input['email']) ? $input['email'] : $user['email'];
+                $emailToCompare = isset($newEmail) ? $newEmail : $user['email'];
                 $pwdCheck = $this->validatePasswordPolicy($input['password'], $emailToCompare);
                 
                 if ($pwdCheck !== true) {
@@ -292,26 +300,37 @@ class UserController {
                 $changes['password'] = 'cambiada';
             }
 
-            $updated = $userModel->update($id, $updateData);
+            // Si hay datos para actualizar
+            if (!empty($updateData)) {
+                $updated = $userModel->update($id, $updateData);
 
-            if ($updated) {
-                // AUDITORÍA
-                if (!empty($changes)) {
-                    $actionKey = 'usuario_actualizado';
-                    if (isset($changes['is_active'])) {
-                        $actionKey = ($updateData['is_active'] === 0) ? 'usuario_desactivado' : 'usuario_reactivado';
+                if ($updated) {
+                    // AUDITORÍA
+                    if (!empty($changes)) {
+                        $actionKey = 'usuario_actualizado';
+                        if (isset($changes['is_active'])) {
+                            $actionKey = ($updateData['is_active'] === 0) ? 'usuario_desactivado' : 'usuario_reactivado';
+                        }
+                        AuditLogger::log($actionKey, 'user', $id, null, ['cambios' => $changes]);
                     }
-                    AuditLogger::log($actionKey, 'user', $id, null, ['changes' => $changes]);
-                }
 
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Usuario actualizado correctamente',
+                        'data'    => ['id' => $id],
+                        'errors'  => null
+                    ]);
+                } else {
+                    throw new Exception("No se pudo actualizar el usuario.");
+                }
+            } else {
+                // Si no enviaron nada distinto, lo damos por bueno
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Usuario actualizado correctamente',
+                    'message' => 'No hubo cambios que actualizar',
                     'data'    => ['id' => $id],
                     'errors'  => null
                 ]);
-            } else {
-                throw new Exception("No se pudo actualizar el usuario.");
             }
 
         } catch (Exception $e) {
@@ -396,5 +415,21 @@ class UserController {
             }
         }
         return true;
+    }
+
+    /** Helper privado para limpiar y formatear nombres */
+    private function sanitizeName($name) {
+        if (empty($name)) return '';
+        
+        // 1. Quitar espacios a los lados
+        $name = trim($name);
+        
+        // 2. Reemplazar múltiples espacios en medio por un solo espacio
+        $name = preg_replace('/\s+/', ' ', $name);
+        
+        // 3. Poner en minúsculas y luego poner mayúscula inicial a cada palabra
+        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
+        
+        return $name;
     }
 }

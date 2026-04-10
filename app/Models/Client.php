@@ -45,7 +45,6 @@ class Client {
         return $stmt->fetchAll();
     }
 
-    /** Obtener info básica del cliente */
     public function getById($id) {
         $sql = "SELECT * FROM clients WHERE id = :id AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
@@ -58,7 +57,6 @@ class Client {
             return false;
         }
 
-        // Datos básicos del cliente y el nombre de su creador
         $sqlClient = "SELECT c.id, c.name, c.reference, c.is_active, c.created_at, u.name AS creator_name 
                       FROM clients c
                       LEFT JOIN users u ON c.created_by = u.id
@@ -66,7 +64,6 @@ class Client {
         
         $params = ['client_id' => $clientId];
 
-        // Validar permisos si es comercial
         if ($role === 'comercial') {
             $sqlClient .= " AND (c.created_by = :user_id OR c.id IN (
                                 SELECT p.client_id FROM projects p 
@@ -81,10 +78,9 @@ class Client {
         $clientData = $stmtClient->fetch();
 
         if (!$clientData) {
-            return false; // No existe o no tiene permisos
+            return false; 
         }
 
-        // Usuarios asociados
         $sqlUsers = "SELECT id, name, role, email, is_active, last_login_at 
                      FROM users 
                      WHERE client_id = :client_id AND deleted_at IS NULL";
@@ -92,7 +88,6 @@ class Client {
         $stmtUsers->execute(['client_id' => $clientId]);
         $usersList = $stmtUsers->fetchAll();
 
-        // Proyectos vinculados
         $sqlProjects = "SELECT id, name, reference, status, budget_amount, created_at 
                         FROM projects 
                         WHERE client_id = :client_id AND deleted_at IS NULL";
@@ -100,7 +95,6 @@ class Client {
         $stmtProjects->execute(['client_id' => $clientId]);
         $projectsList = $stmtProjects->fetchAll();
 
-        // KPIs
         $activeProjectsCount = 0;
         $annualRevenue = 0.0;
         
@@ -133,7 +127,6 @@ class Client {
         ];
     }
 
-    /** Crear nuevo cliente */
     public function create($data) {
         $sql = "INSERT INTO clients (name, reference, is_active, created_by, created_at) 
                 VALUES (:name, :reference, :is_active, :created_by, NOW())";
@@ -149,7 +142,6 @@ class Client {
         return $this->db->lastInsertId();
     }
 
-    /** Actualiza los datos de un cliente */
     public function update($id, $data) {
         $sql = "UPDATE clients 
                 SET name = :name, 
@@ -166,7 +158,6 @@ class Client {
         ]);
     }
 
-    /** Borrado lógico de un cliente (Soft Delete) */
     public function delete($id) {
         $sql = "UPDATE clients 
                 SET deleted_at = NOW(), is_active = 0 
@@ -174,5 +165,27 @@ class Client {
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Genera la siguiente referencia secuencial de forma automática.
+     * Formato: CLI-XXXX (Ej: CLI-0001)
+     */
+    public function generateNextReference() {
+        $prefix = "CLI-";
+
+        $sql = "SELECT reference FROM clients WHERE reference LIKE :prefix ORDER BY id DESC LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['prefix' => $prefix . '%']);
+        $lastReference = $stmt->fetchColumn();
+
+        if ($lastReference) {
+            $lastNumber = (int) substr($lastReference, -4);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

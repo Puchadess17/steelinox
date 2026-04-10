@@ -3,7 +3,7 @@
 
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
-require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
+require_once APP_PATH . '/Services/AuditLogger.php'; 
 
 class ClientController {
 
@@ -11,15 +11,9 @@ class ClientController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Autorización por Rol
         if ($_SESSION['role'] === 'cliente') {
-            http_response_code(403); // Prohibido
-            echo json_encode([
-                'success' => false,
-                'message' => 'Acceso denegado. No tiene permisos para ver esta sección.',
-                'data'    => null,
-                'errors'  => ['role' => 'Se requiere rol admin o comercial']
-            ]);
+            http_response_code(403); 
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado.', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
             return;
         }
 
@@ -36,30 +30,18 @@ class ClientController {
             $clientModel = new Client();
             $clientes = $clientModel->getListByUser($userId, $role);
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Listado de clientes recuperado',
-                'data'    => $clientes,
-                'errors'  => null
-            ]);
+            echo json_encode(['success' => true, 'message' => 'Listado de clientes recuperado', 'data' => $clientes, 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error al recuperar los clientes',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error al recuperar los clientes', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
-    // Obtener el detalle individual de un cliente
     public function show($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
@@ -73,6 +55,7 @@ class ClientController {
         }
 
         try {
+            $id = (int)$id;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
 
@@ -81,39 +64,22 @@ class ClientController {
 
             if (!$clientDetails) {
                 http_response_code(404);
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Cliente no encontrado o sin permisos',
-                    'data'    => null,
-                    'errors'  => ['client' => 'Recurso inaccesible']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado o sin permisos', 'data' => null, 'errors' => ['client' => 'Recurso inaccesible']]);
                 return;
             }
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Detalle del cliente recuperado',
-                'data'    => $clientDetails,
-                'errors'  => null
-            ]);
+            echo json_encode(['success' => true, 'message' => 'Detalle del cliente recuperado', 'data' => $clientDetails, 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error al recuperar el cliente',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error al recuperar el cliente', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
-    // Crear un nuevo cliente (POST)
     public function store() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
@@ -126,80 +92,79 @@ class ClientController {
             return;
         }
 
-        // Leer el JSON del body (raw input)
         $input = json_decode(file_get_contents('php://input'), true);
-
-        // Validación básica
         $errors = [];
-        if (empty($input['name'])) {
+
+        // --- SANITIZACIÓN ---
+        $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+        // --------------------
+
+        if (empty($cleanName)) {
             $errors['name'] = 'El nombre de la empresa es obligatorio.';
         }
 
-        if (!empty($input['reference'])) {
-            if (!preg_match('/^CLI-\d{3,}$/', $input['reference'])) {
-                $errors['reference'] = 'La referencia de cliente debe tener el formato CLI-XXX (Ej: CLI-001)';
-            }
-        }
-
         if (!empty($errors)) {
-            http_response_code(422); // Unprocessable Entity
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error de validación',
-                'data'    => null,
-                'errors'  => $errors
-            ]);
+            http_response_code(422); 
+            echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
             return;
         }
 
         try {
             $clientModel = new Client();
             
-            // Empaquetamos los datos, inyectando el ID del usuario creador desde la sesión
+            // GENERACIÓN AUTOMÁTICA DE REFERENCIA
+            $generatedReference = $clientModel->generateNextReference();
+
             $newClientId = $clientModel->create([
-                'name'       => trim($input['name']),
-                'reference'  => !empty($input['reference']) ? trim($input['reference']) : null,
+                'name'       => $cleanName,
+                'reference'  => $generatedReference,
                 'is_active'  => isset($input['is_active']) ? (int)$input['is_active'] : 1,
                 'created_by' => $_SESSION['user_id']
             ]);
 
-            // AUDITORÍA: Alta de cliente
             AuditLogger::log('cliente_creado', 'client', $newClientId, null, [
-                'nombre'      => trim($input['name']),
-                'referencia' => !empty($input['reference']) ? trim($input['reference']) : null
+                'nombre'     => $cleanName,
+                'referencia' => $generatedReference
             ]);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Cliente creado correctamente',
-                'data'    => ['id' => $newClientId],
+                'data'    => [
+                    'id' => $newClientId,
+                    'reference' => $generatedReference
+                ],
                 'errors'  => null
             ]);
 
         } catch (Exception $e) {
+            // ESCUDO ANTI COLISIONES (1062 Duplicate entry)
+            if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
+                http_response_code(409); 
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Se ha producido una colisión al generar el código de referencia. Por favor, pulsa en Guardar de nuevo.',
+                    'data' => null,
+                    'errors' => ['reference' => 'Código duplicado generado automáticamente']
+                ]);
+                return;
+            }
+
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al crear el cliente',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno al crear el cliente', 'data' => null, 'errors' => ['server' => 'Error al guardar']]);
         }
     }
 
-    // Actualizar un cliente existente (PUT)
     public function update($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
             return;
         }
 
-        // Aceptamos PUT (o POST si el frontend usa method spoofing con _method=PUT)
         if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba PUT']]);
@@ -207,35 +172,46 @@ class ClientController {
         }
 
         try {
+            $id = (int)$id;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             
             $clientModel = new Client();
             
-            // Tiene permiso para ver/editar este cliente?
             $clientDetails = $clientModel->getDetailsById($id, $userId, $role);
             if (!$clientDetails) {
                 http_response_code(404);
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Cliente no encontrado o sin permisos de edición',
-                    'data'    => null,
-                    'errors'  => ['client' => 'Recurso inaccesible']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado o sin permisos de edición', 'data' => null, 'errors' => ['client' => 'Recurso inaccesible']]);
                 return;
             }
 
-            // Leer los datos enviados
             $input = json_decode(file_get_contents('php://input'), true);
+            $errors = [];
 
-            // Validación básica
-            if (empty($input['name'])) {
+            // --- SANITIZACIÓN ---
+            $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+            // --------------------
+
+            if (empty($cleanName)) {
+                $errors['name'] = 'El nombre es obligatorio.';
+            }
+
+            // EL ESCUDO DEL ADMINISTRADOR: Solo el admin puede editar 'reference'
+            if ($role === 'admin' && !empty($input['reference'])) {
+                if (!preg_match('/^CLI-\d{4}$/', trim($input['reference']))) {
+                    $errors['reference'] = 'La referencia debe tener el formato CLI-XXXX (Ej: CLI-0001)';
+                }
+            } elseif ($role !== 'admin' && isset($input['reference'])) {
+                // Bloqueamos el intento de un comercial por cambiar la referencia
+                unset($input['reference']);
+            }
+
+            if (!empty($errors)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['name' => 'El nombre es obligatorio']]);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
                 return;
             }
 
-            // --- PREPARAR DATOS PARA AUDITORÍA (ANTES DE ACTUALIZAR) ---
             $oldData = [
                 'name'      => $clientDetails['info']['name'],
                 'reference' => $clientDetails['info']['reference'],
@@ -243,65 +219,61 @@ class ClientController {
             ];
 
             $newData = [
-                'name'      => trim($input['name']),
-                'reference' => !empty($input['reference']) ? trim($input['reference']) : null,
+                'name'      => $cleanName,
+                'reference' => $oldData['reference'], // Por defecto conservamos el antiguo
                 'is_active' => isset($input['is_active']) ? (int)$input['is_active'] : $oldData['is_active']
             ];
 
-            // Detectar qué campos han cambiado realmente
+            // Inyectar la nueva referencia SOLO si pasó el escudo del admin
+            if ($role === 'admin' && !empty($input['reference'])) {
+                $newData['reference'] = htmlspecialchars(trim($input['reference']), ENT_QUOTES, 'UTF-8');
+            }
+
             $changes = [];
             foreach ($newData as $key => $value) {
                 if ($oldData[$key] !== $value) {
                     $changes[$key] = [
-                        'before' => $oldData[$key],
-                        'after'  => $value
+                        'antes'   => $oldData[$key],
+                        'despues' => $value
                     ];
                 }
             }
 
-            // Actualizar en la base de datos
-            $updated = $clientModel->update($id, $newData);
+            try {
+                $updated = $clientModel->update($id, $newData);
+            } catch (Exception $e) {
+                if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
+                    http_response_code(409); 
+                    echo json_encode(['success' => false, 'message' => 'El código de referencia introducido ya pertenece a otro cliente.', 'data' => null, 'errors' => ['reference' => 'Código duplicado']]);
+                    return;
+                }
+                throw $e; 
+            }
 
             if ($updated) {
-
-                // AUDITORÍA: Edición o Desactivación
                 if (!empty($changes)) {
-                    // Si el estado activo cambió, le doy un action_key específico, sino, es un simple update
                     $actionKey = 'cliente_actualizado';
                     if (isset($changes['is_active'])) {
                         $actionKey = ($newData['is_active'] === 0) ? 'cliente_desactivado' : 'cliente_reactivado';
                     }
-
                     AuditLogger::log($actionKey, 'client', $id, null, ['cambios' => $changes]);
                 }
 
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Cliente actualizado correctamente',
-                    'data'    => ['id' => $id],
-                    'errors'  => null
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Cliente actualizado correctamente', 'data' => ['id' => $id], 'errors' => null]);
             } else {
                 throw new Exception("No se pudo actualizar el registro en la base de datos");
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al actualizar el cliente',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno al actualizar el cliente', 'data' => null, 'errors' => ['server' => 'Error de actualización']]);
         }
     }
 
-    // Borrado lógico de un cliente (DELETE /api/clients/(\d+))
     public function destroy($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización General
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
@@ -315,56 +287,41 @@ class ClientController {
         }
 
         try {
+            $id = (int)$id;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             
             $clientModel = new Client();
             
-            // Escudo de seguridad: ¿Tiene permiso el Comercial sobre este cliente?
             $clientDetails = $clientModel->getDetailsById($id, $userId, $role);
             if (!$clientDetails) {
                 http_response_code(404);
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Cliente no encontrado o sin permisos de borrado',
-                    'data'    => null,
-                    'errors'  => ['client' => 'Recurso inaccesible']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado o sin permisos de borrado', 'data' => null, 'errors' => ['client' => 'Recurso inaccesible']]);
                 return;
             }
 
-            // Proceder con el Soft Delete
             $deleted = $clientModel->delete($id);
 
             if ($deleted) {
-                
-                // AUDITORÍA: Borrado lógico
                 AuditLogger::log('cliente_eliminado', 'client', $id);
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Cliente eliminado correctamente',
-                    'data'    => ['id' => $id],
-                    'errors'  => null
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Cliente eliminado correctamente', 'data' => ['id' => $id], 'errors' => null]);
             } else {
                 http_response_code(404);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'El cliente no se pudo eliminar o ya estaba borrado', 
-                    'data' => null, 
-                    'errors' => null
-                ]);
+                echo json_encode(['success' => false, 'message' => 'El cliente no se pudo eliminar o ya estaba borrado', 'data' => null, 'errors' => null]);
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al eliminar el cliente',
-                'data'    => null,
-                'errors'  => ['server' => $e->getMessage()]
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno al eliminar el cliente', 'data' => null, 'errors' => ['server' => 'Error al borrar']]);
         }
+    }
+
+    /** Helper privado para limpiar y formatear nombres */
+    private function sanitizeName($name) {
+        if (empty($name)) return '';
+        $name = trim($name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
+        return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }

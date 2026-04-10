@@ -212,4 +212,32 @@ class Project {
             throw $e;
         }
     }
+
+    /**
+     * Genera la siguiente referencia secuencial de forma automática.
+     * Formato: PRJ-YYYY-XXXX (Ej: PRJ-2026-0001)
+     */
+    public function generateNextReference() {
+        $year = date('Y');
+        $prefix = "PRJ-$year-";
+
+        // Buscar la última referencia de este año
+        // Como el formato es fijo, ordenamos de forma descendente y cogemos el primero
+        $sql = "SELECT reference FROM projects WHERE reference LIKE :prefix ORDER BY id DESC LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['prefix' => $prefix . '%']);
+        $lastReference = $stmt->fetchColumn();
+
+        if ($lastReference) {
+            // Extraer los últimos 4 dígitos y sumarle 1
+            $lastNumber = (int) substr($lastReference, -4);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            // Si es el primer proyecto del año, empezamos por el 1
+            $nextNumber = 1;
+        }
+
+        // Formatear añadiendo ceros a la izquierda para mantener los 4 dígitos
+        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    }
 }

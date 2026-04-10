@@ -5,6 +5,7 @@ require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
+
 class DocumentController {
 
     // Listar los documentos de un proyecto (GET /api/projects/{projectId}/documents)
@@ -19,7 +20,7 @@ class DocumentController {
 
             // Escudo de Autorización: Reutilizamos el modelo Project
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos']);
                 return;
@@ -54,7 +55,7 @@ class DocumentController {
 
             // Escudo de Autorización
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto']);
                 return;
@@ -68,9 +69,20 @@ class DocumentController {
             }
 
             $file = $_FILES['file'];
-            $title = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
-            $type = $_POST['type'] ?? 'otros';
+            
+            // --- SANITIZACIÓN ESTRICTA ---
+            // 1. Evitar XSS y saltos de directorio en el nombre original del archivo
+            $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
+            
+            // 2. Limpiar y formatear el título
+            $rawTitle = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
+            $title = $this->sanitizeName($rawTitle);
+            
+            // 3. Limpiar variables de configuración
+            $type = isset($_POST['type']) ? htmlspecialchars(trim($_POST['type']), ENT_QUOTES, 'UTF-8') : 'otros';
+            $accessMode = isset($_POST['access_mode']) ? htmlspecialchars(trim($_POST['access_mode']), ENT_QUOTES, 'UTF-8') : 'download';
             $isVisible = isset($_POST['is_visible_to_client']) ? (int)$_POST['is_visible_to_client'] : 0;
+            // -----------------------------
 
             // Seguridad: Tipos MIME permitidos
             $allowedMimes = [
@@ -100,28 +112,26 @@ class DocumentController {
                 mkdir($storageDir, 0755, true);
             }
 
-            $secureFileName = bin2hex(random_bytes(16)) . '_' . time();
-            $destinationPath = $storageDir . $secureFileName;
+            $secureStorageName = bin2hex(random_bytes(16)) . '_' . time();
+            $destinationPath = $storageDir . $secureStorageName;
             $checksum = hash_file('sha256', $file['tmp_name']);
 
             if (!move_uploaded_file($file['tmp_name'], $destinationPath)) {
                 throw new Exception("Error al guardar el archivo en el disco.");
             }
 
-            $accessMode = $_POST['access_mode'] ?? 'download';
-
             $docData = [
                 'project_id'           => (int)$projectId,
                 'type'                 => $type,
-                'title'                => trim($title),
+                'title'                => $title,
                 'is_visible_to_client' => $isVisible,
                 'access_mode'          => $accessMode,
                 'created_by'           => $userId
             ];
 
             $versionData = [
-                'file_name'       => $file['name'],
-                'storage_path'    => $secureFileName,
+                'file_name'       => $safeFileName,
+                'storage_path'    => $secureStorageName,
                 'mime_type'       => $realMime,
                 'file_size'       => $file['size'],
                 'checksum_sha256' => $checksum,
@@ -129,7 +139,7 @@ class DocumentController {
             ];
 
             $documentModel = new Document();
-            $existingId = $documentModel->findDocumentByTitle((int)$projectId, trim($title));
+            $existingId = $documentModel->findDocumentByTitle((int)$projectId, $title);
 
             if ($existingId) {
                 // AUTO-VERSIONADO
@@ -137,9 +147,9 @@ class DocumentController {
                 
                 // AUDITORÍA: Nueva versión automática
                 AuditLogger::log('documento_nueva_version', 'document_version', $newVersionId, $projectId, [
-                    'nombre_archivo'      => $file['name'],
+                    'nombre_archivo'  => $safeFileName,
                     'documento_id'    => $existingId,
-                    'tamaño_archivo'      => $file['size'],
+                    'tamaño_archivo'  => $file['size'],
                     'auto_versionado' => true
                 ]);
 
@@ -154,9 +164,9 @@ class DocumentController {
                 
                 // AUDITORÍA: Subida de documento nuevo
                 AuditLogger::log('documento_subido', 'document', $newDocId, $projectId, [
-                    'nombre_archivo' => $file['name'],
+                    'nombre_archivo' => $safeFileName,
                     'tamaño_archivo' => $file['size'],
-                    'mime_type' => $realMime
+                    'mime_type'      => $realMime
                 ]);
 
                 echo json_encode([
@@ -189,7 +199,7 @@ class DocumentController {
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto']);
                 return;
@@ -202,6 +212,10 @@ class DocumentController {
             }
 
             $file = $_FILES['file'];
+            
+            // --- SANITIZACIÓN ---
+            $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
+            // --------------------
 
             $allowedMimes = [
                 'application/pdf', 
@@ -226,8 +240,8 @@ class DocumentController {
             }
 
             $storageDir = __DIR__ . '/../../storage/documents/';
-            $secureFileName = bin2hex(random_bytes(16)) . '_' . time();
-            $destinationPath = $storageDir . $secureFileName;
+            $secureStorageName = bin2hex(random_bytes(16)) . '_' . time();
+            $destinationPath = $storageDir . $secureStorageName;
             $checksum = hash_file('sha256', $file['tmp_name']);
 
             if (!move_uploaded_file($file['tmp_name'], $destinationPath)) {
@@ -235,8 +249,8 @@ class DocumentController {
             }
 
             $versionData = [
-                'file_name'       => $file['name'],
-                'storage_path'    => $secureFileName,
+                'file_name'       => $safeFileName,
+                'storage_path'    => $secureStorageName,
                 'mime_type'       => $realMime,
                 'file_size'       => $file['size'],
                 'checksum_sha256' => $checksum,
@@ -248,10 +262,10 @@ class DocumentController {
 
             // AUDITORÍA: Nueva versión manual
             AuditLogger::log('documento_nueva_version', 'document_version', $versionId, $projectId, [
-                'nombre_archivo'      => $file['name'],
-                'document_id'    => $documentId,
-                'tamaño_archivo'      => $file['size'],
-                'auto_versioned' => false
+                'nombre_archivo'  => $safeFileName,
+                'document_id'     => $documentId,
+                'tamaño_archivo'  => $file['size'],
+                'auto_versioned'  => false
             ]);
 
             echo json_encode([
@@ -277,7 +291,7 @@ class DocumentController {
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos']);
                 return;
@@ -314,12 +328,15 @@ class DocumentController {
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 die("Proyecto no encontrado o sin permisos.");
             }
 
-            $versionId = $_GET['version_id'] ?? null;
+            // --- SANITIZACIÓN ---
+            $versionId = isset($_GET['version_id']) ? (int)$_GET['version_id'] : null;
+            // --------------------
+
             $documentModel = new Document();
             $docInfo = $documentModel->getForDownload((int)$documentId, (int)$projectId, $versionId);
 
@@ -407,7 +424,7 @@ class DocumentController {
             header('Expires: 0');
             
             $buffer = 64 * 1024; 
-            $aborted = false; // Variable para controlar si el usuario cancela
+            $aborted = false; 
 
             // Bucle de streaming
             while (!feof($fp) && ($p = ftell($fp)) <= $end) {
@@ -417,11 +434,10 @@ class DocumentController {
                 set_time_limit(0); 
                 echo fread($fp, $buffer);
                 
-                // Forzamos a PHP a empujar los datos por la red para que detecte si el cliente se ha desconectado
+                // Forzamos a PHP a empujar los datos por la red
                 ob_flush(); 
                 flush(); 
                 
-                // Si el usuario le dio a "Cancelar descarga" o cerró la pestaña
                 if (connection_aborted()) {
                     $aborted = true;
                     break;
@@ -430,19 +446,18 @@ class DocumentController {
 
             fclose($fp);
 
-            // --- AUDITORÍA (Solo si la descarga/visualización se completó con éxito) ---
+            // --- AUDITORÍA ---
             $isChunked = isset($_SERVER['HTTP_RANGE']);
             $isFirstChunk = $isChunked ? (strpos($_SERVER['HTTP_RANGE'], 'bytes=0-') !== false) : true;
 
             if (!$aborted && $isFirstChunk) {
                 $actionKey = ($disposition === 'attachment') ? 'documento_descargado' : 'documento_visualizado';
                 
-                // Reconectamos a la base de datos para hacer el log de forma segura porque cerramos la sesión arriba
                 AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
-                    'nombre_archivo'           => $docInfo['file_name'],
-                    'numero_version'      => $docInfo['version_number'] ?? null,
+                    'nombre_archivo'        => $docInfo['file_name'],
+                    'numero_version'        => $docInfo['version_number'] ?? null,
                     'es_version_especifica' => $versionId ? true : false,
-                    'version_id'          => $versionId ?: ($docInfo['version_id'] ?? null)
+                    'version_id'            => $versionId ?: ($docInfo['version_id'] ?? null)
                 ]);
             }
             
@@ -452,5 +467,14 @@ class DocumentController {
             http_response_code(500);
             die("Error interno.");
         }
+    }
+
+    /** Helper privado para limpiar y formatear nombres */
+    private function sanitizeName($name) {
+        if (empty($name)) return '';
+        $name = trim($name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
+        return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }

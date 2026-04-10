@@ -7,9 +7,7 @@ require_once APP_PATH . '/Services/AuditLogger.php';
 
 class PasswordResetController
 {
-    /**
-     * Renderiza la vista de cambio de contraseña (GET /password/reset?token=...)
-     */
+    /** Renderiza la vista de cambio de contraseña (GET /password/reset?token=...) */
     public function showResetForm()
     {
         $token = $_GET['token'] ?? null;
@@ -35,10 +33,18 @@ class PasswordResetController
     {
         header('Content-Type: application/json');
         $input = json_decode(file_get_contents('php://input'), true);
-        $email = $input['email'] ?? null;
+        
+        // --- SANITIZACIÓN ---
+        $email = isset($input['email']) ? strtolower(trim($input['email'])) : null;
+        // --------------------
 
-        if (!$email) {
+        if (empty($email)) {
             echo json_encode(['success' => false, 'message' => 'El email es obligatorio.']);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'message' => 'El formato del email no es válido.']);
             return;
         }
 

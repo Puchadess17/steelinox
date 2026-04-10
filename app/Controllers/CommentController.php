@@ -25,6 +25,11 @@ class CommentController {
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
+            // --- SANITIZACIÓN BÁSICA DE RUTAS ---
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
+            // ------------------------------------
+
             // 1. Escudo de Autorización: ¿Tiene acceso al proyecto?
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
@@ -35,7 +40,7 @@ class CommentController {
 
             // 2. Escudo del Documento: ¿Existe y es visible para este usuario?
             $documentModel = new Document();
-            $docInfo = $documentModel->getForDownload((int)$documentId, (int)$projectId);
+            $docInfo = $documentModel->getForDownload($documentId, $projectId);
             
             if (!$docInfo) {
                 http_response_code(404);
@@ -57,7 +62,7 @@ class CommentController {
 
             // 3. Obtener el hilo de comentarios (filtrado o completo)
             $commentModel = new Comment();
-            $comments = $commentModel->getByDocument((int)$documentId, $versionId);
+            $comments = $commentModel->getByDocument($documentId, $versionId);
 
             echo json_encode([
                 'success' => true,
@@ -88,6 +93,11 @@ class CommentController {
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
+            // --- SANITIZACIÓN BÁSICA DE RUTAS ---
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
+            // ------------------------------------
+
             // Escudo de Autorización: ¿Tiene acceso al proyecto?
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
@@ -98,7 +108,7 @@ class CommentController {
 
             // Escudo del Documento: Recuperamos el docInfo (que incluye el current_version_id gracias al JOIN)
             $documentModel = new Document();
-            $docInfo = $documentModel->getForDownload((int)$documentId, (int)$projectId);
+            $docInfo = $documentModel->getForDownload($documentId, $projectId);
             
             if (!$docInfo) {
                 http_response_code(404);
@@ -115,9 +125,13 @@ class CommentController {
 
             // Procesar el texto del comentario
             $input = json_decode(file_get_contents('php://input'), true);
-            $body = isset($input['body']) ? trim($input['body']) : '';
+            $rawBody = isset($input['body']) ? $input['body'] : '';
 
-            if (empty($body)) {
+            // --- SANITIZACIÓN DE COMENTARIOS ---
+            $safeBody = $this->sanitizeCommentBody($rawBody);
+            // -----------------------------------
+
+            if (empty($safeBody)) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'errors' => ['body' => 'Campo requerido']]);
                 return;
@@ -131,7 +145,7 @@ class CommentController {
             if (!empty($input['version_id'])) {
                 // Verificar que esa versión pertenece REALMENTE a este documento
                 $stmtCheckVer = $db->prepare("SELECT id FROM document_versions WHERE id = :v_id AND document_id = :d_id");
-                $stmtCheckVer->execute(['v_id' => $input['version_id'], 'd_id' => $documentId]);
+                $stmtCheckVer->execute(['v_id' => (int)$input['version_id'], 'd_id' => $documentId]);
                 
                 if ($stmtCheckVer->fetchColumn()) {
                     $versionIdToSave = (int)$input['version_id'];
@@ -146,12 +160,10 @@ class CommentController {
                 $versionIdToSave = $stmtVer->fetchColumn();
             }
 
-            $safeBody = htmlspecialchars($body);
-
             // Inserción final con la versión correcta
             $newCommentId = $commentModel->create([
-                'project_id'          => (int)$projectId,
-                'document_id'         => (int)$documentId,
+                'project_id'          => $projectId,
+                'document_id'         => $documentId,
                 'document_version_id' => $versionIdToSave, 
                 'author_user_id'      => $userId,
                 'body'                => $safeBody
@@ -164,7 +176,7 @@ class CommentController {
                 AuditLogger::log('comentario_creado', 'comment', $newCommentId, $projectId, [
                     'documento_id'  => $documentId,
                     'version_id'   => $versionIdToSave,
-                    'body_snippet' => mb_substr($safeBody, 0, 50) . (mb_strlen($safeBody) > 50 ? '...' : '')
+                    'body_snippet' => mb_substr($safeBody, 0, 50, 'UTF-8') . (mb_strlen($safeBody, 'UTF-8') > 50 ? '...' : '')
                 ]);
 
                 http_response_code(200);
@@ -183,5 +195,26 @@ class CommentController {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
         }
+    }
+
+    /** Helper privado para limpiar y formatear comentarios largos
+     * Ej: "   hola, esto  es   un comentario " => "Hola, esto es un comentario"
+     */
+    private function sanitizeCommentBody($text) {
+        if (empty($text)) return '';
+        
+        // 1. Quitar espacios a los lados
+        $text = trim($text);
+        
+        // 2. Reemplazar múltiples espacios en el medio por uno solo
+        $text = preg_replace('/\s+/', ' ', $text);
+        
+        // 3. Forzar que la primera letra del comentario entero sea mayúscula (con soporte para tildes)
+        $firstChar = mb_substr($text, 0, 1, "UTF-8");
+        $restOfText = mb_substr($text, 1, null, "UTF-8");
+        $text = mb_strtoupper($firstChar, "UTF-8") . $restOfText;
+        
+        // 4. Protección extrema contra XSS antes de guardar en la DB
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     }
 }

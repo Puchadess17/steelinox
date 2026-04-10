@@ -3,7 +3,7 @@
 
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
-require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
+require_once APP_PATH . '/Services/AuditLogger.php';
 
 class CommercialController {
 
@@ -91,15 +91,20 @@ class CommercialController {
             $input = json_decode(file_get_contents('php://input'), true);
             $errors = [];
 
+            // --- SANITIZACIÓN PRE-VALIDACIÓN ---
+            $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+            $cleanEmail = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+            // -----------------------------------
+
             // 1. Validaciones obligatorias
-            if (empty($input['name'])) $errors['name'] = 'El nombre es obligatorio.';
-            if (empty($input['email']) || !filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
+            if (empty($cleanName)) $errors['name'] = 'El nombre es obligatorio.';
+            if (empty($cleanEmail) || !filter_var($cleanEmail, FILTER_VALIDATE_EMAIL)) {
                 $errors['email'] = 'El email es obligatorio y debe tener un formato válido.';
             }
             if (empty($input['password'])) {
                 $errors['password'] = 'La contraseña es obligatoria.';
             } else {
-                $pwdCheck = $this->validatePasswordPolicy($input['password'], $input['email'] ?? '');
+                $pwdCheck = $this->validatePasswordPolicy($input['password'], $cleanEmail);
                 if ($pwdCheck !== true) {
                     $errors['password'] = $pwdCheck;
                 }
@@ -107,7 +112,7 @@ class CommercialController {
 
             $userModel = new User();
             
-            if (!isset($errors['email']) && $userModel->emailExists($input['email'])) {
+            if (!isset($errors['email']) && $userModel->emailExists($cleanEmail)) {
                 $errors['email'] = 'Este correo electrónico ya está registrado en el sistema.';
             }
 
@@ -124,8 +129,8 @@ class CommercialController {
             // Forzando el rol 'comercial'
             $newUserId = $userModel->createInternalUser([
                 'role'          => 'comercial',
-                'name'          => trim($input['name']),
-                'email'         => strtolower(trim($input['email'])),
+                'name'          => $cleanName,
+                'email'         => $cleanEmail,
                 'password_hash' => $hashedPassword,
                 'is_active'     => $isActive
             ]);
@@ -133,8 +138,8 @@ class CommercialController {
             // AUDITORÍA: Alta de comercial
             AuditLogger::log('usuario_creado', 'user', $newUserId, null, [
                 'role'      => 'comercial',
-                'nombre'      => trim($input['name']),
-                'email'     => strtolower(trim($input['email'])),
+                'nombre'    => $cleanName,
+                'email'     => $cleanEmail,
                 'es_activo' => $isActive
             ]);
 
@@ -173,11 +178,6 @@ class CommercialController {
             $input = json_decode(file_get_contents('php://input'), true);
             $errors = [];
 
-            if (empty($input['name'])) $errors['name'] = 'El nombre es obligatorio.';
-            if (empty($input['email']) || !filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
-                $errors['email'] = 'El email es obligatorio y válido.';
-            }
-
             $userModel = new User();
 
             // Obtenemos los datos ANTES de actualizar para la auditoría
@@ -188,8 +188,18 @@ class CommercialController {
                 return;
             }
 
+            // --- SANITIZACIÓN AL ACTUALIZAR ---
+            $newName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+            $newEmail = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+            // ----------------------------------
+
+            if (empty($newName)) $errors['name'] = 'El nombre es obligatorio.';
+            if (empty($newEmail) || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                $errors['email'] = 'El email es obligatorio y válido.';
+            }
+
             // Comprobar que el email no lo esté usando OTRO usuario
-            if (!isset($errors['email']) && $userModel->emailExists($input['email'], $id)) {
+            if (!isset($errors['email']) && $userModel->emailExists($newEmail, $id)) {
                 $errors['email'] = 'Este correo electrónico ya pertenece a otra cuenta.';
             }
 
@@ -203,8 +213,8 @@ class CommercialController {
             $hashedPassword = null;
             $passwordChanged = false;
             if (!empty($input['password'])) {
-                // Usamos el email nuevo si se envió, o el antiguo si no
-                $emailToCompare = !empty($input['email']) ? $input['email'] : $oldData['email'];
+                // Usamos el email nuevo sanitizado si se envió, o el antiguo si no
+                $emailToCompare = !empty($newEmail) ? $newEmail : $oldData['email'];
                 
                 $pwdCheck = $this->validatePasswordPolicy($input['password'], $emailToCompare);
                 if ($pwdCheck !== true) {
@@ -217,23 +227,21 @@ class CommercialController {
                 $passwordChanged = true;
             }
 
-            $newName = trim($input['name']);
-            $newEmail = strtolower(trim($input['email']));
             $newIsActive = isset($input['is_active']) ? (int)$input['is_active'] : (int)$oldData['is_active'];
 
             // Preparar el array de cambios para la auditoría
             $changes = [];
             if ($oldData['name'] !== $newName) {
-                $changes['name'] = ['before' => $oldData['name'], 'after' => $newName];
+                $changes['name'] = ['antes' => $oldData['name'], 'despues' => $newName];
             }
             if ($oldData['email'] !== $newEmail) {
-                $changes['email'] = ['before' => $oldData['email'], 'after' => $newEmail];
+                $changes['email'] = ['antes' => $oldData['email'], 'despues' => $newEmail];
             }
             if ((int)$oldData['is_active'] !== $newIsActive) {
-                $changes['is_active'] = ['before' => (int)$oldData['is_active'], 'after' => $newIsActive];
+                $changes['is_active'] = ['antes' => (int)$oldData['is_active'], 'despues' => $newIsActive];
             }
             if ($passwordChanged) {
-                $changes['password'] = 'changed'; // Dejamos constancia sin revelar la contraseña
+                $changes['password'] = 'cambiada'; // Dejamos constancia sin revelar la contraseña
             }
 
             // Actualizar en base de datos
@@ -373,5 +381,14 @@ class CommercialController {
             }
         }
         return true;
+    }
+
+    /** Helper privado para limpiar y formatear nombres */
+    private function sanitizeName($name) {
+        if (empty($name)) return '';
+        $name = trim($name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
+        return $name;
     }
 }
