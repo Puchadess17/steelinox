@@ -234,8 +234,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `reset_token`, `reset_token_expires_at`, `is_active`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-09 13:11:12', '2026-03-26 17:18:25', '2026-04-09 13:11:12', NULL),
-(2, 1, 'cliente', 'Cliente Empresa demo', 'empresa@cliente.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-09 13:05:49', '2026-03-30 09:12:24', '2026-04-09 13:05:49', NULL);
+(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', NULL, NULL, 1, '2026-04-09 13:11:12', '2026-03-26 17:18:25', '2026-04-09 13:11:12', NULL),
+(2, 1, 'cliente', 'Cliente Empresa demo', 'empresa@cliente.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', NULL, NULL, 1, '2026-04-09 13:05:49', '2026-03-30 09:12:24', '2026-04-09 13:05:49', NULL);
 
 --
 -- Índices para tablas volcadas

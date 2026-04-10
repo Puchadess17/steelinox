@@ -30,9 +30,7 @@ class PasswordResetController
         require_once APP_PATH . '/Views/reset_password.php';
     }
 
-    /**
-     * Procesa la solicitud de envío de email (POST /api/password/forgot)
-     */
+    /** Procesa la solicitud de envío de email (POST /api/password/forgot) */
     public function sendResetEmail()
     {
         header('Content-Type: application/json');
@@ -98,9 +96,7 @@ class PasswordResetController
         }
     }
 
-    /**
-     * Procesa el cambio real de contraseña (POST /api/password/reset)
-     */
+    /** Procesa el cambio real de contraseña (POST /api/password/reset) */
     public function resetPassword()
     {
         header('Content-Type: application/json');
@@ -122,6 +118,19 @@ class PasswordResetController
             return;
         }
 
+        // --- ESCUDO DE POLÍTICA DE CONTRASEÑAS ---
+        $pwdCheck = $this->validatePasswordPolicy($password, $user['email']);
+        if ($pwdCheck !== true) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Error de validación', 
+                'errors'  => ['password' => $pwdCheck]
+            ]);
+            return;
+        }
+        // -----------------------------------------
+
         // Actualizar clave
         $hashed = password_hash($password, PASSWORD_DEFAULT);
         $updated = $userModel->update($user['id'], ['password_hash' => $hashed]);
@@ -136,5 +145,22 @@ class PasswordResetController
         } else {
             echo json_encode(['success' => false, 'message' => 'No se pudo actualizar la contraseña.']);
         }
+    }
+
+    /** Helper privado para validar la política de contraseñas */
+    private function validatePasswordPolicy($password, $email) {
+        if (strlen($password) < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+        if (!preg_match('/[A-Z]/', $password)) return 'La contraseña debe incluir al menos una letra mayúscula.';
+        if (!preg_match('/[a-z]/', $password)) return 'La contraseña debe incluir al menos una letra minúscula.';
+        if (!preg_match('/[0-9]/', $password)) return 'La contraseña debe incluir al menos un número.';
+        
+        if (!empty($email)) {
+            $emailPrefix = explode('@', $email)[0];
+            // strcasecmp compara sin importar mayúsculas/minúsculas
+            if (strcasecmp($password, $emailPrefix) === 0) {
+                return 'La contraseña no puede ser igual a la primera parte de tu correo electrónico.';
+            }
+        }
+        return true;
     }
 }

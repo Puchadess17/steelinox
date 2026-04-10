@@ -116,7 +116,14 @@ class UserController {
         } elseif (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $input['email'])) {
             $errors['email'] = 'El formato del email no es válido.';
         }
-        if (empty($input['password'])) $errors['password'] = 'La contraseña es obligatoria.';
+        if (empty($input['password'])) {
+            $errors['password'] = 'La contraseña es obligatoria.';
+        } else {
+            $pwdCheck = $this->validatePasswordPolicy($input['password'], $input['email'] ?? '');
+            if ($pwdCheck !== true) {
+                $errors['password'] = $pwdCheck;
+            }
+        }
         if (empty($input['client_id'])) $errors['client_id'] = 'ID de cliente obligatorio.';
 
         if (!empty($errors)) {
@@ -272,6 +279,15 @@ class UserController {
             }
 
             if (!empty($input['password'])) {
+                $emailToCompare = !empty($input['email']) ? $input['email'] : $user['email'];
+                $pwdCheck = $this->validatePasswordPolicy($input['password'], $emailToCompare);
+                
+                if ($pwdCheck !== true) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['password' => $pwdCheck]]);
+                    return;
+                }
+                
                 $updateData['password_hash'] = password_hash($input['password'], PASSWORD_DEFAULT);
                 $changes['password'] = 'cambiada';
             }
@@ -364,5 +380,21 @@ class UserController {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error al eliminar usuario.', 'data' => null, 'errors' => null]);
         }
+    }
+
+    /** Helper privado para validar la política de contraseñas */
+    private function validatePasswordPolicy($password, $email) {
+        if (strlen($password) < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+        if (!preg_match('/[A-Z]/', $password)) return 'La contraseña debe incluir al menos una letra mayúscula.';
+        if (!preg_match('/[a-z]/', $password)) return 'La contraseña debe incluir al menos una letra minúscula.';
+        if (!preg_match('/[0-9]/', $password)) return 'La contraseña debe incluir al menos un número.';
+        
+        if (!empty($email)) {
+            $emailPrefix = explode('@', $email)[0];
+            if (strcasecmp($password, $emailPrefix) === 0) {
+                return 'La contraseña no puede ser igual a la primera parte de tu correo electrónico.';
+            }
+        }
+        return true;
     }
 }

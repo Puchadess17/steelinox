@@ -96,8 +96,13 @@ class CommercialController {
             if (empty($input['email']) || !filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
                 $errors['email'] = 'El email es obligatorio y debe tener un formato válido.';
             }
-            if (empty($input['password']) || strlen($input['password']) < 6) {
-                $errors['password'] = 'La contraseña es obligatoria y debe tener al menos 6 caracteres.';
+            if (empty($input['password'])) {
+                $errors['password'] = 'La contraseña es obligatoria.';
+            } else {
+                $pwdCheck = $this->validatePasswordPolicy($input['password'], $input['email'] ?? '');
+                if ($pwdCheck !== true) {
+                    $errors['password'] = $pwdCheck;
+                }
             }
 
             $userModel = new User();
@@ -198,11 +203,16 @@ class CommercialController {
             $hashedPassword = null;
             $passwordChanged = false;
             if (!empty($input['password'])) {
-                if (strlen($input['password']) < 6) {
+                // Usamos el email nuevo si se envió, o el antiguo si no
+                $emailToCompare = !empty($input['email']) ? $input['email'] : $oldData['email'];
+                
+                $pwdCheck = $this->validatePasswordPolicy($input['password'], $emailToCompare);
+                if ($pwdCheck !== true) {
                     http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'errors' => ['password' => 'Mínimo 6 caracteres']]);
+                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'errors' => ['password' => $pwdCheck]]);
                     return;
                 }
+                
                 $hashedPassword = password_hash($input['password'], PASSWORD_DEFAULT);
                 $passwordChanged = true;
             }
@@ -346,5 +356,22 @@ class CommercialController {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
         }
+    }
+
+    /** Helper privado para validar la política de contraseñas */
+    private function validatePasswordPolicy($password, $email) {
+        if (strlen($password) < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+        if (!preg_match('/[A-Z]/', $password)) return 'La contraseña debe incluir al menos una letra mayúscula.';
+        if (!preg_match('/[a-z]/', $password)) return 'La contraseña debe incluir al menos una letra minúscula.';
+        if (!preg_match('/[0-9]/', $password)) return 'La contraseña debe incluir al menos un número.';
+        
+        if (!empty($email)) {
+            $emailPrefix = explode('@', $email)[0];
+            // strcasecmp compara sin importar mayúsculas/minúsculas (ej: Admin1234 == admin1234)
+            if (strcasecmp($password, $emailPrefix) === 0) {
+                return 'La contraseña no puede ser igual a la primera parte de tu correo electrónico.';
+            }
+        }
+        return true;
     }
 }
