@@ -54,12 +54,14 @@ SIModules.clientUsersAdmin = {
                                 <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Usuarios Cliente</h1>
                             </div>
                         </div>
+                        ${SIApp.user && SIApp.user.role !== 'cliente' ? `
                         <div class="flex items-center gap-2">
                             <button onclick="SIRouter.navigate('user-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                 Nuevo Usuario
                             </button>
                         </div>
+                        ` : ''}
                     </div>
 
                     <!-- KPI Grid -->
@@ -172,12 +174,14 @@ SIModules.clientUsersAdmin = {
                     </td>
                     <td class="px-6 py-4 text-right whitespace-nowrap">
                         <div class="flex items-center justify-end gap-1.5">
+                            ${SIApp.user && SIApp.user.role !== 'cliente' ? `
                             <a href="/steelinox/user/edit/${u.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </a>
                             <button onclick="SIModules.clientUsersAdmin._confirmDelete(${u.id}, '${SIApp.escapeHtml(u.name)}')" class="p-2 text-gray-400 hover:text-red-500 transition-all hover:scale-110" title="Eliminar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -216,6 +220,7 @@ SIModules.clientUsersAdmin = {
                         Último acceso: ${lastAccessText}
                     </div>
                 </div>
+                ${SIApp.user && SIApp.user.role !== 'cliente' ? `
                 <div class="mt-auto px-5 pb-4 pt-1 flex justify-center gap-2 border-t border-gray-50">
                     <a href="/steelinox/user/edit/${u.id}" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
@@ -226,6 +231,7 @@ SIModules.clientUsersAdmin = {
                         Eliminar
                     </button>
                 </div>
+                ` : ''}
             </div>
             `;
         }).join('');
@@ -258,9 +264,11 @@ SIModules.clientUsersAdmin = {
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('last_login_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Último Acceso ${this._getSortIcon('last_login_at')}</span>
                             </th>
+                            ${SIApp.user && SIApp.user.role !== 'cliente' ? `
                             <th class="px-6 py-4 text-right w-32">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Acciones</span>
                             </th>
+                            ` : ''}
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/50">

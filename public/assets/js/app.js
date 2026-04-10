@@ -6,6 +6,16 @@
 const SIApp = {
     user: null,
 
+    constants: {
+        regex: {
+            PRJ: /^PRJ-\d{4}-\d{4,4}$/,
+            CLI: /^CLI-\d{4}$/,
+            EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            PASSWORD: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/
+        }
+    },
+
+
     /** Iniciar la aplicación */
     async init() {
         // 1. Verificar sesión local
@@ -151,6 +161,133 @@ const SIApp = {
     // ──────────────────────────────────────
     // UTILIDADES
     // ──────────────────────────────────────
+
+    /**
+     * Valida un campo en tiempo real y muestra feedback visual.
+     * @param {HTMLElement} inputEl 
+     * @param {RegExp} regex 
+     * @param {string} errorMsg 
+     * @returns {boolean}
+     */
+    validateField(inputEl, validation, errorMsg) {
+        if (!inputEl) return true;
+        
+        const val = inputEl.value.trim();
+        let isValid = true;
+
+        if (typeof validation === 'function') {
+            isValid = val === '' || validation(val);
+        } else if (validation instanceof RegExp) {
+            isValid = val === '' || validation.test(val);
+        } else if (typeof validation === 'boolean') {
+            isValid = validation;
+        }
+        
+        let errorEl = inputEl.parentNode.querySelector('.si-field-error');
+        if (!errorEl) {
+            errorEl = document.createElement('p');
+            errorEl.className = 'si-field-error text-[10px] font-bold text-red-500 mt-1 ml-1 animate-in fade-in slide-in-from-top-1 duration-200';
+            inputEl.parentNode.appendChild(errorEl);
+        }
+
+        if (!isValid) {
+            inputEl.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
+            inputEl.classList.remove('border-gray-100', 'focus:border-orange-500', 'focus:ring-orange-500/10');
+            errorEl.textContent = errorMsg;
+            errorEl.classList.remove('hidden');
+        } else {
+            inputEl.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
+            inputEl.classList.add('border-gray-100', 'focus:border-orange-500', 'focus:ring-orange-500/10');
+            errorEl.classList.add('hidden');
+        }
+
+        return isValid;
+    },
+
+    /**
+     * Alerta visual (Eye Icon) para campos de contraseña.
+     * @param {HTMLElement} btnEl El botón que recibe el click
+     */
+    togglePasswordVisibility(btnEl) {
+        if (!btnEl) return;
+        const input = btnEl.parentNode.querySelector('input');
+        if (!input) return;
+
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+
+        const eyeOpen = btnEl.querySelector('.eye-open');
+        const eyeClosed = btnEl.querySelector('.eye-closed');
+
+        if (eyeOpen) eyeOpen.classList.toggle('hidden', !isPass);
+        if (eyeClosed) eyeClosed.classList.toggle('hidden', isPass);
+    },
+
+    /**
+     * Validación detallada de contraseñas con indicadores visuales x/tick.
+     * @param {HTMLElement} inputEl 
+     */
+    validatePasswordRequirements(inputEl) {
+        if (!inputEl) return;
+        
+        const pwd = inputEl.value;
+        const form = inputEl.closest('form') || document;
+        const emailInput = form.querySelector('[name="email"], #user-email');
+        const emailVal = emailInput ? emailInput.value.trim() : '';
+        const emailPrefix = emailVal.split('@')[0].toLowerCase();
+
+        const requirements = [
+            { id: 'req-len', label: 'Mínimo 8 caracteres', check: pwd.length >= 8 },
+            { id: 'req-let', label: 'Al menos una letra', check: /[A-Za-z]/.test(pwd) },
+            { id: 'req-num', label: 'Al menos un número', check: /\d/.test(pwd) }
+        ];
+
+        // Solo añadir requisito de email si el email tiene longitud suficiente
+        if (emailPrefix.length >= 3) {
+            requirements.push({ 
+                id: 'req-eml', 
+                label: 'No empezar por tu email', 
+                check: !pwd.toLowerCase().startsWith(emailPrefix) 
+            });
+        }
+
+        // Crear/Obtener contenedor de requisitos
+        let container = inputEl.parentNode.querySelector('.si-pwd-requirements');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'si-pwd-requirements mt-2 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200';
+            inputEl.parentNode.appendChild(container);
+        }
+
+        // Renderizar/Actualizar requisitos
+        container.innerHTML = requirements.map(req => `
+            <div id="${req.id}" class="flex items-center gap-2 transition-colors duration-200 ${req.check ? 'text-emerald-500' : 'text-gray-400'}">
+                <span class="shrink-0">
+                    ${req.check ? 
+                        `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>` : 
+                        `<svg class="w-3.5 h-3.5 ${pwd.length > 0 ? 'text-red-300' : 'text-gray-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>`
+                    }
+                </span>
+                <span class="text-[10px] font-bold uppercase tracking-wide italic leading-none">${req.label}</span>
+            </div>
+        `).join('');
+
+        // Actualizar borde del input basado en si todo se cumple
+        const allValid = requirements.every(r => r.check);
+        if (pwd.length > 0) {
+            if (allValid) {
+                inputEl.classList.remove('border-red-500', 'focus:ring-red-500/10');
+                inputEl.classList.add('border-emerald-500', 'focus:ring-emerald-500/10');
+            } else {
+                inputEl.classList.remove('border-emerald-500', 'focus:ring-emerald-500/10');
+                inputEl.classList.add('border-red-500', 'focus:ring-red-500/10');
+            }
+        } else {
+            inputEl.classList.remove('border-red-500', 'focus:ring-red-500/10', 'border-emerald-500', 'focus:ring-emerald-500/10');
+        }
+
+        return allValid;
+    },
 
     /** Formatear fecha */
     formatDate(dateStr) {

@@ -621,14 +621,35 @@ SIModules.clientDetailAdmin = {
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Email</label>
-                                <input type="email" id="user-email" name="email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="ejemplo@empresa.com">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Email <span class="text-red-500">*</span></label>
+                                <input type="email" id="user-email" name="email" required 
+                                    oninput="SIApp.validateField(this, SIApp.constants.regex.EMAIL, 'Email no válido')"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="ejemplo@empresa.com">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Contraseña</label>
-                                <input type="password" id="user-password" name="password" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Dejar en blanco para no cambiar (si edita)">
-                                <p class="text-[10px] text-gray-400 mt-1 font-medium">Requerida para nuevos usuarios.</p>
+                                <div class="relative">
+                                    <input type="password" id="user-password" name="password" 
+                                        oninput="const hint = document.getElementById('user-password-hint'); if(hint) { if(this.value.length > 0) hint.classList.add('hidden'); else hint.classList.remove('hidden'); }; SIApp.validatePasswordRequirements(this);"
+                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="">
+                                    <button type="button" 
+                                        onclick="SIApp.togglePasswordVisibility(this)"
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                                        <span class="eye-open">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </span>
+                                        <span class="eye-closed hidden">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                            </svg>
+                                        </span>
+                                    </button>
+                                </div>
+                                <p id="user-password-hint" class="text-[10px] text-gray-400 mt-1 font-medium italic">Solo rellena este campo si deseas cambiar la contraseña actual.</p>
                             </div>
 
                             <div class="flex items-center gap-2 mt-2">
@@ -1009,7 +1030,7 @@ SIModules.clientDetailAdmin = {
             document.getElementById('user-is-active').checked = user.is_active == 1 || user.is_active === true;
             document.getElementById('user-password').required = false;
         } else {
-            title.textContent = 'Añadir Usuario';
+            document.getElementById('user-password-hint').classList.remove('hidden');
             document.getElementById('user-id').value = '';
             document.getElementById('user-is-active').checked = true;
             document.getElementById('user-password').required = true;
@@ -1051,7 +1072,7 @@ SIModules.clientDetailAdmin = {
         }
 
         // Email Validation (Format)
-        const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const regexEmail = SIApp.constants.regex.EMAIL;
         if (!regexEmail.test(payload.email)) {
             if (window.SIApp) SIApp.showToast('Email no válido', 'Por favor, ingrese un correo electrónico con formato correcto.', 'error');
             return;

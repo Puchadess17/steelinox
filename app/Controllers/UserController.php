@@ -16,11 +16,8 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'errors' => ['role' => 'Privilegios insuficientes']]);
-            return;
-        }
+        // Los clientes pueden ver el listado, se filtrará en el modelo
+
 
         try {
             $userModel = new User();
@@ -54,11 +51,8 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado']);
-            return;
-        }
+        // Los clientes pueden ver detalles de sus propios compañeros
+
 
         try {
             $userModel = new User();

@@ -296,6 +296,10 @@ class User
                         WHERE pu.user_id = :user_id AND p.deleted_at IS NULL
                       ))";
             $params['user_id'] = $actorUserId;
+        } elseif ($actorRole === 'cliente') {
+            // Un cliente solo puede ver usuarios de SU MISMA empresa
+            $sql .= " AND c.id = (SELECT client_id FROM users WHERE id = :user_id)";
+            $params['user_id'] = $actorUserId;
         }
 
         $sql .= " ORDER BY u.created_at DESC";

@@ -76,10 +76,6 @@ const SIRouter = {
         // --- LA MAGIA NUEVA ---
         // Si la URL empieza por "project/", le decimos al router que cargue la vista 'project-detail'
         if (cleanPath.startsWith('project/')) {
-            const user = Auth.getUser();
-            if (user && user.role === 'cliente') {
-                return 'project-detail-cliente';
-            }
             return 'project-detail';
         }
 
@@ -112,8 +108,8 @@ const SIRouter = {
         this.routes = {
             'dashboard': { module: 'dashboard', method: 'loadDashboardAuto', roles: ['admin', 'comercial', 'cliente'], title: 'Panel General' },
             'clients': { module: 'dashboard', method: 'loadClientsList', roles: ['admin', 'comercial'], title: 'Clientes' },
-            'project-detail': { module: 'projectDetailAdmin', method: 'loadProjectDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Proyecto' },
-            'project-detail-cliente': { module: 'projects', method: 'loadProjectDetail', roles: ['cliente'], title: 'Detalle del Proyecto' },
+            'projects': { module: 'dashboard', method: 'loadProjectsList', roles: ['admin', 'comercial', 'cliente'], title: 'Proyectos' },
+            'project-detail': { module: 'projectDetailAdmin', method: 'loadProjectDetailSPA', roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
             'client-detail': { module: 'clientDetailAdmin', method: 'loadClientDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Cliente' },
             'client-new': { module: 'clientFormAdmin', method: 'loadCreateSPA', roles: ['admin', 'comercial'], title: 'Nuevo Cliente' },
             'client-edit': { module: 'clientFormAdmin', method: 'loadEditSPA', roles: ['admin', 'comercial'], title: 'Editar Cliente' },
@@ -123,7 +119,7 @@ const SIRouter = {
             'commercial-new': { module: 'commercialFormAdmin', method: 'loadCreateSPA', roles: ['admin'], title: 'Nuevo Comercial' },
             'commercial-edit': { module: 'commercialFormAdmin', method: 'loadEditSPA', roles: ['admin'], title: 'Editar Comercial' },
 
-            'users': { module: 'clientUsersAdmin', method: 'loadList', roles: ['admin', 'comercial'], title: 'Usuarios Cliente' },
+            'users': { module: 'clientUsersAdmin', method: 'loadList', roles: ['admin', 'comercial', 'cliente'], title: 'Usuarios Cliente' },
             'user-new': { module: 'clientUserFormAdmin', method: 'loadCreateSPA', roles: ['admin', 'comercial'], title: 'Nuevo Usuario Cliente' },
             'user-edit': { module: 'clientUserFormAdmin', method: 'loadEditSPA', roles: ['admin', 'comercial'], title: 'Editar Usuario Cliente' },
 

@@ -151,8 +151,10 @@ SIModules.clientFormAdmin = {
                                             <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                                                 <span class="text-gray-400 font-black">#</span> Referencia Interna <span class="text-red-500">*</span>
                                             </label>
-                                            <input type="text" id="fc-reference" value="${this.clientData.reference || ''}" class="w-full bg-transparent border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all" required placeholder="Ej. CLI-2026-089">
-                                            <p class="text-[10px] text-gray-400 mt-2 font-medium">Código único de seguimiento (CLI-XXX).</p>
+                                            <input type="text" id="fc-reference" value="${this.clientData.reference || ''}" 
+                                                   oninput="SIApp.validateField(this, SIApp.constants.regex.CLI, 'Formato inválido: CLI-XXXX')"
+                                                   class="w-full bg-transparent border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all" required placeholder="Ej. CLI-0089">
+                                            <p class="text-[10px] text-gray-400 mt-2 font-medium">Código único de seguimiento (CLI-XXXX).</p>
                                         </div>
                                         ` : ''}
                                     </div>
@@ -254,7 +256,7 @@ SIModules.clientFormAdmin = {
             // Solo incluimos y validamos referencia si estamos en modo edición
             if (this.mode === 'edit') {
                 data.reference = document.getElementById('fc-reference').value;
-                const regexRef = /^CLI-\d{4}$/;
+                const regexRef = SIApp.constants.regex.CLI;
                 if (!regexRef.test(data.reference)) {
                     if (window.SIApp) SIApp.showToast('Error de Formato', 'La referencia debe ser CLI-XXXX (Ej: CLI-0001)', 'error');
                     btn.innerHTML = originalHtml;

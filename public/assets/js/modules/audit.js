@@ -55,7 +55,7 @@ window.SIModules.audit = {
                 const id = instance.element.id;
                 if (id === 'filter-start') this.filters.date_start = dateStr;
                 if (id === 'filter-end') this.filters.date_end = dateStr;
-                this.loadLogs();
+                this._updateFilterButtonVisibility();
             }
         };
 
@@ -452,6 +452,14 @@ window.SIModules.audit = {
                         </div>
 
                     </div>
+
+                    <!-- BOTÓN DE ACCIÓN (Solo visible si hay filtros) -->
+                    <div id="filter-action-container" class="hidden mt-8 pt-8 border-t border-gray-50 flex justify-center animate-in fade-in slide-in-from-top-4 duration-300">
+                        <button onclick="window.SIModules.audit.loadLogs()" class="px-10 py-4 bg-[#1a1b25] hover:bg-[#2a2b35] text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-xl shadow-gray-200 flex items-center gap-3 active:scale-95 group">
+                            <svg class="w-4 h-4 text-orange-500 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            Filtrar Resultados
+                        </button>
+                    </div>
                 </div>
 
                 <!-- LISTADO -->
@@ -522,7 +530,10 @@ window.SIModules.audit = {
         if (this.fpStart) this.fpStart.clear();
         if (this.fpEnd) this.fpEnd.clear();
 
-        // 4. Recargar logs
+        // 4. Actualizar visibilidad
+        this._updateFilterButtonVisibility();
+
+        // 5. Recargar logs
         this.loadLogs();
         
         SIApp.showToast('Filtros limpiados', 'Se han restablecido todos los criterios de búsqueda.', 'info');
@@ -533,7 +544,20 @@ window.SIModules.audit = {
         document.getElementById(`label-${filterKey}`).textContent = label;
         document.getElementById(`drop-${filterKey}`).classList.add('hidden');
         document.getElementById(`btn-drop-${filterKey}`).querySelector('svg').style.transform = 'rotate(0deg)';
-        this.loadLogs();
+        
+        this._updateFilterButtonVisibility();
+    },
+
+    _updateFilterButtonVisibility() {
+        const hasFilters = Object.values(this.filters).some(v => v !== '');
+        const container = document.getElementById('filter-action-container');
+        if (container) {
+            if (hasFilters) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
     },
 
     _populateCustomDropdown(key, items, defaultLabel, isFiltering = false) {
