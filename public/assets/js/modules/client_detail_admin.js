@@ -659,14 +659,10 @@ SIModules.clientDetailAdmin = {
                     <div class="p-6 overflow-y-auto">
                         <form id="project-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveProject();" class="space-y-4">
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
                                     <input type="text" id="project-name" name="name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Nave Industrial">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
-                                    <input type="text" id="project-ref" name="reference" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: PRJ-2026-001">
                                 </div>
                             </div>
                             
@@ -1183,20 +1179,12 @@ SIModules.clientDetailAdmin = {
         const payload = {
             client_id: this.clientId,
             name: document.getElementById('project-name').value,
-            reference: document.getElementById('project-ref').value,
             budget_amount: document.getElementById('project-budget').value || null,
             surface: document.getElementById('project-surface').value || null,
             project_type: document.getElementById('project-type').value || null,
             status: document.getElementById('project-status').value || 'propuesta',
             description: document.getElementById('project-desc').value || null
         };
-
-        // Regex Validation (Projects are always new in this modal)
-        const regexPrj = /^PRJ-\d{4}-\d{3,}$/;
-        if (!regexPrj.test(payload.reference)) {
-            if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXX (Ej: PRJ-2026-001)', 'error');
-            return;
-        }
 
         spinner.classList.remove('hidden');
         spinner.classList.add('animate-spin');

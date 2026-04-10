@@ -2495,9 +2495,9 @@ SIModules.projectDetailAdmin = {
             if (data.surface === '') data.surface = null;
 
             // Project Reference Validation
-            const regexPrj = /^PRJ-\d{4}-\d{3,}$/;
+            const regexPrj = /^PRJ-\d{4}-\d{4}$/;
             if (!regexPrj.test(data.reference)) {
-                if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXX (Ej: PRJ-2026-001)', 'error');
+                if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXXX (Ej: PRJ-2026-0001)', 'error');
                 btn.innerHTML = oldText;
                 btn.disabled = false;
                 return;
