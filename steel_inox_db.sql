@@ -67,13 +67,7 @@ INSERT INTO `clients` (`id`, `name`, `reference`, `is_active`, `created_by`, `cr
 (2, 'Nike S.L.', 'CLI-033', 0, 1, '2026-04-08 09:15:52', '2026-04-08 11:37:04', NULL),
 (3, 'dsfa', 'CLI-145', 1, 1, '2026-04-08 16:22:52', '2026-04-08 16:23:11', NULL),
 (4, 'Cliente 1', 'CLI-147', 1, 1, '2026-04-09 09:17:39', '2026-04-09 09:17:39', NULL),
-(5, 'Cliente 2', 'CLI-847', 1, 1, '2026-04-09 09:17:49', '2026-04-09 09:17:49', NULL),
-(6, 'Cliente 3', 'CLI-947', 1, 1, '2026-04-09 09:18:02', '2026-04-09 09:18:02', NULL),
-(7, 'Cliente 5', 'CLI-645', 1, 1, '2026-04-09 09:18:14', '2026-04-09 09:18:14', NULL),
-(8, 'Cliente 6', 'CLI-341', 1, 1, '2026-04-09 09:18:27', '2026-04-09 09:18:27', NULL),
-(9, 'Cliente 9', 'CLI-419', 1, 1, '2026-04-09 09:18:50', '2026-04-09 09:18:50', NULL),
-(10, 'Cliente 10', 'CLI-390', 1, 1, '2026-04-09 09:19:02', '2026-04-09 09:19:02', NULL),
-(11, 'Cliente 15', 'CLI-211', 1, 1, '2026-04-09 09:19:12', '2026-04-09 09:19:12', NULL);
+(5, 'Cliente 2', 'CLI-847', 1, 1, '2026-04-09 09:17:49', '2026-04-09 09:17:49', NULL);
 
 -- --------------------------------------------------------
 
@@ -241,8 +235,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `reset_token`, `reset_token_expires_at`, `is_active`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-09 13:11:12', '2026-03-26 17:18:25', '2026-04-09 13:11:12', NULL),
-(2, 1, 'cliente', 'Cliente Empresa demo', 'empresa@cliente.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-09 13:05:49', '2026-03-30 09:12:24', '2026-04-09 13:05:49', NULL),
-(3, 3, 'cliente', 'Kontakt', 'kontakt@email.com', '$2y$12$wQP96UhX8GHBLVWmiN4NIed4/Q2tNk9KMxGVuJ1YiAbwVL1IS2u9y', NULL, NULL, 1, '2026-04-09 13:05:32', '2026-04-08 16:23:48', '2026-04-09 13:05:32', NULL);
+(2, 1, 'cliente', 'Cliente Empresa demo', 'empresa@cliente.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, NULL, 1, '2026-04-09 13:05:49', '2026-03-30 09:12:24', '2026-04-09 13:05:49', NULL);
 
 --
 -- Índices para tablas volcadas
