@@ -15,7 +15,7 @@ class Client
     public function getListByUser($userId, $role, $limit = 15, $offset = 0, $filters = [])
     {
         if ($role === 'cliente') {
-            return ['total' => 0, 'data' => []];
+            return ['total' => 0, 'data' => [], 'kpis' => []];
         }
 
         $params = [];
@@ -50,6 +50,19 @@ class Client
             $params['status'] = $isActive;
         }
 
+        // --- 3. ORDENACIÓN DINÁMICA (Blindaje contra Inyección SQL) ---
+        $allowedSortColumns = ['name', 'reference', 'projects_count', 'users_count', 'created_at'];
+        $sortBy = isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns) ? $filters['sort_by'] : 'created_at';
+        $sortDir = isset($filters['sort_dir']) && strtoupper($filters['sort_dir']) === 'ASC' ? 'ASC' : 'DESC';
+
+        // Añadimos el prefijo 'c.' para evitar ambigüedades en la query del comercial
+        $orderBy = $sortBy;
+        if ($role === 'comercial' && in_array($sortBy, ['name', 'reference', 'created_at'])) {
+            $orderBy = "c." . $sortBy;
+        }
+        $orderByClause = "ORDER BY $orderBy $sortDir";
+        // --------------------------------------------------------------
+
         $whereSql = "WHERE " . implode(" AND ", $where);
 
         if ($role === 'admin') {
@@ -59,7 +72,7 @@ class Client
                                (SELECT COUNT(*) FROM users WHERE client_id = clients.id AND deleted_at IS NULL) as users_count
                         FROM clients 
                         $whereSql 
-                        ORDER BY created_at DESC
+                        $orderByClause
                         LIMIT :limit OFFSET :offset";
 
         } else {
@@ -77,7 +90,7 @@ class Client
                         LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
                         LEFT JOIN project_user pu ON p.id = pu.project_id
                         $whereSql
-                        ORDER BY c.created_at DESC
+                        $orderByClause
                         LIMIT :limit OFFSET :offset";
         }
 
@@ -97,7 +110,7 @@ class Client
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();
 
-        // 3. KPIs Globales
+        // 4. KPIs Globales
         $kpiSql = "SELECT COUNT(*) as total,
                           SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as new_this_month,
                           (SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL " . ($role === 'comercial' ? "AND id IN (SELECT project_id FROM project_user WHERE user_id = :kpi_user_id)" : "") . ") as total_projects,
@@ -123,7 +136,7 @@ class Client
                 'totalProjects' => (int)($kpis['total_projects'] ?? 0),
                 'totalUsers'    => (int)($kpis['total_users'] ?? 0)
             ],
-            'data' => $stmtData->fetchAll()
+            'data' => $stmtData->fetchAll(PDO::FETCH_ASSOC)
         ];
     }
 

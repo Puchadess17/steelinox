@@ -31,21 +31,26 @@ class ClientController {
             // 1. Extraemos los parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Extraemos filtros extra
+            // 2. Extraemos filtros extra y parámetros de ordenación
             $filters = [
-                'search' => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
-                'status' => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all'
+                'search'   => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
+                'status'   => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all',
+                'sort_by'  => isset($_GET['sort_by']) ? htmlspecialchars(trim($_GET['sort_by']), ENT_QUOTES, 'UTF-8') : 'created_at',
+                'sort_dir' => isset($_GET['sort_dir']) ? htmlspecialchars(trim($_GET['sort_dir']), ENT_QUOTES, 'UTF-8') : 'desc'
             ];
 
-            // 3. Pedimos los datos con los límites y filtros
+            // 3. Pedimos los datos con los límites, filtros y orden
             $clientModel = new Client();
             $result = $clientModel->getListByUser($userId, $role, $limit, $offset, $filters);
 
-            // 4. Devolvemos el JSON uniforme
+            // 4. Devolvemos el JSON uniforme CON LOS KPIs INCLUIDOS
             echo json_encode([
                 'success'    => true, 
                 'message'    => 'Listado de clientes recuperado', 
-                'data'       => $result['data'], 
+                'data'       => [
+                    'list' => $result['data'],
+                    'kpis' => $result['kpis'] // <-- Aquí están los datos para las 3 tarjetas
+                ], 
                 'pagination' => PaginationHelper::format($result['total'], $limit, $page),
                 'errors'     => null
             ]);
@@ -325,11 +330,21 @@ class ClientController {
         }
     }
 
+    /** Helper privado para limpiar y formatear nombres */
     private function sanitizeName($name) {
         if (empty($name)) return '';
+        
         $name = trim($name);
+        
+        // Reemplazar múltiples espacios en medio por un solo espacio
         $name = preg_replace('/\s+/', ' ', $name);
-        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
+        
+        // Poner SOLO la primera letra en mayúscula y respetar el resto
+        $firstChar = mb_strtoupper(mb_substr($name, 0, 1, "UTF-8"), "UTF-8");
+        $restOfText = mb_substr($name, 1, null, "UTF-8");
+        $name = $firstChar . $restOfText;
+        
+        // Sanitización XSS
         return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }
