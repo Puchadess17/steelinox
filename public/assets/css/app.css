@@ -175,27 +175,39 @@ body {
 
 /* Colores con bordes sutiles (Alineados con dropdown dots) */
 .badge-propuesta {
-    background-color: #fffbeb; /* amber-50 */
-    color: #b45309; /* amber-700 */
-    border-color: #fde68a; /* amber-200 */
+    background-color: #fffbeb;
+    /* amber-50 */
+    color: #b45309;
+    /* amber-700 */
+    border-color: #fde68a;
+    /* amber-200 */
 }
 
 .badge-aprobado {
-    background-color: #eff6ff; /* blue-50 */
-    color: #1d4ed8; /* blue-700 */
-    border-color: #bfdbfe; /* blue-200 */
+    background-color: #eff6ff;
+    /* blue-50 */
+    color: #1d4ed8;
+    /* blue-700 */
+    border-color: #bfdbfe;
+    /* blue-200 */
 }
 
 .badge-ejecucion {
-    background-color: #fff7ed; /* orange-50 */
-    color: #c2410c; /* orange-700 */
-    border-color: #fed7aa; /* orange-200 */
+    background-color: #fff7ed;
+    /* orange-50 */
+    color: #c2410c;
+    /* orange-700 */
+    border-color: #fed7aa;
+    /* orange-200 */
 }
 
 .badge-cerrado {
-    background-color: #ecfdf5; /* emerald-50 */
-    color: #047857; /* emerald-700 */
-    border-color: #a7f3d0; /* emerald-200 */
+    background-color: #ecfdf5;
+    /* emerald-50 */
+    color: #047857;
+    /* emerald-700 */
+    border-color: #a7f3d0;
+    /* emerald-200 */
 }
 
 .badge-activo {
@@ -317,8 +329,8 @@ body {
 
 /* --- Login page background --- */
 .login-bg {
-    background: linear-gradient(rgba(17, 24, 39, 0.4), rgba(17, 24, 39, 0.4)), 
-                url('/steelinox/public/assets/img/steel-inox-nosotros-v3.webp');
+    background: linear-gradient(rgba(17, 24, 39, 0.4), rgba(17, 24, 39, 0.4)),
+        url('/steelinox/public/assets/img/steel-inox-nosotros-v3.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -432,6 +444,7 @@ body {
     background-color: var(--si-primary);
     /* Naranja Steel Inox */
     color: white;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
 }
 
 /* --- Empty state --- */

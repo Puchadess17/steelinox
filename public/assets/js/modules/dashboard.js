@@ -64,7 +64,8 @@ SIModules.dashboard = {
         };
 
         this.adminProjects = projects; // Caché para buscador y filtros interactivos
-        this.currentAdminFilter = 'all';
+        
+        // El renderizado usará this.currentAdminFilter para poner la clase active
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -91,11 +92,11 @@ SIModules.dashboard = {
                     <!-- Fila de Tabs con scroll horizontal nativo -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-client tab-admin active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterAdmin('all', this)">Todos</button>
-                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterAdmin('propuesta', this)">Pendientes</button>
-                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterAdmin('aprobado', this)">Aprobados</button>
-                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterAdmin('ejecucion', this)">En Ejecución</button>
-                            <button class="tab-client tab-admin whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterAdmin('cerrado', this)">Cerrados</button>
+                            <button class="tab-client tab-admin ${this.currentAdminFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterAdmin('all', this)">Todos</button>
+                            <button class="tab-client tab-admin ${this.currentAdminFilter === 'propuesta' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterAdmin('propuesta', this)">Pendientes</button>
+                            <button class="tab-client tab-admin ${this.currentAdminFilter === 'aprobado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterAdmin('aprobado', this)">Aprobados</button>
+                            <button class="tab-client tab-admin ${this.currentAdminFilter === 'ejecucion' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterAdmin('ejecucion', this)">En Ejecución</button>
+                            <button class="tab-client tab-admin ${this.currentAdminFilter === 'cerrado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterAdmin('cerrado', this)">Cerrados</button>
                         </div>
                     </div>
 
@@ -221,11 +222,13 @@ SIModules.dashboard = {
 
     /** Filtro de tabs en panel administrador */
     _filterAdmin(status, btnElement) {
-        document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove('active'));
+        const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
+        document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove(...activeClasses));
+        
         if (btnElement) {
-            btnElement.classList.add('active');
+            btnElement.classList.add(...activeClasses);
         } else {
-            document.querySelector(`.tab-admin[data-filter="${status}"]`)?.classList.add('active');
+            document.querySelector(`.tab-admin[data-filter="${status}"]`)?.classList.add(...activeClasses);
         }
 
         this.currentAdminFilter = status;
@@ -280,8 +283,8 @@ SIModules.dashboard = {
 
         // Cachear datos para filtrado frontend
         this.commercialProjects = projects;
-        this.currentCommercialFilter = 'all';
-        this.currentCommercialSearch = '';
+        
+        // Se renderizará con ternario usando this.currentCommercialFilter
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -315,11 +318,11 @@ SIModules.dashboard = {
                     <!-- Fila de Tabs -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-commercial tab-client active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterCommercial('all', this)">Todos</button>
-                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterCommercial('propuesta', this)">Pendientes</button>
-                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterCommercial('aprobado', this)">Aprobados</button>
-                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterCommercial('ejecucion', this)">En Ejecución</button>
-                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterCommercial('cerrado', this)">Cerrados</button>
+                            <button class="tab-commercial tab-client ${this.currentCommercialFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterCommercial('all', this)">Todos</button>
+                            <button class="tab-commercial tab-client ${this.currentCommercialFilter === 'propuesta' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterCommercial('propuesta', this)">Pendientes</button>
+                            <button class="tab-commercial tab-client ${this.currentCommercialFilter === 'aprobado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterCommercial('aprobado', this)">Aprobados</button>
+                            <button class="tab-commercial tab-client ${this.currentCommercialFilter === 'ejecucion' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterCommercial('ejecucion', this)">En Ejecución</button>
+                            <button class="tab-commercial tab-client ${this.currentCommercialFilter === 'cerrado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterCommercial('cerrado', this)">Cerrados</button>
                         </div>
                     </div>
 
@@ -816,9 +819,9 @@ SIModules.dashboard = {
                     <!-- Fila de Tabs con scroll horizontal nativo -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'all' ? 'active' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClientsAdmin('all', this)">Todos</button>
-                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'activo' ? 'active' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.dashboard._filterClientsAdmin('activo', this)">Activos</button>
-                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'inactivo' ? 'active' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.dashboard._filterClientsAdmin('inactivo', this)">Inactivos</button>
+                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClientsAdmin('all', this)">Todos</button>
+                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'activo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.dashboard._filterClientsAdmin('activo', this)">Activos</button>
+                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'inactivo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.dashboard._filterClientsAdmin('inactivo', this)">Inactivos</button>
                         </div>
                     </div>
 
@@ -1024,8 +1027,10 @@ SIModules.dashboard = {
 
     /** Filtros para la vista de listado de clientes */
     _filterClientsAdmin(status, btnElement) {
-        document.querySelectorAll('.tab-admin-client').forEach(t => t.classList.remove('active'));
-        if (btnElement) btnElement.classList.add('active');
+        const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
+        document.querySelectorAll('.tab-admin-client').forEach(t => t.classList.remove(...activeClasses));
+        
+        if (btnElement) btnElement.classList.add(...activeClasses);
 
         this.currentClientFilter = status;
         this.currentClientPage = 1;
@@ -1097,11 +1102,11 @@ SIModules.dashboard = {
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'all' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterProjectsList('all', this)">Todos</button>
-                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'propuesta' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterProjectsList('propuesta', this)">Pendientes</button>
-                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'aprobado' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterProjectsList('aprobado', this)">Aprobados</button>
-                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'ejecucion' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterProjectsList('ejecucion', this)">En Ejecución</button>
-                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'cerrado' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterProjectsList('cerrado', this)">Cerrados</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterProjectsList('all', this)">Todos</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'propuesta' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterProjectsList('propuesta', this)">Pendientes</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'aprobado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterProjectsList('aprobado', this)">Aprobados</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'ejecucion' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterProjectsList('ejecucion', this)">En Ejecución</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'cerrado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterProjectsList('cerrado', this)">Cerrados</button>
                         </div>
                     </div>
 
@@ -1187,8 +1192,11 @@ SIModules.dashboard = {
     },
 
     _filterProjectsList(status, btn) {
-        document.querySelectorAll('.tab-proj-list').forEach(t => t.classList.remove('active'));
-        if (btn) btn.classList.add('active');
+        const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
+        document.querySelectorAll('.tab-proj-list').forEach(t => t.classList.remove(...activeClasses));
+        
+        if (btn) btn.classList.add(...activeClasses);
+        
         this.currentProjListFilter = status;
         this.currentProjListPage = 1;
         this.loadProjectsList();

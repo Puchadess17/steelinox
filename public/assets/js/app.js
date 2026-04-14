@@ -186,7 +186,7 @@ const SIApp = {
      */
     validateField(inputEl, validation, errorMsg) {
         if (!inputEl) return true;
-        
+
         const val = inputEl.value.trim();
         let isValid = true;
 
@@ -197,7 +197,7 @@ const SIApp = {
         } else if (typeof validation === 'boolean') {
             isValid = validation;
         }
-        
+
         let wrapper = inputEl.parentNode;
         if (wrapper.classList.contains('relative')) wrapper = wrapper.parentNode;
 
@@ -247,7 +247,7 @@ const SIApp = {
      */
     validatePasswordRequirements(inputEl) {
         if (!inputEl) return;
-        
+
         const pwd = inputEl.value;
         const form = inputEl.closest('form') || document;
         const emailInput = form.querySelector('[name="email"], #user-email');
@@ -263,10 +263,10 @@ const SIApp = {
 
         // Solo añadir requisito de email si el email tiene longitud suficiente
         if (emailPrefix.length >= 3) {
-            requirements.push({ 
-                id: 'req-eml', 
-                label: 'No empezar por tu email', 
-                check: pwd.length > 0 && !pwd.toLowerCase().startsWith(emailPrefix) 
+            requirements.push({
+                id: 'req-eml',
+                label: 'No empezar por tu email',
+                check: pwd.length > 0 && !pwd.toLowerCase().startsWith(emailPrefix)
             });
         }
 
@@ -285,10 +285,10 @@ const SIApp = {
         container.innerHTML = requirements.map(req => `
             <div id="${req.id}" class="flex items-center gap-2 transition-colors duration-200 ${req.check ? 'text-emerald-500' : 'text-gray-400'}">
                 <span class="shrink-0">
-                    ${req.check ? 
-                        `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>` : 
-                        `<svg class="w-3.5 h-3.5 ${pwd.length > 0 ? 'text-red-300' : 'text-gray-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>`
-                    }
+                    ${req.check ?
+                `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>` :
+                `<svg class="w-3.5 h-3.5 ${pwd.length > 0 ? 'text-red-300' : 'text-gray-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>`
+            }
                 </span>
                 <span class="text-[10px] font-bold uppercase tracking-wide italic leading-none">${req.label}</span>
             </div>
@@ -533,7 +533,7 @@ const SIApp = {
 
         // --- LÓGICA DE BOTONES NUMÉRICOS ---
         let buttons = [];
-        
+
         // Página 1 siempre
         buttons.push({ page: 1, active: cp === 1 });
 
@@ -572,10 +572,10 @@ const SIApp = {
             if (b.type === 'ellipsis') {
                 return `<span class="px-2 text-gray-400 font-bold">...</span>`;
             }
-            const activeClass = b.active 
-                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
+            const activeClass = b.active
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                 : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300';
-            
+
             return `
                 <button class="si-page-btn w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${activeClass}" 
                         data-page="${b.page}">
@@ -588,8 +588,11 @@ const SIApp = {
             <div class="flex flex-col lg:flex-row items-center justify-between gap-6 pt-6 border-t border-gray-100">
                 <!-- IZQUIERDA: Info de página y Salto Manual -->
                 <div class="order-3 lg:order-1 flex-1 flex items-center gap-4">
-                    <p class="text-[13px] font-medium text-gray-400 whitespace-nowrap">
-                        Página <span class="text-gray-900 font-bold">${cp}</span> de <span class="text-gray-900 font-bold">${tp}</span>
+                    <p class="text-[11px] sm:text-[13px] font-medium text-gray-400">
+                        <span class="hidden sm:inline">Mostrando página</span>
+                        <span class="sm:hidden">Pág.</span>
+                        <span class="text-gray-900 font-bold">${cp}</span> de <span class="text-gray-900 font-bold">${tp}</span>
+                        <span class="hidden md:inline text-gray-300 ml-1">(${pagination.total_results || 0} resultados en total)</span>
                     </p>
                     <div class="flex items-center gap-1.5 pl-4 border-l border-gray-100">
                         <input type="number" id="si-input-goto" 

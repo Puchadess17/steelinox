@@ -33,8 +33,14 @@ class UserController {
             // Extraemos los parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
+            // 2. Extraemos filtros extra
+            $filters = [
+                'search' => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
+                'status' => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all'
+            ];
+            
             $userModel = new User();
-            $result = $userModel->getClientUsersList($actorUserId, $actorRole, $limit, $offset);
+            $result = $userModel->getClientUsersList($actorUserId, $actorRole, $limit, $offset, $filters);
 
             echo json_encode([
                 'success' => true, 

@@ -33,9 +33,15 @@ class ProjectController
             // 1. Extraemos parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Extraemos datos y el total desde el modelo
+            // 2. Extraemos filtros extra
+            $filters = [
+                'search' => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
+                'status' => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all'
+            ];
+            
+            // 3. Extraemos datos y el total desde el modelo
             $projectModel = new Project();
-            $result = $projectModel->getListByUser($userId, $role, $clientId, $limit, $offset);
+            $result = $projectModel->getListByUser($userId, $role, $clientId, $limit, $offset, $filters);
 
             // 3. Devolvemos el JSON uniforme
             echo json_encode([

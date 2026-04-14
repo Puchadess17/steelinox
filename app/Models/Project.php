@@ -11,23 +11,38 @@ class Project {
     }
 
     // Lista de proyectos dashboard, filtrada por rol, usuario y paginada
-    public function getListByUser($userId, $role, $clientId, $limit = 15, $offset = 0) {
-        $baseWhere = "WHERE p.deleted_at IS NULL";
+    public function getListByUser($userId, $role, $clientId, $limit = 15, $offset = 0, $filters = []) {
+        $params = [];
+        $where = ["p.deleted_at IS NULL"];
 
         if ($role === 'cliente') {
-            $baseWhere .= " AND p.client_id = :client_id";
+            $where[] = "p.client_id = :client_id";
+            $params['client_id'] = $clientId;
         } elseif ($role === 'comercial') {
-            $baseWhere .= " AND p.id IN (SELECT project_id FROM project_user WHERE user_id = :user_id)";
+            $where[] = "p.id IN (SELECT project_id FROM project_user WHERE user_id = :user_id)";
+            $params['user_id'] = $userId;
         }
 
+        // 2. Filtros Externos (Search / Status)
+        if (!empty($filters['search'])) {
+            $q = "%" . $filters['search'] . "%";
+            $where[] = "(p.name LIKE :search1 OR p.reference LIKE :search2)";
+            $params['search1'] = $q;
+            $params['search2'] = $q;
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $where[] = "p.status = :status";
+            $params['status'] = $filters['status'];
+        }
+
+        $whereSql = "WHERE " . implode(" AND ", $where);
+
         // 1. Contar el total de registros
-        $countSql = "SELECT COUNT(*) FROM projects p " . $baseWhere;
+        $countSql = "SELECT COUNT(*) FROM projects p LEFT JOIN clients c ON p.client_id = c.id " . $whereSql;
         $stmtCount = $this->db->prepare($countSql);
-        
-        if ($role === 'cliente') {
-            $stmtCount->bindValue(':client_id', $clientId, PDO::PARAM_INT);
-        } elseif ($role === 'comercial') {
-            $stmtCount->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        foreach ($params as $key => $val) {
+            $stmtCount->bindValue(":$key", $val);
         }
         $stmtCount->execute();
         $total = (int)$stmtCount->fetchColumn();
@@ -36,16 +51,13 @@ class Project {
         $dataSql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name 
                     FROM projects p
                     LEFT JOIN clients c ON p.client_id = c.id
-                    $baseWhere
+                    $whereSql
                     ORDER BY p.created_at DESC
                     LIMIT :limit OFFSET :offset";
 
         $stmtData = $this->db->prepare($dataSql);
-        
-        if ($role === 'cliente') {
-            $stmtData->bindValue(':client_id', $clientId, PDO::PARAM_INT);
-        } elseif ($role === 'comercial') {
-            $stmtData->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        foreach ($params as $key => $val) {
+            $stmtData->bindValue(":$key", $val);
         }
         
         // Bindeamos los parámetros de paginación asegurando que son enteros

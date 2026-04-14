@@ -171,15 +171,40 @@ class User
     /** ---COMERCIALES--- */
 
     /** La lista de todos los comerciales, estadísticas y paginación */
-    public function getCommercialsWithStats($limit = 15, $offset = 0) {
+    public function getCommercialsWithStats($limit = 15, $offset = 0, $filters = []) {
+        $params = [];
+        $where = ["u.role = 'comercial' AND u.deleted_at IS NULL"];
+
+        // Filtros Externos (Search / Status)
+        if (!empty($filters['search'])) {
+            $q = "%" . $filters['search'] . "%";
+            $where[] = "(u.name LIKE :search1 OR u.email LIKE :search2)";
+            $params['search1'] = $q;
+            $params['search2'] = $q;
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $status = $filters['status'];
+            $isActive = ($status === 'activo' || $status === 'active') ? 1 : (($status === 'inactivo' || $status === 'inactive') ? 0 : null);
+            if ($isActive !== null) {
+                $where[] = "u.is_active = :status";
+                $params['status'] = $isActive;
+            }
+        }
+
+        $whereSql = "WHERE " . implode(" AND ", $where);
+
         // 1. KPIs Globales de comerciales
         $kpiSql = "SELECT COUNT(*) as total,
-                          SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as activos,
-                          SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactivos
-                   FROM users 
-                   WHERE role = 'comercial' AND deleted_at IS NULL";
+                          SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) as activos,
+                          SUM(CASE WHEN u.is_active = 0 THEN 1 ELSE 0 END) as inactivos
+                   FROM users u
+                   $whereSql";
         
         $stmtKpis = $this->db->prepare($kpiSql);
+        foreach ($params as $key => $val) {
+            $stmtKpis->bindValue(":$key", $val);
+        }
         $stmtKpis->execute();
         $kpiData = $stmtKpis->fetch(PDO::FETCH_ASSOC);
 
@@ -192,13 +217,15 @@ class User
                     FROM users u
                     LEFT JOIN project_user pu ON u.id = pu.user_id
                     LEFT JOIN projects p ON pu.project_id = p.id AND p.deleted_at IS NULL
-                    WHERE u.role = 'comercial' 
-                      AND u.deleted_at IS NULL
+                    $whereSql
                     GROUP BY u.id
                     ORDER BY u.name ASC
                     LIMIT :limit OFFSET :offset";
         
         $stmtData = $this->db->prepare($dataSql);
+        foreach ($params as $key => $val) {
+            $stmtData->bindValue(":$key", $val);
+        }
         $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();
@@ -294,25 +321,44 @@ class User
     /** ---CLIENTES (USUARIOS)--- */
 
     /** Listado de usuarios 'cliente' con KPIs globales y Paginación */
-    public function getClientUsersList($actorUserId, $actorRole, $limit = 15, $offset = 0) {
-        $baseSql = "FROM users u
-                    INNER JOIN clients c ON u.client_id = c.id
-                    WHERE u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL";
-        
+    public function getClientUsersList($actorUserId, $actorRole, $limit = 15, $offset = 0, $filters = []) {
+        $baseWhere = ["u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL"];
         $params = [];
 
         if ($actorRole === 'comercial') {
-            $baseSql .= " AND (c.created_by = :user_id_1 OR c.id IN (
+            $baseWhere[] = "(c.created_by = :actor_id_1 OR c.id IN (
                             SELECT p.client_id FROM projects p 
                             INNER JOIN project_user pu ON p.id = pu.project_id 
-                            WHERE pu.user_id = :user_id_2 AND p.deleted_at IS NULL
+                            WHERE pu.user_id = :actor_id_2 AND p.deleted_at IS NULL
                           ))";
-            $params['user_id_1'] = $actorUserId;
-            $params['user_id_2'] = $actorUserId;
+            $params['actor_id_1'] = $actorUserId;
+            $params['actor_id_2'] = $actorUserId;
         } elseif ($actorRole === 'cliente') {
-            $baseSql .= " AND c.id = (SELECT client_id FROM users WHERE id = :user_id)";
-            $params['user_id'] = $actorUserId;
+            $baseWhere[] = "c.id = (SELECT client_id FROM users WHERE id = :actor_id)";
+            $params['actor_id'] = $actorUserId;
         }
+
+        // Filtros Externos (Search / Status)
+        if (!empty($filters['search'])) {
+            $q = "%" . $filters['search'] . "%";
+            $baseWhere[] = "(u.name LIKE :search1 OR u.email LIKE :search2 OR c.name LIKE :search3)";
+            $params['search1'] = $q;
+            $params['search2'] = $q;
+            $params['search3'] = $q;
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $status = $filters['status'];
+            $isActive = ($status === 'activo' || $status === 'active') ? 1 : (($status === 'inactivo' || $status === 'inactive') ? 0 : null);
+            if ($isActive !== null) {
+                $baseWhere[] = "u.is_active = :status";
+                $params['status'] = $isActive;
+            }
+        }
+
+        $baseSql = "FROM users u
+                    INNER JOIN clients c ON u.client_id = c.id
+                    WHERE " . implode(" AND ", $baseWhere);
 
         // 1. Ejecutar el Count + KPIs Globales
         $kpiSql = "SELECT COUNT(*) as total,
@@ -322,7 +368,11 @@ class User
                    
         $stmtKpis = $this->db->prepare($kpiSql);
         foreach ($params as $key => $value) {
-            $stmtKpis->bindValue(":$key", $value, PDO::PARAM_INT);
+            if (strpos($key, 'search') !== false) {
+                $stmtKpis->bindValue(":$key", $value);
+            } else {
+                $stmtKpis->bindValue(":$key", $value, PDO::PARAM_INT);
+            }
         }
         $stmtKpis->execute();
         $kpiData = $stmtKpis->fetch(PDO::FETCH_ASSOC);
@@ -338,7 +388,11 @@ class User
 
         $stmtData = $this->db->prepare($dataSql);
         foreach ($params as $key => $value) {
-            $stmtData->bindValue(":$key", $value, PDO::PARAM_INT);
+            if (strpos($key, 'search') !== false) {
+                $stmtData->bindValue(":$key", $value);
+            } else {
+                $stmtData->bindValue(":$key", $value, PDO::PARAM_INT);
+            }
         }
         $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);

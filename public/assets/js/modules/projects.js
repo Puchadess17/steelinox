@@ -34,6 +34,8 @@ SIModules.projects = {
         `;
 
         this.documents = [];
+        this.currentDocPage = 1;
+        this.docsPerPage = 15;
 
         try {
             const result = await API.get(`/projects/${projectId}`);
@@ -144,7 +146,7 @@ SIModules.projects = {
         const counter = document.getElementById('client-doc-counter');
         if (!container) return;
 
-        if (counter) counter.textContent = `${pagination ? pagination.total_items : this.documents.length} ARCHIVOS`;
+        if (counter) counter.textContent = `${pagination ? pagination.total_results : this.documents.length} ARCHIVOS`;
 
         if (this.documents.length === 0) {
             container.innerHTML = `
