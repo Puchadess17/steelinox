@@ -169,14 +169,13 @@ window.SIModules.audit = {
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] border-b border-gray-100 bg-gray-50/50">
-                            <th class="px-6 py-4">Actor / Rol</th>
+                            <th class="px-6 py-4">Usuario</th>
                             <th class="px-6 py-4">Acción</th>
                             <th class="px-6 py-4">Empresa / Cliente</th>
                             <th class="px-6 py-4">Proyecto</th>
                             <th class="px-6 py-4">Entidad</th>
-                            <th class="px-6 py-4">IP & Origen</th>
-                            <th class="px-6 py-4">Fecha Evento</th>
-                            <th class="px-6 py-4"></th>
+                            <th class="px-6 py-4 text-right">Fecha</th>
+                            <th class="px-6 py-4 w-24"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -313,6 +312,17 @@ window.SIModules.audit = {
         `;
     },
 
+    _formatMetadata(m) {
+        if (!m || typeof m !== 'object') return '';
+        const parts = [];
+        for (const [k, v] of Object.entries(m)) {
+            if (typeof v !== 'object' && !['version_id', 'project_id', 'proyecto_id', 'client_id', 'documento_id', 'file_name', 'nombre_archivo', 'title'].includes(k)) {
+                parts.push(`${this._humanizeMetadataKey(k)}: ${v}`);
+            }
+        }
+        return parts.join(' | ');
+    },
+
     _logRowTemplate(log) {
         const actorName = log.actor_name || 'Sistema';
         const actorRole = log.actor_role || 'system';
@@ -322,26 +332,77 @@ window.SIModules.audit = {
         const dateStr = SIApp.formatDateTime(log.created_at);
         const timeAgo = SIApp.timeAgo(log.created_at);
 
+        const m = log.metadata || {};
+        const docActions = [
+            'documento_subido', 'documento_nueva_version', 'documento_descargado', 
+            'documento_visualizado', 'comentario_creado', 'document_comment', 
+            'document_commentd', 'document_deleted'
+        ];
+
+        let actionHtml = '';
+        if (docActions.includes(log.action_key)) {
+            const projId = m.proyecto_id || m.project_id || log.project_id;
+            const docName = m.nombre_archivo || m.file_name || m.documento_titulo || m.title || 'Documento adjunto';
+            const versionText = m.numero_version || m.version_number ? `(v${m.numero_version || m.version_number})` : '';
+
+            let finalLink = `/steelinox/project/${projId || ''}`;
+            const docId = m.documento_id || m.document_id;
+            if (projId && docId) {
+                finalLink += `/documents/${docId}`;
+                if (m.version_id) {
+                    finalLink += `?version_id=${m.version_id}`;
+                }
+            }
+
+            if (projId) {
+                actionHtml = `
+                    <a href="${finalLink}" class="inline-flex items-center gap-1.5 text-[13px] text-blue-500 hover:text-blue-600 font-black transition-colors group/doclink no-underline mb-0.5">
+                        ${actionLabel.toUpperCase()}
+                        <svg class="w-3.5 h-3.5 transform group-hover/doclink:translate-x-0.5 group-hover/doclink:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                    <span class="block text-[10px] text-gray-500 font-bold truncate max-w-[220px]" title="${SIApp.escapeHtml(docName)}">
+                        📄 ${SIApp.escapeHtml(docName)} <span class="text-blue-400">${versionText}</span>
+                    </span>
+                `;
+            } else {
+                actionHtml = `
+                    <span class="text-[13px] font-black text-[#1a1b25] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
+                    <span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${SIApp.escapeHtml(docName)}</span>
+                `;
+            }
+        } else {
+            // Acción normal si no es documento
+            actionHtml = `
+                <span class="text-[13px] font-black text-[#1a1b25] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
+                ${log.metadata ? `<span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${this._formatMetadata(log.metadata)}</span>` : ''}
+            `;
+        }
+
         return `
             <tr class="hover:bg-gray-50/50 transition-all group">
                 <td class="px-6 py-5">
                     <div class="flex items-center gap-4">
-                        <div class="avatar-initials w-10 h-10 text-xs shadow-sm ring-2 ring-white">${SIApp._getInitials(actorName)}</div>
+                        <div class="avatar-initials w-10 h-10 text-xs shadow-sm ring-2 ring-white ${log.actor_role === 'cliente' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${SIApp._getInitials(actorName)}</div>
                         <div>
-                            <p class="text-sm font-black text-gray-900 line-clamp-1 truncate max-w-[150px]">${actorName}</p>
-                            <p class="text-[9px] font-black uppercase tracking-widest text-orange-500/70">${actorRole}</p>
+                            ${log.actor_id ? `
+                                <a href="/steelinox/${log.actor_role === 'cliente' ? 'user/edit' : 'commercial'}/${log.actor_id}" 
+                                   class="text-sm font-black text-gray-900 line-clamp-1 truncate max-w-[150px] transition-colors ${log.actor_role === 'cliente' ? 'hover:text-rose-500' : 'hover:text-indigo-600'}">
+                                    ${actorName}
+                                </a>
+                            ` : `
+                                <p class="text-sm font-black text-gray-900 line-clamp-1 truncate max-w-[150px]">${actorName}</p>
+                            `}
+                            <p class="text-[9px] font-black uppercase tracking-widest ${log.actor_role === 'cliente' ? 'text-rose-500/70' : 'text-indigo-500/70'}">${actorRole}</p>
                         </div>
                     </div>
                 </td>
                 <td class="px-6 py-5">
-                    <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl ${actionStyles.bg} ${actionStyles.text} border ${actionStyles.border} shadow-sm">
-                        ${actionLabel}
-                    </span>
+                    ${actionHtml}
                 </td>
                 <td class="px-6 py-5">
                     ${log.client_name ? `
                         <div class="flex flex-col">
-                            <a href="/steelinox/client/${log.client_id_ctx}" class="text-sm font-bold text-gray-800 tracking-tight hover:text-orange-500 transition-colors line-clamp-1 max-w-[180px]">${log.client_name}</a>
+                            <a href="/steelinox/client/${log.client_id_ctx}" class="text-sm font-bold text-gray-800 tracking-tight hover:text-emerald-500 transition-colors line-clamp-1 max-w-[180px]">${log.client_name}</a>
                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${log.client_ref || 'CUENTA PRINCIPAL'}</span>
                         </div>
                     ` : '<span class="text-sm font-bold text-gray-300 italic">Sistema</span>'}
@@ -349,8 +410,7 @@ window.SIModules.audit = {
                 <td class="px-6 py-5">
                     ${log.project_name ? `
                         <div class="flex flex-col">
-                            <a href="/steelinox/project/${log.project_id}/logs" class="text-sm font-bold text-gray-800 tracking-tight hover:text-orange-500 transition-colors line-clamp-1 max-w-[180px]">${log.project_name}</a>
-
+                            <a href="/steelinox/project/${log.project_id}/logs" class="text-sm font-bold text-gray-800 tracking-tight hover:text-amber-500 transition-colors line-clamp-1 max-w-[180px]">${log.project_name}</a>
                             <span class="text-[10px] font-mono text-gray-400 uppercase">${log.project_ref || 'Sin Ref.'}</span>
                         </div>
                     ` : '<span class="text-sm font-bold text-gray-300 italic">No aplica</span>'}
@@ -358,24 +418,37 @@ window.SIModules.audit = {
                 <td class="px-6 py-5">
                     ${this._renderEntityLink(log)}
                 </td>
-                <td class="px-6 py-5">
+                <td class="px-6 py-5 text-right">
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-mono font-bold text-gray-400">${log.ip || '—'}</span>
-                        <span class="text-[8px] font-black text-gray-300 uppercase tracking-widest">${log.user_agent ? SIApp.escapeHtml(log.user_agent).substring(0, 30) + '...' : 'Browser'}</span>
-                    </div>
-                </td>
-                <td class="px-6 py-5">
-                    <div class="flex flex-col text-right sm:text-left">
                         <span class="text-sm font-black text-gray-800 tracking-tight">${timeAgo}</span>
                         <span class="text-[10px] text-gray-400 font-medium">${dateStr}</span>
                     </div>
                 </td>
-                <td class="px-6 py-5 text-right">
-                    ${log.metadata ? `
-                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="w-10 h-10 flex items-center justify-center text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-2xl transition-all border border-transparent hover:border-orange-100 group/btn" title="Ver detalles JSON">
-                            <svg class="w-5 h-5 transition-transform group-hover/btn:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                        </button>
-                    ` : ''}
+                <td class="px-6 py-4 text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end gap-1">
+                        <div class="relative group/tooltip inline-block text-left">
+                            <button class="p-2 text-gray-400 hover:text-orange-500 rounded-full hover:bg-orange-50 transition-all focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+                            </button>
+                            
+                            <div class="absolute right-0 bottom-full mb-2 hidden group-hover/tooltip:block w-64 bg-[#1a1b25] text-left rounded-xl shadow-2xl z-50 p-4 transform transition-all opacity-0 group-hover/tooltip:opacity-100 pointer-events-none">
+                                <div class="mb-3">
+                                    <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Dirección IP</span>
+                                    <span class="font-mono text-[11px] text-orange-400 font-bold">${SIApp.escapeHtml(log.ip || 'Desconocida')}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Origen / Navegador</span>
+                                    <span class="text-[10px] text-gray-300 leading-tight whitespace-normal break-words font-medium">${SIApp.escapeHtml(log.user_agent || 'Desconocido')}</span>
+                                </div>
+                                <div class="absolute -bottom-1.5 right-3.5 w-3 h-3 bg-[#1a1b25] transform rotate-45"></div>
+                            </div>
+                        </div>
+                        ${log.metadata ? `
+                            <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="p-2 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-full transition-all group/btn" title="Ver detalles JSON">
+                                <svg class="w-5 h-5 transition-transform group-hover/btn:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                            </button>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
             ${log.metadata ? `
@@ -881,15 +954,23 @@ window.SIModules.audit = {
             return `<a href="/steelinox/project/${pid}" class="${style}">${value}</a>`;
         }
 
+        const styles = {
+            project: "hover:text-amber-500",
+            client: "hover:text-emerald-500",
+            document: "hover:text-blue-500",
+            user: log.actor_role === 'cliente' ? "hover:text-rose-500" : "hover:text-indigo-600"
+        };
+        const currentHover = styles[log.entity_type] || "hover:text-orange-500";
+
         // Manejo de nombres (Strings)
         if (key === 'name' || key === 'title' || key === 'nombre' || key === 'nombre_archivo' || key === 'file_name') {
             const escaped = SIApp.escapeHtml(value);
             if (log.entity_type === 'project' || (log.project_id || log.metadata?.project_id)) {
                 const pid = log.project_id || log.metadata?.project_id || (log.entity_type === 'project' ? log.entity_id : null);
-                if (pid) return `<a href="/steelinox/project/${pid}" class="${style}">${escaped}</a>`;
+                if (pid) return `<a href="/steelinox/project/${pid}" class="${style} ${currentHover}">${escaped}</a>`;
             }
             if (log.entity_type === 'client') {
-                return `<a href="/steelinox/client/${log.entity_id}" class="${style}">${escaped}</a>`;
+                return `<a href="/steelinox/client/${log.entity_id}" class="${style} hover:text-emerald-500">${escaped}</a>`;
             }
             return escaped;
         }
@@ -902,21 +983,32 @@ window.SIModules.audit = {
         const entityName = log.entity_name || (log.entity_id ? `#${log.entity_id}` : '');
         
         const style = "group/link flex flex-col transition-colors no-underline text-left sm:text-left";
-        const labelStyle = "text-sm font-bold text-gray-800 tracking-tight group-hover/link:text-orange-500 transition-colors";
-        const subStyle = "text-[10px] text-gray-400 font-medium truncate max-w-[150px] uppercase tracking-wide";
-
+        
         let href = null;
+        let hoverClass = "group-hover/link:text-amber-500"; // Project default
 
         if (log.entity_type === 'project') {
             href = `/steelinox/project/${log.entity_id}`;
+            hoverClass = "group-hover/link:text-amber-500";
         } else if (log.entity_type === 'client') {
             href = `/steelinox/client/${log.entity_id}`;
-        } else if (log.entity_type === 'document') {
+            hoverClass = "group-hover/link:text-emerald-500";
+        } else if (log.entity_type === 'document' || log.entity_type === 'document_version') {
             const pid = log.project_id || log.metadata?.project_id;
-            if (pid) {
-                href = `/steelinox/project/${pid}`;
+            if (pid) href = `/steelinox/project/${pid}`;
+            hoverClass = "group-hover/link:text-blue-500";
+        } else if (log.entity_type === 'user') {
+            if (log.actor_role === 'cliente') {
+                href = `/steelinox/user/edit/${log.entity_id}`;
+                hoverClass = "group-hover/link:text-rose-500";
+            } else {
+                href = `/steelinox/commercial/${log.entity_id}`;
+                hoverClass = "group-hover/link:text-indigo-600";
             }
         }
+
+        const labelStyle = `text-sm font-bold text-gray-800 tracking-tight ${href ? hoverClass : ''} transition-colors`;
+        const subStyle = "text-[10px] text-gray-400 font-medium truncate max-w-[150px] uppercase tracking-wide";
 
         const innerContent = `
             <span class="${labelStyle}">${entityLabel}</span>

@@ -1056,19 +1056,25 @@ SIModules.dashboard = {
         }, 400); // Pequeño debounce para no saturar la API
     },
 
-
     /** Handler para cambio de orden en columnas */
     _sortClients(field) {
         // Validación de seguridad para los campos permitidos
         const allowedFields = ['name', 'reference', 'projects_count', 'users_count', 'created_at'];
         if (!allowedFields.includes(field)) return;
 
-        // Iniciar el objeto de ordenación si no existe
-        this.currentClientSort = this.currentClientSort || { field: 'name', dir: 'asc' };
+        // Iniciar el objeto de ordenación vacío si no existe
+        this.currentClientSort = this.currentClientSort || { field: null, dir: null };
 
         if (this.currentClientSort.field === field) {
-            this.currentClientSort.dir = this.currentClientSort.dir === 'asc' ? 'desc' : 'asc';
+            // Ciclo de 3 estados: asc -> desc -> sin ordenar (null)
+            if (this.currentClientSort.dir === 'asc') {
+                this.currentClientSort.dir = 'desc';
+            } else {
+                this.currentClientSort.field = null;
+                this.currentClientSort.dir = null;
+            }
         } else {
+            // Si hacemos clic en una columna nueva, empieza en ascendente
             this.currentClientSort.field = field;
             this.currentClientSort.dir = 'asc';
         }

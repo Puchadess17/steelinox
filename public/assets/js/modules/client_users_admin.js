@@ -24,7 +24,9 @@ SIModules.clientUsersAdmin = {
             let url = `/users?page=${this.currentPage}&limit=${this.itemsPerPage}`;
             if (this.currentFilter !== 'all') url += `&status=${this.currentFilter}`;
             if (this.currentSearch) url += `&search=${encodeURIComponent(this.currentSearch)}`;
-            if (this.currentSortCol) url += `&sort=${this.currentSortCol}&dir=${this.currentSortDir}`;
+
+            // Usamos sort_by y sort_dir para coincidir con la convención de la API
+            if (this.currentSortCol) url += `&sort_by=${this.currentSortCol}&sort_dir=${this.currentSortDir}`;
 
             const result = await API.get(url);
             if (!result.success) {
@@ -34,22 +36,21 @@ SIModules.clientUsersAdmin = {
 
             const rawData = result.data;
             const usersList = rawData.list || [];
-            const kpis = rawData.kpis || { total: 0, activos: 0, inactivos: 0 };
+            const kpis = rawData.kpis || { total: 0, activos: 0, empresas_cubiertas: 0 };
             const pagination = result.pagination;
 
-            // Al no tener todos los usuarios en memoria, este count (empresas únicas) en la página no será total
-            const uniqueCompanies = "-"; 
+            // Ahora sí usamos el dato real de la API
+            const uniqueCompanies = kpis.empresas_cubiertas || 0;
 
             this.container.innerHTML = `
                 <div class="fade-in">
-                    <!-- Header -->
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                         <div>
                             <div class="flex items-center gap-3 mb-2">
                                 <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Usuarios Cliente</h1>
                             </div>
                         </div>
-                        ${SIApp.user && SIApp.user.role !== 'cliente' ? `
+                        ${window.SIApp && SIApp.user && SIApp.user.role !== 'cliente' ? `
                         <div class="flex items-center gap-2">
                             <button onclick="SIRouter.navigate('user-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -59,14 +60,12 @@ SIModules.clientUsersAdmin = {
                         ` : ''}
                     </div>
 
-                    <!-- KPI Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
                         ${this._renderKpiCard('Usuarios Totales', kpis.total, 'Accesos creados en el sistema', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
                         ${this._renderKpiCard('Usuarios Activos', kpis.activos, 'Con acceso habilitado', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>')}
                         ${this._renderKpiCard('Empresas Cubiertas', uniqueCompanies, 'Clientes con al menos 1 usuario', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
                     </div>
 
-                    <!-- Buscador y Tabs -->
                     <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
                         <div class="w-full xl:w-auto">
                             <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
@@ -232,7 +231,7 @@ SIModules.clientUsersAdmin = {
         container.innerHTML = `
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
-                    <thead>
+<thead>
                         <tr class="bg-gray-50 border-b border-gray-100">
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Usuario ${this._getSortIcon('name')}</span>
@@ -240,13 +239,13 @@ SIModules.clientUsersAdmin = {
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('company_name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Empresa ${this._getSortIcon('company_name')}</span>
                             </th>
-                            <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('is_active')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado ${this._getSortIcon('is_active')}</span>
+                            <th class="px-6 py-4 text-center select-none">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('last_login_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Último Acceso ${this._getSortIcon('last_login_at')}</span>
                             </th>
-                            ${SIApp.user && SIApp.user.role !== 'cliente' ? `
+                            ${window.SIApp && SIApp.user && SIApp.user.role !== 'cliente' ? `
                             <th class="px-6 py-4 text-right w-32">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Acciones</span>
                             </th>
@@ -307,21 +306,36 @@ SIModules.clientUsersAdmin = {
     _filter(status, btn) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-users').forEach(t => t.classList.remove(...activeClasses));
-        
+
         if (btn) btn.classList.add(...activeClasses);
-        
+
         this.currentFilter = status;
         this.currentPage = 1;
         this.loadList();
     },
 
     _sort(col) {
+        // Columnas permitidas para ordenar
+        const allowedCols = ['name', 'company_name', 'last_login_at'];
+        if (!allowedCols.includes(col)) return;
+
         if (this.currentSortCol === col) {
-            this.currentSortDir = this.currentSortDir === 'asc' ? 'desc' : 'asc';
+            // Ciclo de 3 estados: asc -> desc -> sin ordenar (null)
+            if (this.currentSortDir === 'asc') {
+                this.currentSortDir = 'desc';
+            } else {
+                // Al tercer clic, limpiamos la ordenación
+                this.currentSortCol = null;
+                this.currentSortDir = null;
+            }
         } else {
+            // Si hacemos clic en una columna nueva, empieza en ascendente
             this.currentSortCol = col;
             this.currentSortDir = 'asc';
         }
+
+        // Volvemos a la página 1 y recargamos
+        this.currentPage = 1;
         this.loadList();
     },
 

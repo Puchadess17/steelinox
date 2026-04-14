@@ -24,8 +24,7 @@ SIModules.commercialsAdmin = {
             let url = `/commercials?page=${this.currentPage}&limit=${this.itemsPerPage}`;
             if (this.currentFilter !== 'all') url += `&status=${this.currentFilter}`;
             if (this.currentSearch) url += `&search=${encodeURIComponent(this.currentSearch)}`;
-            if (this.currentSortCol) url += `&sort=${this.currentSortCol}&dir=${this.currentSortDir}`;
-
+            if (this.currentSortCol) url += `&sort_by=${this.currentSortCol}&sort_dir=${this.currentSortDir}`;
             const result = await API.get(url);
             if (!result.success) {
                 this.container.innerHTML = `<div class="p-10 text-center text-red-500">${result.message}</div>`;
@@ -241,8 +240,8 @@ SIModules.commercialsAdmin = {
                             <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.commercialsAdmin._sort('active_projects')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyectos ${this._getSortIcon('active_projects')}</span>
                             </th>
-                            <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.commercialsAdmin._sort('is_active')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado ${this._getSortIcon('is_active')}</span>
+<th class="px-6 py-4 text-center select-none">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.commercialsAdmin._sort('last_login_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Última Conexión ${this._getSortIcon('last_login_at')}</span>
@@ -422,21 +421,34 @@ SIModules.commercialsAdmin = {
     _filter(status, btn) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-comerciales').forEach(t => t.classList.remove(...activeClasses));
-        
+
         if (btn) btn.classList.add(...activeClasses);
-        
+
         this.currentFilter = status;
         this.currentPage = 1;
         this.loadList();
     },
 
     _sort(col) {
+        // Columnas permitidas para ordenar en Comerciales
+        const allowedCols = ['name', 'email', 'active_projects', 'last_login_at'];
+        if (!allowedCols.includes(col)) return;
+
         if (this.currentSortCol === col) {
-            this.currentSortDir = this.currentSortDir === 'asc' ? 'desc' : 'asc';
+            // Ciclo de 3 estados: asc -> desc -> sin ordenar (null)
+            if (this.currentSortDir === 'asc') {
+                this.currentSortDir = 'desc';
+            } else {
+                this.currentSortCol = null;
+                this.currentSortDir = null;
+            }
         } else {
+            // Nueva columna: empieza en ascendente
             this.currentSortCol = col;
             this.currentSortDir = 'asc';
         }
+
+        this.currentPage = 1;
         this.loadList();
     },
 
