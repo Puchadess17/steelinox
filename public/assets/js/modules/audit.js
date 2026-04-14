@@ -30,6 +30,17 @@ window.SIModules.audit = {
     async initAuditLog() {
         const container = SIRouter.contentContainer;
 
+        // Reset de estado para carga limpia (evitar persistencia SPA)
+        this.filters = {
+            actor_user_id: '',
+            action_key: '',
+            entity_type: '',
+            date_start: '',
+            date_end: ''
+        };
+        this.currentPage = 1;
+        this.itemsPerPage = 15;
+
         // Renderizar estructura básica (Skeleton)
         container.innerHTML = this._skeletonTemplate();
 
@@ -46,7 +57,6 @@ window.SIModules.audit = {
         this._initOutsideClick();
     },
 
-    /** Inicializa Flatpickr en los inputs de fecha */
     _initDatePickers() {
         const config = {
             locale: "es",
@@ -54,17 +64,27 @@ window.SIModules.audit = {
             altInput: true,
             altFormat: "d M, Y",
             allowInput: true,
-            disableMobile: "true",
-            onChange: (selectedDates, dateStr, instance) => {
-                const id = instance.element.id;
-                if (id === 'filter-start') this.filters.date_start = dateStr;
-                if (id === 'filter-end') this.filters.date_end = dateStr;
-                this._updateFilterButtonVisibility();
-            }
+            disableMobile: "true"
         };
 
-        this.fpStart = flatpickr("#filter-start", config);
-        this.fpEnd = flatpickr("#filter-end", config);
+        this.fpStart = flatpickr("#filter-start", {
+            ...config,
+            onChange: (selectedDates, dateStr) => {
+                this.filters.date_start = dateStr;
+                this.currentPage = 1;
+                this._updateFilterUIState();
+                this.loadLogs();
+            }
+        });
+        this.fpEnd = flatpickr("#filter-end", {
+            ...config,
+            onChange: (selectedDates, dateStr) => {
+                this.filters.date_end = dateStr;
+                this.currentPage = 1;
+                this._updateFilterUIState();
+                this.loadLogs();
+            }
+        });
     },
 
     async loadFiltersData() {
@@ -151,6 +171,8 @@ window.SIModules.audit = {
                         <tr class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] border-b border-gray-100 bg-gray-50/50">
                             <th class="px-6 py-4">Actor / Rol</th>
                             <th class="px-6 py-4">Acción</th>
+                            <th class="px-6 py-4">Empresa / Cliente</th>
+                            <th class="px-6 py-4">Proyecto</th>
                             <th class="px-6 py-4">Entidad</th>
                             <th class="px-6 py-4">IP & Origen</th>
                             <th class="px-6 py-4">Fecha Evento</th>
@@ -196,46 +218,72 @@ window.SIModules.audit = {
         const actorRole = log.actor_role || 'system';
         const actionLabel = this._humanizeAction(log.action_key);
         const actionStyles = this._getActionStyles(log.action_key);
-        const entityLabel = this._humanizeEntity(log.entity_type);
         const dateStr = SIApp.formatDateTime(log.created_at);
         const timeAgo = SIApp.timeAgo(log.created_at);
 
         return `
-            <div class="p-5 flex flex-col gap-4 bg-white active:bg-gray-50 transition-colors">
-                <!-- Header: Actor & Tiempo -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="avatar-initials w-9 h-9 text-[10px] shadow-sm ring-2 ring-white">${SIApp._getInitials(actorName)}</div>
-                        <div>
-                            <p class="text-[13px] font-black text-gray-900">${actorName}</p>
-                            <p class="text-[8px] font-black uppercase tracking-widest text-orange-500/70">${actorRole}</p>
+            <div class="px-5 py-6 flex flex-col bg-white border-b border-gray-50 active:bg-gray-50 transition-colors">
+                <!-- Status & Time Header -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${actionStyles.bg} ${actionStyles.text} border ${actionStyles.border}">
+                        ${actionLabel}
+                    </span>
+                    <div class="text-right">
+                        <span class="block text-[11px] font-black text-gray-900 tracking-tight">${timeAgo}</span>
+                        <span class="block text-[9px] text-gray-400 font-medium">${dateStr}</span>
+                    </div>
+                </div>
+
+                <!-- Main Context: Actor & Entity -->
+                <div class="flex items-start gap-4 mb-5">
+                    <div class="avatar-initials w-11 h-11 text-xs shadow-sm ring-2 ring-white bg-gray-50 flex-shrink-0">${SIApp._getInitials(actorName)}</div>
+                    <div class="flex flex-col gap-1 min-w-0">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-black text-gray-900 truncate">${actorName}</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-orange-500/70">${actorRole}</span>
+                        </div>
+                        <div class="mt-1">
+                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-0.5">Elemento Afectado</span>
+                            ${this._renderEntityLink(log)}
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-[11px] font-black text-gray-800 tracking-tight">${timeAgo}</p>
-                        <p class="text-[9px] text-gray-400 font-medium">${dateStr}</p>
-                    </div>
                 </div>
 
-                <!-- Body: Acción & Entidad -->
-                <div class="flex flex-col gap-2.5">
-                    <div class="flex items-center justify-between">
-                        <span class="px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-xl ${actionStyles.bg} ${actionStyles.text} border ${actionStyles.border} shadow-sm w-fit">
-                            ${actionLabel}
-                        </span>
-                        ${this._renderEntityLink(log)}
-                    </div>
-                </div>
+                <!-- Logic Hierarchy Box: Client & Project -->
+                ${(log.client_name || log.project_name) ? `
+                    <div class="bg-gray-50/80 rounded-2xl p-4 border border-gray-100/50 flex flex-col gap-3 mb-5">
+                        ${log.client_name ? `
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest flex-shrink-0">Empresa</span>
+                                <div class="text-right min-w-0">
+                                    <a href="/steelinox/client/${log.client_id_ctx}" class="block text-[13px] font-bold text-gray-800 hover:text-orange-600 transition-colors truncate">${log.client_name}</a>
+                                    <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">${log.client_ref || 'PRINCIPAL'}</span>
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${log.project_name ? `
+                            <div class="flex items-center justify-between gap-4 py-3 border-t border-gray-100/50">
+                                <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest flex-shrink-0">Proyecto</span>
+                                <div class="text-right min-w-0">
+                                    <a href="/steelinox/project/${log.project_id}/logs" class="block text-[13px] font-bold text-gray-800 hover:text-orange-600 transition-colors truncate">${log.project_name}</a>
 
-                <!-- Footer: IP & Acciones -->
-                <div class="flex items-center justify-between pt-2 border-t border-gray-50">
+                                    <span class="block text-[9px] font-mono text-gray-400 uppercase truncate">${log.project_ref || 'Sin Ref.'}</span>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+
+                <!-- Footer: Network info & Details -->
+                <div class="flex items-center justify-between">
                     <div class="flex flex-col">
                         <span class="text-[10px] font-mono font-bold text-gray-400">${log.ip || '—'}</span>
+                        <span class="text-[8px] font-black text-gray-300 uppercase tracking-widest">System Origin</span>
                     </div>
                     ${log.metadata ? `
-                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-4 py-2 bg-gray-50 hover:bg-orange-50 text-[10px] font-black text-gray-400 hover:text-orange-500 rounded-xl transition-all border border-gray-100 flex items-center gap-2">
-                            VER DETALLES
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-5 py-2.5 bg-white hover:bg-orange-50 text-[10px] font-black text-gray-500 hover:text-orange-600 rounded-xl transition-all border border-gray-100 shadow-sm flex items-center gap-2 active:scale-95 group">
+                            DETALLES
+                            <svg class="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                     ` : ''}
                 </div>
@@ -291,12 +339,29 @@ window.SIModules.audit = {
                     </span>
                 </td>
                 <td class="px-6 py-5">
+                    ${log.client_name ? `
+                        <div class="flex flex-col">
+                            <a href="/steelinox/client/${log.client_id_ctx}" class="text-sm font-bold text-gray-800 tracking-tight hover:text-orange-500 transition-colors line-clamp-1 max-w-[180px]">${log.client_name}</a>
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${log.client_ref || 'CUENTA PRINCIPAL'}</span>
+                        </div>
+                    ` : '<span class="text-sm font-bold text-gray-300 italic">Sistema</span>'}
+                </td>
+                <td class="px-6 py-5">
+                    ${log.project_name ? `
+                        <div class="flex flex-col">
+                            <a href="/steelinox/project/${log.project_id}/logs" class="text-sm font-bold text-gray-800 tracking-tight hover:text-orange-500 transition-colors line-clamp-1 max-w-[180px]">${log.project_name}</a>
+
+                            <span class="text-[10px] font-mono text-gray-400 uppercase">${log.project_ref || 'Sin Ref.'}</span>
+                        </div>
+                    ` : '<span class="text-sm font-bold text-gray-300 italic">No aplica</span>'}
+                </td>
+                <td class="px-6 py-5">
                     ${this._renderEntityLink(log)}
                 </td>
                 <td class="px-6 py-5">
-                    <div class="flex flex-col gap-0.5">
-                        <span class="text-xs font-mono font-bold text-gray-500">${log.ip || '—'}</span>
-                        <span class="text-[9px] text-gray-300 line-clamp-1 truncate max-w-[140px]" title="${SIApp.escapeHtml(log.user_agent)}">${log.user_agent || ''}</span>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-mono font-bold text-gray-400">${log.ip || '—'}</span>
+                        <span class="text-[8px] font-black text-gray-300 uppercase tracking-widest">${log.user_agent ? SIApp.escapeHtml(log.user_agent).substring(0, 30) + '...' : 'Browser'}</span>
                     </div>
                 </td>
                 <td class="px-6 py-5">
@@ -315,7 +380,7 @@ window.SIModules.audit = {
             </tr>
             ${log.metadata ? `
                 <tr id="meta-${log.id}" class="hidden bg-[#FAFAFA]">
-                    <td colspan="6" class="px-10 py-6">
+                    <td colspan="8" class="px-10 py-6">
                         <div class="bg-white border border-gray-100 rounded-[1.5rem] p-6 shadow-sm overflow-hidden">
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
@@ -376,9 +441,9 @@ window.SIModules.audit = {
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
-                        <button onclick="window.SIModules.audit.resetFilters()" class="px-6 py-3 bg-gray-50 border border-gray-100 text-gray-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all flex items-center gap-2">
+                        <button id="btn-reset-filters" onclick="window.SIModules.audit.resetFilters()" class="hidden px-6 py-3 bg-red-50 border border-red-100 text-red-500 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-100 transition-all flex items-center gap-2 animate-in fade-in zoom-in duration-300">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            Limpiar
+                            Borrar Filtros
                         </button>
                         <button onclick="window.SIModules.audit.loadLogs()" class="px-6 py-3 bg-white border border-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest rounded-2xl hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -480,14 +545,6 @@ window.SIModules.audit = {
                         </div>
 
                     </div>
-
-                    <!-- BOTÓN DE ACCIÓN (Solo visible si hay filtros) -->
-                    <div id="filter-action-container" class="hidden mt-8 pt-8 border-t border-gray-50 flex justify-center animate-in fade-in slide-in-from-top-4 duration-300">
-                        <button onclick="window.SIModules.audit.loadLogs()" class="px-10 py-4 bg-[#1a1b25] hover:bg-[#2a2b35] text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-xl shadow-gray-200 flex items-center gap-3 active:scale-95 group">
-                            <svg class="w-4 h-4 text-orange-500 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            Filtrar Resultados
-                        </button>
-                    </div>
                 </div>
 
                 <!-- LISTADO -->
@@ -559,35 +616,65 @@ window.SIModules.audit = {
         if (this.fpStart) this.fpStart.clear();
         if (this.fpEnd) this.fpEnd.clear();
 
-        // 4. Actualizar visibilidad
-        this._updateFilterButtonVisibility();
-
-        // 5. Recargar logs
+        this._updateFilterUIState();
         this.loadLogs();
-
-        SIApp.showToast('Filtros limpiados', 'Se han restablecido todos los criterios de búsqueda.', 'info');
     },
 
     selectOption(filterKey, value, label) {
         this.filters[filterKey === 'actor' ? 'actor_user_id' : (filterKey === 'action' ? 'action_key' : 'entity_type')] = value;
-        this.currentPage = 1; // Forzar a la primera página al cambiar filtro
+        this.currentPage = 1; 
         document.getElementById(`label-${filterKey}`).textContent = label;
         document.getElementById(`drop-${filterKey}`).classList.add('hidden');
         document.getElementById(`btn-drop-${filterKey}`).querySelector('svg').style.transform = 'rotate(0deg)';
 
-        this._updateFilterButtonVisibility();
+        this._updateFilterUIState();
+        this.loadLogs();
     },
 
-    _updateFilterButtonVisibility() {
+    _updateFilterUIState() {
         const hasFilters = Object.values(this.filters).some(v => v !== '');
-        const container = document.getElementById('filter-action-container');
-        if (container) {
+        const btnReset = document.getElementById('btn-reset-filters');
+        
+        if (btnReset) {
             if (hasFilters) {
-                container.classList.remove('hidden');
+                btnReset.classList.remove('hidden');
             } else {
-                container.classList.add('hidden');
+                btnReset.classList.add('hidden');
             }
         }
+
+        // Estilo visual en los botones de los dropdowns si tienen algo seleccionado
+        const map = {
+            actor_user_id: 'btn-drop-actor',
+            action_key: 'btn-drop-action',
+            entity_type: 'btn-drop-entity'
+        };
+
+        Object.entries(map).forEach(([key, btnId]) => {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (this.filters[key]) {
+                btn.classList.add('border-orange-500', 'bg-orange-50/30', 'text-orange-600');
+                btn.classList.remove('bg-gray-50', 'border-gray-100', 'text-gray-700');
+            } else {
+                btn.classList.remove('border-orange-500', 'bg-orange-50/30', 'text-orange-600');
+                btn.classList.add('bg-gray-50', 'border-gray-100', 'text-gray-700');
+            }
+        });
+
+        // Resaltado de fechas
+        ['filter-start', 'filter-end'].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            const val = id === 'filter-start' ? this.filters.date_start : this.filters.date_end;
+            if (val) {
+                input.classList.add('border-orange-500', 'bg-orange-50/30');
+                input.classList.remove('bg-gray-50', 'border-gray-100');
+            } else {
+                input.classList.remove('border-orange-500', 'bg-orange-50/30');
+                input.classList.add('bg-gray-50', 'border-gray-100');
+            }
+        });
     },
 
     _populateCustomDropdown(key, items, defaultLabel, isFiltering = false) {
@@ -768,35 +855,43 @@ window.SIModules.audit = {
 
         const style = "text-gray-900 group-hover:text-orange-500 transition-colors no-underline font-bold";
 
+        // Formateo de booleanos
+        if (typeof value === 'boolean') {
+            return value 
+                ? '<span class="text-emerald-500 font-black tracking-widest text-[10px]">SÍ</span>' 
+                : '<span class="text-gray-400 font-black tracking-widest text-[10px]">NO</span>';
+        }
+
+        // Formateo de tamaños de archivo
+        if (key === 'tamaño_archivo' || key === 'file_size') {
+            return `<span class="font-mono text-indigo-600">${SIApp.formatFileSize(value)}</span>`;
+        }
+
         // Manejo de IDs técnicos
         if (key === 'client_id') {
-            return `<a href="/steelinox/client/${value}" class="${style}">#${value}</a>`;
+            return `<a href="/steelinox/client/${value}" class="${style}">${value}</a>`;
         }
 
         if (key === 'project_id') {
-            return `<a href="/steelinox/project/${value}" class="${style}">#${value}</a>`;
+            return `<a href="/steelinox/project/${value}" class="${style}">${value}</a>`;
         }
 
-        if (key === 'document_id') {
+        if (key === 'document_id' || key === 'documento_id') {
             const pid = log.metadata?.project_id || log.project_id || log.entity_id;
-            return `<a href="/steelinox/project/${pid}" class="${style}">#${value}</a>`;
+            return `<a href="/steelinox/project/${pid}" class="${style}">${value}</a>`;
         }
 
         // Manejo de nombres (Strings)
-        if (key === 'name' || key === 'title') {
-            if (log.entity_type === 'project') {
-                return `<a href="/steelinox/project/${log.entity_id}" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+        if (key === 'name' || key === 'title' || key === 'nombre' || key === 'nombre_archivo' || key === 'file_name') {
+            const escaped = SIApp.escapeHtml(value);
+            if (log.entity_type === 'project' || (log.project_id || log.metadata?.project_id)) {
+                const pid = log.project_id || log.metadata?.project_id || (log.entity_type === 'project' ? log.entity_id : null);
+                if (pid) return `<a href="/steelinox/project/${pid}" class="${style}">${escaped}</a>`;
             }
             if (log.entity_type === 'client') {
-                return `<a href="/steelinox/client/${log.entity_id}" class="${style}">${SIApp.escapeHtml(value)}</a>`;
+                return `<a href="/steelinox/client/${log.entity_id}" class="${style}">${escaped}</a>`;
             }
-        }
-
-        if (key === 'file_name' && log.entity_type === 'document') {
-            const pid = log.metadata?.project_id || log.project_id;
-            if (pid) {
-                return `<a href="/steelinox/project/${pid}" class="${style}">${SIApp.escapeHtml(value)}</a>`;
-            }
+            return escaped;
         }
 
         return value;
@@ -804,41 +899,41 @@ window.SIModules.audit = {
 
     _renderEntityLink(log) {
         const entityLabel = this._humanizeEntity(log.entity_type);
-        const style = "group/link inline-flex items-center gap-2 transition-colors no-underline";
-        const textStyle = "text-sm font-bold text-gray-600 group-hover/link:text-orange-500 transition-colors";
+        const entityName = log.entity_name || (log.entity_id ? `#${log.entity_id}` : '');
+        
+        const style = "group/link flex flex-col transition-colors no-underline text-left sm:text-left";
+        const labelStyle = "text-sm font-bold text-gray-800 tracking-tight group-hover/link:text-orange-500 transition-colors";
+        const subStyle = "text-[10px] text-gray-400 font-medium truncate max-w-[150px] uppercase tracking-wide";
 
         let href = null;
-        let route = null;
 
         if (log.entity_type === 'project') {
             href = `/steelinox/project/${log.entity_id}`;
-            route = 'project-detail';
         } else if (log.entity_type === 'client') {
             href = `/steelinox/client/${log.entity_id}`;
-            route = 'client-detail';
         } else if (log.entity_type === 'document') {
             const pid = log.project_id || log.metadata?.project_id;
             if (pid) {
                 href = `/steelinox/project/${pid}`;
-                route = 'project-detail';
             }
         }
 
-        const badge = log.entity_id ? `<span class="bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] font-black font-mono text-gray-400 group-hover/link:bg-orange-50 group-hover/link:text-orange-500 transition-colors">#${log.entity_id}</span>` : '';
+        const innerContent = `
+            <span class="${labelStyle}">${entityLabel}</span>
+            ${entityName ? `<span class="${subStyle}">${entityName}</span>` : ''}
+        `;
 
         if (href) {
             return `
                 <a href="${href}" class="${style}">
-                    <span class="${textStyle}">${entityLabel}</span>
-                    ${badge}
+                    ${innerContent}
                 </a>
             `;
         }
 
         return `
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-gray-600">${entityLabel}</span>
-                ${badge}
+            <div class="${style}">
+                ${innerContent}
             </div>
         `;
     }

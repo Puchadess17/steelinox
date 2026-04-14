@@ -41,13 +41,17 @@ class Client
         }
 
         if (isset($filters['status']) && $filters['status'] !== 'all') {
-            $isActive = ($filters['status'] === 'activo') ? 1 : 0;
-            if ($role === 'admin') {
-                $where[] = "is_active = :status";
-            } else {
-                $where[] = "c.is_active = :status";
+            $status = $filters['status'];
+            $isActive = ($status === 'activo' || $status === 'active') ? 1 : (($status === 'inactivo' || $status === 'inactive') ? 0 : null);
+            
+            if ($isActive !== null) {
+                if ($role === 'admin') {
+                    $where[] = "is_active = :status";
+                } else {
+                    $where[] = "c.is_active = :status";
+                }
+                $params['status'] = $isActive;
             }
-            $params['status'] = $isActive;
         }
 
         // --- 3. ORDENACIÓN DINÁMICA (Blindaje contra Inyección SQL) ---

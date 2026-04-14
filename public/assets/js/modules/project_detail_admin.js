@@ -15,6 +15,10 @@ SIModules.projectDetailAdmin = {
     activeTab: 'resumen',
     activeDocTypeFilter: 'all',
     updatingDocumentId: null,
+    pendingPreviewDocId: null,
+    pendingPreviewVersionId: null,
+    currentDocId: null,
+    currentDoc: null,
 
     // Paginación
     auditPage: 1,
@@ -26,14 +30,37 @@ SIModules.projectDetailAdmin = {
     get user() { return window.SIApp ? SIApp.user : null; },
 
     async loadProjectDetailSPA() {
-        const pathParts = window.location.pathname.split('/');
-        const projectId = pathParts[pathParts.length - 1];
+        const path = window.location.pathname;
+        const match = path.match(/\/project\/(\d+)/);
 
-        if (!projectId || isNaN(projectId)) {
+        if (!match) {
             SIRouter.show404();
             return;
         }
 
+        const projectId = match[1];
+        const subAction = path.includes('/documents') ? 'documents' : (path.includes('/logs') ? 'logs' : 'resumen');
+
+        // Extraer docId si existe (ej: /project/3/documents/123)
+        let docId = null;
+        if (subAction === 'documents') {
+            const docMatch = path.match(/\/documents\/(\d+)/);
+            if (docMatch) docId = docMatch[1];
+        }
+
+        // --- LÓGICA DE IDEMPOTENCIA (SPA OPTIMIZATION) ---
+        // Si el proyecto ya está cargado, el layout existe, y solo cambia la pestaña/acción
+        if (this.projectId === projectId && this.project && document.getElementById('project-tabs-nav')) {
+            this.activeTab = this._getInternalTabName(subAction);
+            this._syncTabClasses();
+            this.renderTabContent();
+            if (docId) this.openPreview(docId);
+            return;
+        }
+
+        // Si es un proyecto nuevo o primera carga
+        this.activeTab = this._getInternalTabName(subAction);
+        this.pendingPreviewDocId = docId;
         const user = Auth.getUser();
 
         // Generar layout inicial
@@ -71,11 +98,11 @@ SIModules.projectDetailAdmin = {
 
             <!-- TABS -->
             <div class="border-b border-gray-200 mb-8 overflow-x-auto hide-scrollbar">
-                <nav class="flex gap-8" aria-label="Tabs">
-                    <button onclick="SIModules.projectDetailAdmin.switchTab('resumen', this)" class="tab-btn active border-orange-500 text-orange-600 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Resumen</button>
-                    <button onclick="SIModules.projectDetailAdmin.switchTab('documentos', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Documentos</button>
+                <nav class="flex gap-8" aria-label="Tabs" id="project-tabs-nav">
+                    <button data-tab="resumen" onclick="SIModules.projectDetailAdmin.switchTab('resumen', this)" class="tab-btn ${this.activeTab === 'resumen' ? 'active border-orange-500 text-orange-600' : 'border-transparent text-gray-400'} py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Resumen</button>
+                    <button data-tab="documentos" onclick="SIModules.projectDetailAdmin.switchTab('documentos', this)" class="tab-btn ${this.activeTab === 'documentos' ? 'active border-orange-500 text-orange-600' : 'border-transparent text-gray-400'} py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Documentos</button>
                     ${user && user.role !== 'cliente' ? `
-                    <button onclick="SIModules.projectDetailAdmin.switchTab('historial', this)" class="tab-btn border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Histórico</button>
+                    <button data-tab="historial" onclick="SIModules.projectDetailAdmin.switchTab('historial', this)" class="tab-btn ${this.activeTab === 'historial' ? 'active border-orange-500 text-orange-600' : 'border-transparent text-gray-400'} py-4 px-1 border-b-2 font-bold text-sm transition-all whitespace-nowrap">Histórico</button>
                     ` : ''}
                 </nav>
             </div>
@@ -86,6 +113,7 @@ SIModules.projectDetailAdmin = {
                     <div class="si-spinner"></div>
                 </div>
             </div>
+
 
             <!-- MODAL ASIGNAR COMERCIAL -->
             <div id="assign-commercial-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
@@ -392,12 +420,62 @@ SIModules.projectDetailAdmin = {
         this.projectId = projectId;
         this.userContext = user;
 
+        // Reset de estado para evitar persistencia entre proyectos en la SPA
+        // NOTA: No reseteamos activeTab aquí porque loadProjectDetailSPA ya lo calculó de la URL
+        this.auditPage = 1;
+        this.docPage = 1;
+        this.activeDocTypeFilter = 'all';
+        this.documents = [];
+        this.auditLogs = [];
+
         if (!this.projectId) {
             window.location.href = '/steelinox/panel';
             return;
         }
 
+
         await this.loadProjectData();
+    },
+
+    /** Helper para mapear la URL con el nombre interno del tab */
+    _getInternalTabName(subAction) {
+        const map = {
+            'resumen': 'resumen',
+            'documents': 'documentos',
+            'logs': 'historial'
+        };
+        return map[subAction] || 'resumen';
+    },
+
+    /** Sincronizar visualmente las pestañas basadas en activeTab */
+    _syncTabClasses() {
+        const nav = document.getElementById('project-tabs-nav');
+        if (!nav) return;
+
+        nav.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.getAttribute('data-tab') === this.activeTab) {
+                btn.classList.add('active', 'border-orange-500', 'text-orange-600');
+                btn.classList.remove('border-transparent', 'text-gray-400');
+            } else {
+                btn.classList.remove('active', 'border-orange-500', 'text-orange-600');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            }
+        });
+    },
+
+    /** Actualizar la URL sin recargar para reflejar el tab activo */
+    _syncUrlForTab() {
+        const tabToUrlSuffix = {
+            'resumen': '',
+            'documentos': '/documents',
+            'historial': '/logs'
+        };
+        const suffix = tabToUrlSuffix[this.activeTab] || '';
+        const newUrl = `/steelinox/project/${this.projectId}${suffix}`;
+
+        if (window.location.pathname !== newUrl) {
+            window.history.pushState({ tab: this.activeTab }, '', newUrl);
+        }
     },
 
     /** Cargar datos de la API */
@@ -445,17 +523,16 @@ SIModules.projectDetailAdmin = {
         }
     },
 
-    /** Cambiar entre pestañas */
+    /** Cambiar entre pestañas con sincronización de URL */
     switchTab(tabId, btn) {
-        document.querySelectorAll('.tab-btn').forEach(t => {
-            t.classList.remove('active', 'border-orange-500', 'text-orange-600');
-            t.classList.add('border-transparent', 'text-gray-400');
-        });
-
-        btn.classList.add('active', 'border-orange-500', 'text-orange-600');
-        btn.classList.remove('border-transparent', 'text-gray-400');
-
+        // En SPA, actualizamos la URL
         this.activeTab = tabId;
+        this._syncUrlForTab();
+
+        // Sincronización visual
+        this._syncTabClasses();
+
+        // Renderizado de contenido
         this.renderTabContent();
     },
 
@@ -1127,16 +1204,13 @@ SIModules.projectDetailAdmin = {
 
         return `
             <div class="space-y-6 pb-6 w-full max-w-full">
-                <!-- Header -->
                 <div class="pt-2 px-1">
                      <h3 class="text-[11px] font-black text-[#E57B23] uppercase tracking-[0.2em] mb-2">${SIApp.escapeHtml(this.project.client_name || 'STEELINOX')}</h3>
                      <h1 class="text-3xl font-black text-[#1a1b25] tracking-tight">Historial de Actividad</h1>
                      <p class="text-sm text-gray-400 mt-2 font-medium">Cronología completa de eventos en el Proyecto ${SIApp.escapeHtml(this.project.name || '')}</p>
                 </div>
 
-                <!-- Timeline Container -->
-                <div class="relative pl-8 space-y-10 mt-10" id="historial-timeline-container">
-                    <div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>
+                <div class="relative pl-0 sm:pl-8 space-y-10 mt-10" id="historial-timeline-container">
                     <div class="flex flex-col items-center justify-center py-20 text-gray-300">
                         <div class="si-spinner mb-4"></div>
                         <p class="text-sm font-bold uppercase tracking-widest">Sincronizando historial...</p>
@@ -1150,6 +1224,8 @@ SIModules.projectDetailAdmin = {
         try {
             const res = await API.get(`/projects/${this.projectId}/audit?page=${this.auditPage}&limit=${this.auditLimit}`);
             const container = document.getElementById('historial-timeline-container');
+
+            // Si el contenedor no existe en el HTML, abortamos
             if (!container) return;
 
             if (!res.success) {
@@ -1164,14 +1240,15 @@ SIModules.projectDetailAdmin = {
                 return;
             }
 
+            // AQUÍ FALTABA EL RENDERIZADO DE LOS LOGS
             const timelineHtml = logs.map(log => this._buildHistoryNode(log)).join('');
-            
+
             container.innerHTML = `
-                <div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>
                 ${timelineHtml}
                 <div id="project-audit-pagination" class="mt-12 pl-4"></div>
             `;
 
+            // Renderizar la paginación si existe
             if (res.pagination) {
                 const pagContainer = document.getElementById('project-audit-pagination');
                 if (pagContainer) {
@@ -1197,85 +1274,133 @@ SIModules.projectDetailAdmin = {
 
         const timeFormat = window.SIApp ? SIApp.timeAgo(log.created_at) + ' · ' + SIApp.formatDate(log.created_at) : log.created_at;
         const actor = log.actor_name || 'Sistema';
+        const m = log.metadata || {};
+
+        let docId = m.documento_id || m.document_id || null;
+        let versionId = m.version_id || null;
+        let onClickAction = '';
+
+        if (docId) {
+            onClickAction = `onclick="SIModules.projectDetailAdmin.navigateToDocument(${docId}, ${versionId ? versionId : 'null'})"`;
+        }
 
         switch (log.action_key) {
+            case 'proyecto_creado':
             case 'proyecto_creadod':
                 type = 'status';
                 actionTitle = 'NUEVO PROYECTO';
                 title = 'Creación del Proyecto';
-                content = `Proyecto ${SIApp.escapeHtml(log.metadata?.name || '')} registrado en plataforma.`;
+                content = `Proyecto ${SIApp.escapeHtml(m.name || m.nombre || '')} registrado en plataforma.`;
                 break;
+
+            case 'proyecto_actualizado':
             case 'proyecto_actualizadod':
                 type = 'edit';
                 actionTitle = 'EDICIÓN DE DATOS';
                 title = 'Actualización del Proyecto';
                 content = 'Se han modificado los detalles del proyecto.';
-                if (log.metadata?.changes) {
+                if (m.changes) {
                     content += '<br><span class="text-xs text-gray-400 mt-1 block">Cambios aplicados</span>';
                 }
                 break;
+
             case 'proyecto_cambio_estado':
             case 'proyecto_cambio_estadod':
                 type = 'status';
                 actionTitle = 'CAMBIO DE ESTADO';
                 title = 'Actualización de Estado';
-                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || '-'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
-                if (log.metadata?.reason) {
-                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
+                const sOld = m.estado_anterior || m.previous_status || m.old_status || '-';
+                const sNew = m.estado_nuevo || m.new_status || '-';
+                const motivo = m.motivo || m.reason || '';
+                content = `De <strong class="uppercase text-gray-400">${sOld}</strong> a <strong class="uppercase text-orange-500">${sNew}</strong>`;
+                if (motivo) {
+                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(motivo)}"</span>`;
                 }
                 break;
+
             case 'proyecto_reabierto':
                 type = 'status';
                 actionTitle = 'PROYECTO REABIERTO';
                 title = 'El Proyecto fue Reabierto';
-                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || 'CERRADO'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
-                if (log.metadata?.reason) {
-                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
-                }
+                const rOld = m.estado_anterior || m.previous_status || m.old_status || 'CERRADO';
+                const rNew = m.estado_nuevo || m.new_status || '-';
+                content = `De <strong class="uppercase text-gray-400">${rOld}</strong> a <strong class="uppercase text-orange-500">${rNew}</strong>`;
                 break;
+
+            case 'proyecto_comercial_asignado':
+                type = 'edit';
+                actionTitle = 'COMERCIAL ASIGNADO';
+                title = 'Nuevo comercial en proyecto';
+                content = `Se ha asignado a un nuevo gestor comercial para este proyecto.`;
+                break;
+
+            case 'proyecto_comercial_removido':
+                type = 'edit';
+                actionTitle = 'COMERCIAL REMOVIDO';
+                title = 'Comercial desvinculado';
+                content = `Se ha retirado al gestor comercial del proyecto.`;
+                break;
+
             case 'documento_subido':
                 type = 'document';
                 actionTitle = 'NUEVO DOCUMENTO';
-                title = log.metadata?.title || log.metadata?.new_title || log.metadata?.file_name || 'Documento Innombrado';
+                title = m.nombre_archivo || m.file_name || m.title || m.new_title || 'Documento Innombrado';
                 isAttachment = true;
-                content = `Archivo subido al sistema<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
+                content = `Archivo subido al sistema<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${m.mime_type ? m.mime_type.split('/')[1] : (m.category || 'General')} ${m.tamaño_archivo ? ' • ' + SIApp.formatFileSize(m.tamaño_archivo) : ''}</span>`;
+                content += `<span class="inline-flex mt-2 items-center gap-1 text-[9.5px] font-bold text-gray-400 uppercase tracking-widest group-hover/doc:text-orange-500 transition-colors">Ver Documento <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg></span>`;
                 break;
+
             case 'documento_nueva_version':
                 type = 'document';
                 actionTitle = 'NUEVA VERSIÓN';
-                title = log.metadata?.title || log.metadata?.new_title || log.metadata?.file_name || 'Actualización de Documento';
+                title = m.nombre_archivo || m.file_name || m.title || m.new_title || 'Actualización de Documento';
                 isAttachment = true;
-                content = `Versión actualizada del documento<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.version_number ? 'v' + log.metadata.version_number : 'General'}</span>`;
+                const vNum = m.numero_version || m.version_number;
+                const vSize = m.tamaño_archivo || m.file_size;
+                content = `Versión actualizada del documento<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">
+                    ${vNum ? 'v' + vNum : 'General'} ${vSize ? ' • ' + SIApp.formatFileSize(vSize) : ''}
+                </span>`;
+                content += `<span class="inline-flex mt-2 items-center gap-1 text-[9.5px] font-bold text-gray-400 uppercase tracking-widest group-hover/doc:text-orange-500 transition-colors">Ver Versión <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg></span>`;
                 break;
+
             case 'documento_descargado':
                 type = 'document';
-                actionTitle = 'DESCARGA DE DOCUMENTO';
-                title = log.metadata?.file_name || log.metadata?.title || 'Documento Descargado';
+                actionTitle = 'DESCARGA';
+                title = m.nombre_archivo || m.file_name || m.title || 'Archivo Descargado';
                 isAttachment = true;
-                content = `El documento fue descargado localmente por el usuario.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
+                content = `El documento fue descargado localmente.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${m.numero_version || m.version_number || 'ACTUAL'}</span>`;
+                content += `<span class="inline-flex mt-2 items-center gap-1 text-[9.5px] font-bold text-gray-400 uppercase tracking-widest group-hover/doc:text-orange-500 transition-colors">Ver en Preview <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg></span>`;
                 break;
+
             case 'documento_visualizado':
                 type = 'document';
-                actionTitle = 'CONSULTA DE DOCUMENTO';
-                title = log.metadata?.file_name || log.metadata?.title || 'Documento Visualizado';
+                actionTitle = 'CONSULTA';
+                title = m.nombre_archivo || m.file_name || m.title || 'Archivo Visualizado';
                 isAttachment = true;
-                content = `El documento ha sido previsualizado en el navegador.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${log.metadata?.version_number || 'ACTUAL'}</span>`;
+                content = `El documento ha sido previsualizado.<br><span class="text-[10px] font-black text-indigo-400 uppercase tracking-tighter mt-1 block">VERSIÓN ${m.numero_version || m.version_number || 'ACTUAL'}</span>`;
+                content += `<span class="inline-flex mt-2 items-center gap-1 text-[9.5px] font-bold text-gray-400 uppercase tracking-widest group-hover/doc:text-orange-500 transition-colors">Ver en Preview <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg></span>`;
                 break;
+
+            case 'comentario_creado':
             case 'document_comment':
+            case 'document_commentd':
                 type = 'chat';
-                actionTitle = 'COMENTARIO INTERNO';
-                title = '';
-                content = `"${SIApp.escapeHtml(log.metadata?.comment || '')}"`;
+                actionTitle = 'COMENTARIO';
+                title = m.documento_titulo || m.title || 'Documento';
+                content = `"${SIApp.escapeHtml(m.body_snippet || m.comment || '')}"`;
+                content += `<br><span class="inline-flex mt-2 items-center gap-1 text-[9.5px] font-bold text-gray-400 uppercase tracking-widest group-hover/doc:text-orange-500 transition-colors">Ir al documento <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg></span>`;
                 break;
+
             case 'document_deleted':
                 type = 'edit';
                 actionTitle = 'DOCUMENTO ELIMINADO';
                 title = 'Documento Removido';
-                content = `El archivo ${(log.metadata?.title || log.metadata?.file_name || '')} ha sido eliminado.`;
+                content = `El archivo ${(m.nombre_archivo || m.file_name || m.title || '')} ha sido eliminado.`;
                 break;
+
             default:
                 actionTitle = log.action_key?.replace(/_/g, ' ').toUpperCase() || 'EVENTO DE SISTEMA';
-                title = log.metadata?.title || log.metadata?.file_name || log.metadata?.name || 'Actividad Registrada';
+                title = m.title || m.file_name || m.nombre_archivo || m.name || 'Actividad Registrada';
 
                 let defaultContent = [];
                 if (log.metadata && typeof log.metadata === 'object') {
@@ -1302,7 +1427,7 @@ SIModules.projectDetailAdmin = {
         let contentHtml = '';
         if (isAttachment) {
             contentHtml = `
-                <div class="mt-3 p-5 bg-[#f8faff] border border-[#e0e7ff] rounded-2xl flex items-center gap-4 shadow-sm w-full lg:w-3/4 xl:w-2/3">
+                <div class="mt-3 p-5 bg-[#f8faff] border border-[#e0e7ff] rounded-2xl flex items-center gap-4 shadow-sm w-full lg:w-3/4 xl:w-2/3 transition-colors group-hover/doc:border-[#c7d2fe] group-hover/doc:bg-[#f0f4ff]">
                     <div class="w-12 h-12 bg-white border border-[#c7d2fe] rounded-xl shadow-sm flex items-center justify-center text-[#4338ca] shrink-0">
                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/></svg>
                     </div>
@@ -1315,7 +1440,8 @@ SIModules.projectDetailAdmin = {
         } else if (type === 'chat') {
             contentHtml = `
                 <div class="mt-2.5">
-                    <div class="inline-block px-6 py-4 bg-[#f8f9fa] rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm relative w-full lg:w-2/3">
+                    <div class="inline-block px-6 py-4 bg-[#f8f9fa] rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm relative w-full lg:w-2/3 transition-colors group-hover/doc:border-orange-200 group-hover/doc:bg-orange-50/50">
+                        <h5 class="text-[12px] font-black text-gray-900 leading-tight mb-2">${title}</h5>
                         <p class="text-[14px] text-gray-700 font-medium leading-relaxed italic">${content}</p>
                     </div>
                 </div>
@@ -1330,25 +1456,25 @@ SIModules.projectDetailAdmin = {
         }
 
         return `
-            <div class="relative flex items-start gap-4 sm:gap-5 group fade-in w-full">
-                <!-- Desktop Actor Name -->
+            <div ${onClickAction} class="relative z-10 flex items-start gap-4 sm:gap-5 group fade-in w-full ${onClickAction ? 'cursor-pointer hover:bg-gray-50/50 rounded-2xl transition-colors p-2 -ml-2 group/doc' : ''}">
                 <div class="hidden sm:flex w-24 lg:w-32 flex-col items-end pt-1 shrink-0">
                     <span class="text-[10px] lg:text-[11px] font-black text-[#1a1b25] uppercase tracking-tight text-right leading-tight pr-1" title="${actor}">${actor}</span>
                 </div>
                 
-                <!-- Timeline dot / icon -->
-                <div class="relative z-10 w-10 h-10 sm:w-11 sm:h-11 ${node.color} rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform flex-shrink-0 ring-4 ring-white mt-1 sm:mt-0">
-                    ${node.icon}
+                <div class="relative flex flex-col items-center shrink-0 self-stretch mt-1 sm:mt-0">
+                    <div class="absolute top-6 bottom-[-50px] left-1/2 -translate-x-1/2 w-[2px] bg-gray-100 -z-10"></div>
+                    
+                    <div class="relative z-10 w-10 h-10 sm:w-11 sm:h-11 ${node.color} rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform ring-4 ring-white shrink-0">
+                        ${node.icon}
+                    </div>
                 </div>
                 
-                <!-- Content -->
-                <div class="flex-1 min-w-0 pb-5 sm:pb-3 border-b border-gray-50/50">
+                <div class="flex-1 min-w-0 pb-5 sm:pb-3 border-b border-gray-50/50 ${onClickAction ? 'border-transparent' : ''}">
                     <div class="mb-2 sm:mb-1 flex flex-wrap items-center gap-2">
                         <span class="text-[9px] font-black tracking-widest uppercase text-orange-500 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">${actionTitle}</span>
                         <span class="text-[9px] lg:text-[10px] text-gray-400 font-medium">${timeFormat}</span>
                     </div>
                     
-                    <!-- Mobile Actor Name -->
                     <div class="sm:hidden mb-2 flex items-center gap-1.5 text-gray-900">
                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span class="text-[10px] font-black uppercase tracking-tight leading-none">${actor}</span>
@@ -1359,6 +1485,7 @@ SIModules.projectDetailAdmin = {
             </div>
         `;
     },
+
 
     /** Filtrar filas de documentos en tiempo real (ahora por tarjetas) */
     _filterDocs(query = null) {
@@ -1434,7 +1561,7 @@ SIModules.projectDetailAdmin = {
         const counter = document.getElementById('doc-counter');
         if (!container) return;
 
-        if (counter) counter.textContent = `${pagination ? pagination.total_items : this.documents.length} ARCHIVOS`;
+        if (counter) counter.textContent = `${pagination ? pagination.total_results : this.documents.length} ARCHIVOS`;
 
         if (this.documents.length === 0) {
             container.innerHTML = `
@@ -1455,7 +1582,7 @@ SIModules.projectDetailAdmin = {
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
             const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
-            
+
             const canViewMime = doc.mime_type === 'application/pdf' ||
                 doc.mime_type.startsWith('image/') ||
                 doc.mime_type.startsWith('video/') ||
@@ -1535,6 +1662,18 @@ SIModules.projectDetailAdmin = {
             </div>
             <div id="project-docs-pagination" class="mt-8 border-t border-gray-50 pt-6"></div>
         `;
+
+        // --- GESTIÓN DE PREVIEW PENDIENTE (RUTA DIRECTA) ---
+        if (this.pendingPreviewDocId) {
+            const doc = this.documents.find(d => d.id == this.pendingPreviewDocId);
+            const vId = this.pendingPreviewVersionId;
+            if (doc) {
+                // Pequeño timeout para asegurar que el DOM de la pestaña está listo
+                setTimeout(() => this.openPreviewModal(doc, vId), 100);
+            }
+            this.pendingPreviewDocId = null; // Consumir
+            this.pendingPreviewVersionId = null;
+        }
 
         if (pagination) {
             const pagContainer = document.getElementById('project-docs-pagination');
@@ -1706,6 +1845,44 @@ SIModules.projectDetailAdmin = {
         document.querySelectorAll('[id^="dropdown-"]').forEach(d => d.classList.add('hidden'));
     },
 
+    /**
+     * Ayudante para abrir una previsualización buscando el doc en la lista cargada.
+     * Útil para navegación interna y deep linking.
+     */
+    openPreview(docId, versionId = null) {
+        if (!this.documents || this.documents.length === 0) {
+            this.pendingPreviewDocId = docId;
+            this.pendingPreviewVersionId = versionId;
+            return;
+        }
+        const doc = this.documents.find(d => d.id == docId);
+        if (doc) {
+            this.openPreviewModal(doc, versionId);
+        } else {
+            // Si no está en la lista actual (ej: paginación), lo dejamos como pendiente
+            // aunque usualmente la API lo habrá traído si entramos por ID.
+            this.pendingPreviewDocId = docId;
+            this.pendingPreviewVersionId = versionId;
+        }
+    },
+
+    /**
+     * Navega automáticamente a la pestaña de documentos y abre el preview.
+     */
+    navigateToDocument(docId, versionId = null) {
+        this.pendingPreviewDocId = docId;
+        this.pendingPreviewVersionId = versionId;
+
+        const tabBtn = document.querySelector('button[data-tab="documentos"]');
+        if (tabBtn) {
+            this.switchTab('documentos', tabBtn);
+        } else {
+            this.activeTab = 'documentos';
+            this._syncUrlForTab();
+            this.renderTabContent();
+        }
+    },
+
     /** PREVISUALIZACIÓN */
     openPreviewModal(doc, versionId = null) {
         const modal = document.getElementById('preview-doc-modal');
@@ -1737,6 +1914,12 @@ SIModules.projectDetailAdmin = {
         // URLs
         const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view?${versionId ? 'version_id=' + versionId + '&' : ''}_t=${Date.now()}`;
         const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id=' + versionId : ''}`;
+
+        // --- SPA: Sincronizar URL para Deep Linking ---
+        const previewUrl = `/steelinox/project/${this.projectId}/documents/${doc.id}`;
+        if (window.location.pathname !== previewUrl) {
+            window.history.pushState({ docId: doc.id }, '', previewUrl);
+        }
 
         if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
         if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
@@ -1776,7 +1959,7 @@ SIModules.projectDetailAdmin = {
             if (leftPanel) leftPanel.classList.remove('hidden');
             if (rightPanel) rightPanel.classList.remove('w-full', 'lg:w-full', 'xl:w-full');
             if (rightPanel) rightPanel.classList.add('lg:w-[26rem]', 'xl:w-[30rem]');
-            
+
             if (isImage && img) {
                 img.classList.remove('hidden');
                 img.src = viewUrl;
@@ -2028,55 +2211,55 @@ SIModules.projectDetailAdmin = {
             const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
             const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
 
-        // Check Permissions
-        const isClient = this.user && this.user.role === 'cliente';
-        const canClientView = !isClient || this.currentDoc.access_mode === 'view' || this.currentDoc.access_mode === 'both';
-        const canClientDownload = !isClient || this.currentDoc.access_mode === 'download' || this.currentDoc.access_mode === 'both';
+            // Check Permissions
+            const isClient = this.user && this.user.role === 'cliente';
+            const canClientView = !isClient || this.currentDoc.access_mode === 'view' || this.currentDoc.access_mode === 'both';
+            const canClientDownload = !isClient || this.currentDoc.access_mode === 'download' || this.currentDoc.access_mode === 'both';
 
-        if (headerDownloadBtn) {
-            headerDownloadBtn.href = downloadUrl;
-            headerDownloadBtn.style.display = canClientDownload ? '' : 'none';
-        }
+            if (headerDownloadBtn) {
+                headerDownloadBtn.href = downloadUrl;
+                headerDownloadBtn.style.display = canClientDownload ? '' : 'none';
+            }
 
-        const leftPanel = document.getElementById('preview-left-panel');
-        const rightPanel = document.getElementById('preview-right-panel');
+            const leftPanel = document.getElementById('preview-left-panel');
+            const rightPanel = document.getElementById('preview-right-panel');
 
-        if (!canClientView) {
-            if (leftPanel) leftPanel.classList.add('hidden');
-            if (rightPanel) rightPanel.classList.remove('lg:w-[26rem]', 'xl:w-[30rem]');
-            if (rightPanel) rightPanel.classList.add('w-full', 'lg:w-full', 'xl:w-full');
+            if (!canClientView) {
+                if (leftPanel) leftPanel.classList.add('hidden');
+                if (rightPanel) rightPanel.classList.remove('lg:w-[26rem]', 'xl:w-[30rem]');
+                if (rightPanel) rightPanel.classList.add('w-full', 'lg:w-full', 'xl:w-full');
 
-            if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
-            if (img) { img.classList.add('hidden'); img.src = ''; }
-            if (video) { video.classList.add('hidden'); video.src = ''; video.pause(); }
-            if (skeleton) skeleton.classList.add('hidden');
-            if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
-        } else {
-            if (leftPanel) leftPanel.classList.remove('hidden');
-            if (rightPanel) rightPanel.classList.remove('w-full', 'lg:w-full', 'xl:w-full');
-            if (rightPanel) rightPanel.classList.add('lg:w-[26rem]', 'xl:w-[30rem]');
-
-            if (isImage && img) {
-                img.classList.remove('hidden');
-                img.src = viewUrl;
-            } else if (isVideo && video) {
-                video.classList.remove('hidden');
-                video.src = viewUrl;
-                video.load();
-            } else if ((isPdf || isText) && iframe) {
-                iframe.classList.remove('hidden');
-                iframe.src = viewUrl;
-            } else {
+                if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
+                if (img) { img.classList.add('hidden'); img.src = ''; }
+                if (video) { video.classList.add('hidden'); video.src = ''; video.pause(); }
                 if (skeleton) skeleton.classList.add('hidden');
-                if (unsupportedDiv) {
-                    unsupportedDiv.classList.remove('hidden');
-                    if (unsupportedDownload) {
-                        unsupportedDownload.href = downloadUrl;
-                        unsupportedDownload.style.display = canClientDownload ? '' : 'none';
+                if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
+            } else {
+                if (leftPanel) leftPanel.classList.remove('hidden');
+                if (rightPanel) rightPanel.classList.remove('w-full', 'lg:w-full', 'xl:w-full');
+                if (rightPanel) rightPanel.classList.add('lg:w-[26rem]', 'xl:w-[30rem]');
+
+                if (isImage && img) {
+                    img.classList.remove('hidden');
+                    img.src = viewUrl;
+                } else if (isVideo && video) {
+                    video.classList.remove('hidden');
+                    video.src = viewUrl;
+                    video.load();
+                } else if ((isPdf || isText) && iframe) {
+                    iframe.classList.remove('hidden');
+                    iframe.src = viewUrl;
+                } else {
+                    if (skeleton) skeleton.classList.add('hidden');
+                    if (unsupportedDiv) {
+                        unsupportedDiv.classList.remove('hidden');
+                        if (unsupportedDownload) {
+                            unsupportedDownload.href = downloadUrl;
+                            unsupportedDownload.style.display = canClientDownload ? '' : 'none';
+                        }
                     }
                 }
             }
-        }
         }
 
         // Actualizar campo oculto de versión activa y el indicador del chat
@@ -2366,6 +2549,12 @@ SIModules.projectDetailAdmin = {
             modal.classList.add('hidden');
             if (iframe) iframe.src = 'about:blank';
         }, 300);
+
+        // --- SPA: Sincronizar URL al cerrar ---
+        const baseUrl = `/steelinox/project/${this.projectId}/documents`;
+        if (window.location.pathname !== baseUrl) {
+            window.history.pushState({ tab: 'documentos' }, '', baseUrl);
+        }
     },
 
     /** Disparar el selector para una nueva versión */

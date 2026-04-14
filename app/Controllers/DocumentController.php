@@ -183,6 +183,7 @@ class DocumentController {
                 // AUDITORÍA
                 AuditLogger::log('documento_subido', 'document', $newDocId, $projectId, [
                     'nombre_archivo'   => $safeFileName,
+                    'documento_id'     => $newDocId,
                     'documento_titulo' => $title,
                     'tamaño_archivo'   => $file['size'],
                     'mime_type'        => $realMime
@@ -289,6 +290,7 @@ class DocumentController {
                 'nombre_archivo'   => $safeFileName,
                 'document_id'      => $documentId,
                 'documento_titulo' => $docInfo ? $docInfo['title'] : 'Desconocido',
+                'numero_version'   => $docInfo ? $docInfo['version_number'] : null,
                 'tamaño_archivo'   => $file['size'],
                 'auto_versioned'   => false
             ]);
@@ -491,6 +493,7 @@ class DocumentController {
                 
                 AuditLogger::log($actionKey, 'document', $documentId, $projectId, [
                     'nombre_archivo'        => $docInfo['file_name'],
+                    'documento_id'          => $documentId,
                     'numero_version'        => $docInfo['version_number'] ?? null,
                     'es_version_especifica' => $versionId ? true : false,
                     'version_id'            => $versionId ?: ($docInfo['version_id'] ?? null)

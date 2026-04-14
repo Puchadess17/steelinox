@@ -22,7 +22,12 @@ class Audit
                     WHEN a.entity_type = 'user' THEN u_ent.name
                     WHEN a.entity_type = 'comment' THEN 'Comentario'
                     ELSE NULL
-                 END AS entity_name";
+                 END AS entity_name,
+                 p_ctx.name AS project_name,
+                 p_ctx.reference AS project_ref,
+                 COALESCE(c_ctx.name, c_ent_direct.name) AS client_name,
+                 COALESCE(c_ctx.reference, c_ent_direct.reference) AS client_ref,
+                 COALESCE(p_ctx.client_id, CASE WHEN a.entity_type = 'client' THEN a.entity_id ELSE NULL END) AS client_id_ctx";
     }
 
     /** HELPER PRIVADO: Genera los JOINs necesarios para cruzar las entidades */
@@ -31,7 +36,10 @@ class Audit
                  LEFT JOIN documents d_ent ON a.entity_type = 'document' AND a.entity_id = d_ent.id
                  LEFT JOIN document_versions dv_ent ON a.entity_type = 'document_version' AND a.entity_id = dv_ent.id
                  LEFT JOIN clients c_ent ON a.entity_type = 'client' AND a.entity_id = c_ent.id
-                 LEFT JOIN users u_ent ON a.entity_type = 'user' AND a.entity_id = u_ent.id ";
+                 LEFT JOIN users u_ent ON a.entity_type = 'user' AND a.entity_id = u_ent.id 
+                 LEFT JOIN projects p_ctx ON a.project_id = p_ctx.id
+                 LEFT JOIN clients c_ctx ON p_ctx.client_id = c_ctx.id
+                 LEFT JOIN clients c_ent_direct ON a.entity_type = 'client' AND a.entity_id = c_ent_direct.id ";
     }
 
     /** Obtiene el historial de un proyecto específico con paginación */

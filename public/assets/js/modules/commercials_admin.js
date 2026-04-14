@@ -70,9 +70,9 @@ SIModules.commercialsAdmin = {
                         <!-- Fila de Tabs con scroll horizontal nativo -->
                         <div class="w-full xl:w-auto">
                             <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                                <button class="tab-comercial tab-comerciales active bg-orange-500 text-white shadow-md shadow-orange-500/20 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.commercialsAdmin._filter('all', this)">Todos</button>
-                                <button class="tab-comercial tab-comerciales bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="active" onclick="SIModules.commercialsAdmin._filter('active', this)">Activos</button>
-                                <button class="tab-comercial tab-comerciales bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactive" onclick="SIModules.commercialsAdmin._filter('inactive', this)">Inactivos</button>
+                                <button class="tab-client tab-comerciales ${this.currentFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.commercialsAdmin._filter('all', this)">Todos</button>
+                                <button class="tab-client tab-comerciales ${this.currentFilter === 'activo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.commercialsAdmin._filter('activo', this)">Activos</button>
+                                <button class="tab-client tab-comerciales ${this.currentFilter === 'inactivo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.commercialsAdmin._filter('inactivo', this)">Inactivos</button>
                             </div>
                         </div>
 
@@ -419,16 +419,12 @@ SIModules.commercialsAdmin = {
         `;
     },
 
-    /** Filtros Instantáneos */
     _filter(status, btn) {
-        document.querySelectorAll('.tab-comerciales').forEach(t => {
-            t.classList.remove('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
-            t.classList.add('bg-white', 'border', 'border-gray-100', 'text-gray-400', 'hover:bg-gray-50');
-        });
-        if (btn) {
-            btn.classList.add('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
-            btn.classList.remove('bg-white', 'border', 'border-gray-100', 'text-gray-400', 'hover:bg-gray-50');
-        }
+        const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
+        document.querySelectorAll('.tab-comerciales').forEach(t => t.classList.remove(...activeClasses));
+        
+        if (btn) btn.classList.add(...activeClasses);
+        
         this.currentFilter = status;
         this.currentPage = 1;
         this.loadList();
