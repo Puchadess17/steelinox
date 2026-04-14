@@ -4,6 +4,7 @@
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
+require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class ProjectController
 {
@@ -29,14 +30,20 @@ class ProjectController
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            $projectModel = new Project();
-            $proyectos = $projectModel->getListByUser($userId, $role, $clientId);
+            // 1. Extraemos parámetros de paginación
+            [$page, $limit, $offset] = PaginationHelper::getParams();
 
+            // 2. Extraemos datos y el total desde el modelo
+            $projectModel = new Project();
+            $result = $projectModel->getListByUser($userId, $role, $clientId, $limit, $offset);
+
+            // 3. Devolvemos el JSON uniforme
             echo json_encode([
-                'success' => true,
-                'message' => 'Proyectos recuperados correctamente',
-                'data' => $proyectos,
-                'errors' => null
+                'success'    => true,
+                'message'    => 'Proyectos recuperados correctamente',
+                'data'       => $result['data'],
+                'pagination' => PaginationHelper::format($result['total'], $limit, $page),
+                'errors'     => null
             ]);
 
         } catch (Exception $e) {
@@ -371,7 +378,6 @@ class ProjectController
             $projectModel = new Project();
 
             // --- GENERACIÓN SECUENCIAL INTELIGENTE ---
-            // Le pedimos al modelo que nos dé el siguiente número libre de este año
             $generatedReference = $projectModel->generateNextReference();
             // -----------------------------------------
 
@@ -407,6 +413,17 @@ class ProjectController
             ]);
 
         } catch (Exception $e) {
+            if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
+                http_response_code(409); // 409 Conflict
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Se ha producido una colisión al generar el código de referencia. Por favor, pulsa en Guardar de nuevo.',
+                    'data' => null,
+                    'errors' => ['reference' => 'Código duplicado generado aleatoriamente']
+                ]);
+                return;
+            }
+
             http_response_code(500);
             echo json_encode([
                 'success' => false,

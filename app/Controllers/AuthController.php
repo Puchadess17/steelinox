@@ -2,7 +2,7 @@
 // app/Controllers/AuthController.php
 
 require_once APP_PATH . '/Models/User.php';
-require_once APP_PATH . '/Models/Audit.php'; // <-- INYECTAMOS EL MODELO DE AUDITORÍA
+require_once APP_PATH . '/Models/Audit.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 
 class AuthController {
@@ -93,7 +93,6 @@ class AuthController {
     }
     
     public function login() {
-        // Indico que devuelvo JSON
         header('Content-Type: application/json; charset=utf-8');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -104,16 +103,18 @@ class AuthController {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $input = json_decode(file_get_contents('php://input'), true);
-        $email = $input['email'] ?? '';
-        $password = $input['password'] ?? '';
+        
+        // --- SANITIZACIÓN ---
+        $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+        $password = $input['password'] ?? ''; 
         $ip = $_SERVER['REMOTE_ADDR'];
+        // --------------------
 
         // --- RATE LIMITING REAL (A prueba de Bots) ---
         $auditModel = new Audit();
         $failedAttempts = $auditModel->countRecentFailedLogins($ip, 15);
 
         if ($failedAttempts >= 5) {
-            // AUDITORÍA: Bloqueo de IP (entity_id = 0 para no dar error en MySQL)
             AuditLogger::log('ip_bloqueada', 'system', 0, null, ['ip' => $ip, 'email_intentado' => $email]);
 
             $this->sendResponse(429, false, 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.', null, ['rate_limit' => 'Inténtelo de nuevo en 15 minutos']);
@@ -122,7 +123,11 @@ class AuthController {
         // --- FIN RATE LIMITING ---
 
         $validationErrors = [];
-        if (empty($email)) $validationErrors['email'] = 'El email es obligatorio';
+        if (empty($email)) {
+            $validationErrors['email'] = 'El email es obligatorio';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $validationErrors['email'] = 'El formato del email no es válido';
+        }
         if (empty($password)) $validationErrors['password'] = 'La contraseña es obligatoria';
 
         if (!empty($validationErrors)) {
@@ -154,7 +159,6 @@ class AuthController {
             ], null);
         } else {
             // AUDITORÍA: Login fallido (entity_id = 0). 
-            // Al guardar esto, el $failedAttempts de la próxima petición sumará 1 real.
             AuditLogger::log('login_fallido', 'system', 0, null, ['email_intentado' => $email]);
 
             $this->sendResponse(401, false, 'Credenciales incorrectas', null, ['auth' => 'Email o contraseña inválidos']);

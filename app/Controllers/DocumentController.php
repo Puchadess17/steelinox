@@ -5,6 +5,7 @@ require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
+require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class DocumentController {
 
@@ -13,27 +14,45 @@ class DocumentController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba GET', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
+            return;
+        }
+
         try {
+            $projectId = (int)$projectId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
             // Escudo de Autorización: Reutilizamos el modelo Project
             $projectModel = new Project();
-            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos']);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
-            $documentModel = new Document();
-            $documents = $documentModel->getListByProject((int)$projectId, $role);
+            // 1. Extraemos los parámetros de paginación
+            [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            echo json_encode(['success' => true, 'data' => $documents]);
+            // 2. Extraemos los datos con límites del modelo
+            $documentModel = new Document();
+            $result = $documentModel->getListByProject($projectId, $role, $limit, $offset);
+
+            // 3. Devolvemos el JSON uniforme
+            echo json_encode([
+                'success'    => true, 
+                'message'    => 'Documentos recuperados correctamente',
+                'data'       => $result['data'],
+                'pagination' => PaginationHelper::format($result['total'], $limit, $page),
+                'errors'     => null
+            ]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error del servidor']]);
         }
     }
 
@@ -44,41 +63,38 @@ class DocumentController {
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba POST']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba POST', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
         try {
+            $projectId = (int)$projectId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
             // Escudo de Autorización
             $projectModel = new Project();
-            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto']);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
             // Validar que se ha enviado un archivo
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido o superó el límite de tamaño']);
+                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido o superó el límite de tamaño', 'data' => null, 'errors' => ['file' => 'Archivo inválido']]);
                 return;
             }
 
             $file = $_FILES['file'];
             
             // --- SANITIZACIÓN ESTRICTA ---
-            // 1. Evitar XSS y saltos de directorio en el nombre original del archivo
             $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
-            
-            // 2. Limpiar y formatear el título
             $rawTitle = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
             $title = $this->sanitizeName($rawTitle);
             
-            // 3. Limpiar variables de configuración
             $type = isset($_POST['type']) ? htmlspecialchars(trim($_POST['type']), ENT_QUOTES, 'UTF-8') : 'otros';
             $accessMode = isset($_POST['access_mode']) ? htmlspecialchars(trim($_POST['access_mode']), ENT_QUOTES, 'UTF-8') : 'download';
             $isVisible = isset($_POST['is_visible_to_client']) ? (int)$_POST['is_visible_to_client'] : 0;
@@ -103,7 +119,7 @@ class DocumentController {
 
             if (!in_array($realMime, $allowedMimes)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'El formato del archivo no está permitido por seguridad.']);
+                echo json_encode(['success' => false, 'message' => 'El formato del archivo no está permitido por seguridad.', 'data' => null, 'errors' => ['file' => 'Tipo mime inválido']]);
                 return;
             }
 
@@ -121,7 +137,7 @@ class DocumentController {
             }
 
             $docData = [
-                'project_id'           => (int)$projectId,
+                'project_id'           => $projectId,
                 'type'                 => $type,
                 'title'                => $title,
                 'is_visible_to_client' => $isVisible,
@@ -139,13 +155,13 @@ class DocumentController {
             ];
 
             $documentModel = new Document();
-            $existingId = $documentModel->findDocumentByTitle((int)$projectId, $title);
+            $existingId = $documentModel->findDocumentByTitle($projectId, $title);
 
             if ($existingId) {
                 // AUTO-VERSIONADO
-                $newVersionId = $documentModel->uploadNewVersion((int)$existingId, $versionData);
+                $newVersionId = $documentModel->uploadNewVersion($existingId, $versionData);
                 
-                // AUDITORÍA: Nueva versión automática
+                // AUDITORÍA
                 AuditLogger::log('documento_nueva_version', 'document_version', $newVersionId, $projectId, [
                     'nombre_archivo'  => $safeFileName,
                     'documento_id'    => $existingId,
@@ -156,13 +172,14 @@ class DocumentController {
                 echo json_encode([
                     'success' => true,
                     'message' => 'Se ha detectado un documento con el mismo nombre. Se ha subido como una nueva versión (Auto-Versionado).',
-                    'data'    => ['id' => $existingId, 'version_id' => $newVersionId, 'is_new_version' => true]
+                    'data'    => ['id' => $existingId, 'version_id' => $newVersionId, 'is_new_version' => true],
+                    'errors'  => null
                 ]);
             } else {
                 // DOCUMENTO NUEVO
                 $newDocId = $documentModel->uploadNewDocument($docData, $versionData);
                 
-                // AUDITORÍA: Subida de documento nuevo
+                // AUDITORÍA
                 AuditLogger::log('documento_subido', 'document', $newDocId, $projectId, [
                     'nombre_archivo' => $safeFileName,
                     'tamaño_archivo' => $file['size'],
@@ -172,13 +189,14 @@ class DocumentController {
                 echo json_encode([
                     'success' => true,
                     'message' => 'Documento subido correctamente',
-                    'data'    => ['id' => $newDocId, 'is_new_version' => false]
+                    'data'    => ['id' => $newDocId, 'is_new_version' => false],
+                    'errors'  => null
                 ]);
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al subir documento']]);
         }
     }
 
@@ -189,25 +207,27 @@ class DocumentController {
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba POST']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba POST', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
         try {
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto']);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto', 'data' => null, 'errors' => ['project' => 'Denegado']]);
                 return;
             }
 
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido']);
+                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido', 'data' => null, 'errors' => ['file' => 'Inválido']]);
                 return;
             }
 
@@ -235,7 +255,7 @@ class DocumentController {
 
             if (!in_array($realMime, $allowedMimes)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'El formato del archivo no está permitido.']);
+                echo json_encode(['success' => false, 'message' => 'El formato del archivo no está permitido.', 'data' => null, 'errors' => ['file' => 'Formato no soportado']]);
                 return;
             }
 
@@ -258,9 +278,9 @@ class DocumentController {
             ];
 
             $documentModel = new Document();
-            $versionId = $documentModel->uploadNewVersion((int)$documentId, $versionData);
+            $versionId = $documentModel->uploadNewVersion($documentId, $versionData);
 
-            // AUDITORÍA: Nueva versión manual
+            // AUDITORÍA
             AuditLogger::log('documento_nueva_version', 'document_version', $versionId, $projectId, [
                 'nombre_archivo'  => $safeFileName,
                 'document_id'     => $documentId,
@@ -271,12 +291,13 @@ class DocumentController {
             echo json_encode([
                 'success' => true,
                 'message' => 'Nueva versión subida correctamente',
-                'data'    => ['version_id' => $versionId]
+                'data'    => ['version_id' => $versionId],
+                'errors'  => null
             ]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al subir version']]);
         }
     }
 
@@ -285,26 +306,34 @@ class DocumentController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba GET']]);
+            return;
+        }
+
         try {
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
             $documentModel = new Document();
-            $versions = $documentModel->getVersions((int)$documentId);
+            $versions = $documentModel->getVersions($documentId);
 
-            echo json_encode(['success' => true, 'data' => $versions]);
+            echo json_encode(['success' => true, 'message' => 'Versiones recuperadas', 'data' => $versions, 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al obtener versiones']);
+            echo json_encode(['success' => false, 'message' => 'Error al obtener versiones', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -323,12 +352,14 @@ class DocumentController {
         AuthMiddleware::check();
 
         try {
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById((int)$projectId, $userId, $role, $clientId)) {
+            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
                 die("Proyecto no encontrado o sin permisos.");
             }
@@ -338,7 +369,7 @@ class DocumentController {
             // --------------------
 
             $documentModel = new Document();
-            $docInfo = $documentModel->getForDownload((int)$documentId, (int)$projectId, $versionId);
+            $docInfo = $documentModel->getForDownload($documentId, $projectId, $versionId);
 
             if (!$docInfo) {
                 http_response_code(404);
@@ -469,7 +500,9 @@ class DocumentController {
         }
     }
 
-    /** Helper privado para limpiar y formatear nombres */
+    /** Helper privado para limpiar y formatear nombres
+     * Ej: "   presupuesto   final  " => "Presupuesto Final"
+     */
     private function sanitizeName($name) {
         if (empty($name)) return '';
         $name = trim($name);

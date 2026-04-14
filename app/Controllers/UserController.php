@@ -5,6 +5,7 @@ require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
+require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class UserController {
 
@@ -16,30 +17,38 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        // Los clientes pueden ver el listado, se filtrará en el modelo
+        if ($actorRole === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            return;
+        }
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba GET']]);
+            return;
+        }
 
         try {
-            $userModel = new User();
-            $users = $userModel->getClientUsersList($actorUserId, $actorRole);
+            // Extraemos los parámetros de paginación
+            [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // Calcular KPIs para las tarjetas superiores
-            $kpis = [
-                'total'     => count($users),
-                'activos'   => count(array_filter($users, fn($u) => $u['is_active'] == 1)),
-                'inactivos' => count(array_filter($users, fn($u) => $u['is_active'] == 0))
-            ];
+            $userModel = new User();
+            $result = $userModel->getClientUsersList($actorUserId, $actorRole, $limit, $offset);
 
             echo json_encode([
                 'success' => true, 
+                'message' => 'Usuarios recuperados correctamente',
                 'data' => [
-                    'list' => $users,
-                    'kpis' => $kpis
-                ]
+                    'list' => $result['data'],
+                    'kpis' => $result['kpis']
+                ],
+                'pagination' => PaginationHelper::format($result['total'], $limit, $page),
+                'errors' => null
             ]);
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
@@ -51,8 +60,17 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        // Los clientes pueden ver detalles de sus propios compañeros
+        if ($actorRole === 'cliente') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            return;
+        }
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba GET']]);
+            return;
+        }
 
         try {
             $userModel = new User();
@@ -60,7 +78,7 @@ class UserController {
 
             if (!$user || $user['role'] !== 'cliente') {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
+                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado', 'data' => null, 'errors' => ['user' => 'Inaccesible']]);
                 return;
             }
 
@@ -68,16 +86,16 @@ class UserController {
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la empresa de este usuario']);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la empresa de este usuario', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
             unset($user['password_hash']); // Nunca enviamos el hash al front
 
-            echo json_encode(['success' => true, 'data' => $user]);
+            echo json_encode(['success' => true, 'message' => 'Detalle recuperado', 'data' => $user, 'errors' => null]);
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno']);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
@@ -137,7 +155,7 @@ class UserController {
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($input['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre esta empresa']);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre esta empresa', 'data' => null, 'errors' => ['client_id' => 'Denegado']]);
                 return;
             }
 
@@ -179,7 +197,7 @@ class UserController {
         } catch (Exception $e) {
             error_log('UserController::store - ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al crear el usuario.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => false, 'message' => 'Error al crear el usuario.', 'data' => null, 'errors' => ['server' => 'Error al guardar']]);
         }
     }
 
@@ -219,7 +237,7 @@ class UserController {
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la empresa de este usuario']);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la empresa de este usuario', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
@@ -264,7 +282,7 @@ class UserController {
                     // Validar permisos sobre la NUEVA empresa
                     if (!$clientModel->getDetailsById($newClientId, $actorUserId, $actorRole)) {
                         http_response_code(403);
-                        echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la nueva empresa seleccionada']);
+                        echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la nueva empresa seleccionada', 'data' => null, 'errors' => ['client_id' => 'Denegado']]);
                         return;
                     }
                     $updateData['client_id'] = $newClientId;
@@ -330,7 +348,7 @@ class UserController {
         } catch (Exception $e) {
             error_log('UserController::update - ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar el usuario.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar el usuario.', 'data' => null, 'errors' => ['server' => 'Error de base de datos']]);
         }
     }
 
@@ -360,7 +378,7 @@ class UserController {
 
             if (!$user) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado o ya eliminado', 'data' => null, 'errors' => null]);
+                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado o ya eliminado', 'data' => null, 'errors' => ['user' => 'Inaccesible']]);
                 return;
             }
 
@@ -368,7 +386,7 @@ class UserController {
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre este usuario']);
+                echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre este usuario', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
@@ -391,7 +409,7 @@ class UserController {
         } catch (Exception $e) {
             error_log('UserController::destroy - ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al eliminar usuario.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => false, 'message' => 'Error al eliminar usuario.', 'data' => null, 'errors' => ['server' => 'Error al borrar']]);
         }
     }
 
@@ -414,16 +432,9 @@ class UserController {
     /** Helper privado para limpiar y formatear nombres */
     private function sanitizeName($name) {
         if (empty($name)) return '';
-        
-        // 1. Quitar espacios a los lados
         $name = trim($name);
-        
-        // 2. Reemplazar múltiples espacios en medio por un solo espacio
         $name = preg_replace('/\s+/', ' ', $name);
-        
-        // 3. Poner en minúsculas y luego poner mayúscula inicial a cada palabra
         $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
-        
         return $name;
     }
 }

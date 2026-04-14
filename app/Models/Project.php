@@ -10,30 +10,53 @@ class Project {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    // Lista de proyectos dashboard, filtrada por rol y usuario
-    public function getListByUser($userId, $role, $clientId) {
-        $sql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name 
-                FROM projects p
-                LEFT JOIN clients c ON p.client_id = c.id
-                WHERE p.deleted_at IS NULL";
-
-        $params = [];
+    // Lista de proyectos dashboard, filtrada por rol, usuario y paginada
+    public function getListByUser($userId, $role, $clientId, $limit = 15, $offset = 0) {
+        $baseWhere = "WHERE p.deleted_at IS NULL";
 
         if ($role === 'cliente') {
-            $sql .= " AND p.client_id = :client_id";
-            $params['client_id'] = $clientId;
-
+            $baseWhere .= " AND p.client_id = :client_id";
         } elseif ($role === 'comercial') {
-            $sql .= " AND p.id IN (SELECT project_id FROM project_user WHERE user_id = :user_id)";
-            $params['user_id'] = $userId;
+            $baseWhere .= " AND p.id IN (SELECT project_id FROM project_user WHERE user_id = :user_id)";
         }
 
-        $sql .= " ORDER BY p.created_at DESC";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        // 1. Contar el total de registros
+        $countSql = "SELECT COUNT(*) FROM projects p " . $baseWhere;
+        $stmtCount = $this->db->prepare($countSql);
         
-        return $stmt->fetchAll();
+        if ($role === 'cliente') {
+            $stmtCount->bindValue(':client_id', $clientId, PDO::PARAM_INT);
+        } elseif ($role === 'comercial') {
+            $stmtCount->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        }
+        $stmtCount->execute();
+        $total = (int)$stmtCount->fetchColumn();
+
+        // 2. Extraer datos paginados
+        $dataSql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name 
+                    FROM projects p
+                    LEFT JOIN clients c ON p.client_id = c.id
+                    $baseWhere
+                    ORDER BY p.created_at DESC
+                    LIMIT :limit OFFSET :offset";
+
+        $stmtData = $this->db->prepare($dataSql);
+        
+        if ($role === 'cliente') {
+            $stmtData->bindValue(':client_id', $clientId, PDO::PARAM_INT);
+        } elseif ($role === 'comercial') {
+            $stmtData->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        }
+        
+        // Bindeamos los parámetros de paginación asegurando que son enteros
+        $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmtData->execute();
+        
+        return [
+            'total' => $total,
+            'data'  => $stmtData->fetchAll()
+        ];
     }
 
     // Proyecto individual->fetch
@@ -222,7 +245,6 @@ class Project {
         $prefix = "PRJ-$year-";
 
         // Buscar la última referencia de este año
-        // Como el formato es fijo, ordenamos de forma descendente y cogemos el primero
         $sql = "SELECT reference FROM projects WHERE reference LIKE :prefix ORDER BY id DESC LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['prefix' => $prefix . '%']);

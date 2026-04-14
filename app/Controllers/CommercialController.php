@@ -4,6 +4,7 @@
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
+require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class CommercialController {
 
@@ -26,35 +27,25 @@ class CommercialController {
 
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba GET']]);
             return;
         }
 
         try {
-            $userModel = new User();
-            $commercialsList = $userModel->getCommercialsWithStats();
+            // 1. Extraemos los parámetros de paginación
+            [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // Calcular KPIs globales
-            $total = count($commercialsList);
-            $activos = 0;
-            
-            foreach ($commercialsList as $comercial) {
-                if ($comercial['is_active']) {
-                    $activos++;
-                }
-            }
+            $userModel = new User();
+            $result = $userModel->getCommercialsWithStats($limit, $offset);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Lista de comerciales recuperada correctamente',
                 'data'    => [
-                    'kpis' => [
-                        'total'    => $total,
-                        'activos'  => $activos,
-                        'inactivos'=> $total - $activos
-                    ],
-                    'list' => $commercialsList
+                    'kpis' => $result['kpis'],
+                    'list' => $result['data']
                 ],
+                'pagination' => PaginationHelper::format($result['total'], $limit, $page),
                 'errors'  => null
             ]);
 
@@ -83,7 +74,7 @@ class CommercialController {
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba POST']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba POST', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
@@ -164,13 +155,13 @@ class CommercialController {
 
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
             return;
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba PUT']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba PUT', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
@@ -184,7 +175,7 @@ class CommercialController {
             $oldData = $userModel->getCommercialDetails($id);
             if (!$oldData) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado', 'errors' => ['id' => 'Usuario inválido']]);
+                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado', 'data' => null, 'errors' => ['id' => 'Usuario inválido']]);
                 return;
             }
 
@@ -205,7 +196,7 @@ class CommercialController {
 
             if (!empty($errors)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Error de validación', 'errors' => $errors]);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
                 return;
             }
 
@@ -219,7 +210,7 @@ class CommercialController {
                 $pwdCheck = $this->validatePasswordPolicy($input['password'], $emailToCompare);
                 if ($pwdCheck !== true) {
                     http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'errors' => ['password' => $pwdCheck]]);
+                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['password' => $pwdCheck]]);
                     return;
                 }
                 
@@ -263,14 +254,14 @@ class CommercialController {
                     AuditLogger::log($actionKey, 'user', $id, null, ['cambios' => $changes]);
                 }
 
-                echo json_encode(['success' => true, 'message' => 'Comercial actualizado correctamente', 'data' => ['id' => $id]]);
+                echo json_encode(['success' => true, 'message' => 'Comercial actualizado correctamente', 'data' => ['id' => $id], 'errors' => null]);
             } else {
                 throw new Exception("No se encontró al comercial o no hubo cambios");
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
@@ -281,13 +272,13 @@ class CommercialController {
 
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
             return;
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba DELETE']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba DELETE', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
@@ -295,7 +286,7 @@ class CommercialController {
             // Protección contra auto-borrado
             if ((int)$id === (int)$_SESSION['user_id']) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No puedes eliminar tu propia cuenta', 'errors' => null]);
+                echo json_encode(['success' => false, 'message' => 'No puedes eliminar tu propia cuenta', 'data' => null, 'errors' => ['user' => 'Auto-borrado bloqueado']]);
                 return;
             }
 
@@ -307,14 +298,14 @@ class CommercialController {
                 // AUDITORÍA: Borrado lógico
                 AuditLogger::log('usuario_borrado', 'user', $id);
 
-                echo json_encode(['success' => true, 'message' => 'Comercial eliminado correctamente', 'data' => null]);
+                echo json_encode(['success' => true, 'message' => 'Comercial eliminado correctamente', 'data' => null, 'errors' => null]);
             } else {
                 throw new Exception("No se pudo eliminar el registro");
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
@@ -325,13 +316,13 @@ class CommercialController {
 
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
             return;
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba GET']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba GET', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
@@ -343,11 +334,11 @@ class CommercialController {
             
             if (!$commercialInfo) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado o inactivo', 'errors' => ['id' => 'Usuario no válido']]);
+                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado o inactivo', 'data' => null, 'errors' => ['id' => 'Usuario no válido']]);
                 return;
             }
 
-            // Obtener su cartera de proyectos
+            // Obtener su cartera de proyectos (sin paginar, al ser vista detalle)
             $projectsList = $userModel->getCommercialProjects($id);
 
             echo json_encode([
@@ -362,7 +353,7 @@ class CommercialController {
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
@@ -375,7 +366,6 @@ class CommercialController {
         
         if (!empty($email)) {
             $emailPrefix = explode('@', $email)[0];
-            // strcasecmp compara sin importar mayúsculas/minúsculas (ej: Admin1234 == admin1234)
             if (strcasecmp($password, $emailPrefix) === 0) {
                 return 'La contraseña no puede ser igual a la primera parte de tu correo electrónico.';
             }

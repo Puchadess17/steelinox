@@ -17,7 +17,7 @@ class User
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = :email AND is_active = 1 AND deleted_at IS NULL");
         $stmt->execute(['email' => $email]);
 
-        return $stmt->fetch(); // Devuelve array del usuario o false
+        return $stmt->fetch(); 
     }
 
     public function findById($id)
@@ -57,7 +57,6 @@ class User
         return $stmt->fetch() !== false;
     }
 
-    /** Soft Delete de un usuario */
     public function softDelete($id) {
         $sql = "UPDATE users 
                 SET deleted_at = NOW(), is_active = 0 
@@ -129,7 +128,6 @@ class User
         return $stmt->execute(['id' => $id]);
     }
 
-    /** Obtiene la lista de comerciales/admins activos que NO están asignados a un proyecto concreto */
     public function getAvailableForProject($projectId)
     {
         $sql = "SELECT id, name, email, role 
@@ -148,16 +146,13 @@ class User
         return $stmt->fetchAll();
     }
 
-    /** Guarda un token de recuperación */
     public function setResetToken($email, $token)
     {
-        // 1 hora de validez
         $sql = "UPDATE users SET reset_token = :token, reset_token_expires_at = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = :email AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['token' => $token, 'email' => $email]);
     }
 
-    /** Valida un token de recuperación */
     public function findByResetToken($token)
     {
         $sql = "SELECT id, email FROM users WHERE reset_token = :token AND reset_token_expires_at > NOW() AND deleted_at IS NULL";
@@ -166,7 +161,6 @@ class User
         return $stmt->fetch();
     }
 
-    /** Limpia los tokens tras el reset exitoso */
     public function clearResetToken($userId)
     {
         $sql = "UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = :id";
@@ -176,26 +170,50 @@ class User
 
     /** ---COMERCIALES--- */
 
-    /** La lista de todos los comerciales y estadísticas de sus proyectos asignados */
-    public function getCommercialsWithStats() {
-        $sql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at,
-                       COUNT(DISTINCT pu.project_id) as total_projects,
-                       COUNT(DISTINCT CASE WHEN p.status != 'cerrado' THEN p.id ELSE NULL END) as active_projects
-                FROM users u
-                LEFT JOIN project_user pu ON u.id = pu.user_id
-                LEFT JOIN projects p ON pu.project_id = p.id AND p.deleted_at IS NULL
-                WHERE u.role = 'comercial' 
-                  AND u.deleted_at IS NULL
-                GROUP BY u.id
-                ORDER BY u.name ASC";
+    /** La lista de todos los comerciales, estadísticas y paginación */
+    public function getCommercialsWithStats($limit = 15, $offset = 0) {
+        // 1. KPIs Globales de comerciales
+        $kpiSql = "SELECT COUNT(*) as total,
+                          SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as activos,
+                          SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactivos
+                   FROM users 
+                   WHERE role = 'comercial' AND deleted_at IS NULL";
         
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
+        $stmtKpis = $this->db->prepare($kpiSql);
+        $stmtKpis->execute();
+        $kpiData = $stmtKpis->fetch(PDO::FETCH_ASSOC);
+
+        $total = (int)($kpiData['total'] ?? 0);
+
+        // 2. Extraer datos paginados
+        $dataSql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at,
+                           COUNT(DISTINCT pu.project_id) as total_projects,
+                           COUNT(DISTINCT CASE WHEN p.status != 'cerrado' THEN p.id ELSE NULL END) as active_projects
+                    FROM users u
+                    LEFT JOIN project_user pu ON u.id = pu.user_id
+                    LEFT JOIN projects p ON pu.project_id = p.id AND p.deleted_at IS NULL
+                    WHERE u.role = 'comercial' 
+                      AND u.deleted_at IS NULL
+                    GROUP BY u.id
+                    ORDER BY u.name ASC
+                    LIMIT :limit OFFSET :offset";
         
-        return $stmt->fetchAll();
+        $stmtData = $this->db->prepare($dataSql);
+        $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmtData->execute();
+        
+        return [
+            'total' => $total,
+            'kpis'  => [
+                'total'     => $total,
+                'activos'   => (int)($kpiData['activos'] ?? 0),
+                'inactivos' => (int)($kpiData['inactivos'] ?? 0)
+            ],
+            'data'  => $stmtData->fetchAll()
+        ];
     }
 
-    /** Crea un usuario comercial */
     public function createInternalUser($data) {
         $sql = "INSERT INTO users (client_id, role, name, email, password_hash, is_active, created_at) 
                 VALUES (NULL, :role, :name, :email, :password_hash, :is_active, NOW())";
@@ -212,7 +230,6 @@ class User
         return $this->db->lastInsertId();
     }
 
-    /** Update comercial */
     public function updateInternalUser($id, $data) {
         $sql = "UPDATE users 
                 SET name = :name, 
@@ -241,7 +258,6 @@ class User
         return $stmt->execute($params);
     }
 
-    /** Obtiene los detalles básicos de un comercial por su ID */
     public function getCommercialDetails($id) {
         $sql = "SELECT id, name, email, is_active, last_login_at, created_at
                 FROM users 
@@ -252,7 +268,6 @@ class User
         return $stmt->fetch();
     }
 
-    /** Lista de proyectos asignados a un comercial */
     public function getCommercialProjects($commercialId) {
         $sql = "SELECT p.id, p.name, p.reference, p.status, p.budget_amount, p.created_at, 
                        c.name AS client_name
@@ -269,7 +284,6 @@ class User
         return $stmt->fetchAll();
     }
 
-    /** Obtiene todos los usuarios (incluyendo borrados) para filtros de auditoría */
     public function getAllBasic() {
         $sql = "SELECT id, name, role, deleted_at FROM users ORDER BY name ASC";
         $stmt = $this->db->prepare($sql);
@@ -279,33 +293,64 @@ class User
 
     /** ---CLIENTES (USUARIOS)--- */
 
-    /** Listado de usuarios 'cliente'. Admin: Ve todos. Comercial: Ve solo los de las empresas a las que tiene acceso. */
-    public function getClientUsersList($actorUserId, $actorRole) {
-        $sql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at, 
-                       c.name AS company_name, c.id AS client_id
-                FROM users u
-                INNER JOIN clients c ON u.client_id = c.id
-                WHERE u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL";
+    /** Listado de usuarios 'cliente' con KPIs globales y Paginación */
+    public function getClientUsersList($actorUserId, $actorRole, $limit = 15, $offset = 0) {
+        $baseSql = "FROM users u
+                    INNER JOIN clients c ON u.client_id = c.id
+                    WHERE u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL";
         
         $params = [];
 
         if ($actorRole === 'comercial') {
-            $sql .= " AND (c.created_by = :user_id OR c.id IN (
-                        SELECT p.client_id FROM projects p 
-                        INNER JOIN project_user pu ON p.id = pu.project_id 
-                        WHERE pu.user_id = :user_id AND p.deleted_at IS NULL
-                      ))";
+            $baseSql .= " AND (c.created_by = :user_id OR c.id IN (
+                            SELECT p.client_id FROM projects p 
+                            INNER JOIN project_user pu ON p.id = pu.project_id 
+                            WHERE pu.user_id = :user_id AND p.deleted_at IS NULL
+                          ))";
             $params['user_id'] = $actorUserId;
         } elseif ($actorRole === 'cliente') {
-            // Un cliente solo puede ver usuarios de SU MISMA empresa
-            $sql .= " AND c.id = (SELECT client_id FROM users WHERE id = :user_id)";
+            $baseSql .= " AND c.id = (SELECT client_id FROM users WHERE id = :user_id)";
             $params['user_id'] = $actorUserId;
         }
 
-        $sql .= " ORDER BY u.created_at DESC";
+        // 1. Ejecutar el Count + KPIs Globales
+        $kpiSql = "SELECT COUNT(*) as total,
+                          SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) as activos,
+                          SUM(CASE WHEN u.is_active = 0 THEN 1 ELSE 0 END) as inactivos
+                   " . $baseSql;
+                   
+        $stmtKpis = $this->db->prepare($kpiSql);
+        foreach ($params as $key => $value) {
+            $stmtKpis->bindValue(":$key", $value, PDO::PARAM_INT);
+        }
+        $stmtKpis->execute();
+        $kpiData = $stmtKpis->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        $total = (int)($kpiData['total'] ?? 0);
+
+        // 2. Extraer datos paginados
+        $dataSql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at, 
+                           c.name AS company_name, c.id AS client_id
+                    " . $baseSql . " 
+                    ORDER BY u.created_at DESC
+                    LIMIT :limit OFFSET :offset";
+
+        $stmtData = $this->db->prepare($dataSql);
+        foreach ($params as $key => $value) {
+            $stmtData->bindValue(":$key", $value, PDO::PARAM_INT);
+        }
+        $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmtData->execute();
+
+        return [
+            'total' => $total,
+            'kpis'  => [
+                'total'     => $total,
+                'activos'   => (int)($kpiData['activos'] ?? 0),
+                'inactivos' => (int)($kpiData['inactivos'] ?? 0)
+            ],
+            'data'  => $stmtData->fetchAll()
+        ];
     }
 }

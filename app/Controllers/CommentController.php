@@ -5,7 +5,8 @@ require_once APP_PATH . '/Models/Comment.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
-require_once APP_PATH . '/Services/AuditLogger.php'; // <-- INYECTAMOS EL SERVICIO DE AUDITORÍA
+require_once APP_PATH . '/Services/AuditLogger.php';
+require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class CommentController {
 
@@ -16,7 +17,7 @@ class CommentController {
 
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba GET']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba GET', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
@@ -34,7 +35,7 @@ class CommentController {
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos']);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
@@ -44,14 +45,14 @@ class CommentController {
             
             if (!$docInfo) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Documento no encontrado']);
+                echo json_encode(['success' => false, 'message' => 'Documento no encontrado', 'data' => null, 'errors' => ['document' => 'Recurso inaccesible']]);
                 return;
             }
 
             // Si es cliente, verificamos que el documento sea público para él
             if ($role === 'cliente' && $docInfo['is_visible_to_client'] == 0) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Documento confidencial']);
+                echo json_encode(['success' => false, 'message' => 'Documento confidencial', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
@@ -60,20 +61,25 @@ class CommentController {
                             ? (int)$_GET['version_id'] 
                             : null;
 
-            // 3. Obtener el hilo de comentarios (filtrado o completo)
-            $commentModel = new Comment();
-            $comments = $commentModel->getByDocument($documentId, $versionId);
+            // 3. Extraemos los parámetros de paginación
+            [$page, $limit, $offset] = PaginationHelper::getParams();
 
+            // 4. Obtener el hilo de comentarios paginado
+            $commentModel = new Comment();
+            $result = $commentModel->getByDocument($documentId, $versionId, $limit, $offset);
+
+            // 5. Devolvemos el JSON uniforme
             echo json_encode([
-                'success' => true,
-                'message' => 'Comentarios recuperados correctamente',
-                'data'    => $comments,
-                'errors'  => null
+                'success'    => true,
+                'message'    => 'Comentarios recuperados correctamente',
+                'data'       => $result['data'],
+                'pagination' => PaginationHelper::format($result['total'], $limit, $page),
+                'errors'     => null
             ]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al recuperar comentarios']]);
         }
     }
 
@@ -84,7 +90,7 @@ class CommentController {
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba POST']);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba POST', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
             return;
         }
 
@@ -102,7 +108,7 @@ class CommentController {
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos']);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
@@ -112,14 +118,14 @@ class CommentController {
             
             if (!$docInfo) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Documento no encontrado']);
+                echo json_encode(['success' => false, 'message' => 'Documento no encontrado', 'data' => null, 'errors' => ['document' => 'Recurso inaccesible']]);
                 return;
             }
 
             // Si es cliente, verificamos que el documento sea público para él
             if ($role === 'cliente' && $docInfo['is_visible_to_client'] == 0) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No puedes comentar en un documento interno']);
+                echo json_encode(['success' => false, 'message' => 'No puedes comentar en un documento interno', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
@@ -133,7 +139,7 @@ class CommentController {
 
             if (empty($safeBody)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'errors' => ['body' => 'Campo requerido']]);
+                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'data' => null, 'errors' => ['body' => 'Campo requerido']]);
                 return;
             }
 
@@ -151,7 +157,7 @@ class CommentController {
                     $versionIdToSave = (int)$input['version_id'];
                 } else {
                     http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Versión inválida', 'errors' => ['version_id' => 'Esta versión no pertenece al documento actual.']]);
+                    echo json_encode(['success' => false, 'message' => 'Versión inválida', 'data' => null, 'errors' => ['version_id' => 'Esta versión no pertenece al documento actual.']]);
                     return;
                 }
             } else {
@@ -172,7 +178,6 @@ class CommentController {
             if ($newCommentId) {
 
                 // AUDITORÍA: Alta de comentario
-                // Guardamos un extracto del body para el timeline y a qué versión pertenece
                 AuditLogger::log('comentario_creado', 'comment', $newCommentId, $projectId, [
                     'documento_id'  => $documentId,
                     'version_id'   => $versionIdToSave,
@@ -188,12 +193,12 @@ class CommentController {
                 ]);
             } else {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'No se pudo guardar el comentario', 'data' => null, 'errors' => null]);
+                echo json_encode(['success' => false, 'message' => 'No se pudo guardar el comentario', 'data' => null, 'errors' => ['database' => 'Error al guardar']]);
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al publicar']]);
         }
     }
 

@@ -10,121 +10,136 @@ class Audit {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    /** Obtiene el historial de un proyecto específico */
-    public function getByProject($projectId) {
+    /** Obtiene el historial de un proyecto específico con paginación */
+    public function getByProject($projectId, $limit = 15, $offset = 0) {
+        $countSql = "SELECT COUNT(*) FROM audit_logs WHERE project_id = :project_id";
+        $stmtCount = $this->db->prepare($countSql);
+        $stmtCount->execute(['project_id' => $projectId]);
+        $total = (int)$stmtCount->fetchColumn();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
                 WHERE a.project_id = :project_id
-                ORDER BY a.created_at DESC";
+                ORDER BY a.created_at DESC
+                LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['project_id' => $projectId]);
+        // Usamos bindValue explícito porque PDO a veces falla mezclando LIMIT/OFFSET con execute(array)
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         
-        return $stmt->fetchAll();
+        return ['total' => $total, 'data' => $stmt->fetchAll()];
     }
 
-    /** Obtiene el historial completo de un cliente específico (Cambios en el cliente, en sus usuarios y en sus proyectos) */
-    public function getByClient($clientId) {
+    /** Obtiene el historial de un cliente específico con paginación */
+    public function getByClient($clientId, $limit = 15, $offset = 0) {
+        $whereSql = "WHERE (a.entity_type = 'client' AND a.entity_id = :c1)
+                        OR (a.entity_type = 'user' AND a.entity_id IN (SELECT id FROM users WHERE client_id = :c2))
+                        OR (a.entity_type = 'project' AND a.entity_id IN (SELECT id FROM projects WHERE client_id = :c3))";
+
+        $countSql = "SELECT COUNT(*) FROM audit_logs a " . $whereSql;
+        $stmtCount = $this->db->prepare($countSql);
+        $stmtCount->execute(['c1' => $clientId, 'c2' => $clientId, 'c3' => $clientId]);
+        $total = (int)$stmtCount->fetchColumn();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.metadata_json, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
-                WHERE (a.entity_type = 'client' AND a.entity_id = :client_id1)
-                   OR (a.entity_type = 'user' AND a.entity_id IN (SELECT id FROM users WHERE client_id = :client_id2))
-                   OR (a.entity_type = 'project' AND a.entity_id IN (SELECT id FROM projects WHERE client_id = :client_id3))
-                ORDER BY a.created_at DESC";
+                $whereSql
+                ORDER BY a.created_at DESC
+                LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
-        // Pasamos el ID tres veces para evitar problemas de compatibilidad en PDO con parámetros repetidos
-        $stmt->execute([
-            'client_id1' => $clientId,
-            'client_id2' => $clientId,
-            'client_id3' => $clientId
-        ]);
+        $stmt->bindValue(':c1', $clientId, PDO::PARAM_INT);
+        $stmt->bindValue(':c2', $clientId, PDO::PARAM_INT);
+        $stmt->bindValue(':c3', $clientId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         
-        return $stmt->fetchAll();
+        return ['total' => $total, 'data' => $stmt->fetchAll()];
     }
 
-    /** Obtiene el log global del sistema (Solo para Superadmins) */
-    public function getGlobalLogs($limit = 100) {
+    /** Obtiene el log global del sistema con paginación */
+    public function getGlobalLogs($limit = 15, $offset = 0) {
+        $total = (int)$this->db->query("SELECT COUNT(*) FROM audit_logs")->fetchColumn();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
                 ORDER BY a.created_at DESC
-                LIMIT " . (int)$limit;
+                LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         
-        return $stmt->fetchAll();
+        return ['total' => $total, 'data' => $stmt->fetchAll()];
     }
 
-    /**
-     * Obtiene logs filtrados con soporte para búsqueda avanzada
-     */
-    public function getFilteredLogs($filters = [], $limit = 500) {
+    /** Obtiene logs filtrados con búsqueda avanzada y paginación */
+    public function getFilteredLogs($filters = [], $limit = 15, $offset = 0) {
         $where = [];
-        $params = [];
-
-        if (!empty($filters['actor_user_id'])) {
-            $where[] = "a.actor_user_id = :actor_user_id";
-            $params['actor_user_id'] = $filters['actor_user_id'];
-        }
-
-        if (!empty($filters['action_key'])) {
-            $where[] = "a.action_key = :action_key";
-            $params['action_key'] = $filters['action_key'];
-        }
-
-        if (!empty($filters['entity_type'])) {
-            $where[] = "a.entity_type = :entity_type";
-            $params['entity_type'] = $filters['entity_type'];
-        }
-
-        if (!empty($filters['date_start'])) {
-            $where[] = "a.created_at >= :date_start";
-            $params['date_start'] = $filters['date_start'] . " 00:00:00";
-        }
-
-        if (!empty($filters['date_end'])) {
-            $where[] = "a.created_at <= :date_end";
-            $params['date_end'] = $filters['date_end'] . " 23:59:59";
-        }
+        
+        if (!empty($filters['actor_user_id'])) $where[] = "a.actor_user_id = :actor_user_id";
+        if (!empty($filters['action_key']))    $where[] = "a.action_key = :action_key";
+        if (!empty($filters['entity_type']))   $where[] = "a.entity_type = :entity_type";
+        if (!empty($filters['date_start']))    $where[] = "a.created_at >= :date_start";
+        if (!empty($filters['date_end']))      $where[] = "a.created_at <= :date_end";
 
         $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
+        // Closure para bindear parámetros dinámicamente
+        $bindParams = function($stmt) use ($filters) {
+            if (!empty($filters['actor_user_id'])) $stmt->bindValue(':actor_user_id', $filters['actor_user_id'], PDO::PARAM_INT);
+            if (!empty($filters['action_key']))    $stmt->bindValue(':action_key', $filters['action_key'], PDO::PARAM_STR);
+            if (!empty($filters['entity_type']))   $stmt->bindValue(':entity_type', $filters['entity_type'], PDO::PARAM_STR);
+            if (!empty($filters['date_start']))    $stmt->bindValue(':date_start', $filters['date_start'] . " 00:00:00", PDO::PARAM_STR);
+            if (!empty($filters['date_end']))      $stmt->bindValue(':date_end', $filters['date_end'] . " 23:59:59", PDO::PARAM_STR);
+        };
+
+        // 1. Contar totales
+        $countSql = "SELECT COUNT(*) FROM audit_logs a $whereSql";
+        $stmtCount = $this->db->prepare($countSql);
+        $bindParams($stmtCount);
+        $stmtCount->execute();
+        $total = (int)$stmtCount->fetchColumn();
+
+        // 2. Extraer datos paginados
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.user_agent, a.created_at,
                        u.name AS actor_name, a.actor_role
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
                 $whereSql
                 ORDER BY a.created_at DESC
-                LIMIT " . (int)$limit;
+                LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $bindParams($stmt);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         
-        return $stmt->fetchAll();
+        return ['total' => $total, 'data' => $stmt->fetchAll()];
     }
 
-    /** Obtiene todos los tipos de acciones registrados para los filtros */
     public function getUniqueActions() {
         $sql = "SELECT DISTINCT action_key FROM audit_logs ORDER BY action_key ASC";
         return $this->db->query($sql)->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    /** Obtiene todos los tipos de entidades registrados para los filtros */
     public function getUniqueEntities() {
         $sql = "SELECT DISTINCT entity_type FROM audit_logs ORDER BY entity_type ASC";
         return $this->db->query($sql)->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    /** * Cuenta los intentos de login fallidos de una IP en un periodo de tiempo.
-     * Usado para el Rate Limiting persistente (Anti-Fuerza Bruta).
-     */
     public function countRecentFailedLogins($ip, $minutes = 15) {
         $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));
         
@@ -134,10 +149,7 @@ class Audit {
                   AND created_at >= :time_limit";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            'ip'         => $ip,
-            'time_limit' => $timeLimit
-        ]);
+        $stmt->execute(['ip' => $ip, 'time_limit' => $timeLimit]);
         
         return (int) $stmt->fetchColumn();
     }

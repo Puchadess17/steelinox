@@ -39,12 +39,12 @@ class PasswordResetController
         // --------------------
 
         if (empty($email)) {
-            echo json_encode(['success' => false, 'message' => 'El email es obligatorio.']);
+            echo json_encode(['success' => false, 'message' => 'El email es obligatorio.', 'data' => null, 'errors' => ['email' => 'Requerido']]);
             return;
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            echo json_encode(['success' => false, 'message' => 'El formato del email no es válido.']);
+            echo json_encode(['success' => false, 'message' => 'El formato del email no es válido.', 'data' => null, 'errors' => ['email' => 'Formato inválido']]);
             return;
         }
 
@@ -53,13 +53,12 @@ class PasswordResetController
 
         if (!$user) {
             // AUDITORÍA: Intento de recuperación sobre un email inexistente
-            // Cambiado a 0 para que no rompa la inserción en MySQL
             AuditLogger::log('recuperacion_clave_fallida', 'system', 0, null, [
                 'email_intentado' => $email
             ]);
 
-            // Por seguridad, no decimos si el email existe o no
-            echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.']);
+            // Por seguridad, no decimos si el email existe o no (Anti-Enumeración)
+            echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.', 'data' => null, 'errors' => null]);
             return;
         }
 
@@ -89,16 +88,15 @@ class PasswordResetController
         $mailResult = MailService::send($email, "Recuperar Contraseña — Steel Inox", $html);
 
         if ($mailResult['success']) {
-            
-            // AUDITORÍA: Solicitud de cambio de contraseña exitosa
+            // AUDITORÍA
             AuditLogger::log('recuperacion_clave_solicitada', 'user', $user['id'], null, [
                 'email' => $email
             ]);
 
-            echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.']);
+            echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.', 'data' => null, 'errors' => null]);
         } else {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al enviar el correo. Por favor, contacte con soporte.']);
+            echo json_encode(['success' => false, 'message' => 'Error al enviar el correo. Por favor, contacte con soporte.', 'data' => null, 'errors' => ['server' => 'Fallo envío email']]);
         }
     }
 
@@ -112,7 +110,7 @@ class PasswordResetController
         $password = $input['password'] ?? null;
 
         if (!$token || !$password) {
-            echo json_encode(['success' => false, 'message' => 'Datos incompletos.']);
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos.', 'data' => null, 'errors' => ['request' => 'Faltan parámetros']]);
             return;
         }
 
@@ -120,7 +118,7 @@ class PasswordResetController
         $user = $userModel->findByResetToken($token);
 
         if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'El enlace ha caducado o es inválido.']);
+            echo json_encode(['success' => false, 'message' => 'El enlace ha caducado o es inválido.', 'data' => null, 'errors' => ['token' => 'Inválido o expirado']]);
             return;
         }
 
@@ -131,6 +129,7 @@ class PasswordResetController
             echo json_encode([
                 'success' => false, 
                 'message' => 'Error de validación', 
+                'data'    => null,
                 'errors'  => ['password' => $pwdCheck]
             ]);
             return;
@@ -144,12 +143,12 @@ class PasswordResetController
         if ($updated) {
             $userModel->clearResetToken($user['id']);
 
-            // AUDITORÍA: Contraseña cambiada definitivamente
+            // AUDITORÍA
             AuditLogger::log('clave_actualizada', 'user', $user['id']);
 
-            echo json_encode(['success' => true, 'message' => 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.']);
+            echo json_encode(['success' => true, 'message' => 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.', 'data' => null, 'errors' => null]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'No se pudo actualizar la contraseña.']);
+            echo json_encode(['success' => false, 'message' => 'No se pudo actualizar la contraseña.', 'data' => null, 'errors' => ['server' => 'Error al guardar en base de datos']]);
         }
     }
 

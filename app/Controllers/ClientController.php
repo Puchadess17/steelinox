@@ -4,6 +4,7 @@
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
+require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class ClientController {
 
@@ -27,10 +28,21 @@ class ClientController {
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
 
-            $clientModel = new Client();
-            $clientes = $clientModel->getListByUser($userId, $role);
+            // 1. Extraemos los parámetros de paginación
+            [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            echo json_encode(['success' => true, 'message' => 'Listado de clientes recuperado', 'data' => $clientes, 'errors' => null]);
+            // 2. Pedimos los datos con los límites
+            $clientModel = new Client();
+            $result = $clientModel->getListByUser($userId, $role, $limit, $offset);
+
+            // 3. Devolvemos el JSON uniforme
+            echo json_encode([
+                'success'    => true, 
+                'message'    => 'Listado de clientes recuperado', 
+                'data'       => $result['data'], 
+                'pagination' => PaginationHelper::format($result['total'], $limit, $page),
+                'errors'     => null
+            ]);
 
         } catch (Exception $e) {
             http_response_code(500);
@@ -95,9 +107,7 @@ class ClientController {
         $input = json_decode(file_get_contents('php://input'), true);
         $errors = [];
 
-        // --- SANITIZACIÓN ---
         $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
-        // --------------------
 
         if (empty($cleanName)) {
             $errors['name'] = 'El nombre de la empresa es obligatorio.';
@@ -112,7 +122,6 @@ class ClientController {
         try {
             $clientModel = new Client();
             
-            // GENERACIÓN AUTOMÁTICA DE REFERENCIA
             $generatedReference = $clientModel->generateNextReference();
 
             $newClientId = $clientModel->create([
@@ -138,7 +147,6 @@ class ClientController {
             ]);
 
         } catch (Exception $e) {
-            // ESCUDO ANTI COLISIONES (1062 Duplicate entry)
             if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
                 http_response_code(409); 
                 echo json_encode([
@@ -188,21 +196,17 @@ class ClientController {
             $input = json_decode(file_get_contents('php://input'), true);
             $errors = [];
 
-            // --- SANITIZACIÓN ---
             $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
-            // --------------------
 
             if (empty($cleanName)) {
                 $errors['name'] = 'El nombre es obligatorio.';
             }
 
-            // EL ESCUDO DEL ADMINISTRADOR: Solo el admin puede editar 'reference'
             if ($role === 'admin' && !empty($input['reference'])) {
                 if (!preg_match('/^CLI-\d{4}$/', trim($input['reference']))) {
                     $errors['reference'] = 'La referencia debe tener el formato CLI-XXXX (Ej: CLI-0001)';
                 }
             } elseif ($role !== 'admin' && isset($input['reference'])) {
-                // Bloqueamos el intento de un comercial por cambiar la referencia
                 unset($input['reference']);
             }
 
@@ -220,11 +224,10 @@ class ClientController {
 
             $newData = [
                 'name'      => $cleanName,
-                'reference' => $oldData['reference'], // Por defecto conservamos el antiguo
+                'reference' => $oldData['reference'],
                 'is_active' => isset($input['is_active']) ? (int)$input['is_active'] : $oldData['is_active']
             ];
 
-            // Inyectar la nueva referencia SOLO si pasó el escudo del admin
             if ($role === 'admin' && !empty($input['reference'])) {
                 $newData['reference'] = htmlspecialchars(trim($input['reference']), ENT_QUOTES, 'UTF-8');
             }
@@ -316,7 +319,6 @@ class ClientController {
         }
     }
 
-    /** Helper privado para limpiar y formatear nombres */
     private function sanitizeName($name) {
         if (empty($name)) return '';
         $name = trim($name);

@@ -10,39 +10,70 @@ class Client {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    public function getListByUser($userId, $role) {
+    public function getListByUser($userId, $role, $limit = 15, $offset = 0) {
         if ($role === 'cliente') {
-            return [];
+            return ['total' => 0, 'data' => []];
         }
 
-        $params = [];
-        
+        $countSql = "";
+        $dataSql = "";
+
         if ($role === 'admin') {
-            $sql = "SELECT id, name, reference, is_active, created_at,
-                           (SELECT COUNT(*) FROM projects WHERE client_id = clients.id AND deleted_at IS NULL) as projects_count,
-                           (SELECT COUNT(*) FROM users WHERE client_id = clients.id AND deleted_at IS NULL) as users_count
-                    FROM clients 
-                    WHERE deleted_at IS NULL 
-                    ORDER BY created_at DESC";
-                    
+            // Contamos el total para el Admin
+            $countSql = "SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL";
+            
+            // Extraemos los datos paginados
+            $dataSql = "SELECT id, name, reference, is_active, created_at,
+                               (SELECT COUNT(*) FROM projects WHERE client_id = clients.id AND deleted_at IS NULL) as projects_count,
+                               (SELECT COUNT(*) FROM users WHERE client_id = clients.id AND deleted_at IS NULL) as users_count
+                        FROM clients 
+                        WHERE deleted_at IS NULL 
+                        ORDER BY created_at DESC
+                        LIMIT :limit OFFSET :offset";
+                        
         } elseif ($role === 'comercial') {
-            $sql = "SELECT DISTINCT c.id, c.name, c.reference, c.is_active, c.created_at,
-                           (SELECT COUNT(*) FROM projects WHERE client_id = c.id AND deleted_at IS NULL) as projects_count,
-                           (SELECT COUNT(*) FROM users WHERE client_id = c.id AND deleted_at IS NULL) as users_count
-                    FROM clients c
-                    LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
-                    LEFT JOIN project_user pu ON p.id = pu.project_id
-                    WHERE (c.created_by = :user_id OR pu.user_id = :user_id) 
-                      AND c.deleted_at IS NULL
-                    ORDER BY c.created_at DESC";
-                    
-            $params['user_id'] = $userId;
+            // Contamos el total para el Comercial usando DISTINCT para evitar multiplicar por los JOINs
+            $countSql = "SELECT COUNT(DISTINCT c.id) 
+                         FROM clients c
+                         LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
+                         LEFT JOIN project_user pu ON p.id = pu.project_id
+                         WHERE (c.created_by = :user_id OR pu.user_id = :user_id) 
+                           AND c.deleted_at IS NULL";
+
+            // Extraemos los datos paginados
+            $dataSql = "SELECT DISTINCT c.id, c.name, c.reference, c.is_active, c.created_at,
+                               (SELECT COUNT(*) FROM projects WHERE client_id = c.id AND deleted_at IS NULL) as projects_count,
+                               (SELECT COUNT(*) FROM users WHERE client_id = c.id AND deleted_at IS NULL) as users_count
+                        FROM clients c
+                        LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
+                        LEFT JOIN project_user pu ON p.id = pu.project_id
+                        WHERE (c.created_by = :user_id OR pu.user_id = :user_id) 
+                          AND c.deleted_at IS NULL
+                        ORDER BY c.created_at DESC
+                        LIMIT :limit OFFSET :offset";
         }
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        // 1. Ejecutar el Count
+        $stmtCount = $this->db->prepare($countSql);
+        if ($role === 'comercial') {
+            $stmtCount->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        }
+        $stmtCount->execute();
+        $total = (int)$stmtCount->fetchColumn();
+
+        // 2. Ejecutar la Extracción de Datos Paginada
+        $stmtData = $this->db->prepare($dataSql);
+        if ($role === 'comercial') {
+            $stmtData->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        }
+        $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmtData->execute();
         
-        return $stmt->fetchAll();
+        return [
+            'total' => $total, 
+            'data'  => $stmtData->fetchAll()
+        ];
     }
 
     public function getById($id) {
@@ -167,10 +198,6 @@ class Client {
         return $stmt->execute(['id' => $id]);
     }
 
-    /**
-     * Genera la siguiente referencia secuencial de forma automática.
-     * Formato: CLI-XXXX (Ej: CLI-0001)
-     */
     public function generateNextReference() {
         $prefix = "CLI-";
 
