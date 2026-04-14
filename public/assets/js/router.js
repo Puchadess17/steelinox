@@ -132,15 +132,17 @@ const SIRouter = {
     /** Manejar cambio de ruta */
     async handleRoute(view) {
         const user = Auth.getUser();
+        const isLoginPage = window.location.pathname === '/steelinox/' || window.location.pathname === '/steelinox/index.php';
 
         if (!user) {
-            window.location.href = '/steelinox/';
+            if (!isLoginPage) {
+                window.location.href = '/steelinox/';
+            }
             return;
         }
 
         // Buscar ruta
         const route = this.routes[view];
-
         if (!route) {
             this.show404();
             return;

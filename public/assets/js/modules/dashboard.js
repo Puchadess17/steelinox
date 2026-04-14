@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Steel Inox — Dashboard Module
  * 3 dashboards: Admin, Comercial, Cliente.
  * Usa datos de GET /api/projects/search para calcular KPIs client-side.
@@ -64,7 +64,7 @@ SIModules.dashboard = {
         };
 
         this.adminProjects = projects; // Caché para buscador y filtros interactivos
-        
+
         // El renderizado usará this.currentAdminFilter para poner la clase active
 
         this.container.innerHTML = `
@@ -224,7 +224,7 @@ SIModules.dashboard = {
     _filterAdmin(status, btnElement) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove(...activeClasses));
-        
+
         if (btnElement) {
             btnElement.classList.add(...activeClasses);
         } else {
@@ -271,7 +271,7 @@ SIModules.dashboard = {
         const rawData = result.data;
         const projects = rawData.list || rawData || [];
         const pagination = result.pagination;
-        
+
         // Calcular KPIs para comercial
         const kpis = rawData.kpis || {
             total: pagination ? pagination.total_results : projects.length,
@@ -283,7 +283,7 @@ SIModules.dashboard = {
 
         // Cachear datos para filtrado frontend
         this.commercialProjects = projects;
-        
+
         // Se renderizará con ternario usando this.currentCommercialFilter
 
         this.container.innerHTML = `
@@ -775,9 +775,17 @@ SIModules.dashboard = {
         this.currentClientPage = this.currentClientPage || 1;
         this.clientsPerPage = this.clientsPerPage || 15;
 
+        // 1. Inicializar el estado de ordenación por defecto si no existe
+        this.currentClientSort = this.currentClientSort || { field: 'name', dir: 'asc' };
+
         let url = `/clients?page=${this.currentClientPage}&limit=${this.clientsPerPage}`;
         if (this.currentClientFilter !== 'all') url += `&status=${this.currentClientFilter}`;
         if (this.currentClientSearch) url += `&search=${encodeURIComponent(this.currentClientSearch)}`;
+
+        // 2. Añadir los parámetros de ordenación a la URL de la API
+        if (this.currentClientSort.field) {
+            url += `&sort_by=${this.currentClientSort.field}&sort_dir=${this.currentClientSort.dir}`;
+        }
 
         const result = await API.get(url);
 
@@ -786,8 +794,9 @@ SIModules.dashboard = {
             return;
         }
 
-        const clients = result.data || [];
-        const kpis = result.kpis || { total: 0, newThisMonth: 0, totalProjects: 0, totalUsers: 0 };
+        // 3. NUEVA ESTRUCTURA: Extraer list y kpis desde result.data
+        const clients = result.data?.list || [];
+        const kpis = result.data?.kpis || { total: 0, newThisMonth: 0, totalProjects: 0, totalUsers: 0 };
         const pagination = result.pagination;
 
         this.container.innerHTML = `
@@ -809,7 +818,7 @@ SIModules.dashboard = {
 
                 <!-- KPI Grid Premium (Estilo Flat / Captura) -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-                    ${this._kpiStatFlat('Clientes Totales', kpis.total, `+${kpis.newThisMonth} registrados este mes`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>')}
+                    ${this._kpiStatFlat('Clientes Totales', pagination.total_results, `+${kpis.newThisMonth} registrados este mes`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>')}
                     ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, `Vinculados a tu cartera`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>')}
                     ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>')}
                 </div>
@@ -1029,7 +1038,7 @@ SIModules.dashboard = {
     _filterClientsAdmin(status, btnElement) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-admin-client').forEach(t => t.classList.remove(...activeClasses));
-        
+
         if (btnElement) btnElement.classList.add(...activeClasses);
 
         this.currentClientFilter = status;
@@ -1047,14 +1056,23 @@ SIModules.dashboard = {
         }, 400); // Pequeño debounce para no saturar la API
     },
 
+
     /** Handler para cambio de orden en columnas */
     _sortClients(field) {
+        // Validación de seguridad para los campos permitidos
+        const allowedFields = ['name', 'reference', 'projects_count', 'users_count', 'created_at'];
+        if (!allowedFields.includes(field)) return;
+
+        // Iniciar el objeto de ordenación si no existe
+        this.currentClientSort = this.currentClientSort || { field: 'name', dir: 'asc' };
+
         if (this.currentClientSort.field === field) {
             this.currentClientSort.dir = this.currentClientSort.dir === 'asc' ? 'desc' : 'asc';
         } else {
             this.currentClientSort.field = field;
             this.currentClientSort.dir = 'asc';
         }
+
         this.currentClientPage = 1;
         this.loadClientsList();
     },
@@ -1194,9 +1212,9 @@ SIModules.dashboard = {
     _filterProjectsList(status, btn) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-proj-list').forEach(t => t.classList.remove(...activeClasses));
-        
+
         if (btn) btn.classList.add(...activeClasses);
-        
+
         this.currentProjListFilter = status;
         this.currentProjListPage = 1;
         this.loadProjectsList();

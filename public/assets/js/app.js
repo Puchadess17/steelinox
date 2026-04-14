@@ -21,9 +21,10 @@ const SIApp = {
         // 1. Verificar sesión local
         this.user = Auth.getUser();
 
+        // Detectar si estamos actualmente en la página pública del login
+        const isLoginPage = window.location.pathname === '/steelinox/' || window.location.pathname === '/steelinox/index.php';
+
         // Si no hay datos en sessionStorage, intentar recuperar la sesión del servidor.
-        // Esto evita un bucle infinito de redirecciones cuando el usuario cierra
-        // la pestaña y la reabre (sessionStorage se pierde, pero la cookie PHP sigue viva).
         if (!this.user) {
             try {
                 const res = await fetch('/steelinox/api/me', {
@@ -33,27 +34,37 @@ const SIApp = {
                 if (res.ok) {
                     const json = await res.json();
                     if (json.success && json.data) {
-                        // Sesión PHP sigue viva → recuperar datos en sessionStorage
+                        // Sesión PHP sigue viva → recuperar datos
                         sessionStorage.setItem('si_user', JSON.stringify(json.data));
                         this.user = json.data;
                     } else {
-                        // Sesión PHP expirada → limpiar local e ir a login
+                        // Sesión expirada
                         sessionStorage.removeItem('si_user');
-                        window.location.href = '/steelinox/';
+                        if (!isLoginPage) window.location.href = '/steelinox/';
                         return;
                     }
                 } else {
-                    // 401 u otro error → limpiar local e ir a login
+                    // Error 401 o similar
                     sessionStorage.removeItem('si_user');
-                    window.location.href = '/steelinox/';
+                    if (!isLoginPage) window.location.href = '/steelinox/';
                     return;
                 }
             } catch (e) {
                 console.error('SIApp: Error verificando sesión:', e);
                 sessionStorage.removeItem('si_user');
-                window.location.href = '/steelinox/';
+                if (!isLoginPage) window.location.href = '/steelinox/';
                 return;
             }
+        }
+
+        // Si a estas alturas seguimos sin usuario y estamos en el login, cortamos la ejecución 
+        // (así permitimos que el usuario escriba su email/contraseña sin pintar la SPA)
+        if (!this.user) return;
+
+        // Si el usuario SÍ tiene sesión, pero por algún motivo está en la URL del login, lo metemos al panel
+        if (this.user && isLoginPage) {
+            window.location.href = '/steelinox/panel';
+            return;
         }
 
         // 2. Obtener CSRF token para futuras mutaciones
