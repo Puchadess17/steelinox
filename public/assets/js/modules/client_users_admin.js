@@ -10,40 +10,35 @@ SIModules.clientUsersAdmin = {
         return document.getElementById('main-content');
     },
 
-    // Datos en memoria para filtrado instantáneo
-    allUsers: [],
+    // Datos en memoria para configuración y filtros
     currentFilter: 'all',
     currentSearch: '',
     currentSortCol: 'name',
     currentSortDir: 'asc',
     currentPage: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 15,
 
     /** 1. CARGAR LISTADO GLOBAL */
     async loadList() {
         try {
-            const result = await API.get('/users');
+            let url = `/users?page=${this.currentPage}&limit=${this.itemsPerPage}`;
+            if (this.currentFilter !== 'all') url += `&status=${this.currentFilter}`;
+            if (this.currentSearch) url += `&search=${encodeURIComponent(this.currentSearch)}`;
+            if (this.currentSortCol) url += `&sort=${this.currentSortCol}&dir=${this.currentSortDir}`;
+
+            const result = await API.get(url);
             if (!result.success) {
                 this.container.innerHTML = `<div class="p-10 text-center text-red-500">${result.message}</div>`;
                 return;
             }
 
             const rawData = result.data;
-            // Support both old flat array format and new {list, kpis} format
-            if (Array.isArray(rawData)) {
-                this.allUsers = rawData;
-            } else {
-                this.allUsers = rawData.list || [];
-            }
+            const usersList = rawData.list || [];
+            const kpis = rawData.kpis || { total: 0, activos: 0, inactivos: 0 };
+            const pagination = result.pagination;
 
-            const kpis = Array.isArray(rawData) ? {
-                total: this.allUsers.length,
-                activos: this.allUsers.filter(u => u.is_active == 1).length,
-                inactivos: this.allUsers.filter(u => u.is_active == 0).length
-            } : (rawData.kpis || { total: 0, activos: 0, inactivos: 0 });
-
-            // Count unique companies
-            const uniqueCompanies = new Set(this.allUsers.map(u => u.client_id)).size;
+            // Al no tener todos los usuarios en memoria, este count (empresas únicas) en la página no será total
+            const uniqueCompanies = "-"; 
 
             this.container.innerHTML = `
                 <div class="fade-in">
@@ -93,10 +88,11 @@ SIModules.clientUsersAdmin = {
                     </div>
 
                     <div id="users-table-container"></div>
+                    <div id="users-pagination" class="mt-6"></div>
                 </div>
             `;
 
-            this._applyFilters();
+            this._renderTable(usersList, pagination);
 
         } catch (error) {
             console.error('Error loading client users:', error);
@@ -105,12 +101,13 @@ SIModules.clientUsersAdmin = {
     },
 
     /** 2. RENDERIZAR TABLA */
-    _renderTable(data) {
+    _renderTable(data, pagination) {
         const container = document.getElementById('users-table-container');
         const countSpan = document.getElementById('users-results-count');
+        const paginationContainer = document.getElementById('users-pagination');
         if (!container) return;
 
-        if (countSpan) countSpan.textContent = `Mostrando ${data.length} resultados`;
+        if (countSpan && pagination) countSpan.textContent = `Viendo ${data.length} de ${pagination.total_results}`;
 
         if (data.length === 0) {
             container.innerHTML = `
@@ -122,15 +119,9 @@ SIModules.clientUsersAdmin = {
                     <p class="text-xs text-gray-400 mt-1">Ningún usuario coincide con tu búsqueda.</p>
                 </div>
             `;
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
         }
-
-        const totalPages = Math.ceil(data.length / this.itemsPerPage);
-        if (this.currentPage > totalPages) this.currentPage = totalPages;
-        if (this.currentPage < 1) this.currentPage = 1;
-
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const pagedData = data.slice(startIndex, startIndex + this.itemsPerPage);
 
         const colors = [
             'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700',
@@ -139,7 +130,7 @@ SIModules.clientUsersAdmin = {
             'bg-cyan-100 text-cyan-700'
         ];
 
-        const desktopRows = pagedData.map(u => {
+        const desktopRows = data.map(u => {
             const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
             const colorClass = colors[(u.id || u.name.length) % colors.length];
@@ -188,7 +179,7 @@ SIModules.clientUsersAdmin = {
             `;
         }).join('');
 
-        const mobileCards = pagedData.map(u => {
+        const mobileCards = data.map(u => {
             const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
             const lastAccessText = u.last_login_at ? SIApp.timeAgo(u.last_login_at) : 'Nunca';
@@ -236,16 +227,7 @@ SIModules.clientUsersAdmin = {
             `;
         }).join('');
 
-        let pagesHtml = '';
-        if (totalPages > 1) {
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === this.currentPage) {
-                    pagesHtml += `<button class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition-all bg-orange-500 text-white shadow-lg shadow-orange-500/30">${i}</button>`;
-                } else {
-                    pagesHtml += `<button class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition-all bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50" onclick="SIModules.clientUsersAdmin._goToPage(${i})">${i}</button>`;
-                }
-            }
-        }
+
 
         container.innerHTML = `
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
@@ -280,23 +262,28 @@ SIModules.clientUsersAdmin = {
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-6">
                 ${mobileCards}
             </div>
-
-            ${totalPages > 1 ? `
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-                <p class="text-[13px] font-bold text-gray-400">Mostrando <span class="text-[#1a1b25]">${startIndex + 1}</span> a <span class="text-[#1a1b25]">${Math.min(startIndex + this.itemsPerPage, data.length)}</span> de <span class="text-[#1a1b25]">${data.length}</span> resultados</p>
-                <div class="flex items-center gap-1">
-                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentPage === 1 ? 'text-gray-300 pointer-events-none' : 'bg-white border border-gray-100 hover:bg-gray-50 text-[#1a1b25]'}" onclick="SIModules.clientUsersAdmin._goToPage(${this.currentPage - 1})">Anterior</button>
-                    ${pagesHtml}
-                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentPage === totalPages ? 'text-gray-300 pointer-events-none' : 'bg-white border border-gray-100 hover:bg-gray-50 text-[#1a1b25]'}" onclick="SIModules.clientUsersAdmin._goToPage(${this.currentPage + 1})">Siguiente</button>
-                </div>
-            </div>
-            ` : ''}
         `;
+
+        if (pagination && paginationContainer) {
+            SIApp.renderPaginationControls(
+                paginationContainer,
+                pagination,
+                (newPage) => {
+                    this.currentPage = newPage;
+                    this.loadList();
+                },
+                (newLimit) => {
+                    this.itemsPerPage = newLimit;
+                    this.currentPage = 1;
+                    this.loadList();
+                }
+            );
+        }
     },
 
     _goToPage(page) {
         this.currentPage = page;
-        this._applyFilters();
+        this.loadList();
     },
 
     _renderKpiCard(title, value, subtitle, iconHtml) {
@@ -328,7 +315,7 @@ SIModules.clientUsersAdmin = {
         }
         this.currentFilter = status;
         this.currentPage = 1;
-        this._applyFilters();
+        this.loadList();
     },
 
     _sort(col) {
@@ -338,7 +325,7 @@ SIModules.clientUsersAdmin = {
             this.currentSortCol = col;
             this.currentSortDir = 'asc';
         }
-        this._applyFilters();
+        this.loadList();
     },
 
     _getSortIcon(col) {
@@ -349,34 +336,7 @@ SIModules.clientUsersAdmin = {
     _search(val) {
         this.currentSearch = val.toLowerCase().trim();
         this.currentPage = 1;
-        this._applyFilters();
-    },
-
-    _applyFilters() {
-        let filtered = [...this.allUsers];
-
-        if (this.currentFilter === 'active') filtered = filtered.filter(u => u.is_active == 1);
-        if (this.currentFilter === 'inactive') filtered = filtered.filter(u => u.is_active == 0);
-
-        if (this.currentSearch) {
-            filtered = filtered.filter(u =>
-                u.name.toLowerCase().includes(this.currentSearch) ||
-                u.email.toLowerCase().includes(this.currentSearch) ||
-                (u.company_name && u.company_name.toLowerCase().includes(this.currentSearch))
-            );
-        }
-
-        if (this.currentSortCol) {
-            filtered.sort((a, b) => {
-                let valA = a[this.currentSortCol] || '';
-                let valB = b[this.currentSortCol] || '';
-                if (valA < valB) return this.currentSortDir === 'asc' ? -1 : 1;
-                if (valA > valB) return this.currentSortDir === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        this._renderTable(filtered);
+        this.loadList();
     },
 
     async _confirmDelete(id, name) {

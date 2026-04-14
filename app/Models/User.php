@@ -302,12 +302,13 @@ class User
         $params = [];
 
         if ($actorRole === 'comercial') {
-            $baseSql .= " AND (c.created_by = :user_id OR c.id IN (
+            $baseSql .= " AND (c.created_by = :user_id_1 OR c.id IN (
                             SELECT p.client_id FROM projects p 
                             INNER JOIN project_user pu ON p.id = pu.project_id 
-                            WHERE pu.user_id = :user_id AND p.deleted_at IS NULL
+                            WHERE pu.user_id = :user_id_2 AND p.deleted_at IS NULL
                           ))";
-            $params['user_id'] = $actorUserId;
+            $params['user_id_1'] = $actorUserId;
+            $params['user_id_2'] = $actorUserId;
         } elseif ($actorRole === 'cliente') {
             $baseSql .= " AND c.id = (SELECT client_id FROM users WHERE id = :user_id)";
             $params['user_id'] = $actorUserId;

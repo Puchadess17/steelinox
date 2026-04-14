@@ -32,7 +32,17 @@ SIModules.dashboard = {
 
     async loadAdminDashboard() {
         const user = Auth.getUser();
-        const result = await API.get('/projects/search');
+
+        this.currentAdminFilter = this.currentAdminFilter || 'all';
+        this.currentAdminSearch = this.currentAdminSearch || '';
+        this.currentAdminPage = this.currentAdminPage || 1;
+        this.adminItemsPerPage = this.adminItemsPerPage || 10;
+
+        let url = `/projects/search?page=${this.currentAdminPage}&limit=${this.adminItemsPerPage}`;
+        if (this.currentAdminFilter !== 'all') url += `&status=${this.currentAdminFilter}`;
+        if (this.currentAdminSearch) url += `&search=${encodeURIComponent(this.currentAdminSearch)}`;
+
+        const result = await API.get(url);
 
         // Manejar error
         if (!result.success) {
@@ -40,11 +50,13 @@ SIModules.dashboard = {
             return;
         }
 
-        const projects = Array.isArray(result.data) ? result.data : [];
+        const rawData = result.data;
+        const projects = rawData.list || rawData || [];
+        const pagination = result.pagination;
 
         // Calcular KPIs
-        const kpis = {
-            total: projects.length,
+        const kpis = rawData.kpis || {
+            total: pagination ? pagination.total_results : projects.length,
             ejecucion: projects.filter(p => p.status === 'ejecucion').length,
             propuesta: projects.filter(p => p.status === 'propuesta').length,
             cerrado: projects.filter(p => p.status === 'cerrado').length,
@@ -117,12 +129,14 @@ SIModules.dashboard = {
     // ═══════════════════════════════════════
 
     /** Renderiza la tabla limpia de proyectos administador basándose en data filtrada **/
-    _renderAdminTable(data) {
+    _renderAdminTable(data, pagination) {
         const container = document.getElementById('admin-table-container');
         const counter = document.getElementById('admin-table-counter');
+        const paginationContainer = document.getElementById('admin-table-pagination');
         if (!container) return;
 
-        if (counter) counter.innerText = `${data.length} RESULTADOS`;
+        if (counter && pagination) counter.innerText = `Viendo ${data.length} de ${pagination.total_results} RESULTADOS`;
+        else if (counter) counter.innerText = `${data.length} RESULTADOS`;
 
         if (data.length === 0) {
             container.innerHTML = `
@@ -187,13 +201,26 @@ SIModules.dashboard = {
                 </table>
             </div>
         `;
+
+        if (pagination && paginationContainer) {
+            SIApp.renderPaginationControls(
+                paginationContainer,
+                pagination,
+                (newPage) => {
+                    this.currentAdminPage = newPage;
+                    this.loadAdminDashboard();
+                },
+                (newLimit) => {
+                    this.adminItemsPerPage = newLimit;
+                    this.currentAdminPage = 1;
+                    this.loadAdminDashboard();
+                }
+            );
+        }
     },
 
     /** Filtro de tabs en panel administrador */
     _filterAdmin(status, btnElement) {
-        if (!this.adminProjects) return;
-
-        // Actualizar visual de los botones
         document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove('active'));
         if (btnElement) {
             btnElement.classList.add('active');
@@ -202,35 +229,17 @@ SIModules.dashboard = {
         }
 
         this.currentAdminFilter = status;
-        this._searchAdmin(); // Llama a _searchAdmin sin argumentos para aplicar ambos filtros
+        this.currentAdminPage = 1;
+        this.loadAdminDashboard();
     },
 
     /** Filtro de buscador en tiempo real administrador */
     _searchAdmin(query = null) {
-        if (!this.adminProjects) return;
-
         if (query !== null) {
-            this.currentAdminSearch = query.toLowerCase();
+            this.currentAdminSearch = query.toLowerCase().trim();
         }
-
-        let filtered = this.adminProjects;
-
-        // Filtro por tab (estado)
-        if (this.currentAdminFilter !== 'all') {
-            filtered = filtered.filter(p => p.status === this.currentAdminFilter);
-        }
-
-        // Filtro por texto
-        if (this.currentAdminSearch) {
-            const q = this.currentAdminSearch;
-            filtered = filtered.filter(p =>
-                (p.name && p.name.toLowerCase().includes(q)) ||
-                (p.reference && p.reference.toLowerCase().includes(q)) ||
-                (p.client_name && p.client_name.toLowerCase().includes(q))
-            );
-        }
-
-        this._renderAdminTable(filtered);
+        this.currentAdminPage = 1;
+        this.loadAdminDashboard();
     },
 
     // ═══════════════════════════════════════
@@ -239,18 +248,30 @@ SIModules.dashboard = {
 
     async loadCommercialDashboard() {
         const user = Auth.getUser();
-        const result = await API.get('/projects/search');
+
+        this.currentCommercialFilter = this.currentCommercialFilter || 'all';
+        this.currentCommercialSearch = this.currentCommercialSearch || '';
+        this.currentCommercialPage = this.currentCommercialPage || 1;
+        this.commercialItemsPerPage = this.commercialItemsPerPage || 10;
+
+        let url = `/projects/search?page=${this.currentCommercialPage}&limit=${this.commercialItemsPerPage}`;
+        if (this.currentCommercialFilter !== 'all') url += `&status=${this.currentCommercialFilter}`;
+        if (this.currentCommercialSearch) url += `&search=${encodeURIComponent(this.currentCommercialSearch)}`;
+
+        const result = await API.get(url);
 
         if (!result.success) {
             this.container.innerHTML = this._errorState('No se pudieron cargar tus proyectos.');
             return;
         }
 
-        const projects = Array.isArray(result.data) ? result.data : [];
+        const rawData = result.data;
+        const projects = rawData.list || rawData || [];
+        const pagination = result.pagination;
         
         // Calcular KPIs para comercial
-        const kpis = {
-            total: projects.length,
+        const kpis = rawData.kpis || {
+            total: pagination ? pagination.total_results : projects.length,
             propuesta: projects.filter(p => p.status === 'propuesta').length,
             ejecucion: projects.filter(p => p.status === 'ejecucion').length,
             aprobado: projects.filter(p => p.status === 'aprobado').length,
@@ -319,11 +340,12 @@ SIModules.dashboard = {
                     <div id="commercial-table-container" class="select-none bg-gray-50/20">
                         <!-- Renderizado dinámico -->
                     </div>
+                    <div id="commercial-table-pagination" class="mt-6 px-4 pb-4"></div>
                 </div>
             </div>
         `;
 
-        this._renderCommercialTable(projects);
+        this._renderCommercialTable(projects, pagination);
     },
 
     // ═══════════════════════════════════════
@@ -331,12 +353,14 @@ SIModules.dashboard = {
     // ═══════════════════════════════════════
 
     /** Renderiza la tabla de proyectos para el comercial */
-    _renderCommercialTable(data) {
+    _renderCommercialTable(data, pagination) {
         const container = document.getElementById('commercial-table-container');
         const counter = document.getElementById('commercial-table-counter');
+        const paginationContainer = document.getElementById('commercial-table-pagination');
         if (!container) return;
 
-        if (counter) counter.innerText = `${data.length} RESULTADOS`;
+        if (counter && pagination) counter.innerText = `Viendo ${data.length} de ${pagination.total_results} RESULTADOS`;
+        else if (counter) counter.innerText = `${data.length} RESULTADOS`;
 
         if (data.length === 0) {
             container.innerHTML = `
@@ -397,6 +421,22 @@ SIModules.dashboard = {
                 </table>
             </div>
         `;
+
+        if (pagination && paginationContainer) {
+            SIApp.renderPaginationControls(
+                paginationContainer,
+                pagination,
+                (newPage) => {
+                    this.currentCommercialPage = newPage;
+                    this.loadCommercialDashboard();
+                },
+                (newLimit) => {
+                    this.commercialItemsPerPage = newLimit;
+                    this.currentCommercialPage = 1;
+                    this.loadCommercialDashboard();
+                }
+            );
+        }
     },
 
     /** Filtro comercial */
@@ -404,35 +444,15 @@ SIModules.dashboard = {
         document.querySelectorAll('.tab-commercial').forEach(t => t.classList.remove('active'));
         if (btn) btn.classList.add('active');
         this.currentCommercialFilter = status;
-        this._applyCommercialFilters();
+        this.currentCommercialPage = 1;
+        this.loadCommercialDashboard();
     },
 
     /** Buscador comercial */
     _searchCommercial(query) {
-        this.currentCommercialSearch = query.toLowerCase();
-        this._applyCommercialFilters();
-    },
-
-    /** Lógica de filtrado combinada para comercial */
-    _applyCommercialFilters() {
-        if (!this.commercialProjects) return;
-
-        let filtered = this.commercialProjects;
-
-        if (this.currentCommercialFilter !== 'all') {
-            filtered = filtered.filter(p => p.status === this.currentCommercialFilter);
-        }
-
-        if (this.currentCommercialSearch) {
-            const q = this.currentCommercialSearch;
-            filtered = filtered.filter(p =>
-                (p.name && p.name.toLowerCase().includes(q)) ||
-                (p.reference && p.reference.toLowerCase().includes(q)) ||
-                (p.client_name && p.client_name.toLowerCase().includes(q))
-            );
-        }
-
-        this._renderCommercialTable(filtered);
+        this.currentCommercialSearch = query.toLowerCase().trim();
+        this.currentCommercialPage = 1;
+        this.loadCommercialDashboard();
     },
 
     // ═══════════════════════════════════════
@@ -747,33 +767,25 @@ SIModules.dashboard = {
             return;
         }
 
-        const result = await API.get('/clients');
+        this.currentClientFilter = this.currentClientFilter || 'all';
+        this.currentClientSearch = this.currentClientSearch || '';
+        this.currentClientPage = this.currentClientPage || 1;
+        this.clientsPerPage = this.clientsPerPage || 15;
+
+        let url = `/clients?page=${this.currentClientPage}&limit=${this.clientsPerPage}`;
+        if (this.currentClientFilter !== 'all') url += `&status=${this.currentClientFilter}`;
+        if (this.currentClientSearch) url += `&search=${encodeURIComponent(this.currentClientSearch)}`;
+
+        const result = await API.get(url);
 
         if (!result.success) {
             this.container.innerHTML = this._errorState('No se pudieron cargar los datos de clientes.');
             return;
         }
 
-        const clients = Array.isArray(result.data) ? result.data : [];
-
-        // Estado persistente para el listado de clientes
-        this.adminClients = clients;
-        this.currentClientFilter = 'all';
-        this.currentClientSearch = '';
-        this.currentClientSort = { field: 'name', dir: 'asc' };
-        this.currentClientPage = 1;
-        this.clientsPerPage = 10;
-
-        // Calcular KPIs rápidos
-        const now = new Date();
-        const firstDayMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        const kpis = {
-            total: clients.length,
-            newThisMonth: clients.filter(c => new Date(c.created_at) >= firstDayMonth).length,
-            totalProjects: clients.reduce((sum, c) => sum + parseInt(c.projects_count || 0), 0),
-            totalUsers: clients.reduce((sum, c) => sum + parseInt(c.users_count || 0), 0)
-        };
+        const clients = result.data || [];
+        const kpis = result.kpis || { total: 0, newThisMonth: 0, totalProjects: 0, totalUsers: 0 };
+        const pagination = result.pagination;
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -804,16 +816,16 @@ SIModules.dashboard = {
                     <!-- Fila de Tabs con scroll horizontal nativo -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-client tab-admin-client active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClientsAdmin('all', this)">Todos</button>
-                            <button class="tab-client tab-admin-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.dashboard._filterClientsAdmin('activo', this)">Activos</button>
-                            <button class="tab-client tab-admin-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.dashboard._filterClientsAdmin('inactivo', this)">Inactivos</button>
+                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'all' ? 'active' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClientsAdmin('all', this)">Todos</button>
+                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'activo' ? 'active' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.dashboard._filterClientsAdmin('activo', this)">Activos</button>
+                            <button class="tab-client tab-admin-client ${this.currentClientFilter === 'inactivo' ? 'active' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.dashboard._filterClientsAdmin('inactivo', this)">Inactivos</button>
                         </div>
                     </div>
 
                     <!-- Buscador -->
                     <div class="relative w-full xl:w-96 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" placeholder="Buscar por nombre o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" value="${this.currentClientSearch}" placeholder="Buscar por nombre o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -821,32 +833,33 @@ SIModules.dashboard = {
                 <div id="clients-table-container">
                     <!-- Renderizado dinámico aquí -->
                 </div>
+
+                <!-- Paginación Global -->
+                <div id="clients-pagination-container"></div>
             </div>
         `;
 
-        this._renderClientsTable(clients);
+        this._renderClientsTable(clients, pagination);
     },
 
-    _renderClientsTable(data) {
+    _renderClientsTable(pagedData, pagination) {
         const container = document.getElementById('clients-table-container');
         if (!container) return;
 
-        if (data.length === 0) {
+        if (pagedData.length === 0) {
             container.innerHTML = `
                 <div class="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
                     <p class="text-sm font-semibold text-gray-900">No se encontraron clientes</p>
                     <p class="text-xs text-gray-400 mt-1">Intenta ajustar los filtros o el término de búsqueda.</p>
                 </div>
             `;
+            // Limpiar paginación si no hay datos
+            const pagContainer = document.getElementById('clients-pagination-container');
+            if (pagContainer) pagContainer.innerHTML = '';
             return;
         }
 
-        // --- LÓGICA DE PAGINACIÓN ---
-        const totalResults = data.length;
-        const totalPages = Math.ceil(totalResults / this.clientsPerPage);
-        const startIdx = (this.currentClientPage - 1) * this.clientsPerPage;
-        const pagedData = data.slice(startIdx, startIdx + this.clientsPerPage);
-        const endIdx = Math.min(startIdx + this.clientsPerPage, totalResults);
+        this.currentClientSort = this.currentClientSort || { field: 'name', dir: 'asc' };
 
         // --- RENDERIZADO DE FILAS (Tbody) ---
         const tbody = pagedData.map(c => {
@@ -931,24 +944,18 @@ SIModules.dashboard = {
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-6">
                 ${pagedData.map(c => this._renderClientCardAdminMobile(c)).join('')}
             </div>
-
-            <!-- FOOTER: Paginación -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-                <p class="text-[13px] font-bold text-gray-400">Mostrando <span class="text-[#1a1b25]">${startIdx + 1}</span> a <span class="text-[#1a1b25]">${endIdx}</span> de <span class="text-[#1a1b25]">${totalResults}</span> resultados</p>
-                
-                <div class="flex items-center gap-1">
-                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentClientPage > 1 ? 'bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50' : 'text-gray-300 pointer-events-none'}" 
-                            onclick="SIModules.dashboard._goToClientsPage(${this.currentClientPage - 1})">
-                        Anterior
-                    </button>
-                    ${this._renderPaginationButtons(totalPages)}
-                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentClientPage < totalPages ? 'bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50' : 'text-gray-300 pointer-events-none'}" 
-                            onclick="SIModules.dashboard._goToClientsPage(${this.currentClientPage + 1})">
-                        Siguiente
-                    </button>
-                </div>
-            </div>
         `;
+
+        // Renderizar la botonera compartida
+        const pagContainer = document.getElementById('clients-pagination-container');
+        if (pagContainer) {
+            SIApp.renderPaginationControls(
+                pagContainer,
+                pagination,
+                (page) => { this.currentClientPage = page; this.loadClientsList(); },
+                (limit) => { this.clientsPerPage = limit; this.currentClientPage = 1; this.loadClientsList(); }
+            );
+        }
     },
 
     /** Helper para pintar los circulitos de estado */
@@ -964,20 +971,7 @@ SIModules.dashboard = {
         `;
     },
 
-    /** Helper para botones numéricos de paginación */
-    _renderPaginationButtons(totalPages) {
-        let html = '';
-        for (let i = 1; i <= totalPages; i++) {
-            const isCurrent = i === this.currentClientPage;
-            html += `
-                <button class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition-all ${isCurrent ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white border border-gray-100 text-[#1a1b25] hover:bg-gray-50'}"
-                        onclick="SIModules.dashboard._goToClientsPage(${i})">
-                    ${i}
-                </button>
-            `;
-        }
-        return html;
-    },
+
 
     /** Card Mobile para el Listado de Clientes */
     _renderClientCardAdminMobile(c) {
@@ -1031,65 +1025,21 @@ SIModules.dashboard = {
     /** Filtros para la vista de listado de clientes */
     _filterClientsAdmin(status, btnElement) {
         document.querySelectorAll('.tab-admin-client').forEach(t => t.classList.remove('active'));
-        if (btnElement) {
-            btnElement.classList.add('active');
-        } else {
-            document.querySelector(`.tab-admin-client[data-filter="${status}"]`)?.classList.add('active');
-        }
+        if (btnElement) btnElement.classList.add('active');
 
         this.currentClientFilter = status;
-        this._applyClientsAdminFilters();
+        this.currentClientPage = 1;
+        this.loadClientsList();
     },
 
+    /** Al buscar, reiniciamos a la página 1 y recargamos */
     _searchClients(query) {
-        this.currentClientSearch = query.toLowerCase();
-        this._applyClientsAdminFilters();
-    },
-
-    _applyClientsAdminFilters() {
-        if (!this.adminClients) return;
-
-        let filtered = [...this.adminClients]; // Copia para no mutar el original
-
-        // 1. Filtrar por Tab (Estado)
-        if (this.currentClientFilter !== 'all') {
-            const isActive = this.currentClientFilter === 'activo';
-            filtered = filtered.filter(c => (c.is_active == 1 || c.is_active === true) === isActive);
-        }
-
-        // 2. Filtrar por Texto (Buscador)
-        if (this.currentClientSearch && this.currentClientSearch.trim() !== '') {
-            const q = this.currentClientSearch;
-            filtered = filtered.filter(c =>
-                (c.name && c.name.toLowerCase().includes(q)) ||
-                (c.reference && c.reference.toLowerCase().includes(q))
-            );
-        }
-
-        // 3. Ordenar dinámicamente
-        const { field, dir } = this.currentClientSort;
-        filtered.sort((a, b) => {
-            let valA = a[field] || '';
-            let valB = b[field] || '';
-
-            // Caso especial para booleanos/números de estado
-            if (field === 'is_active') {
-                valA = (valA == 1) ? 1 : 0;
-                valB = (valB == 1) ? 1 : 0;
-            }
-
-            if (valA < valB) return dir === 'asc' ? -1 : 1;
-            if (valA > valB) return dir === 'asc' ? 1 : -1;
-            return 0;
-        });
-
-        // Al filtrar o buscar, si la página actual excede el nuevo total, reseteamos a 1
-        const totalPages = Math.ceil(filtered.length / this.clientsPerPage);
-        if (this.currentClientPage > totalPages && totalPages > 0) {
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.currentClientSearch = query.toLowerCase();
             this.currentClientPage = 1;
-        }
-
-        this._renderClientsTable(filtered);
+            this.loadClientsList();
+        }, 400); // Pequeño debounce para no saturar la API
     },
 
     /** Handler para cambio de orden en columnas */
@@ -1100,14 +1050,156 @@ SIModules.dashboard = {
             this.currentClientSort.field = field;
             this.currentClientSort.dir = 'asc';
         }
-        // Al ordenar solemos querer volver a la primera página para ver el cambio
         this.currentClientPage = 1;
-        this._applyClientsAdminFilters();
+        this.loadClientsList();
     },
 
-    /** Handler para paginación */
-    _goToClientsPage(page) {
-        this.currentClientPage = page;
-        this._applyClientsAdminFilters();
+    // ═══════════════════════════════════════
+    // PROJECTS LIST VIEW (FULL LIST)
+    // ═══════════════════════════════════════
+
+    async loadProjectsList() {
+        const user = Auth.getUser();
+        if (!user) return;
+
+        this.currentProjListPage = this.currentProjListPage || 1;
+        this.projListPerPage = this.projListPerPage || 15;
+        this.currentProjListFilter = this.currentProjListFilter || 'all';
+        this.currentProjListSearch = this.currentProjListSearch || '';
+
+        let url = `/projects/search?page=${this.currentProjListPage}&limit=${this.projListPerPage}`;
+        if (this.currentProjListFilter !== 'all') url += `&status=${this.currentProjListFilter}`;
+        if (this.currentProjListSearch) url += `&search=${encodeURIComponent(this.currentProjListSearch)}`;
+
+        const result = await API.get(url);
+
+        if (!result.success) {
+            this.container.innerHTML = this._errorState('No se pudieron cargar los proyectos.');
+            return;
+        }
+
+        const projects = result.data.list || result.data || [];
+        const pagination = result.pagination;
+
+        this.container.innerHTML = `
+            <div class="fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Proyectos</h1>
+                    ${user.role !== 'cliente' ? `
+                        <button onclick="SIModules.projectDetailAdmin.openCreateModal()" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Nuevo Proyecto
+                        </button>
+                    ` : ''}
+                </div>
+
+                <!-- Filtros y Búsqueda -->
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'all' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterProjectsList('all', this)">Todos</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'propuesta' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterProjectsList('propuesta', this)">Pendientes</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'aprobado' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterProjectsList('aprobado', this)">Aprobados</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'ejecucion' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterProjectsList('ejecucion', this)">En Ejecución</button>
+                            <button class="tab-client tab-proj-list ${this.currentProjListFilter === 'cerrado' ? 'active' : ''} whitespace-nowrap px-4 py-2 text-xs font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterProjectsList('cerrado', this)">Cerrados</button>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full xl:w-96 flex-shrink-0 group">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" oninput="SIModules.dashboard._searchProjectsList(this.value)" value="${this.currentProjListSearch}" placeholder="Buscar por nombre o referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <div id="projects-list-table-container"></div>
+                <div id="projects-list-pagination-container"></div>
+            </div>
+        `;
+
+        this._renderProjectsListTable(projects, pagination);
+    },
+
+    _renderProjectsListTable(data, pagination) {
+        const container = document.getElementById('projects-list-table-container');
+        if (!container) return;
+
+        if (data.length === 0) {
+            container.innerHTML = `
+                <div class="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
+                    <p class="text-sm font-semibold text-gray-900">No se encontraron proyectos</p>
+                    <p class="text-xs text-gray-400 mt-1">Intenta ajustar los filtros.</p>
+                </div>
+            `;
+            const pagContainer = document.getElementById('projects-list-pagination-container');
+            if (pagContainer) pagContainer.innerHTML = '';
+            return;
+        }
+
+        const tbody = data.map(p => `
+            <tr class="hover:bg-orange-50/20 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</div>
+                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">${SIApp.escapeHtml(p.reference)}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    ${SIApp.escapeHtml(p.client_name || 'Sin cliente')}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${SIApp.statusBadge(p.status)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                    ${SIApp.formatDate(p.created_at)}
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <svg class="w-4 h-4 text-gray-300 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                </td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
+                <table class="w-full si-table">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Proyecto</th>
+                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
+                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
+                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha</th>
+                            <th class="px-6 py-4 text-right"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50/50">
+                        ${tbody}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        const pagContainer = document.getElementById('projects-list-pagination-container');
+        if (pagContainer) {
+            SIApp.renderPaginationControls(
+                pagContainer,
+                pagination,
+                (page) => { this.currentProjListPage = page; this.loadProjectsList(); },
+                (limit) => { this.projListPerPage = limit; this.currentProjListPage = 1; this.loadProjectsList(); }
+            );
+        }
+    },
+
+    _filterProjectsList(status, btn) {
+        document.querySelectorAll('.tab-proj-list').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        this.currentProjListFilter = status;
+        this.currentProjListPage = 1;
+        this.loadProjectsList();
+    },
+
+    _searchProjectsList(query) {
+        if (this.projSearchTimeout) clearTimeout(this.projSearchTimeout);
+        this.projSearchTimeout = setTimeout(() => {
+            this.currentProjListSearch = query;
+            this.currentProjListPage = 1;
+            this.loadProjectsList();
+        }, 400);
     }
 };

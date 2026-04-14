@@ -16,6 +16,12 @@ SIModules.projectDetailAdmin = {
     activeDocTypeFilter: 'all',
     updatingDocumentId: null,
 
+    // Paginación
+    auditPage: 1,
+    auditLimit: 15,
+    docPage: 1,
+    docLimit: 15,
+
     /** Shortcut: usuario de sesión activo (siempre legible desde SIApp) */
     get user() { return window.SIApp ? SIApp.user : null; },
 
@@ -1142,7 +1148,7 @@ SIModules.projectDetailAdmin = {
 
     async loadProjectTimeline() {
         try {
-            const res = await API.get('/projects/' + this.projectId + '/audit');
+            const res = await API.get(`/projects/${this.projectId}/audit?page=${this.auditPage}&limit=${this.auditLimit}`);
             const container = document.getElementById('historial-timeline-container');
             if (!container) return;
 
@@ -1158,8 +1164,25 @@ SIModules.projectDetailAdmin = {
                 return;
             }
 
-            container.innerHTML = '<div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>' +
-                logs.map(log => this._buildHistoryNode(log)).join('');
+            const timelineHtml = logs.map(log => this._buildHistoryNode(log)).join('');
+            
+            container.innerHTML = `
+                <div class="absolute top-0 bottom-0 left-[43px] w-0.5 bg-gray-100"></div>
+                ${timelineHtml}
+                <div id="project-audit-pagination" class="mt-12 pl-4"></div>
+            `;
+
+            if (res.pagination) {
+                const pagContainer = document.getElementById('project-audit-pagination');
+                if (pagContainer) {
+                    SIApp.renderPaginationControls(
+                        pagContainer,
+                        res.pagination,
+                        (page) => { this.auditPage = page; this.loadProjectTimeline(); },
+                        (limit) => { this.auditLimit = limit; this.auditPage = 1; this.loadProjectTimeline(); }
+                    );
+                }
+            }
         } catch (e) {
             console.error('Error loadProjectTimeline:', e);
         }
@@ -1391,10 +1414,10 @@ SIModules.projectDetailAdmin = {
         if (!container) return;
 
         try {
-            const res = await API.get('/projects/' + this.projectId + '/documents');
+            const res = await API.get(`/projects/${this.projectId}/documents?page=${this.docPage}&limit=${this.docLimit}`);
             if (res.success && res.data) {
                 this.documents = res.data;
-                this.renderDocumentList();
+                this.renderDocumentList(res.pagination);
             } else {
                 container.innerHTML = '<p class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Error al sincronizar expedientes.</p>';
             }
@@ -1405,13 +1428,13 @@ SIModules.projectDetailAdmin = {
     },
 
     /** Renderizar la lista de documentos obtenida */
-    renderDocumentList() {
+    renderDocumentList(pagination) {
         const user = this.user;
         const container = document.getElementById('doc-cards-container');
         const counter = document.getElementById('doc-counter');
         if (!container) return;
 
-        if (counter) counter.textContent = `${this.documents.length} ARCHIVOS`;
+        if (counter) counter.textContent = `${pagination ? pagination.total_items : this.documents.length} ARCHIVOS`;
 
         if (this.documents.length === 0) {
             container.innerHTML = `
@@ -1426,7 +1449,8 @@ SIModules.projectDetailAdmin = {
             return;
         }
 
-        container.innerHTML = this.documents.map(doc => {
+        const docListHtml = this.documents.map(doc => {
+
             const icon = SIApp.getFileIcon(doc.mime_type);
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
@@ -1504,6 +1528,25 @@ SIModules.projectDetailAdmin = {
                 </div>
             `;
         }).join('');
+
+        container.innerHTML = `
+            <div class="flex flex-col gap-3">
+                ${docListHtml}
+            </div>
+            <div id="project-docs-pagination" class="mt-8 border-t border-gray-50 pt-6"></div>
+        `;
+
+        if (pagination) {
+            const pagContainer = document.getElementById('project-docs-pagination');
+            if (pagContainer) {
+                SIApp.renderPaginationControls(
+                    pagContainer,
+                    pagination,
+                    (page) => { this.docPage = page; this.loadProjectDocuments(); },
+                    (limit) => { this.docLimit = limit; this.docPage = 1; this.loadProjectDocuments(); }
+                );
+            }
+        }
     },
 
     /** Mostrar/Ocultar el historial de versiones de un documento */

@@ -121,11 +121,14 @@ SIModules.projects = {
         const container = document.getElementById('client-doc-container');
         if (!container) return;
 
+        this.currentDocPage = this.currentDocPage || 1;
+        this.docsPerPage = this.docsPerPage || 15;
+
         try {
-            const res = await API.get(`/projects/${this.projectId}/documents`);
+            const res = await API.get(`/projects/${this.projectId}/documents?page=${this.currentDocPage}&limit=${this.docsPerPage}`);
             if (res.success && res.data) {
                 this.documents = res.data;
-                this.renderDocumentList();
+                this.renderDocumentList(res.pagination);
             } else {
                 container.innerHTML = '<p class="text-center py-8 text-gray-400 text-xs font-bold uppercase tracking-widest">No hay documentos disponibles.</p>';
             }
@@ -136,12 +139,12 @@ SIModules.projects = {
     },
 
     /** Renderizar lista de documentos */
-    renderDocumentList() {
+    renderDocumentList(pagination) {
         const container = document.getElementById('client-doc-container');
         const counter = document.getElementById('client-doc-counter');
         if (!container) return;
 
-        if (counter) counter.textContent = `${this.documents.length} ARCHIVOS`;
+        if (counter) counter.textContent = `${pagination ? pagination.total_items : this.documents.length} ARCHIVOS`;
 
         if (this.documents.length === 0) {
             container.innerHTML = `
@@ -153,7 +156,8 @@ SIModules.projects = {
             return;
         }
 
-        container.innerHTML = this.documents.map(doc => {
+        const docListHtml = this.documents.map(doc => {
+
             const icon = SIApp.getFileIcon(doc.mime_type);
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
@@ -204,6 +208,23 @@ SIModules.projects = {
                 </div>
             `;
         }).join('');
+
+        container.innerHTML = `
+            <div class="flex flex-col gap-3">
+                ${docListHtml}
+            </div>
+            <div id="client-docs-pagination" class="mt-8 border-t border-gray-50 pt-6"></div>
+        `;
+
+        const pagContainer = document.getElementById('client-docs-pagination');
+        if (pagContainer && pagination) {
+            SIApp.renderPaginationControls(
+                pagContainer,
+                pagination,
+                (page) => { this.currentDocPage = page; this.loadProjectDocuments(); },
+                (limit) => { this.docsPerPage = limit; this.currentDocPage = 1; this.loadProjectDocuments(); }
+            );
+        }
     },
 
     /** Toggle del historial para el cliente */

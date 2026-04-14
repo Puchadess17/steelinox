@@ -31,11 +31,17 @@ class ClientController {
             // 1. Extraemos los parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Pedimos los datos con los límites
-            $clientModel = new Client();
-            $result = $clientModel->getListByUser($userId, $role, $limit, $offset);
+            // 2. Extraemos filtros extra
+            $filters = [
+                'search' => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
+                'status' => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all'
+            ];
 
-            // 3. Devolvemos el JSON uniforme
+            // 3. Pedimos los datos con los límites y filtros
+            $clientModel = new Client();
+            $result = $clientModel->getListByUser($userId, $role, $limit, $offset, $filters);
+
+            // 4. Devolvemos el JSON uniforme
             echo json_encode([
                 'success'    => true, 
                 'message'    => 'Listado de clientes recuperado', 

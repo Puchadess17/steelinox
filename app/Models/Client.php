@@ -3,87 +3,140 @@
 
 require_once CORE_PATH . '/Database.php';
 
-class Client {
+class Client
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    public function getListByUser($userId, $role, $limit = 15, $offset = 0) {
+    public function getListByUser($userId, $role, $limit = 15, $offset = 0, $filters = [])
+    {
         if ($role === 'cliente') {
             return ['total' => 0, 'data' => []];
         }
 
-        $countSql = "";
-        $dataSql = "";
+        $params = [];
+        $where = ["deleted_at IS NULL"];
+
+        // 1. Filtros según Rol
+        if ($role === 'comercial') {
+            $where[] = "(c.created_by = :user_id_1 OR pu.user_id = :user_id_2)";
+            $params['user_id_1'] = $userId;
+            $params['user_id_2'] = $userId;
+        }
+
+        // 2. Filtros Externos (Search / Status)
+        if (!empty($filters['search'])) {
+            $q = "%" . $filters['search'] . "%";
+            if ($role === 'admin') {
+                $where[] = "(name LIKE :search1 OR reference LIKE :search2)";
+            } else {
+                $where[] = "(c.name LIKE :search1 OR c.reference LIKE :search2)";
+            }
+            $params['search1'] = $q;
+            $params['search2'] = $q;
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $isActive = ($filters['status'] === 'activo') ? 1 : 0;
+            if ($role === 'admin') {
+                $where[] = "is_active = :status";
+            } else {
+                $where[] = "c.is_active = :status";
+            }
+            $params['status'] = $isActive;
+        }
+
+        $whereSql = "WHERE " . implode(" AND ", $where);
 
         if ($role === 'admin') {
-            // Contamos el total para el Admin
-            $countSql = "SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL";
-            
-            // Extraemos los datos paginados
+            $countSql = "SELECT COUNT(*) FROM clients $whereSql";
             $dataSql = "SELECT id, name, reference, is_active, created_at,
                                (SELECT COUNT(*) FROM projects WHERE client_id = clients.id AND deleted_at IS NULL) as projects_count,
                                (SELECT COUNT(*) FROM users WHERE client_id = clients.id AND deleted_at IS NULL) as users_count
                         FROM clients 
-                        WHERE deleted_at IS NULL 
+                        $whereSql 
                         ORDER BY created_at DESC
                         LIMIT :limit OFFSET :offset";
-                        
-        } elseif ($role === 'comercial') {
-            // Contamos el total para el Comercial usando DISTINCT para evitar multiplicar por los JOINs
+
+        } else {
+            // Comercial
             $countSql = "SELECT COUNT(DISTINCT c.id) 
                          FROM clients c
                          LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
                          LEFT JOIN project_user pu ON p.id = pu.project_id
-                         WHERE (c.created_by = :user_id OR pu.user_id = :user_id) 
-                           AND c.deleted_at IS NULL";
+                         $whereSql";
 
-            // Extraemos los datos paginados
             $dataSql = "SELECT DISTINCT c.id, c.name, c.reference, c.is_active, c.created_at,
                                (SELECT COUNT(*) FROM projects WHERE client_id = c.id AND deleted_at IS NULL) as projects_count,
                                (SELECT COUNT(*) FROM users WHERE client_id = c.id AND deleted_at IS NULL) as users_count
                         FROM clients c
                         LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
                         LEFT JOIN project_user pu ON p.id = pu.project_id
-                        WHERE (c.created_by = :user_id OR pu.user_id = :user_id) 
-                          AND c.deleted_at IS NULL
+                        $whereSql
                         ORDER BY c.created_at DESC
                         LIMIT :limit OFFSET :offset";
         }
 
-        // 1. Ejecutar el Count
+        // --- EJECUCIÓN ---
         $stmtCount = $this->db->prepare($countSql);
-        if ($role === 'comercial') {
-            $stmtCount->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        foreach ($params as $key => $val) {
+            $stmtCount->bindValue(":$key", $val);
         }
         $stmtCount->execute();
-        $total = (int)$stmtCount->fetchColumn();
+        $total = (int) $stmtCount->fetchColumn();
 
-        // 2. Ejecutar la Extracción de Datos Paginada
         $stmtData = $this->db->prepare($dataSql);
-        if ($role === 'comercial') {
-            $stmtData->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        foreach ($params as $key => $val) {
+            $stmtData->bindValue(":$key", $val);
         }
         $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();
+
+        // 3. KPIs Globales
+        $kpiSql = "SELECT COUNT(*) as total,
+                          SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as new_this_month,
+                          (SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL " . ($role === 'comercial' ? "AND id IN (SELECT project_id FROM project_user WHERE user_id = :kpi_user_id)" : "") . ") as total_projects,
+                          (SELECT COUNT(*) FROM users u INNER JOIN clients c ON u.client_id = c.id WHERE u.deleted_at IS NULL AND c.deleted_at IS NULL " . ($role === 'comercial' ? "AND (c.created_by = :kpi_user_id_2 OR c.id IN (SELECT client_id FROM projects WHERE id IN (SELECT project_id FROM project_user WHERE user_id = :kpi_user_id_3)))" : "") . ") as total_users
+                   FROM clients c " . ($role === 'comercial' ? "WHERE (c.created_by = :kpi_user_id_4 OR c.id IN (SELECT client_id FROM projects p INNER JOIN project_user pu ON p.id = pu.project_id WHERE pu.user_id = :kpi_user_id_5)) AND c.deleted_at IS NULL" : "WHERE c.deleted_at IS NULL");
         
+        $stmtKpi = $this->db->prepare($kpiSql);
+        if ($role === 'comercial') {
+            $stmtKpi->bindValue(':kpi_user_id', $userId, PDO::PARAM_INT);
+            $stmtKpi->bindValue(':kpi_user_id_2', $userId, PDO::PARAM_INT);
+            $stmtKpi->bindValue(':kpi_user_id_3', $userId, PDO::PARAM_INT);
+            $stmtKpi->bindValue(':kpi_user_id_4', $userId, PDO::PARAM_INT);
+            $stmtKpi->bindValue(':kpi_user_id_5', $userId, PDO::PARAM_INT);
+        }
+        $stmtKpi->execute();
+        $kpis = $stmtKpi->fetch(PDO::FETCH_ASSOC);
+
         return [
-            'total' => $total, 
-            'data'  => $stmtData->fetchAll()
+            'total' => $total,
+            'kpis'  => [
+                'total'         => (int)($kpis['total'] ?? 0),
+                'newThisMonth'  => (int)($kpis['new_this_month'] ?? 0),
+                'totalProjects' => (int)($kpis['total_projects'] ?? 0),
+                'totalUsers'    => (int)($kpis['total_users'] ?? 0)
+            ],
+            'data' => $stmtData->fetchAll()
         ];
     }
 
-    public function getById($id) {
+    public function getById($id)
+    {
         $sql = "SELECT * FROM clients WHERE id = :id AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
 
-    public function getDetailsById($clientId, $userId, $role) {
+    public function getDetailsById($clientId, $userId, $role)
+    {
         if ($role === 'cliente') {
             return false;
         }
@@ -92,16 +145,17 @@ class Client {
                       FROM clients c
                       LEFT JOIN users u ON c.created_by = u.id
                       WHERE c.id = :client_id AND c.deleted_at IS NULL";
-        
+
         $params = ['client_id' => $clientId];
 
         if ($role === 'comercial') {
-            $sqlClient .= " AND (c.created_by = :user_id OR c.id IN (
+            $sqlClient .= " AND (c.created_by = :user_id_1 OR c.id IN (
                                 SELECT p.client_id FROM projects p 
                                 INNER JOIN project_user pu ON p.id = pu.project_id 
-                                WHERE pu.user_id = :user_id AND p.deleted_at IS NULL
+                                WHERE pu.user_id = :user_id_2 AND p.deleted_at IS NULL
                             ))";
-            $params['user_id'] = $userId;
+            $params['user_id_1'] = $userId;
+            $params['user_id_2'] = $userId;
         }
 
         $stmtClient = $this->db->prepare($sqlClient);
@@ -109,7 +163,7 @@ class Client {
         $clientData = $stmtClient->fetch();
 
         if (!$clientData) {
-            return false; 
+            return false;
         }
 
         $sqlUsers = "SELECT id, name, role, email, is_active, last_login_at 
@@ -128,7 +182,7 @@ class Client {
 
         $activeProjectsCount = 0;
         $annualRevenue = 0.0;
-        
+
         foreach ($projectsList as $project) {
             if ($project['status'] !== 'cerrado') {
                 $activeProjectsCount++;
@@ -148,57 +202,61 @@ class Client {
         return [
             'info' => $clientData,
             'kpis' => [
-                'total_projects'  => count($projectsList),
+                'total_projects' => count($projectsList),
                 'active_projects' => $activeProjectsCount,
-                'active_users'    => $activeUsersCount,
-                'annual_revenue'  => $annualRevenue
+                'active_users' => $activeUsersCount,
+                'annual_revenue' => $annualRevenue
             ],
             'projects' => $projectsList,
-            'users'    => $usersList
+            'users' => $usersList
         ];
     }
 
-    public function create($data) {
+    public function create($data)
+    {
         $sql = "INSERT INTO clients (name, reference, is_active, created_by, created_at) 
                 VALUES (:name, :reference, :is_active, :created_by, NOW())";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            'name'       => $data['name'],
-            'reference'  => $data['reference'] ?? null,
-            'is_active'  => $data['is_active'] ?? 1,
+            'name' => $data['name'],
+            'reference' => $data['reference'] ?? null,
+            'is_active' => $data['is_active'] ?? 1,
             'created_by' => $data['created_by']
         ]);
-        
+
         return $this->db->lastInsertId();
     }
 
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         $sql = "UPDATE clients 
                 SET name = :name, 
                     reference = :reference, 
                     is_active = :is_active 
                 WHERE id = :id AND deleted_at IS NULL";
-        
+
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            'name'      => $data['name'],
+            'name' => $data['name'],
             'reference' => $data['reference'] ?? null,
-            'is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
-            'id'        => $id
+            'is_active' => isset($data['is_active']) ? (int) $data['is_active'] : 1,
+            'id' => $id
         ]);
     }
 
-    public function delete($id) {
+    public function delete($id)
+    {
         $sql = "UPDATE clients 
                 SET deleted_at = NOW(), is_active = 0 
                 WHERE id = :id AND deleted_at IS NULL";
-        
+
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
 
-    public function generateNextReference() {
+    public function generateNextReference()
+    {
         $prefix = "CLI-";
 
         $sql = "SELECT reference FROM clients WHERE reference LIKE :prefix ORDER BY id DESC LIMIT 1";

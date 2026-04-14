@@ -11,6 +11,10 @@ window.SIModules.audit = {
         date_end: ''
     },
 
+    // Paginación
+    currentPage: 1,
+    itemsPerPage: 15,
+
     // Instancias de Flatpickr para resetear
     fpStart: null,
     fpEnd: null,
@@ -109,16 +113,20 @@ window.SIModules.audit = {
             if (this.filters[key]) params.append(key, this.filters[key]);
         });
 
+        params.append('page', this.currentPage);
+        params.append('limit', this.itemsPerPage);
+
         const res = await API.get(`/audit?${params.toString()}`);
 
         if (res.success && res.data) {
-            this._renderLogs(res.data);
+            const logsList = Array.isArray(res.data) ? res.data : (res.data.list || res.data);
+            this._renderLogs(logsList, res.pagination);
         } else {
             if (listContainer) listContainer.innerHTML = `<div class="p-8 text-center text-red-500 font-bold">Error: ${res.message}</div>`;
         }
     },
 
-    _renderLogs(logs) {
+    _renderLogs(logs, pagination) {
         const listContainer = document.getElementById('audit-list');
         if (!listContainer) return;
 
@@ -159,8 +167,28 @@ window.SIModules.audit = {
             <div class="md:hidden divide-y divide-gray-100">
                 ${logs.map(log => this._logCardTemplate(log)).join('')}
             </div>
+            <div id="audit-pagination" class="px-6 pb-6"></div>
         `;
         listContainer.innerHTML = html;
+
+        if (pagination) {
+            const paginationContainer = document.getElementById('audit-pagination');
+            if (paginationContainer) {
+                SIApp.renderPaginationControls(
+                    paginationContainer,
+                    pagination,
+                    (newPage) => {
+                        this.currentPage = newPage;
+                        this.loadLogs();
+                    },
+                    (newLimit) => {
+                        this.itemsPerPage = newLimit;
+                        this.currentPage = 1;
+                        this.loadLogs();
+                    }
+                );
+            }
+        }
     },
 
     _logCardTemplate(log) {
@@ -222,8 +250,8 @@ window.SIModules.audit = {
                             </div>
                             <div class="space-y-3">
                                 ${Object.entries(log.metadata)
-                                    .filter(([k]) => k !== 'version_id')
-                                    .map(([k, v]) => `
+                    .filter(([k]) => k !== 'version_id')
+                    .map(([k, v]) => `
                                     <div class="bg-white/50 p-3 rounded-xl border border-white">
                                         <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">${this._humanizeMetadataKey(k)}</span>
                                         <span class="text-xs text-gray-900 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
@@ -295,8 +323,8 @@ window.SIModules.audit = {
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 ${Object.entries(log.metadata)
-                                    .filter(([k]) => k !== 'version_id')
-                                    .map(([k, v]) => `
+                    .filter(([k]) => k !== 'version_id')
+                    .map(([k, v]) => `
                                     <div class="bg-gray-50 p-4 rounded-2xl border border-gray-50">
                                         <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">${this._humanizeMetadataKey(k)}</span>
                                         <span class="text-sm text-gray-900 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
@@ -313,7 +341,7 @@ window.SIModules.audit = {
     toggleMetadata(id, btn) {
         const el = document.getElementById(`meta-${id}`);
         const elMobile = document.getElementById(`meta-mobile-${id}`);
-        
+
         const toggle = (element, button) => {
             if (!element) return;
             const isHidden = element.classList.contains('hidden');
@@ -504,7 +532,7 @@ window.SIModules.audit = {
             entity: 'Todas las entidades'
         };
 
-        const filtered = term 
+        const filtered = term
             ? items.filter(i => i.label.toLowerCase().includes(term))
             : items;
 
@@ -512,7 +540,7 @@ window.SIModules.audit = {
     },
 
     resetFilters() {
-        // 1. Resetear objeto de filtros
+        // 1. Resetear objeto de filtros y paginación
         this.filters = {
             actor_user_id: '',
             action_key: '',
@@ -520,6 +548,7 @@ window.SIModules.audit = {
             date_start: '',
             date_end: ''
         };
+        this.currentPage = 1;
 
         // 2. Resetear labels visuales
         document.getElementById('label-actor').textContent = 'Todos los actores';
@@ -535,16 +564,17 @@ window.SIModules.audit = {
 
         // 5. Recargar logs
         this.loadLogs();
-        
+
         SIApp.showToast('Filtros limpiados', 'Se han restablecido todos los criterios de búsqueda.', 'info');
     },
 
     selectOption(filterKey, value, label) {
         this.filters[filterKey === 'actor' ? 'actor_user_id' : (filterKey === 'action' ? 'action_key' : 'entity_type')] = value;
+        this.currentPage = 1; // Forzar a la primera página al cambiar filtro
         document.getElementById(`label-${filterKey}`).textContent = label;
         document.getElementById(`drop-${filterKey}`).classList.add('hidden');
         document.getElementById(`btn-drop-${filterKey}`).querySelector('svg').style.transform = 'rotate(0deg)';
-        
+
         this._updateFilterButtonVisibility();
     },
 
@@ -599,6 +629,7 @@ window.SIModules.audit = {
 
     _humanizeAction(key) {
         const map = {
+            // --- Autenticación y Seguridad ---
             'login_exitoso': 'Inicio de sesión',
             'login_fallido': 'Error de login',
             'logout': 'Cierre de sesión',
@@ -607,16 +638,46 @@ window.SIModules.audit = {
             'recuperacion_clave_solicitada': 'Solicitud recuperación',
             'clave_actualizada': 'Contraseña cambiada',
             'recuperacion_clave_fallida': 'Email recuperación inválido',
+
+            // --- Clientes ---
+            'cliente_creado': 'Creación de cliente',
+            'cliente_actualizado': 'Edición de cliente',
+            'cliente_desactivado': 'Cliente desactivado',
+            'cliente_reactivado': 'Cliente reactivado',
+            'cliente_eliminado': 'Cliente eliminado',
+
+            // --- Proyectos ---
             'proyecto_creado': 'Creación de proyecto',
             'proyecto_actualizado': 'Edición de proyecto',
             'proyecto_cambio_estado': 'Cambio de estado',
+            'proyecto_reabierto': 'Proyecto reabierto',
+            'proyecto_comercial_asignado': 'Comercial asignado',
+            'proyecto_comercial_removido': 'Comercial desasignado',
+
+            // --- Documentos ---
             'documento_subido': 'Documento subido',
+            'documento_nueva_version': 'Nueva versión subida',
             'documento_descargado': 'Documento descargado',
             'documento_visualizado': 'Documento visualizado',
-            'cliente_creado': 'Creación de cliente',
-            'cliente_actualizado': 'Edición de cliente'
+
+            // --- Usuarios (Clientes y Comerciales) ---
+            'usuario_creado': 'Creación de usuario',
+            'usuario_actualizado': 'Edición de usuario',
+            'usuario_desactivado': 'Usuario desactivado',
+            'usuario_reactivado': 'Usuario reactivado',
+            'usuario_borrado': 'Usuario eliminado',
+            'usuario_eliminado': 'Usuario eliminado', // Por si acaso usamos ambos términos
+
+            // --- Comentarios ---
+            'comentario_creado': 'Nuevo comentario'
         };
-        return map[key] || key;
+
+        // Si existe en el mapa lo devuelve.
+        // Si no, quita los guiones bajos por espacios y pone la primera en mayúscula (Plan de contingencia)
+        if (map[key]) return map[key];
+
+        const fallback = key.replace(/_/g, ' ');
+        return fallback.charAt(0).toUpperCase() + fallback.slice(1);
     },
 
     _humanizeEntity(type) {
@@ -645,39 +706,77 @@ window.SIModules.audit = {
 
     _humanizeMetadataKey(key) {
         const map = {
-            'file_name': 'Nombre del archivo',
-            'version_number': 'Número de versión',
-            'is_specific_version': 'Versión específica',
-            'project_id': 'ID del proyecto',
-            'old_status': 'Estado anterior',
-            'new_status': 'Estado nuevo',
-            'reason': 'Motivo / Razón',
-            'email_attempted': 'Email intentado',
-            'client_id': 'ID del cliente',
-            'name': 'Nombre',
-            'reference': 'Referencia',
-            'file_size': 'Tamaño del archivo',
-            'mime_type': 'Tipo MIME',
-            'auto_versioned': 'Auto-versionado',
-            'document_id': 'ID del documento'
+            // --- Generales ---
+            'role': 'Rol',
+            'email': 'Email',
+            'nombre': 'Nombre',
+            'referencia': 'Referencia',
+            'cliente': 'Cliente',
+            'estado': 'Estado',
+            'cambios': 'Cambios realizados',
+
+            // --- Seguridad y Sesión ---
+            'ip': 'Dirección IP',
+            'email_intentado': 'Email introducido',
+            'email_attempted': 'Email introducido', // Legacy
+            'segundos_inactivo': 'Segundos de inactividad',
+
+            // --- Proyectos ---
+            'estado_anterior': 'Estado anterior',
+            'old_status': 'Estado anterior', // Legacy
+            'estado_nuevo': 'Estado nuevo',
+            'new_status': 'Estado nuevo', // Legacy
+            'motivo': 'Motivo / Justificación',
+            'reason': 'Motivo / Justificación', // Legacy
+            'usuario_asignado_id': 'ID Comercial Asignado',
+            'usuario_removido_id': 'ID Comercial Retirado',
+
+            // --- Usuarios y Clientes ---
+            'es_activo': '¿Está activo?',
+            'client_id': 'ID de la Empresa',
+
+            // --- Documentos ---
+            'documento_id': 'ID del Documento',
+            'document_id': 'ID del Documento', // Legacy
+            'nombre_archivo': 'Nombre del archivo',
+            'file_name': 'Nombre del archivo', // Legacy
+            'tamaño_archivo': 'Tamaño (Bytes)',
+            'file_size': 'Tamaño (Bytes)', // Legacy
+            'mime_type': 'Tipo de archivo (MIME)',
+            'auto_versionado': 'Auto-versionado',
+            'auto_versioned': 'Auto-versionado', // Legacy
+            'numero_version': 'Número de versión',
+            'version_number': 'Número de versión', // Legacy
+            'es_version_especifica': 'Descarga de versión específica',
+            'is_specific_version': 'Descarga de versión específica', // Legacy
+            'version_id': 'ID de la Versión',
+
+            // --- Comentarios ---
+            'body_snippet': 'Extracto del comentario'
         };
-        return map[key] || key;
+
+        // Si la encuentra en el diccionario, la devuelve.
+        if (map[key]) return map[key];
+
+        // Plan de contingencia: quitar guiones bajos y capitalizar primera letra
+        const fallback = key.replace(/_/g, ' ');
+        return fallback.charAt(0).toUpperCase() + fallback.slice(1);
     },
 
     _renderMetadataValue(key, value, log) {
         if (typeof value === 'object') return JSON.stringify(value);
-        
+
         const style = "text-gray-900 group-hover:text-orange-500 transition-colors no-underline font-bold";
-        
+
         // Manejo de IDs técnicos
         if (key === 'client_id') {
             return `<a href="/steelinox/client/${value}" class="${style}">#${value}</a>`;
         }
-        
+
         if (key === 'project_id') {
             return `<a href="/steelinox/project/${value}" class="${style}">#${value}</a>`;
         }
-        
+
         if (key === 'document_id') {
             const pid = log.metadata?.project_id || log.project_id || log.entity_id;
             return `<a href="/steelinox/project/${pid}" class="${style}">#${value}</a>`;
@@ -707,10 +806,10 @@ window.SIModules.audit = {
         const entityLabel = this._humanizeEntity(log.entity_type);
         const style = "group/link inline-flex items-center gap-2 transition-colors no-underline";
         const textStyle = "text-sm font-bold text-gray-600 group-hover/link:text-orange-500 transition-colors";
-        
+
         let href = null;
         let route = null;
-        
+
         if (log.entity_type === 'project') {
             href = `/steelinox/project/${log.entity_id}`;
             route = 'project-detail';
@@ -724,9 +823,9 @@ window.SIModules.audit = {
                 route = 'project-detail';
             }
         }
-        
+
         const badge = log.entity_id ? `<span class="bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] font-black font-mono text-gray-400 group-hover/link:bg-orange-50 group-hover/link:text-orange-500 transition-colors">#${log.entity_id}</span>` : '';
-        
+
         if (href) {
             return `
                 <a href="${href}" class="${style}">
@@ -735,7 +834,7 @@ window.SIModules.audit = {
                 </a>
             `;
         }
-        
+
         return `
             <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-gray-600">${entityLabel}</span>

@@ -7,10 +7,12 @@ require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
-class AuditController {
+class AuditController
+{
 
     // Obtener la línea temporal de un proyecto (GET /api/projects/{id}/audit)
-    public function getProjectTimeline($projectId) {
+    public function getProjectTimeline($projectId)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -21,7 +23,7 @@ class AuditController {
         }
 
         try {
-            $projectId = (int)$projectId;
+            $projectId = (int) $projectId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
@@ -44,7 +46,7 @@ class AuditController {
 
             $auditModel = new Audit();
             $result = $auditModel->getByProject($projectId, $limit, $offset);
-            
+
             $logs = $result['data'];
             $total = $result['total'];
 
@@ -54,11 +56,11 @@ class AuditController {
             }
 
             echo json_encode([
-                'success'    => true, 
-                'message'    => 'Logs recuperados correctamente',
-                'data'       => $logs,
+                'success' => true,
+                'message' => 'Logs recuperados correctamente',
+                'data' => $logs,
                 'pagination' => PaginationHelper::format($total, $limit, $page),
-                'errors'     => null
+                'errors' => null
             ]);
 
         } catch (Exception $e) {
@@ -68,7 +70,8 @@ class AuditController {
     }
 
     // Obtener la línea temporal de un cliente (GET /api/clients/{id}/audit)
-    public function getClientTimeline($targetClientId) {
+    public function getClientTimeline($targetClientId)
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -79,7 +82,7 @@ class AuditController {
         }
 
         try {
-            $targetClientId = (int)$targetClientId;
+            $targetClientId = (int) $targetClientId;
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
 
@@ -101,7 +104,7 @@ class AuditController {
 
             $auditModel = new Audit();
             $result = $auditModel->getByClient($targetClientId, $limit, $offset);
-            
+
             $logs = $result['data'];
             $total = $result['total'];
 
@@ -111,11 +114,11 @@ class AuditController {
             }
 
             echo json_encode([
-                'success'    => true, 
-                'message'    => 'Logs recuperados correctamente',
-                'data'       => $logs,
+                'success' => true,
+                'message' => 'Logs recuperados correctamente',
+                'data' => $logs,
                 'pagination' => PaginationHelper::format($total, $limit, $page),
-                'errors'     => null
+                'errors' => null
             ]);
 
         } catch (Exception $e) {
@@ -125,35 +128,36 @@ class AuditController {
     }
 
     // Logs Globales del Sistema
-    public function getGlobalLogs() {
+    public function getGlobalLogs()
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
-        
+
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
             return;
         }
-        
+
         try {
             $filters = [
-                'actor_user_id' => isset($_GET['actor_user_id']) ? (int)$_GET['actor_user_id'] : null,
-                'action_key'    => isset($_GET['action_key']) ? htmlspecialchars(trim($_GET['action_key']), ENT_QUOTES, 'UTF-8') : null,
-                'entity_type'   => isset($_GET['entity_type']) ? htmlspecialchars(trim($_GET['entity_type']), ENT_QUOTES, 'UTF-8') : null,
-                'date_start'    => isset($_GET['date_start']) ? htmlspecialchars(trim($_GET['date_start']), ENT_QUOTES, 'UTF-8') : null,
-                'date_end'      => isset($_GET['date_end']) ? htmlspecialchars(trim($_GET['date_end']), ENT_QUOTES, 'UTF-8') : null,
+                'actor_user_id' => isset($_GET['actor_user_id']) ? (int) $_GET['actor_user_id'] : null,
+                'action_key' => isset($_GET['action_key']) ? htmlspecialchars(trim($_GET['action_key']), ENT_QUOTES, 'UTF-8') : null,
+                'entity_type' => isset($_GET['entity_type']) ? htmlspecialchars(trim($_GET['entity_type']), ENT_QUOTES, 'UTF-8') : null,
+                'date_start' => isset($_GET['date_start']) ? htmlspecialchars(trim($_GET['date_start']), ENT_QUOTES, 'UTF-8') : null,
+                'date_end' => isset($_GET['date_end']) ? htmlspecialchars(trim($_GET['date_end']), ENT_QUOTES, 'UTF-8') : null,
             ];
-            
+
             // Aplicamos Paginación Global
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
             $auditModel = new Audit();
 
             $hasFilters = array_filter($filters);
-            $result = $hasFilters 
-                        ? $auditModel->getFilteredLogs($filters, $limit, $offset)
-                        : $auditModel->getGlobalLogs($limit, $offset);
-            
+            $result = $hasFilters
+                ? $auditModel->getFilteredLogs($filters, $limit, $offset)
+                : $auditModel->getGlobalLogs($limit, $offset);
+
             $logs = $result['data'];
             $total = $result['total'];
 
@@ -161,43 +165,44 @@ class AuditController {
                 $log['metadata'] = $log['metadata_json'] ? json_decode($log['metadata_json'], true) : null;
                 unset($log['metadata_json']);
             }
-            
+
             echo json_encode([
-                'success'    => true, 
-                'message'    => 'Logs recuperados correctamente',
-                'data'       => $logs,
+                'success' => true,
+                'message' => 'Logs recuperados correctamente',
+                'data' => $logs,
                 'pagination' => PaginationHelper::format($total, $limit, $page),
-                'errors'     => null
+                'errors' => null
             ]);
-            
+
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error al obtener logs', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
         }
     }
 
-    public function getFiltersData() {
+    public function getFiltersData()
+    {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
-        
+
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
             return;
         }
-        
+
         try {
             $auditModel = new Audit();
             require_once APP_PATH . '/Models/User.php';
             $userModel = new User();
-            
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Filtros recuperados',
                 'data' => [
-                    'actions'  => $auditModel->getUniqueActions(),
+                    'actions' => $auditModel->getUniqueActions(),
                     'entities' => $auditModel->getUniqueEntities(),
-                    'actors'   => $userModel->getAllBasic()
+                    'actors' => $userModel->getAllBasic()
                 ],
                 'errors' => null
             ]);

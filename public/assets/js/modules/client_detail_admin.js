@@ -191,9 +191,9 @@ SIModules.clientDetailAdmin = {
         const container = document.getElementById('client-detail-content');
         if (!container) return;
         switch (this.activeTab) {
-            case 'resumen':   container.innerHTML = this._renderResumen(); break;
+            case 'resumen': container.innerHTML = this._renderResumen(); break;
             case 'historial': container.innerHTML = this._renderHistorial(); break;
-            default:          container.innerHTML = '<p class="text-center py-20 text-gray-400">Próximamente...</p>';
+            default: container.innerHTML = '<p class="text-center py-20 text-gray-400">Próximamente...</p>';
         }
         if (this.activeTab === 'resumen') {
             this.renderProjectsList();
@@ -530,12 +530,12 @@ SIModules.clientDetailAdmin = {
         }
 
         const icons = {
-            status:   { color: 'bg-[#E57B23]',  icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
-            document: { color: 'bg-[#0284c7]',  icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-            project:  { color: 'bg-amber-500',   icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>' },
-            user:     { color: 'bg-violet-500',  icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' },
-            chat:     { color: 'bg-gray-100',    icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clip-rule="evenodd"/></svg>' },
-            edit:     { color: 'bg-amber-100',   icon: '<svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' },
+            status: { color: 'bg-[#E57B23]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
+            document: { color: 'bg-[#0284c7]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
+            project: { color: 'bg-amber-500', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>' },
+            user: { color: 'bg-violet-500', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' },
+            chat: { color: 'bg-gray-100', icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clip-rule="evenodd"/></svg>' },
+            edit: { color: 'bg-amber-100', icon: '<svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' },
         };
         const node = icons[type] || icons.edit;
 
@@ -631,7 +631,7 @@ SIModules.clientDetailAdmin = {
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Contraseña</label>
                                 <div class="relative">
                                     <input type="password" id="user-password" name="password" 
-                                        oninput="const hint = document.getElementById('user-password-hint'); if(hint) { if(this.value.length > 0) hint.classList.add('hidden'); else hint.classList.remove('hidden'); }; SIApp.validatePasswordRequirements(this);"
+                                        oninput="const hint = document.getElementById('user-password-hint'); const isEdit = document.getElementById('user-id').value !== ''; if(hint && isEdit) { if(this.value.length > 0) hint.classList.add('hidden'); else hint.classList.remove('hidden'); }; SIApp.validatePasswordRequirements(this);"
                                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="">
                                     <button type="button" 
                                         onclick="SIApp.togglePasswordVisibility(this)"
@@ -1019,6 +1019,7 @@ SIModules.clientDetailAdmin = {
         const modal = document.getElementById('user-modal');
         const form = document.getElementById('user-form');
         const title = document.getElementById('user-modal-title');
+        const hint = document.getElementById('user-password-hint');
 
         form.reset();
 
@@ -1029,11 +1030,16 @@ SIModules.clientDetailAdmin = {
             document.getElementById('user-email').value = user.email;
             document.getElementById('user-is-active').checked = user.is_active == 1 || user.is_active === true;
             document.getElementById('user-password').required = false;
+            
+            // Mostrar hint solo en edición (opcional cambiar pass)
+            if (hint) hint.classList.remove('hidden');
         } else {
-            document.getElementById('user-password-hint').classList.remove('hidden');
             document.getElementById('user-id').value = '';
             document.getElementById('user-is-active').checked = true;
             document.getElementById('user-password').required = true;
+            
+            // Ocultar hint en creación (la pass es obligatoria, no opcional)
+            if (hint) hint.classList.add('hidden');
         }
 
         modal.classList.remove('hidden');
