@@ -320,7 +320,7 @@ class User
 
     /** ---CLIENTES (USUARIOS)--- */
 
-    /** Listado de usuarios 'cliente' con KPIs globales y Paginación */
+    /** Listado de usuarios 'cliente' con KPIs globales, Paginación y Ordenación */
     public function getClientUsersList($actorUserId, $actorRole, $limit = 15, $offset = 0, $filters = []) {
         $baseWhere = ["u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL"];
         $params = [];
@@ -360,10 +360,10 @@ class User
                     INNER JOIN clients c ON u.client_id = c.id
                     WHERE " . implode(" AND ", $baseWhere);
 
-        // 1. Ejecutar el Count + KPIs Globales
+        // 1. Ejecutar el Count + KPIs Globales (Ahora con empresas cubiertas)
         $kpiSql = "SELECT COUNT(*) as total,
                           SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) as activos,
-                          SUM(CASE WHEN u.is_active = 0 THEN 1 ELSE 0 END) as inactivos
+                          COUNT(DISTINCT u.client_id) as empresas_cubiertas
                    " . $baseSql;
                    
         $stmtKpis = $this->db->prepare($kpiSql);
@@ -379,11 +379,24 @@ class User
 
         $total = (int)($kpiData['total'] ?? 0);
 
+        // --- ORDENACIÓN DINÁMICA ---
+        $allowedSortColumns = ['name', 'email', 'company_name', 'last_login_at', 'created_at'];
+        $sortBy = isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns) ? $filters['sort_by'] : 'created_at';
+        $sortDir = isset($filters['sort_dir']) && strtoupper($filters['sort_dir']) === 'ASC' ? 'ASC' : 'DESC';
+
+        // Mapeo seguro de la columna
+        if ($sortBy === 'company_name') {
+            $orderByClause = "ORDER BY c.name $sortDir";
+        } else {
+            $orderByClause = "ORDER BY u.$sortBy $sortDir";
+        }
+        // ---------------------------
+
         // 2. Extraer datos paginados
         $dataSql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at, 
                            c.name AS company_name, c.id AS client_id
                     " . $baseSql . " 
-                    ORDER BY u.created_at DESC
+                    $orderByClause
                     LIMIT :limit OFFSET :offset";
 
         $stmtData = $this->db->prepare($dataSql);
@@ -401,11 +414,11 @@ class User
         return [
             'total' => $total,
             'kpis'  => [
-                'total'     => $total,
-                'activos'   => (int)($kpiData['activos'] ?? 0),
-                'inactivos' => (int)($kpiData['inactivos'] ?? 0)
+                'total'              => $total,
+                'activos'            => (int)($kpiData['activos'] ?? 0),
+                'empresas_cubiertas' => (int)($kpiData['empresas_cubiertas'] ?? 0)
             ],
-            'data'  => $stmtData->fetchAll()
+            'data'  => $stmtData->fetchAll(PDO::FETCH_ASSOC)
         ];
     }
 }
