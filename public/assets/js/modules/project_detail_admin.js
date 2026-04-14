@@ -139,7 +139,6 @@ SIModules.projectDetailAdmin = {
                                             <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'plano', 'Plano')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Plano</li>
                                             <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'documento_tecnico', 'Documento Técnico')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Documento Técnico</li>
                                             <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'materiales', 'Materiales')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Materiales</li>
-                                            <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'pdf', 'PDF Genérico')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">PDF Genérico</li>
                                             <li onclick="SIModules.projectDetailAdmin.selectCustomOption('type', 'otros', 'Otros')" class="px-5 py-3 text-sm font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-600 cursor-pointer transition-colors">Otros</li>
                                         </ul>
                                     </div>
@@ -400,7 +399,7 @@ SIModules.projectDetailAdmin = {
         try {
             const user = this.user;
             const promises = [API.get('/projects/' + this.projectId)];
-            
+
             // Solo cargar auditoría si no es un cliente
             if (user && user.role !== 'cliente') {
                 promises.push(API.get('/projects/' + this.projectId + '/audit'));
@@ -699,7 +698,7 @@ SIModules.projectDetailAdmin = {
                         <div class="mt-8 pt-8 border-t border-gray-50">
                             <div class="flex items-center justify-between mb-4">
                                 <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Comerciales Asignados</span>
-                                ${user && user.role !== 'cliente' ? `
+                                ${user && user.role === 'admin' ? `
                                 <button onclick="SIModules.projectDetailAdmin.openAssignCommercialModal()" class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                     Asignar
@@ -731,7 +730,7 @@ SIModules.projectDetailAdmin = {
 
                     <!-- Botones de Acción -->
                     <div class="space-y-3">
-                        ${user && user.role !== 'cliente' ? `
+                        ${user && user.role === 'admin' ? `
                         <button onclick="SIModules.projectDetailAdmin.openChangeStatusModal()" class="w-full bg-white border border-gray-100 hover:border-orange-500 hover:text-orange-600 text-gray-700 rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-sm flex items-center justify-between group">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -745,7 +744,9 @@ SIModules.projectDetailAdmin = {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </button>
+                        ` : ''}
 
+                        ${user && user.role !== 'cliente' ? `
                         <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#1a1b25] hover:bg-gray-800 text-white rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-md flex items-center justify-between group">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -762,8 +763,8 @@ SIModules.projectDetailAdmin = {
                         </button>
                         ` : ''}
 
-                        <!-- Flujo de Aprobación de Propuesta para el Cliente -->
-                        ${user && user.role === 'cliente' && p.status === 'propuesta' ? `
+                        <!-- Flujo de Aprobación de Propuesta para el Cliente o Admin -->
+                        ${user && user.role !== 'comercial' && p.status === 'propuesta' ? `
                         <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-[2rem] p-6 border border-orange-200/50 shadow-sm relative overflow-hidden group">
                             <div class="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                             
@@ -992,14 +993,12 @@ SIModules.projectDetailAdmin = {
                     <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('all', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-orange-500 text-white shadow-md shadow-orange-500/20 active" data-type="all">Todos</button>
                     <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('propuesta', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="propuesta">Propuesta</button>
                     <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('presupuesto', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="presupuesto">Presupuesto</button>
-                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('plano', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="plano">Plano</button>
-                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('pdf', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="pdf">PDF</button>
+                    <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('plano', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="plano">Plano</button> 
                     <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('documento_tecnico', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="documento_tecnico">Doc. Técnico</button>
                     <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('materiales', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="materiales">Materiales</button>
                     <button onclick="SIModules.projectDetailAdmin.setDocTypeFilter('otros', this)" class="type-filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap bg-white border border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600 shadow-sm" data-type="otros">Otros</button>
                 </div>
 
-                <!-- Header de Lista -->
                 <!-- Header de Lista -->
                 <div class="flex flex-col pt-2 pb-2 gap-2">
                     <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide text-center sm:text-left">Expediente del Proyecto</h3>
@@ -1432,11 +1431,18 @@ SIModules.projectDetailAdmin = {
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
             const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
-            const canView = doc.mime_type === 'application/pdf' ||
+            
+            const canViewMime = doc.mime_type === 'application/pdf' ||
                 doc.mime_type.startsWith('image/') ||
                 doc.mime_type.startsWith('video/') ||
                 doc.mime_type.startsWith('text/') ||
                 doc.mime_type === 'application/json';
+
+            const isClient = user && user.role === 'cliente';
+            const canClientView = !isClient || doc.access_mode === 'view' || doc.access_mode === 'both';
+            const canClientDownload = !isClient || doc.access_mode === 'download' || doc.access_mode === 'both';
+
+            const canView = canViewMime && canClientView;
 
             return `
                 <div class="doc-row-wrapper mb-3 fade-in">
@@ -1463,17 +1469,17 @@ SIModules.projectDetailAdmin = {
                             <div class="flex items-center gap-1 border-r border-gray-100 pr-3 mr-1">
                                 <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify(doc).replace(/'/g, "&#39;")})' 
                                    class="p-2 text-gray-300 hover:text-blue-500 transition-colors transform hover:scale-110 active:scale-95 flex items-center justify-center relative group/btn" 
-                                   title="Ver / Comentar">
+                                   title="${canClientView ? 'Ver / Comentar' : 'Comentar'}">
                                     <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${canView ? 'opacity-100 group-hover/btn:opacity-0' : 'hidden'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${!canView ? 'opacity-100 group-hover/btn:opacity-0' : 'opacity-0 group-hover/btn:opacity-100'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                    <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${!canView ? 'opacity-100' : 'opacity-0 group-hover/btn:opacity-100'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                 </button>
                                 
-                                <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
+                                ${canClientDownload ? `<a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
                                    target="_blank"
                                    class="p-2 text-gray-300 hover:text-orange-500 transition-colors transform hover:scale-110 active:scale-95" 
                                    title="Descargar Archivo">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                </a>
+                                </a>` : ''}
 
                                 ${user && user.role !== 'cliente' ? `
                                 <button onclick="SIModules.projectDetailAdmin.triggerVersionUpload(${doc.id})"
@@ -1552,6 +1558,11 @@ SIModules.projectDetailAdmin = {
                 v.mime_type.startsWith('video/');
             const isCurrent = v.is_current == 1;
 
+            // Verify permissions for this specific document version wrapper (re-evaluate)
+            const parentDoc = SIModules.projectDetailAdmin.documents?.find(d => d.id == docId);
+            const isClient = SIModules.projectDetailAdmin.user && SIModules.projectDetailAdmin.user.role === 'cliente';
+            const canClientDownload = !isClient || (parentDoc && (parentDoc.access_mode === 'download' || parentDoc.access_mode === 'both'));
+
             return `
                 <div class="flex items-center justify-between px-5 py-3.5 hover:bg-white transition-colors group/ver">
                     <div class="flex items-center gap-3">
@@ -1569,16 +1580,16 @@ SIModules.projectDetailAdmin = {
                         </div>
                     </div>
                     <div class="flex items-center gap-1 opacity-40 group-hover/ver:opacity-100 transition-opacity">
-                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify({ id: docId, title: SIApp.escapeHtml(v.file_name), mime_type: v.mime_type, file_size: v.file_size, version_number: v.version_number, uploaded_by_name: v.uploaded_by_name, uploaded_at: v.uploaded_at }).replace(/'/g, "&#39;")}, ${v.id})'
+                        <button onclick='SIModules.projectDetailAdmin.openPreviewModal(Object.assign({}, ${JSON.stringify({ id: docId, title: SIApp.escapeHtml(v.file_name), mime_type: v.mime_type, file_size: v.file_size, version_number: v.version_number, uploaded_by_name: v.uploaded_by_name, uploaded_at: v.uploaded_at }).replace(/'/g, "&#39;")}, { access_mode: "${parentDoc?.access_mode || 'download'}" }), ${v.id})'
                            class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors transform hover:scale-110 relative" title="Visualizar esta versión / Comentar">
                             <svg class="w-4 h-4 transition-opacity duration-300 ${!canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             <svg class="w-4 h-4 transition-opacity duration-300 ${canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                         </button>
-                        <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
+                        ${canClientDownload ? `<a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
                            target="_blank"
                            class="p-1.5 text-gray-400 hover:text-orange-500 transition-colors" title="Descargar esta versión">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        </a>
+                        </a>` : ''}
                     </div>
                 </div>
             `;
@@ -1694,22 +1705,55 @@ SIModules.projectDetailAdmin = {
         const isPdf = mime === 'application/pdf';
         const isText = mime.startsWith('text/') || mime === 'application/json';
 
-        if (isImage && img) {
-            img.classList.remove('hidden');
-            img.src = viewUrl;
-            // skeleton se oculta en el onload del img en el HTML
-        } else if (isVideo && video) {
-            video.classList.remove('hidden');
-            video.src = viewUrl;
-            video.load(); // Vital para que empiece el streaming en Range
-            // skeleton se oculta en onloadedmetadata en el HTML
-        } else if ((isPdf || isText) && iframe) {
-            iframe.classList.remove('hidden');
-            iframe.src = viewUrl;
-            // skeleton se oculta en onIframeLoad
-        } else {
+        // Check Permissions
+        const isClient = this.user && this.user.role === 'cliente';
+        const canClientView = !isClient || doc.access_mode === 'view' || doc.access_mode === 'both';
+        const canClientDownload = !isClient || doc.access_mode === 'download' || doc.access_mode === 'both';
+
+        if (headerDownloadBtn) {
+            headerDownloadBtn.style.display = canClientDownload ? '' : 'none';
+        }
+
+        const leftPanel = document.getElementById('preview-left-panel');
+        const rightPanel = document.getElementById('preview-right-panel');
+
+        if (!canClientView) {
+            // Hide left panel entirely, set right panel to 100% width
+            if (leftPanel) leftPanel.classList.add('hidden');
+            if (rightPanel) rightPanel.classList.remove('lg:w-[26rem]', 'xl:w-[30rem]');
+            if (rightPanel) rightPanel.classList.add('w-full', 'lg:w-full', 'xl:w-full');
+            // Ensure visual elements fallback handles security
+            if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
+            if (img) { img.classList.add('hidden'); img.src = ''; }
+            if (video) { video.classList.add('hidden'); video.src = ''; video.pause(); }
             if (skeleton) skeleton.classList.add('hidden');
-            if (unsupportedDiv) unsupportedDiv.classList.remove('hidden');
+            if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
+        } else {
+            // Restore normal behavior
+            if (leftPanel) leftPanel.classList.remove('hidden');
+            if (rightPanel) rightPanel.classList.remove('w-full', 'lg:w-full', 'xl:w-full');
+            if (rightPanel) rightPanel.classList.add('lg:w-[26rem]', 'xl:w-[30rem]');
+            
+            if (isImage && img) {
+                img.classList.remove('hidden');
+                img.src = viewUrl;
+            } else if (isVideo && video) {
+                video.classList.remove('hidden');
+                video.src = viewUrl;
+                video.load();
+            } else if ((isPdf || isText) && iframe) {
+                iframe.classList.remove('hidden');
+                iframe.src = viewUrl;
+            } else {
+                if (skeleton) skeleton.classList.add('hidden');
+                if (unsupportedDiv) {
+                    unsupportedDiv.classList.remove('hidden');
+                    if (unsupportedDownload) {
+                        unsupportedDownload.href = downloadUrl;
+                        unsupportedDownload.style.display = canClientDownload ? '' : 'none';
+                    }
+                }
+            }
         }
 
         modal.classList.remove('hidden');
@@ -1941,8 +1985,33 @@ SIModules.projectDetailAdmin = {
             const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
             const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
 
-            if (headerDownloadBtn) headerDownloadBtn.href = downloadUrl;
-            if (unsupportedDownload) unsupportedDownload.href = downloadUrl;
+        // Check Permissions
+        const isClient = this.user && this.user.role === 'cliente';
+        const canClientView = !isClient || this.currentDoc.access_mode === 'view' || this.currentDoc.access_mode === 'both';
+        const canClientDownload = !isClient || this.currentDoc.access_mode === 'download' || this.currentDoc.access_mode === 'both';
+
+        if (headerDownloadBtn) {
+            headerDownloadBtn.href = downloadUrl;
+            headerDownloadBtn.style.display = canClientDownload ? '' : 'none';
+        }
+
+        const leftPanel = document.getElementById('preview-left-panel');
+        const rightPanel = document.getElementById('preview-right-panel');
+
+        if (!canClientView) {
+            if (leftPanel) leftPanel.classList.add('hidden');
+            if (rightPanel) rightPanel.classList.remove('lg:w-[26rem]', 'xl:w-[30rem]');
+            if (rightPanel) rightPanel.classList.add('w-full', 'lg:w-full', 'xl:w-full');
+
+            if (iframe) { iframe.classList.add('hidden'); iframe.src = ''; }
+            if (img) { img.classList.add('hidden'); img.src = ''; }
+            if (video) { video.classList.add('hidden'); video.src = ''; video.pause(); }
+            if (skeleton) skeleton.classList.add('hidden');
+            if (unsupportedDiv) unsupportedDiv.classList.add('hidden');
+        } else {
+            if (leftPanel) leftPanel.classList.remove('hidden');
+            if (rightPanel) rightPanel.classList.remove('w-full', 'lg:w-full', 'xl:w-full');
+            if (rightPanel) rightPanel.classList.add('lg:w-[26rem]', 'xl:w-[30rem]');
 
             if (isImage && img) {
                 img.classList.remove('hidden');
@@ -1956,8 +2025,15 @@ SIModules.projectDetailAdmin = {
                 iframe.src = viewUrl;
             } else {
                 if (skeleton) skeleton.classList.add('hidden');
-                if (unsupportedDiv) unsupportedDiv.classList.remove('hidden');
+                if (unsupportedDiv) {
+                    unsupportedDiv.classList.remove('hidden');
+                    if (unsupportedDownload) {
+                        unsupportedDownload.href = downloadUrl;
+                        unsupportedDownload.style.display = canClientDownload ? '' : 'none';
+                    }
+                }
             }
+        }
         }
 
         // Actualizar campo oculto de versión activa y el indicador del chat
@@ -2646,7 +2722,8 @@ SIModules.projectDetailAdmin = {
     async approveProject() {
         const confirmed = await SIApp.confirm(
             'Aprobar Propuesta',
-            '¿Confirmas que estás conforme con los términos y autorizas el inicio de la obra?'
+            '¿Confirmas que estás conforme con los términos y autorizas el inicio de la obra?',
+            'Aprobar'
         );
         if (!confirmed) return;
 

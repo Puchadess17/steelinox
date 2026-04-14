@@ -75,9 +75,9 @@ SIModules.clientUsersAdmin = {
                     <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
                         <div class="w-full xl:w-auto">
                             <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                                <button class="tab-client tab-users active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.clientUsersAdmin._filter('all', this)">Todos</button>
-                                <button class="tab-client tab-users whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="active" onclick="SIModules.clientUsersAdmin._filter('active', this)">Activos</button>
-                                <button class="tab-client tab-users whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactive" onclick="SIModules.clientUsersAdmin._filter('inactive', this)">Inactivos</button>
+                                <button class="tab-client tab-users active bg-orange-500 text-white shadow-md shadow-orange-500/20 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.clientUsersAdmin._filter('all', this)">Todos</button>
+                                <button class="tab-client tab-users bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="active" onclick="SIModules.clientUsersAdmin._filter('active', this)">Activos</button>
+                                <button class="tab-client tab-users bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactive" onclick="SIModules.clientUsersAdmin._filter('inactive', this)">Inactivos</button>
                             </div>
                         </div>
 
@@ -318,8 +318,14 @@ SIModules.clientUsersAdmin = {
     },
 
     _filter(status, btn) {
-        document.querySelectorAll('.tab-users').forEach(t => t.classList.remove('active'));
-        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.tab-users').forEach(t => {
+            t.classList.remove('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
+            t.classList.add('bg-white', 'border', 'border-gray-100', 'text-gray-400', 'hover:bg-gray-50');
+        });
+        if (btn) {
+            btn.classList.add('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
+            btn.classList.remove('bg-white', 'border', 'border-gray-100', 'text-gray-400', 'hover:bg-gray-50');
+        }
         this.currentFilter = status;
         this.currentPage = 1;
         this._applyFilters();

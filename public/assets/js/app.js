@@ -11,7 +11,7 @@ const SIApp = {
             PRJ: /^PRJ-\d{4}-\d{4,4}$/,
             CLI: /^CLI-\d{4}$/,
             EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            PASSWORD: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/
+            PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/
         }
     },
 
@@ -65,6 +65,21 @@ const SIApp = {
 
         // 4. Inicializar router
         SIRouter.init('main-content');
+
+        // 5. Validación cruzada (Email modificado -> revaluar password)
+        document.addEventListener('input', (e) => {
+            const el = e.target;
+            if (el.matches('[name="email"], #user-email, input[type="email"]')) {
+                const form = el.closest('form') || document;
+                const pwdInputs = form.querySelectorAll('input[type="password"]');
+                pwdInputs.forEach(pwd => {
+                    // Si el password ya tiene el script de validación, forzar actualización
+                    if (pwd.hasAttribute('oninput') && pwd.getAttribute('oninput').includes('validatePasswordRequirements')) {
+                        this.validatePasswordRequirements(pwd);
+                    }
+                });
+            }
+        });
     },
 
     // ──────────────────────────────────────
@@ -183,11 +198,14 @@ const SIApp = {
             isValid = validation;
         }
         
-        let errorEl = inputEl.parentNode.querySelector('.si-field-error');
+        let wrapper = inputEl.parentNode;
+        if (wrapper.classList.contains('relative')) wrapper = wrapper.parentNode;
+
+        let errorEl = wrapper.querySelector('.si-field-error');
         if (!errorEl) {
             errorEl = document.createElement('p');
             errorEl.className = 'si-field-error text-[10px] font-bold text-red-500 mt-1 ml-1 animate-in fade-in slide-in-from-top-1 duration-200';
-            inputEl.parentNode.appendChild(errorEl);
+            wrapper.appendChild(errorEl);
         }
 
         if (!isValid) {
@@ -238,7 +256,8 @@ const SIApp = {
 
         const requirements = [
             { id: 'req-len', label: 'Mínimo 8 caracteres', check: pwd.length >= 8 },
-            { id: 'req-let', label: 'Al menos una letra', check: /[A-Za-z]/.test(pwd) },
+            { id: 'req-upp', label: 'Al menos una mayúscula', check: /[A-Z]/.test(pwd) },
+            { id: 'req-let', label: 'Al menos una minúscula', check: /[a-z]/.test(pwd) },
             { id: 'req-num', label: 'Al menos un número', check: /\d/.test(pwd) }
         ];
 
@@ -247,16 +266,19 @@ const SIApp = {
             requirements.push({ 
                 id: 'req-eml', 
                 label: 'No empezar por tu email', 
-                check: !pwd.toLowerCase().startsWith(emailPrefix) 
+                check: pwd.length > 0 && !pwd.toLowerCase().startsWith(emailPrefix) 
             });
         }
 
+        let wrapper = inputEl.parentNode;
+        if (wrapper.classList.contains('relative')) wrapper = wrapper.parentNode;
+
         // Crear/Obtener contenedor de requisitos
-        let container = inputEl.parentNode.querySelector('.si-pwd-requirements');
+        let container = wrapper.querySelector('.si-pwd-requirements');
         if (!container) {
             container = document.createElement('div');
             container.className = 'si-pwd-requirements mt-2 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200';
-            inputEl.parentNode.appendChild(container);
+            wrapper.appendChild(container);
         }
 
         // Renderizar/Actualizar requisitos
@@ -414,7 +436,7 @@ const SIApp = {
     },
 
     /** Custom Confirm Modal Promisified */
-    confirm(title, message = '') {
+    confirm(title, message = '', confirmText = 'Eliminar') {
         return new Promise((resolve) => {
             // Remove existing if any
             const existing = document.getElementById('si-confirm-modal');
@@ -432,7 +454,7 @@ const SIApp = {
                         </div>
                         <div class="p-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
                             <button id="si-confirm-btn-cancel" class="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all focus:outline-none">Cancelar</button>
-                            <button id="si-confirm-btn-ok" class="px-4 py-2 text-sm font-bold text-white bg-red-500 rounded-xl hover:bg-red-600 shadow-md shadow-red-500/20 transition-all focus:outline-none">Eliminar</button>
+                            <button id="si-confirm-btn-ok" class="px-4 py-2 text-sm font-bold text-white bg-red-500 rounded-xl hover:bg-red-600 shadow-md shadow-red-500/20 transition-all focus:outline-none">${this.escapeHtml(confirmText)}</button>
                         </div>
                     </div>
                 </div>

@@ -247,105 +247,192 @@ SIModules.dashboard = {
         }
 
         const projects = Array.isArray(result.data) ? result.data : [];
+        
+        // Calcular KPIs para comercial
         const kpis = {
             total: projects.length,
             propuesta: projects.filter(p => p.status === 'propuesta').length,
             ejecucion: projects.filter(p => p.status === 'ejecucion').length,
             aprobado: projects.filter(p => p.status === 'aprobado').length,
+            cerrado: projects.filter(p => p.status === 'cerrado').length,
         };
+
+        // Cachear datos para filtrado frontend
+        this.commercialProjects = projects;
+        this.currentCommercialFilter = 'all';
+        this.currentCommercialSearch = '';
 
         this.container.innerHTML = `
             <div class="fade-in">
                 <!-- Header -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
-                        <div class="flex items-center gap-3 mb-1">
-                            <h1 class="text-2xl font-bold text-gray-900">Panel de Proyectos</h1>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-600">MIS PROYECTOS</span>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Panel de Proyectos</h1>
+                            <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-orange-100 text-orange-600 uppercase tracking-wider">MIS PROYECTOS</span>
                         </div>
-                        <p class="text-sm text-gray-500">Gestiona y realiza el seguimiento de tu cartera de proyectos asignada.</p>
+                        <p class="text-gray-400 text-sm">Gestiona y realiza el seguimiento de tu cartera de proyectos asignada.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button class="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all shadow-sm">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             Exportar Lista
                         </button>
+                    </div>
                 </div>
 
-                <!-- KPI Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    ${this._kpiCard('Proyectos Totales', kpis.total, 'orange', this._icon('grid'))}
-                    ${this._kpiCard('Pendientes Aprobación', String(kpis.propuesta).padStart(2, '0'), 'amber', this._icon('clock'))}
-                    ${this._kpiCard('En Producción', kpis.ejecucion, 'emerald', this._icon('play'))}
-                    ${this._kpiCard('Acciones Requeridas', String(kpis.propuesta).padStart(2, '0'), 'red', this._icon('alert'))}
+                <!-- KPI Grid Premium -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
+                    ${this._kpiCardClient('TOTALES', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                    ${this._kpiCardClient('PENDIENTES', kpis.propuesta, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
+                    ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
+                    ${this._kpiCardClient('APROBADOS', kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
                 </div>
 
-                <!-- Tabla de proyectos -->
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-                    <div class="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <h2 class="text-base font-semibold text-gray-900">Listado de Proyectos</h2>
-                        <div class="flex items-center gap-2">
-                            <div class="relative">
-                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <input type="text" placeholder="Buscar por nombre o ref..." class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 w-52">
-                            </div>
-                            <button class="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                                Filtrar
-                            </button>
+                <!-- Tabs y Búsqueda Interactiva -->
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
+                    <!-- Fila de Tabs -->
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-commercial tab-client active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterCommercial('all', this)">Todos</button>
+                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterCommercial('propuesta', this)">Pendientes</button>
+                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="aprobado" onclick="SIModules.dashboard._filterCommercial('aprobado', this)">Aprobados</button>
+                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterCommercial('ejecucion', this)">En Ejecución</button>
+                            <button class="tab-commercial tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterCommercial('cerrado', this)">Cerrados</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
-                        ${this._renderClientCards(projects)}
+
+                    <!-- Buscador -->
+                    <div class="relative w-full xl:w-80 flex-shrink-0 group">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
-                    
-                    <div class="hidden lg:block si-table-wrapper">
-                        <table class="w-full si-table">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="px-4 py-3 text-left">Proyecto</th>
-                                    <th class="px-4 py-3 text-left">Referencia</th>
-                                    <th class="px-4 py-3 text-left">Cliente</th>
-                                    <th class="px-4 py-3 text-left">Estado</th>
-                                    <th class="px-4 py-3 text-left">Fecha Inicio</th>
-                                    <th class="px-4 py-3 text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${projects.length > 0 ? projects.map(p => `
-                                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
-                                        <td class="px-4 py-3">
-                                            <p class="text-sm font-medium text-gray-800">${SIApp.escapeHtml(p.name)}</p>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${SIApp.escapeHtml(p.reference)}</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">${SIApp.escapeHtml(p.client_name || '-')}</td>
-                                        <td class="px-4 py-3">${SIApp.statusBadge(p.status)}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">${SIApp.formatDate(p.created_at)}</td>
-                                        <td class="px-4 py-3 text-center">
-                                            <button class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `).join('') : `
-                                    <tr><td colspan="6" class="text-center py-8 text-sm text-gray-400">No tienes proyectos asignados</td></tr>
-                                `}
-                            </tbody>
-                        </table>
+                </div>
+
+                <!-- Content Grid (Tabla Principal) -->
+                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
+                        <h2 class="text-base font-bold text-[#1a1b25]">Listado de Mis Proyectos</h2>
+                        <span id="commercial-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest">${kpis.total} RESULTADOS</span>
                     </div>
-                    <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-                        <span>Mostrando ${projects.length} de ${projects.length} proyectos</span>
-                        <div class="flex items-center gap-1">
-                            <button class="px-3 py-1 border border-gray-200 rounded text-xs hover:bg-gray-50 disabled:opacity-50" disabled>Anterior</button>
-                            <button class="px-3 py-1 bg-orange-500 text-white rounded text-xs">1</button>
-                            <button class="px-3 py-1 border border-gray-200 rounded text-xs hover:bg-gray-50 disabled:opacity-50" disabled>Siguiente</button>
-                        </div>
+                    <!-- Contenedor adaptativo -->
+                    <div id="commercial-table-container" class="select-none bg-gray-50/20">
+                        <!-- Renderizado dinámico -->
                     </div>
                 </div>
             </div>
         `;
+
+        this._renderCommercialTable(projects);
+    },
+
+    // ═══════════════════════════════════════
+    // COMMERCIAL LOGIC (Filtros, Search, Render)
+    // ═══════════════════════════════════════
+
+    /** Renderiza la tabla de proyectos para el comercial */
+    _renderCommercialTable(data) {
+        const container = document.getElementById('commercial-table-container');
+        const counter = document.getElementById('commercial-table-counter');
+        if (!container) return;
+
+        if (counter) counter.innerText = `${data.length} RESULTADOS`;
+
+        if (data.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <svg class="w-12 h-12 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <p class="text-sm font-semibold text-gray-900">No se encontraron proyectos asignados</p>
+                    <p class="text-xs text-gray-500 mt-1">Prueba a cambiar el filtro o el término de búsqueda.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const tbody = data.map(p => `
+            <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <span class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors block">${SIApp.escapeHtml(p.name)}</span>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
+                </td>
+                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    ${SIApp.escapeHtml(p.client_name || '-')}
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    ${SIApp.statusBadge(p.status)}
+                </td>
+                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase">
+                    ${SIApp.formatDate(p.created_at)}
+                </td>
+                <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <!-- VISTA MÓVIL: Grid de Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
+                ${this._renderClientCards(data)}
+            </div>
+
+            <!-- VISTA DESKTOP: Tabla Extensa Premium -->
+            <div class="hidden lg:block si-table-wrapper">
+                <table class="w-full si-table text-center">
+                    <thead>
+                        <tr class="bg-gray-50/50">
+                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
+                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
+                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
+                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
+                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                            <th class="px-5 py-3.5 text-right w-12 text-center items-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50/80">
+                        ${tbody}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    /** Filtro comercial */
+    _filterCommercial(status, btn) {
+        document.querySelectorAll('.tab-commercial').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        this.currentCommercialFilter = status;
+        this._applyCommercialFilters();
+    },
+
+    /** Buscador comercial */
+    _searchCommercial(query) {
+        this.currentCommercialSearch = query.toLowerCase();
+        this._applyCommercialFilters();
+    },
+
+    /** Lógica de filtrado combinada para comercial */
+    _applyCommercialFilters() {
+        if (!this.commercialProjects) return;
+
+        let filtered = this.commercialProjects;
+
+        if (this.currentCommercialFilter !== 'all') {
+            filtered = filtered.filter(p => p.status === this.currentCommercialFilter);
+        }
+
+        if (this.currentCommercialSearch) {
+            const q = this.currentCommercialSearch;
+            filtered = filtered.filter(p =>
+                (p.name && p.name.toLowerCase().includes(q)) ||
+                (p.reference && p.reference.toLowerCase().includes(q)) ||
+                (p.client_name && p.client_name.toLowerCase().includes(q))
+            );
+        }
+
+        this._renderCommercialTable(filtered);
     },
 
     // ═══════════════════════════════════════

@@ -28,8 +28,18 @@ SIModules.commercialsAdmin = {
                 return;
             }
 
-            this.adminCommercials = result.data.list || [];
-            const kpis = result.data.kpis || { total: 0, activos: 0, inactivos: 0 };
+            const rawData = result.data;
+            if (Array.isArray(rawData)) {
+                this.adminCommercials = rawData;
+            } else {
+                this.adminCommercials = rawData.list || [];
+            }
+
+            const kpis = Array.isArray(rawData) ? {
+                total: this.adminCommercials.length,
+                activos: this.adminCommercials.filter(u => u.is_active == 1).length,
+                inactivos: this.adminCommercials.filter(u => u.is_active == 0).length
+            } : (rawData.kpis || { total: 0, activos: 0, inactivos: 0 });
 
             // Calculate dynamic mock KPIs
             const totalProyectosActivos = this.adminCommercials.reduce((acc, c) => acc + (parseInt(c.active_projects) || 0), 0);
@@ -64,9 +74,9 @@ SIModules.commercialsAdmin = {
                         <!-- Fila de Tabs con scroll horizontal nativo -->
                         <div class="w-full xl:w-auto">
                             <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                                <button class="tab-client tab-comerciales active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.commercialsAdmin._filter('all', this)">Todos</button>
-                                <button class="tab-client tab-comerciales whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="active" onclick="SIModules.commercialsAdmin._filter('active', this)">Activos</button>
-                                <button class="tab-client tab-comerciales whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactive" onclick="SIModules.commercialsAdmin._filter('inactive', this)">Inactivos</button>
+                                <button class="tab-comercial tab-comerciales active bg-orange-500 text-white shadow-md shadow-orange-500/20 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.commercialsAdmin._filter('all', this)">Todos</button>
+                                <button class="tab-comercial tab-comerciales bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="active" onclick="SIModules.commercialsAdmin._filter('active', this)">Activos</button>
+                                <button class="tab-comercial tab-comerciales bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactive" onclick="SIModules.commercialsAdmin._filter('inactive', this)">Inactivos</button>
                             </div>
                         </div>
 
@@ -105,7 +115,10 @@ SIModules.commercialsAdmin = {
 
         if (data.length === 0) {
             container.innerHTML = `
-                <div class="p-12 text-center">
+                <div class="p-12 text-center bg-white border border-gray-100 rounded-2xl shadow-sm">
+                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    </div>
                     <p class="text-sm font-bold text-gray-900">No se encontraron comerciales</p>
                     <p class="text-xs text-gray-400 mt-1">Ningún usuario coincide con tu búsqueda.</p>
                 </div>
@@ -120,19 +133,27 @@ SIModules.commercialsAdmin = {
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
         const pagedData = data.slice(startIndex, startIndex + this.itemsPerPage);
 
+        const colors = [
+            'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700',
+            'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700',
+            'bg-rose-100 text-rose-700', 'bg-indigo-100 text-indigo-700',
+            'bg-cyan-100 text-cyan-700'
+        ];
+
         const desktopRows = pagedData.map(u => {
             const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
+            const colorClass = colors[(u.id || u.name.length) % colors.length];
 
             const lastAccessText = u.last_login_at
-                ? `<span class="text-[14px] font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>`
-                : '<span class="text-[14px] font-medium text-gray-400">Sin acceso</span>';
+                ? `<span class="text-sm font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>`
+                : '<span class="text-sm font-medium text-gray-400">Sin acceso</span>';
 
             return `
                 <tr class="hover:bg-orange-50/20 transition-colors group">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-gray-50 text-[#1a1b25] flex items-center justify-center text-[11px] font-black border border-gray-100 shadow-sm overflow-hidden">
+                            <div class="w-9 h-9 rounded-full ${colorClass} flex items-center justify-center text-[11px] font-black border border-white shadow-sm overflow-hidden">
                                 ${initials}
                             </div>
                             <div class="min-w-0">
@@ -170,17 +191,19 @@ SIModules.commercialsAdmin = {
             const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
             const lastAccessText = u.last_login_at ? SIApp.timeAgo(u.last_login_at) : 'Nunca';
+            const colorClass = colors[(u.id || u.name.length) % colors.length];
+
             return `
             <div class="bg-white border-l-[3.5px] border-l-orange-500 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg block group relative">
                 <div class="px-6 py-5">
                     <div class="flex items-start justify-between mb-4 gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-black tracking-widest shrink-0 border border-orange-100">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-12 h-12 rounded-full ${colorClass} flex items-center justify-center text-sm font-black tracking-widest shrink-0 border border-white">
                                 ${initials}
                             </div>
-                            <div>
-                                <a href="/steelinox/commercial/${u.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(u.name)}</a>
-                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1">${SIApp.escapeHtml(u.email)}</span>
+                            <div class="min-w-0">
+                                <a href="/steelinox/commercial/${u.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors no-underline block truncate">${SIApp.escapeHtml(u.name)}</a>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1 truncate">${SIApp.escapeHtml(u.email)}</span>
                             </div>
                         </div>
                         <div class="shrink-0 mt-0.5">
@@ -256,19 +279,16 @@ SIModules.commercialsAdmin = {
                 ${mobileCards}
             </div>
 
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+            ${totalPages > 1 ? `
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 mt-4">
                 <p class="text-[13px] font-bold text-gray-400">Mostrando <span class="text-[#1a1b25]">${startIndex + 1}</span> a <span class="text-[#1a1b25]">${Math.min(startIndex + this.itemsPerPage, data.length)}</span> de <span class="text-[#1a1b25]">${data.length}</span> resultados</p>
-                
                 <div class="flex items-center gap-1">
-                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentPage === 1 ? 'text-gray-300 pointer-events-none' : 'bg-white border border-gray-100 hover:bg-gray-50 text-[#1a1b25]'}" onclick="SIModules.commercialsAdmin._goToPage(${this.currentPage - 1})">
-                        Anterior
-                    </button>
+                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentPage === 1 ? 'text-gray-300 pointer-events-none' : 'bg-white border border-gray-100 hover:bg-gray-50 text-[#1a1b25]'}" onclick="SIModules.commercialsAdmin._goToPage(${this.currentPage - 1})">Anterior</button>
                     ${pagesHtml}
-                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentPage === totalPages ? 'text-gray-300 pointer-events-none' : 'bg-white border border-gray-100 hover:bg-gray-50 text-[#1a1b25]'}" onclick="SIModules.commercialsAdmin._goToPage(${this.currentPage + 1})">
-                        Siguiente
-                    </button>
+                    <button class="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${this.currentPage === totalPages ? 'text-gray-300 pointer-events-none' : 'bg-white border border-gray-100 hover:bg-gray-50 text-[#1a1b25]'}" onclick="SIModules.commercialsAdmin._goToPage(${this.currentPage + 1})">Siguiente</button>
                 </div>
             </div>
+            ` : ''}
         `;
     },
 
@@ -413,8 +433,14 @@ SIModules.commercialsAdmin = {
 
     /** Filtros Instantáneos */
     _filter(status, btn) {
-        document.querySelectorAll('.tab-comerciales').forEach(t => t.classList.remove('active'));
-        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.tab-comerciales').forEach(t => {
+            t.classList.remove('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
+            t.classList.add('bg-white', 'border', 'border-gray-100', 'text-gray-400', 'hover:bg-gray-50');
+        });
+        if (btn) {
+            btn.classList.add('bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20', 'active');
+            btn.classList.remove('bg-white', 'border', 'border-gray-100', 'text-gray-400', 'hover:bg-gray-50');
+        }
         this.currentFilter = status;
         this.currentPage = 1;
         this._applyFilters();
