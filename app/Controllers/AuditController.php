@@ -9,7 +9,6 @@ require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class AuditController
 {
-
     // Obtener la línea temporal de un proyecto (GET /api/projects/{id}/audit)
     public function getProjectTimeline($projectId)
     {
@@ -53,6 +52,16 @@ class AuditController
             foreach ($logs as &$log) {
                 $log['metadata'] = $log['metadata_json'] ? json_decode($log['metadata_json'], true) : null;
                 unset($log['metadata_json']);
+                
+                // --- RESOLUCIÓN Y FALLBACK DE NOMBRES ---
+                if (empty($log['entity_name']) && (int)$log['entity_id'] !== 0) {
+                    // Si no hay nombre pero hay ID, significa que la entidad fue borrada físicamente
+                    $log['entity_name'] = 'ID: ' . $log['entity_id'] . ' (Eliminado/No disp.)';
+                } elseif ((int)$log['entity_id'] === 0) {
+                    // Eventos de sistema como login fallido
+                    $log['entity_name'] = 'Sistema Global';
+                }
+                // ----------------------------------------
             }
 
             echo json_encode([
@@ -111,6 +120,12 @@ class AuditController
             foreach ($logs as &$log) {
                 $log['metadata'] = $log['metadata_json'] ? json_decode($log['metadata_json'], true) : null;
                 unset($log['metadata_json']);
+                
+                if (empty($log['entity_name']) && (int)$log['entity_id'] !== 0) {
+                    $log['entity_name'] = 'ID: ' . $log['entity_id'] . ' (Eliminado/No disp.)';
+                } elseif ((int)$log['entity_id'] === 0) {
+                    $log['entity_name'] = 'Sistema Global';
+                }
             }
 
             echo json_encode([
@@ -164,6 +179,12 @@ class AuditController
             foreach ($logs as &$log) {
                 $log['metadata'] = $log['metadata_json'] ? json_decode($log['metadata_json'], true) : null;
                 unset($log['metadata_json']);
+                
+                if (empty($log['entity_name']) && (int)$log['entity_id'] !== 0) {
+                    $log['entity_name'] = 'ID: ' . $log['entity_id'] . ' (Eliminado/No disp.)';
+                } elseif ((int)$log['entity_id'] === 0) {
+                    $log['entity_name'] = 'Sistema Global';
+                }
             }
 
             echo json_encode([

@@ -179,9 +179,10 @@ class CommentController {
 
                 // AUDITORÍA: Alta de comentario
                 AuditLogger::log('comentario_creado', 'comment', $newCommentId, $projectId, [
-                    'documento_id'  => $documentId,
-                    'version_id'   => $versionIdToSave,
-                    'body_snippet' => mb_substr($safeBody, 0, 50, 'UTF-8') . (mb_strlen($safeBody, 'UTF-8') > 50 ? '...' : '')
+                    'documento_id'     => $documentId,
+                    'documento_titulo' => $docInfo['title'],
+                    'version_id'       => $versionIdToSave,
+                    'body_snippet'     => mb_substr($safeBody, 0, 50, 'UTF-8') . (mb_strlen($safeBody, 'UTF-8') > 50 ? '...' : '')
                 ]);
 
                 http_response_code(200);

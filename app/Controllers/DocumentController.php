@@ -163,10 +163,11 @@ class DocumentController {
                 
                 // AUDITORÍA
                 AuditLogger::log('documento_nueva_version', 'document_version', $newVersionId, $projectId, [
-                    'nombre_archivo'  => $safeFileName,
-                    'documento_id'    => $existingId,
-                    'tamaño_archivo'  => $file['size'],
-                    'auto_versionado' => true
+                    'nombre_archivo'   => $safeFileName,
+                    'documento_id'     => $existingId,
+                    'documento_titulo' => $title,
+                    'tamaño_archivo'   => $file['size'],
+                    'auto_versionado'  => true
                 ]);
 
                 echo json_encode([
@@ -181,9 +182,10 @@ class DocumentController {
                 
                 // AUDITORÍA
                 AuditLogger::log('documento_subido', 'document', $newDocId, $projectId, [
-                    'nombre_archivo' => $safeFileName,
-                    'tamaño_archivo' => $file['size'],
-                    'mime_type'      => $realMime
+                    'nombre_archivo'   => $safeFileName,
+                    'documento_titulo' => $title,
+                    'tamaño_archivo'   => $file['size'],
+                    'mime_type'        => $realMime
                 ]);
 
                 echo json_encode([
@@ -281,11 +283,14 @@ class DocumentController {
             $versionId = $documentModel->uploadNewVersion($documentId, $versionData);
 
             // AUDITORÍA
+            $docInfo = $documentModel->getForDownload($documentId, $projectId); // Recuperamos info para el log
+
             AuditLogger::log('documento_nueva_version', 'document_version', $versionId, $projectId, [
-                'nombre_archivo'  => $safeFileName,
-                'document_id'     => $documentId,
-                'tamaño_archivo'  => $file['size'],
-                'auto_versioned'  => false
+                'nombre_archivo'   => $safeFileName,
+                'document_id'      => $documentId,
+                'documento_titulo' => $docInfo ? $docInfo['title'] : 'Desconocido',
+                'tamaño_archivo'   => $file['size'],
+                'auto_versioned'   => false
             ]);
 
             echo json_encode([

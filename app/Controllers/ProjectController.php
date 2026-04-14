@@ -178,8 +178,14 @@ class ProjectController
             $added = $projectModel->assignUser($projectId, $userId);
 
             if ($added) {
+                require_once APP_PATH . '/Models/User.php';
+                $uModel = new User();
+                $comercialData = $uModel->findByIdWithInactive($userId);
+                $nombreComercial = $comercialData ? $comercialData['name'] : 'Desconocido';
+
                 AuditLogger::log('proyecto_comercial_asignado', 'project', $projectId, $projectId, [
-                    'usuario_asignado_id' => $userId
+                    'usuario_asignado_id' => $userId,
+                    'nombre_comercial'    => $nombreComercial
                 ]);
 
                 echo json_encode([
@@ -235,8 +241,14 @@ class ProjectController
             $removed = $projectModel->removeUser($projectId, $userId);
 
             if ($removed) {
+                require_once APP_PATH . '/Models/User.php';
+                $uModel = new User();
+                $comercialData = $uModel->findByIdWithInactive($userId);
+                $nombreComercial = $comercialData ? $comercialData['name'] : 'Desconocido';
+
                 AuditLogger::log('proyecto_comercial_removido', 'project', $projectId, $projectId, [
-                    'usuario_removido_id' => $userId
+                    'usuario_removido_id' => $userId,
+                    'nombre_comercial'    => $nombreComercial // <-- NUEVO
                 ]);
 
                 echo json_encode([

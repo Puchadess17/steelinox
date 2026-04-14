@@ -12,6 +12,28 @@ class Audit
         $this->db = Database::getInstance()->getConnection();
     }
 
+    /** HELPER PRIVADO: Genera el bloque SELECT para obtener el nombre de la entidad */
+    private function getSelectEntityNameSql() {
+        return ", CASE 
+                    WHEN a.entity_type = 'project' THEN p_ent.name
+                    WHEN a.entity_type = 'document' THEN d_ent.title
+                    WHEN a.entity_type = 'document_version' THEN dv_ent.file_name
+                    WHEN a.entity_type = 'client' THEN c_ent.name
+                    WHEN a.entity_type = 'user' THEN u_ent.name
+                    WHEN a.entity_type = 'comment' THEN 'Comentario'
+                    ELSE NULL
+                 END AS entity_name";
+    }
+
+    /** HELPER PRIVADO: Genera los JOINs necesarios para cruzar las entidades */
+    private function getJoinEntityNameSql() {
+        return " LEFT JOIN projects p_ent ON a.entity_type = 'project' AND a.entity_id = p_ent.id
+                 LEFT JOIN documents d_ent ON a.entity_type = 'document' AND a.entity_id = d_ent.id
+                 LEFT JOIN document_versions dv_ent ON a.entity_type = 'document_version' AND a.entity_id = dv_ent.id
+                 LEFT JOIN clients c_ent ON a.entity_type = 'client' AND a.entity_id = c_ent.id
+                 LEFT JOIN users u_ent ON a.entity_type = 'user' AND a.entity_id = u_ent.id ";
+    }
+
     /** Obtiene el historial de un proyecto específico con paginación */
     public function getByProject($projectId, $limit = 15, $offset = 0)
     {
@@ -20,22 +42,26 @@ class Audit
         $stmtCount->execute(['project_id' => $projectId]);
         $total = (int) $stmtCount->fetchColumn();
 
+        $selectDynamic = $this->getSelectEntityNameSql();
+        $joinDynamic = $this->getJoinEntityNameSql();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.created_at,
                        u.name AS actor_name, a.actor_role
+                       $selectDynamic
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
+                $joinDynamic
                 WHERE a.project_id = :project_id
                 ORDER BY a.created_at DESC
                 LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($sql);
-        // Usamos bindValue explícito porque PDO a veces falla mezclando LIMIT/OFFSET con execute(array)
         $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
 
-        return ['total' => $total, 'data' => $stmt->fetchAll()];
+        return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
     /** Obtiene el historial de un cliente específico con paginación */
@@ -50,10 +76,15 @@ class Audit
         $stmtCount->execute(['c1' => $clientId, 'c2' => $clientId, 'c3' => $clientId]);
         $total = (int) $stmtCount->fetchColumn();
 
+        $selectDynamic = $this->getSelectEntityNameSql();
+        $joinDynamic = $this->getJoinEntityNameSql();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.metadata_json, a.created_at,
                        u.name AS actor_name, a.actor_role
+                       $selectDynamic
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
+                $joinDynamic
                 $whereSql
                 ORDER BY a.created_at DESC
                 LIMIT :limit OFFSET :offset";
@@ -66,7 +97,7 @@ class Audit
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
 
-        return ['total' => $total, 'data' => $stmt->fetchAll()];
+        return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
     /** Obtiene el log global del sistema con paginación */
@@ -74,10 +105,15 @@ class Audit
     {
         $total = (int) $this->db->query("SELECT COUNT(*) FROM audit_logs")->fetchColumn();
 
+        $selectDynamic = $this->getSelectEntityNameSql();
+        $joinDynamic = $this->getJoinEntityNameSql();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.created_at,
                        u.name AS actor_name, a.actor_role
+                       $selectDynamic
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
+                $joinDynamic
                 ORDER BY a.created_at DESC
                 LIMIT :limit OFFSET :offset";
 
@@ -86,7 +122,7 @@ class Audit
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
 
-        return ['total' => $total, 'data' => $stmt->fetchAll()];
+        return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
     /** Obtiene logs filtrados con búsqueda avanzada y paginación */
@@ -107,7 +143,6 @@ class Audit
 
         $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
-        // Closure para bindear parámetros dinámicamente
         $bindParams = function ($stmt) use ($filters) {
             if (!empty($filters['actor_user_id']))
                 $stmt->bindValue(':actor_user_id', $filters['actor_user_id'], PDO::PARAM_INT);
@@ -121,18 +156,21 @@ class Audit
                 $stmt->bindValue(':date_end', $filters['date_end'] . " 23:59:59", PDO::PARAM_STR);
         };
 
-        // 1. Contar totales
         $countSql = "SELECT COUNT(*) FROM audit_logs a $whereSql";
         $stmtCount = $this->db->prepare($countSql);
         $bindParams($stmtCount);
         $stmtCount->execute();
         $total = (int) $stmtCount->fetchColumn();
 
-        // 2. Extraer datos paginados
+        $selectDynamic = $this->getSelectEntityNameSql();
+        $joinDynamic = $this->getJoinEntityNameSql();
+
         $sql = "SELECT a.id, a.action_key, a.entity_type, a.entity_id, a.project_id, a.metadata_json, a.ip, a.user_agent, a.created_at,
                        u.name AS actor_name, a.actor_role
+                       $selectDynamic
                 FROM audit_logs a
                 LEFT JOIN users u ON a.actor_user_id = u.id
+                $joinDynamic
                 $whereSql
                 ORDER BY a.created_at DESC
                 LIMIT :limit OFFSET :offset";
@@ -143,7 +181,7 @@ class Audit
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
 
-        return ['total' => $total, 'data' => $stmt->fetchAll()];
+        return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
     public function getUniqueActions()
