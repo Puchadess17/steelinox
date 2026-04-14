@@ -1,10 +1,10 @@
-# storage/documents/.htaccess
+# storage/logs/.htaccess
 
 # ==========================================
 # BLOQUEO DE ACCESO PÚBLICO (SEGURIDAD)
 # ==========================================
-# Impide el listado de archivos y el acceso directo
-# a los documentos subidos mediante la URL.
+# Prohíbe cualquier acceso directo a través 
+# del navegador a los archivos de log.
 
 <IfModule mod_authz_core.c>
     # Apache 2.4
@@ -16,4 +16,5 @@
     Deny from all
 </IfModule>
 
+# Deshabilitar listado de directorios por si acaso
 Options -Indexes

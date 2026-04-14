@@ -3,24 +3,40 @@
 
 require_once CORE_PATH . '/Database.php';
 
+/**
+ * ====================
+ * AUDIT LOGGER (SERVICIO)
+ * ====================
+ * Servicio estático responsable de registrar la trazabilidad de acciones
+ * en toda la aplicación. Almacena el contexto del usuario, detalles técnicos
+ * (IP, User-Agent) y metadatos específicos del evento de forma inmutable.
+ */
 class AuditLogger {
 
     /**
-     * Registra un evento en la base de datos de auditoría
-     * * @param string $actionKey Ej: 'documento_descargado', 'proyecto_cambio_estado'
-     * @param string $entityType Ej: 'document', 'project', 'user'
-     * @param int $entityId El ID de la entidad afectada
-     * @param int|null $projectId (Opcional) Para vincularlo a la línea temporal del proyecto
-     * @param array|null $metadata (Opcional) Array asociativo con datos extra (old_status, etc.)
+     * REGISTRO DE EVENTO DE AUDITORÍA
+     * Inserta un nuevo registro en la base de datos. Extrae automáticamente
+     * la información de la sesión y del servidor para certificar la autoría.
+     *
+     * @param string $actionKey Identificador de la acción (ej: 'documento_descargado')
+     * @param string $entityType Tipo de entidad afectada (ej: 'document', 'project')
+     * @param int $entityId ID del registro afectado en la base de datos
+     * @param int|null $projectId ID del proyecto (opcional, para agrupar históricos)
+     * @param array|null $metadata Datos adicionales en formato array asociativo
+     * @return bool True si se registró con éxito, False en caso de error
      */
     public static function log($actionKey, $entityType, $entityId, $projectId = null, $metadata = null) {
         try {
+            // Extrae la conexión global a la base de datos
             $db = Database::getInstance()->getConnection();
 
+            // Captura automática de variables de entorno y sesión
             $actorUserId = $_SESSION['user_id'] ?? null;
             $actorRole = $_SESSION['role'] ?? null;
             $ip = $_SERVER['REMOTE_ADDR'] ?? null;
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            
+            // Conversión segura de metadatos a JSON soportando caracteres unicode
             $metadataJson = $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null;
 
             $sql = "INSERT INTO audit_logs 
@@ -41,9 +57,22 @@ class AuditLogger {
             ]);
 
             return true;
+            
         } catch (Exception $e) {
-            // En un sistema crítico, un fallo en el log no debería tumbar la acción principal.
-            error_log("Fallo crítico en AuditLogger: " . $e->getMessage());
+            /**
+             * EJECUCIÓN SILENCIOSA (FALLBACK A ARCHIVO)
+             * Si ocurre un error al guardar el log, se captura la excepción y 
+             * se escribe en un archivo físico aislando el fallo. Retorna false 
+             * para no interrumpir ni tumbar la transacción principal del usuario.
+             */
+            $logDir = STORAGE_PATH . '/logs';
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0755, true);
+            }
+            
+            $logMessage = "[" . date('Y-m-d H:i:s') . "] Fallo en AuditLogger: " . $e->getMessage() . PHP_EOL;
+            error_log($logMessage, 3, $logDir . '/system_errors.log');
+
             return false;
         }
     }

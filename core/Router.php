@@ -1,10 +1,28 @@
 <?php
 // core/Router.php
 
+/**
+ * ====================
+ * ROUTER (ENRUTADOR)
+ * ====================
+ * El cerebro de la aplicación. Se encarga de mapear las URLs que solicita
+ * el cliente con el Controlador y Método correspondientes. Soporta captura
+ * de parámetros dinámicos mediante Expresiones Regulares (Regex).
+ */
 class Router {
+    
+    /**
+     * ALMACÉN DE RUTAS
+     * Array que guardará en memoria todas las rutas registradas en web.php
+     * antes de que se despache la petición actual.
+     */
     protected $routes = [];
 
-    // Método principal para registrar una ruta
+    /**
+     * REGISTRO PRINCIPAL DE RUTAS
+     * Almacena una nueva ruta normalizando el método HTTP a mayúsculas
+     * y asegurando que la URI empiece con '/' para evitar inconsistencias.
+     */
     public function add($method, $uri, $action) {
         $this->routes[] = [
             'method' => strtoupper($method),
@@ -13,7 +31,11 @@ class Router {
         ];
     }
 
-    // Métodos atajo para limpiar el código al definir rutas
+    /**
+     * MÉTODOS ATAJO (HELPERS RESTful)
+     * Envoltorios semánticos para hacer el archivo web.php más limpio y
+     * legible al definir los endpoints (arquitectura orientada a recursos).
+     */
     public function get($uri, $action) {
         $this->add('GET', $uri, $action);
     }
@@ -30,29 +52,48 @@ class Router {
         $this->add('DELETE', $uri, $action);
     }
 
-    // Despachar la URL al controlador correcto
+    /**
+     * DESPACHO DE LA PETICIÓN (NÚCLEO DEL ROUTER)
+     * Analiza la URL entrante, busca una coincidencia exacta en el almacén
+     * de rutas usando expresiones regulares, e invoca el controlador asociado.
+     */
     public function dispatch($url) {
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         
-        // "method spoofing"
+        /**
+         * METHOD SPOOFING (FALSIFICACIÓN DE MÉTODO)
+         * Los formularios HTML nativos solo soportan GET y POST. Si se recibe
+         * un campo oculto '_method', se sobreescribe internamente para
+         * soportar peticiones PUT o DELETE desde el Frontend.
+         */
         if ($requestMethod === 'POST' && isset($_POST['_method'])) {
             $requestMethod = strtoupper($_POST['_method']);
         }
 
         $url = '/' . trim($url, '/');
 
+        /**
+         * BÚSQUEDA Y EXTRACCIÓN CON REGEX
+         * Itera sobre las rutas y convierte la URI registrada en un patrón.
+         * Si la URL coincide, extrae los parámetros dinámicos.
+         */
         foreach ($this->routes as $route) {
-            // URI guardada en un patrón de expresión regular
-            // Ej: /api/projects/(\d+) se convierte en #^/api/projects/(\d+)$#
+            
+            // Convierte la ruta (ej: /api/projects/(\d+)) a formato Regex estricto
             $pattern = '#^' . $route['uri'] . '$#';
 
-            // preg_match en lugar de === p --> URL encaja con el patrón
             if ($route['method'] === $requestMethod && preg_match($pattern, $url, $matches)) {
                 
-                // Eliminar primer elemento de $matches (que es la URL completa)
-                // para quedarnos con los parámetros capturados (ej: el ID '1')
+                // Elimina el índice [0] de las coincidencias (que contiene la URL completa)
+                // para aislar únicamente los parámetros limpios (ej: el ID).
                 array_shift($matches);
 
+                /**
+                 * INSTANCIACIÓN Y EJECUCIÓN DINÁMICA
+                 * Divide la cadena 'Controlador@metodo'. Instancia el archivo 
+                 * del controlador en tiempo de ejecución e inyecta los 
+                 * parámetros extraídos de la URL mediante el operador spread (...).
+                 */
                 $actionParts = explode('@', $route['action']);
                 $controllerName = $actionParts[0];
                 $methodName = $actionParts[1];
@@ -61,17 +102,22 @@ class Router {
 
                 if (file_exists($controllerFile)) {
                     require_once $controllerFile;
+                    
+                    // Instancia el controlador al vuelo
                     $controller = new $controllerName();
                     
                     if (method_exists($controller, $methodName)) {
-                        // Ejecuto método pasándole los parámetros extraídos dinámicamente
-                        // El operador ... (spread) convierte el array en argumentos separados
                         return $controller->$methodName(...$matches);
                     }
                 }
             }
         }
 
+        /**
+         * RESPUESTA 404 (FALLBACK)
+         * Si el bucle finaliza sin encontrar ninguna coincidencia, interrumpe 
+         * la petición y devuelve un error estándar en formato JSON.
+         */
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Ruta no encontrada']);
         return;

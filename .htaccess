@@ -1,9 +1,27 @@
+# .htaccess (Raíz)
+
+# ====================
+# ENRUTADOR DE DIRECTORIO RAÍZ
+# ====================
+# Oculta la estructura interna del proyecto. Redirige todo el tráfico
+# entrante hacia el directorio 'public', protegiendo las carpetas del
+# núcleo de accesos web directos.
+
 <IfModule mod_rewrite.c>
+    
+    # ACTIVACIÓN DEL MOTOR DE REESCRITURA
+    # Habilita la manipulación y redirección de URLs a nivel de servidor.
     RewriteEngine on
     
-    # Redirigir la raíz a la carpeta public
+    # REDIRECCIÓN DEL DOMINIO PRINCIPAL
+    # Evalúa si la solicitud está completamente vacía (^$). Si es así, 
+    # enruta la petición internamente a la carpeta 'public/'. 
+    # El flag [L] (Last) detiene el procesamiento de reglas adicionales.
     RewriteRule ^$ public/ [L]
     
-    # Redirigir cualquier otra petición a la carpeta public
+    # REDIRECCIÓN DE RUTAS SECUNDARIAS
+    # Captura cualquier petición con parámetros o subdirectorios (.*) 
+    # y la transfiere íntegramente ($1) hacia la carpeta 'public/'.
     RewriteRule (.*) public/$1 [L]
+
 </IfModule>

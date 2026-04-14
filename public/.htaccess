@@ -1,10 +1,35 @@
+# public/.htaccess
+
+# ====================
+# FRONT CONTROLLER REDIRECT (MOD_REWRITE)
+# ====================
+# Intercepta el tráfico HTTP entrante y redirige las peticiones
+# que no correspondan a recursos físicos hacia el index.php.
+# Es la pieza clave para habilitar URLs amigables (Clean URLs).
+
 <IfModule mod_rewrite.c>
+    
+    # ACTIVACIÓN DEL MOTOR DE REESCRITURA
+    # Permite alterar la resolución de las URLs entrantes a nivel de servidor 
+    # antes de que lleguen a la capa de la aplicación.
     RewriteEngine On
 
-    # Si el archivo o directorio existe físicamente, lo servimos
+    # EXCLUSIÓN DE RECURSOS FÍSICOS (ASSETS)
+    # Verifica si la URL solicitada coincide con un directorio (!-d) 
+    # o archivo (!-f) que existe realmente en el disco (ej: /assets/css/app.css).
+    # Si existe, rompe la regla y Apache sirve el archivo directamente 
+    # sin cargar PHP, mejorando drásticamente el rendimiento.
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
 
-    # Si no existe, redirige todo el tráfico a index.php pasando la ruta en la variable 'url'
+    # REDIRECCIÓN AL NÚCLEO DE LA APLICACIÓN
+    # Captura el path virtual completo (^(.*)$) y lo inyecta como 
+    # el parámetro 'url' hacia index.php.
+    # Flags:
+    # - [QSA] (Query String Append): Preserva cualquier parámetro GET 
+    #   adicional en la URL original (ej: /api/users?status=active).
+    # - [L] (Last): Fuerza a Apache a detener el procesamiento de 
+    #   otras reglas de reescritura tras aplicar esta.
     RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+    
 </IfModule>

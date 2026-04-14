@@ -1,6 +1,8 @@
 .env
 /storage/documents/*
 !/storage/documents/.htaccess
+/storage/logs/*
+!/storage/logs/.htaccess
 /vendor
 .DS_Store
 Thumbs.db
