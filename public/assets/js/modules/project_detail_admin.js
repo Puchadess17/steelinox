@@ -746,7 +746,7 @@ SIModules.projectDetailAdmin = {
 
                     <!-- Bloque de Comerciales Asignados -->
                     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <div class="flex items-center justify-between mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                 <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                                 Comerciales Asignados
@@ -1189,7 +1189,7 @@ SIModules.projectDetailAdmin = {
 
     async loadProjectTimeline() {
         try {
-            const res = await API.get(`/projects/${this.projectId}/audit?page=${this.auditPage}&limit=${this.auditLimit}`);
+            const res = await API.get(`/projects/${this.projectId}/audit?page=${this.auditPage}&limit=${this.auditLimit}`, { silent: true });
             const container = document.getElementById('historial-timeline-container');
 
             // Si el contenedor no existe en el HTML, abortamos
@@ -1525,7 +1525,7 @@ SIModules.projectDetailAdmin = {
         if (!container) return;
 
         try {
-            const res = await API.get(`/projects/${this.projectId}/documents?page=${this.docPage}&limit=${this.docLimit}`);
+            const res = await API.get(`/projects/${this.projectId}/documents?page=${this.docPage}&limit=${this.docLimit}`, { silent: true });
             if (res.success && res.data) {
                 this.documents = res.data;
                 this.renderDocumentList(res.pagination);
@@ -1709,7 +1709,7 @@ SIModules.projectDetailAdmin = {
         if (!container) return;
 
         try {
-            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/versions`);
+            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/versions`, { silent: true });
             if (res.success) {
                 this.renderVersionList(docId, res.data);
             } else {
@@ -2288,7 +2288,7 @@ SIModules.projectDetailAdmin = {
         }
 
         try {
-            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/versions`);
+            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/versions`, { silent: true });
             if (res.success && res.data) {
                 this.docVersions = res.data; // Cache for switchDocVersion
 
@@ -2362,7 +2362,7 @@ SIModules.projectDetailAdmin = {
         loading.classList.remove('hidden');
         container.innerHTML = '';
         try {
-            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/comments`);
+            const res = await API.get(`/projects/${this.projectId}/documents/${docId}/comments`, { silent: true });
             if (res.success && res.data) {
                 this.currentComments = res.data;
                 this.renderDocComments(versionId);
@@ -2497,7 +2497,7 @@ SIModules.projectDetailAdmin = {
                 data.version_id = parseInt(activeVersionId);
             }
 
-            const res = await API.post(`/projects/${this.projectId}/documents/${docId}/comments`, data);
+            const res = await API.post(`/projects/${this.projectId}/documents/${docId}/comments`, data, { silent: true });
 
             if (res.success) {
                 input.value = '';

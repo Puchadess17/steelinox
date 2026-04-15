@@ -124,7 +124,7 @@ const SIRouter = {
             'user-edit': { module: 'clientUserFormAdmin', method: 'loadEditSPA', roles: ['admin', 'comercial'], title: 'Editar Usuario Cliente' },
 
             'audit-log': { module: 'audit', method: 'initAuditLog', roles: ['admin'], title: 'Registro de Actividad' },
-            'settings': { module: 'settings', method: 'dummyMethod', roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
+            'settings': { module: 'settings', method: 'init', roles: ['admin', 'comercial', 'cliente'], title: 'Ajustes' },
             'projects-new': { module: 'projects', method: 'dummyMethod', roles: ['admin', 'comercial'], title: 'Nuevo Proyecto' }
         };
     },

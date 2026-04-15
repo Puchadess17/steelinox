@@ -104,7 +104,14 @@ const SIApp = {
         const btnLogout = document.getElementById('btn-logout');
 
         if (userName) userName.textContent = this.user.name || 'Usuario';
-        if (userRole) userRole.textContent = this._roleLabel(this.user.role);
+        
+        if (userRole) {
+            let roleText = this._roleLabel(this.user.role);
+            if (this.user.role === 'cliente' && this.user.client_name) {
+                roleText += ` de ${this.user.client_name}`;
+            }
+            userRole.textContent = roleText;
+        }
 
         if (userAvatar) {
             userAvatar.textContent = this._getInitials(this.user.name);
@@ -116,6 +123,16 @@ const SIApp = {
                 Auth.logout();
             });
         }
+    },
+
+    /** Cambio de tema global */
+    toggleTheme() {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('si-theme', isDark ? 'dark' : 'light');
+        
+        // Sincronizar switches si existen en la página
+        const settingsSwitch = document.getElementById('theme-toggle');
+        if (settingsSwitch) settingsSwitch.checked = isDark;
     },
 
     // ──────────────────────────────────────
@@ -534,222 +551,72 @@ const SIApp = {
 
     /**
      * Renderiza los controles de paginación en el contenedor especificado.
-     * @param {HTMLElement} container Contenedor donde se insertará el HTML de paginación
-     * @param {Object} pagination Datos de paginación recibidos del backend
-     * @param {Function} onPageChange Callback al cambiar de página (recibe número de página)
-     * @param {Function} onLimitChange Callback al cambiar el límite por página (recibe número de límite)
      */
-    // ──────────────────────────────────────
-    // MODAL HELPER
-    // ──────────────────────────────────────
-
-    /**
-     * Abre un modal por su ID aplicando la animación estándar (opacity + scale).
-     * @param {string} modalId
-     */
-    modal: {
-        open(modalId) {
-            const modal = document.getElementById(modalId);
-            if (!modal) return;
-            modal.classList.remove('hidden');
-            void modal.offsetWidth; // Fuerza repintado antes de la transición
-            modal.classList.remove('opacity-0');
-            const container = modal.querySelector('div');
-            if (container) container.classList.remove('scale-95');
-        },
-
-        close(modalId) {
-            const modal = document.getElementById(modalId);
-            if (!modal) return;
-            modal.classList.add('opacity-0');
-            const container = modal.querySelector('div');
-            if (container) container.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-    },
-
-    // ──────────────────────────────────────
-    // FORM DATA HELPER
-    // ──────────────────────────────────────
-
-    /**
-     * Valida un formulario HTML5, extrae sus datos y normaliza los valores:
-     * - Strings vacíos → null (ideal para números/fechas opcionales)
-     * - Checkboxes → booleanos reales
-     * @param {string} formId
-     * @returns {Object|null} Datos del formulario, o null si la validación falla
-     */
-    getValidatedFormData(formId) {
-        const form = document.getElementById(formId);
-        if (!form) return null;
-
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return null;
-        }
-
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        // Convertir strings vacíos a null
-        for (const key in data) {
-            if (typeof data[key] === 'string' && data[key].trim() === '') {
-                data[key] = null;
-            }
-        }
-
-        // Checkboxes: on → true, ausente → false
-        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            data[cb.name] = cb.checked;
-        });
-
-        return data;
-    },
-
-    // ──────────────────────────────────────
-    // BUTTON LOADING HELPER
-    // ──────────────────────────────────────
-
-    /**
-     * Activa o desactiva el estado de carga de un botón.
-     * Guarda el HTML original en data-original-text para restaurarlo.
-     * @param {string} btnId
-     * @param {boolean} isLoading
-     * @param {string} [defaultText='Guardar'] Texto de respaldo si no se guardó el original
-     */
-    setBtnLoading(btnId, isLoading, defaultText = 'Guardar') {
-        const btn = document.getElementById(btnId);
-        if (!btn) return;
-
-        if (isLoading) {
-            if (!btn.dataset.originalText) {
-                btn.dataset.originalText = btn.innerHTML;
-            }
-            btn.disabled = true;
-            btn.innerHTML = `
-                <svg class="w-4 h-4 animate-spin inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                Procesando...
-            `;
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = btn.dataset.originalText || defaultText;
-            delete btn.dataset.originalText;
-        }
-    },
-
     renderPaginationControls(container, pagination, onPageChange, onLimitChange) {
         if (!container || !pagination) return;
 
         const cp = pagination.current_page;
         const tp = pagination.total_pages;
 
-        // --- LÓGICA DE BOTONES NUMÉRICOS ---
         let buttons = [];
-
-        // Página 1 siempre
         buttons.push({ page: 1, active: cp === 1 });
 
-        // Elipsis inicial
-        if (cp > 3) {
-            buttons.push({ type: 'ellipsis' });
-        }
+        if (cp > 3) buttons.push({ type: 'ellipsis' });
+        if (cp > 2) buttons.push({ page: cp - 1, active: false });
+        if (cp > 1 && cp < tp) buttons.push({ page: cp, active: true });
+        if (cp < tp - 1) buttons.push({ page: cp + 1, active: false });
+        if (cp < tp - 2) buttons.push({ type: 'ellipsis' });
+        if (tp > 1) buttons.push({ page: tp, active: cp === tp });
 
-        // Página Anterior (si no es la 1 o 2)
-        if (cp > 2) {
-            buttons.push({ page: cp - 1, active: false });
-        }
-
-        // Página Actual (si no es la 1 o la última)
-        if (cp > 1 && cp < tp) {
-            buttons.push({ page: cp, active: true });
-        }
-
-        // Página Siguiente (si no es la última o penúltima)
-        if (cp < tp - 1) {
-            buttons.push({ page: cp + 1, active: false });
-        }
-
-        // Elipsis final
-        if (cp < tp - 2) {
-            buttons.push({ type: 'ellipsis' });
-        }
-
-        // Última página siempre (si hay más de una)
-        if (tp > 1) {
-            buttons.push({ page: tp, active: cp === tp });
-        }
-
-        // Renderizado del HTML de los botones numéricos
         const buttonsHtml = buttons.map(b => {
-            if (b.type === 'ellipsis') {
-                return `<span class="px-2 text-gray-400 font-bold">...</span>`;
-            }
+            if (b.type === 'ellipsis') return `<span class="px-2 text-gray-400 font-bold">...</span>`;
             const activeClass = b.active
                 ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                 : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300';
 
-            return `
-                <button class="si-page-btn w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${activeClass}" 
-                        data-page="${b.page}">
-                    ${b.page}
-                </button>
-            `;
+            return `<button class="si-page-btn w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${activeClass}" data-page="${b.page}">${b.page}</button>`;
         }).join('');
 
         container.innerHTML = `
             <div class="flex flex-col lg:flex-row items-center justify-between gap-6 pt-6 border-t border-gray-100">
-                <!-- IZQUIERDA: Info de página y Salto Manual -->
                 <div class="order-3 lg:order-1 flex-1 flex items-center gap-4">
                     <p class="text-[11px] sm:text-[13px] font-medium text-gray-400">
                         <span class="hidden sm:inline">Mostrando página</span>
                         <span class="sm:hidden">Pág.</span>
                         <span class="text-gray-900 font-bold">${cp}</span> de <span class="text-gray-900 font-bold">${tp}</span>
-                        <span class="hidden md:inline text-gray-300 ml-1">(${pagination.total_results || 0} resultados en total)</span>
+                        <span class="hidden md:inline text-gray-300 ml-1">(${pagination.total_results || 0} resultados)</span>
                     </p>
                     <div class="flex items-center gap-1.5 pl-4 border-l border-gray-100">
-                        <input type="number" id="si-input-goto" 
-                               class="w-11 h-8 text-center text-[11px] font-bold border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all" 
-                               min="1" max="${tp}" placeholder="${cp}">
-                        <button id="si-btn-goto" 
-                                class="h-8 px-3 bg-gray-50 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-transparent hover:border-orange-100">
-                            Ir
-                        </button>
+                        <input type="number" id="si-input-goto" class="w-11 h-8 text-center text-[11px] font-bold border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" min="1" max="${tp}" placeholder="${cp}">
+                        <button id="si-btn-goto" class="h-8 px-3 bg-gray-50 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg text-[10px] font-black uppercase transition-all border border-transparent hover:border-orange-100">Ir</button>
                     </div>
                 </div>
 
-                <!-- CENTRO: Navegación Numérica -->
                 <div class="order-1 lg:order-2 flex items-center gap-1.5 justify-center">
                     <button id="si-btn-prev" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all ${!pagination.has_previous_page ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    
                     ${buttonsHtml}
-
                     <button id="si-btn-next" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all ${!pagination.has_next_page ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </div>
 
-                <!-- DERECHA: Selector de Límite -->
                 <div class="order-2 lg:order-3 flex-1 flex justify-end">
                     <div class="flex items-center bg-gray-50/80 p-1.5 rounded-2xl border border-gray-100/50">
-                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all ${pagination.per_page == 15 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="15">15</button>
-                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all ${pagination.per_page == 30 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="30">30</button>
-                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all ${pagination.per_page == 50 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="50">50</button>
+                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 15 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="15">15</button>
+                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 30 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="30">30</button>
+                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 50 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="50">50</button>
                     </div>
                 </div>
             </div>
         `;
 
-        // Eventos para botones Anterior/Siguiente (Iconos)
         const btnPrev = container.querySelector('#si-btn-prev');
         const btnNext = container.querySelector('#si-btn-next');
         if (btnPrev && pagination.has_previous_page) btnPrev.addEventListener('click', () => onPageChange(pagination.previous_page));
         if (btnNext && pagination.has_next_page) btnNext.addEventListener('click', () => onPageChange(pagination.next_page));
 
-        // Eventos para botones numéricos
         container.querySelectorAll('.si-page-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const page = parseInt(e.currentTarget.dataset.page, 10);
@@ -757,34 +624,56 @@ const SIApp = {
             });
         });
 
-        // Eventos para el salto manual de página
         const inputGoto = container.querySelector('#si-input-goto');
         const btnGoto = container.querySelector('#si-btn-goto');
         const handleGoto = () => {
             const val = parseInt(inputGoto.value, 10);
-            if (!isNaN(val) && val >= 1 && val <= tp && val !== cp) {
-                onPageChange(val);
-            } else {
-                inputGoto.value = '';
-            }
+            if (!isNaN(val) && val >= 1 && val <= tp && val !== cp) onPageChange(val);
+            else inputGoto.value = '';
         };
 
         if (btnGoto) btnGoto.addEventListener('click', handleGoto);
-        if (inputGoto) {
-            inputGoto.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') handleGoto();
-            });
-        }
+        if (inputGoto) inputGoto.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleGoto(); });
 
-        // Eventos para selectores de límite
         container.querySelectorAll('.si-limit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const newLimit = parseInt(e.target.dataset.limit, 10);
                 if (newLimit !== pagination.per_page) onLimitChange(newLimit);
             });
         });
-    }
+    },
+
+    // ──────────────────────────────────────
+    // MODAL HELPER
+    // ──────────────────────────────────────
+
+    modal: {
+        open(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('hidden');
+            setTimeout(() => {
+                el.classList.add('opacity-100');
+                el.querySelector('div').classList.add('scale-100');
+                el.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        },
+        close(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('opacity-100');
+            el.querySelector('div').classList.remove('scale-100');
+            el.querySelector('div').classList.add('scale-95');
+            setTimeout(() => el.classList.add('hidden'), 300);
+        }
+    },
+
+    formatDate(dateStr) {
+        if (!dateStr) return '...';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    },
 };
 
-// Exportar globalmente para que typeof window.SIApp funcione correctamente
+// Exportar globalmente
 window.SIApp = SIApp;

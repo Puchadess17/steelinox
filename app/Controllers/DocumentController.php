@@ -46,8 +46,9 @@ class DocumentController {
             ]);
 
         } catch (Exception $e) {
+            error_log("[DocumentController] Error in index: " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error del servidor']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage(), 'data' => null, 'errors' => ['server' => 'Error del servidor']]);
         }
     }
 

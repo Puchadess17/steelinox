@@ -39,7 +39,7 @@ class Client
         }
 
         $params = [];
-        $where = ["deleted_at IS NULL"];
+        $where = ["c.deleted_at IS NULL"];
 
         // 1. Filtros Multitenant según Rol
         if ($role === 'comercial') {
@@ -66,7 +66,7 @@ class Client
             
             if ($isActive !== null) {
                 if ($role === 'admin') {
-                    $where[] = "is_active = :status";
+                    $where[] = "c.is_active = :status";
                 } else {
                     $where[] = "c.is_active = :status";
                 }
@@ -94,11 +94,11 @@ class Client
 
         // --- CONSTRUCCIÓN DE CONSULTAS POR ROL ---
         if ($role === 'admin') {
-            $countSql = "SELECT COUNT(*) FROM clients $whereSql";
-            $dataSql = "SELECT id, name, reference, is_active, created_at,
-                               (SELECT COUNT(*) FROM projects WHERE client_id = clients.id AND deleted_at IS NULL) as projects_count,
-                               (SELECT COUNT(*) FROM users WHERE client_id = clients.id AND deleted_at IS NULL) as users_count
-                        FROM clients 
+            $countSql = "SELECT COUNT(*) FROM clients c $whereSql";
+            $dataSql = "SELECT c.id, c.name, c.reference, c.is_active, c.created_at,
+                               (SELECT COUNT(*) FROM projects WHERE client_id = c.id AND deleted_at IS NULL) as projects_count,
+                               (SELECT COUNT(*) FROM users WHERE client_id = c.id AND deleted_at IS NULL) as users_count
+                        FROM clients c
                         $whereSql 
                         $orderByClause
                         LIMIT :limit OFFSET :offset";

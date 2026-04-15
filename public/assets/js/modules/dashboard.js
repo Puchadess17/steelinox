@@ -154,18 +154,18 @@ SIModules.dashboard = {
 
         const tbody = data.map(p => `
             <tr class="hover:bg-orange-50/30 transition-colors group">
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(p.name)}</a>
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
-                </td>
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
                     ${p.client_id ? `
                         <a href="/steelinox/client/${p.client_id}" class="text-gray-600 group-hover:text-orange-600 transition-colors no-underline">
                             ${SIApp.escapeHtml(p.client_name)}
                         </a>
                     ` : 'Sin Asignar'}
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(p.name)}</a>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
@@ -197,20 +197,22 @@ SIModules.dashboard = {
                 <table class="w-full si-table text-center">
                     <thead>
                         <tr class="bg-gray-50/50">
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('client_name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
+                            </th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyecto ${sortIcon('name')}</span>
                             </th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('reference')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Referencia ${sortIcon('reference')}</span>
                             </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('client_name')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
+                            <th class="px-5 py-3.5">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('created_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center font-bold">Creado ${sortIcon('created_at')}</span>
                             </th>
-                            <th class="px-5 py-3.5 text-right w-12"></th>
+                            <th class="px-5 py-3.5 text-right w-12 border-l border-gray-100/50"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/80">
@@ -400,14 +402,14 @@ SIModules.dashboard = {
 
         const tbody = data.map(p => `
             <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
+                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    ${SIApp.escapeHtml(p.client_name || '-')}
+                </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors block">${SIApp.escapeHtml(p.name)}</span>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
-                </td>
-                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    ${SIApp.escapeHtml(p.client_name || '-')}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
@@ -439,20 +441,22 @@ SIModules.dashboard = {
                 <table class="w-full si-table text-center">
                     <thead>
                         <tr class="bg-gray-50/50">
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('client_name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
+                            </th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyecto ${sortIcon('name')}</span>
                             </th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('reference')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Referencia ${sortIcon('reference')}</span>
                             </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('client_name')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
+                            <th class="px-5 py-3.5">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('created_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Creado ${sortIcon('created_at')}</span>
                             </th>
-                            <th class="px-5 py-3.5 text-right w-12 text-center items-center"></th>
+                            <th class="px-5 py-3.5 text-right w-12 border-l border-gray-100/50"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/80">

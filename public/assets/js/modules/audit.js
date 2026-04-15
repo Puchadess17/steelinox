@@ -846,6 +846,8 @@ window.SIModules.audit = {
             'user': 'Usuario',
             'project': 'Proyecto',
             'document': 'Documento',
+            'document_version': 'Versión de documento',
+            'comment': 'Comentario',
             'client': 'Cliente',
             'system': 'Sistema'
         };

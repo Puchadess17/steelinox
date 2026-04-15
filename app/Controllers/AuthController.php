@@ -60,7 +60,17 @@ class AuthController {
 
         // Devolver datos del usuario desde la sesión
         $userModel = new User();
-        $user = $userModel->findById($_SESSION['user_id']);
+        
+        // Realizamos un JOIN manual o extendemos la consulta para obtener el nombre de la empresa
+        $db = Database::getInstance()->getConnection();
+        $sql = "SELECT u.id, u.name, u.role, u.created_at, c.name as client_name 
+                FROM users u 
+                LEFT JOIN clients c ON u.client_id = c.id 
+                WHERE u.id = :id AND u.deleted_at IS NULL";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['id' => $_SESSION['user_id']]);
+        $user = $stmt->fetch();
 
         if (!$user) {
             session_unset();
@@ -70,9 +80,11 @@ class AuthController {
         }
 
         $this->sendResponse(200, true, 'Sesión activa', [
-            'id'   => $user['id'],
-            'name' => $user['name'],
-            'role' => $user['role']
+            'id'          => $user['id'],
+            'name'        => $user['name'],
+            'role'        => $user['role'],
+            'client_name' => $user['client_name'],
+            'created_at'  => $user['created_at']
         ], null);
     }
 

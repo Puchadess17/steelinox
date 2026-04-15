@@ -256,12 +256,12 @@ SITemplates.modal = function(options) {
     } = options;
 
     return `
-        <div id="${id}" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full ${maxWidth} shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+        <div id="${id}" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2rem] w-full ${maxWidth} shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh] border border-transparent dark:border-slate-800">
                 <!-- Header -->
-                <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                    <h3 class="text-xl font-extrabold text-gray-900">${title}</h3>
-                    <button onclick="SIApp.modal.close('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                    <h3 class="text-xl font-extrabold text-gray-900 dark:text-white">${title}</h3>
+                    <button onclick="SIApp.modal.close('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -274,9 +274,9 @@ SITemplates.modal = function(options) {
                 </div>
                 
                 <!-- Footer -->
-                <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
-                     <button onclick="SIApp.modal.close('${id}')" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">Cancelar</button>
-                     <button id="${id}-btn-save" onclick="${saveActionLabel}" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-all flex items-center justify-center gap-2 min-w-[120px]">
+                <div class="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
+                     <button onclick="SIApp.modal.close('${id}')" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-all leading-none">Cancelar</button>
+                     <button id="${id}-btn-save" onclick="${saveActionLabel}" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-all flex items-center justify-center gap-2 min-w-[120px] leading-none shadow-lg shadow-orange-500/20">
                          ${saveBtnLabel}
                      </button>
                 </div>

@@ -133,10 +133,10 @@ const API = {
                 return result;
             }
 
-            // ── 403 Forbidden → posible error CSRF ──
-            if (response.status === 403 && !options._isRetry) {
+            // ── 403 Forbidden → Solo reintentar si el mensaje indica fallo de CSRF ──
+            if (response.status === 403 && !options._isRetry && result.message && result.message.toLowerCase().includes('csrf')) {
                 // Renovar token e intentar 1 vez más
-                console.warn('API: 403 recibido, reintentando con nuevo CSRF token...');
+                console.warn('API: 403 (CSRF) recibido, reintentando con nuevo token...');
                 this.csrfToken = null;
                 await this.fetchCsrfToken();
                 return this.request(method, endpoint, data, { ...options, _isRetry: true });
