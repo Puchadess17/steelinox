@@ -195,9 +195,19 @@ class UserController {
                 'email'     => $cleanEmail
             ]);
 
+            // --- INYECCIÓN DE NOTIFICACIÓN (EMAIL DE BIENVENIDA) ---
+            require_once APP_PATH . '/Services/NotificationService.php';
+            
+            NotificationService::queueUserEvent($newUserId, 'alta_usuario', $cleanEmail, [
+                'nombre'         => $cleanName,
+                'email'          => $cleanEmail,
+                'password_plana' => $input['password']
+            ]);
+            // --------------------------------------------------------
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Usuario creado correctamente',
+                'message' => 'Usuario creado correctamente y credenciales enviadas.',
                 'data'    => ['id' => $newUserId],
                 'errors'  => null
             ]);

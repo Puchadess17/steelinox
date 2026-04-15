@@ -4,7 +4,6 @@
 require_once CORE_PATH . '/Database.php';
 
 /**
- * ====================
  * NOTIFICATION SERVICE (GESTOR DE COLAS)
  * ====================
  * Servicio encargado de encolar correos electrónicos transaccionales.
@@ -173,10 +172,85 @@ class NotificationService
                 $body .= "<p>Se ha añadido un nuevo comentario en la plataforma:</p>";
                 $body .= "<blockquote style='background: #f9f9f9; padding: 10px; border-left: 4px solid #0056b3;'>" . htmlspecialchars($data['comentario'] ?? '', ENT_QUOTES, 'UTF-8') . "</blockquote>";
                 break;
+
+            case 'alta_usuario':
+                $subject = "Bienvenido a la extranet de Steel Inox";
+                $body .= "<h2>Hola, " . htmlspecialchars($data['nombre'] ?? '', ENT_QUOTES, 'UTF-8') . "</h2>";
+                $body .= "<p>Se ha creado tu cuenta de acceso a la plataforma privada de proyectos de Steel Inox.</p>";
+                $body .= "<ul>";
+                $body .= "<li><strong>URL de acceso:</strong> <a href='https://tu-dominio.com'>Acceder al panel</a></li>";
+                $body .= "<li><strong>Email:</strong> " . htmlspecialchars($data['email'] ?? '', ENT_QUOTES, 'UTF-8') . "</li>";
+                $body .= "<li><strong>Contraseña temporal:</strong> " . htmlspecialchars($data['password_plana'] ?? '', ENT_QUOTES, 'UTF-8') . "</li>";
+                $body .= "</ul>";
+                $body .= "<p>Por seguridad, te recomendamos cambiar esta contraseña desde los ajustes de tu perfil nada más entrar.</p>";
+                break;
         }
 
         $body .= "<hr style='border: none; border-top: 1px solid #eee; margin-top: 20px;' />";
         $body .= "<p style='font-size: 12px; color: #999;'>Este es un mensaje automático de la plataforma Steel Inox. Por favor, no responda a este correo.</p>";
+        $body .= "</div>";
+
+        return [$subject, $body];
+    }
+
+    /**
+     * EVENTOS DE USUARIO (SIN PROYECTO)
+     * ====================
+     * Encola una notificación directa a un usuario, independiente de cualquier proyecto.
+     * Ideal para emails de bienvenida, recuperación de contraseñas o avisos de seguridad.
+     *
+     * @param int $recipientUserId ID del usuario que recibe el correo
+     * @param string $eventName Tipo de evento (ej: 'alta_usuario')
+     * @param string $recipientEmail Email de destino
+     * @param array $data Metadatos extra (nombre, contraseña plana, tokens, etc.)
+     */
+    public static function queueUserEvent($recipientUserId, $eventName, $recipientEmail, $data = [])
+    {
+        $db = Database::getInstance()->getConnection();
+
+        // Construimos el correo con una plantilla adaptada a usuarios
+        list($subject, $body) = self::buildUserEmailTemplate($eventName, $data);
+
+        $sqlQueue = "INSERT INTO notifications_queue 
+                     (recipient_user_id, event_type, recipient_email, subject, body, created_at) 
+                     VALUES (:user_id, :event_type, :email, :subject, :body, NOW())";
+        
+        $stmtQueue = $db->prepare($sqlQueue);
+        return $stmtQueue->execute([
+            'user_id'    => $recipientUserId,
+            'event_type' => $eventName,
+            'email'      => $recipientEmail,
+            'subject'    => $subject,
+            'body'       => $body
+        ]);
+    }
+
+    /**
+     * Plantilla de correos genéricos para usuarios.
+     */
+    private static function buildUserEmailTemplate($eventName, $data) {
+        $subject = "Notificación de Steel Inox";
+        $body = "<div style='font-family: Arial, sans-serif; color: #333;'>";
+
+        switch ($eventName) {
+            case 'alta_usuario':
+                $subject = "Bienvenido a la plataforma de Steel Inox";
+                $body .= "<h2 style='color: #0056b3;'>Hola, " . htmlspecialchars($data['nombre'] ?? '', ENT_QUOTES, 'UTF-8') . "</h2>";
+                $body .= "<p>Tu cuenta para acceder a la extranet privada de proyectos de Steel Inox ha sido creada con éxito.</p>";
+                $body .= "<div style='background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #ddd;'>";
+                $body .= "<strong>Tus credenciales de acceso:</strong><br><br>";
+                $body .= "Usuario: <strong>" . htmlspecialchars($data['email'] ?? '', ENT_QUOTES, 'UTF-8') . "</strong><br>";
+                $body .= "Contraseña: <strong>" . htmlspecialchars($data['password_plana'] ?? '', ENT_QUOTES, 'UTF-8') . "</strong>";
+                $body .= "</div>";
+                $body .= "<p>Por seguridad, te recomendamos cambiar esta contraseña desde los ajustes de tu perfil la primera vez que inicies sesión.</p>";
+                $body .= "<p><a href='https://tu-dominio.com/steelinox/' style='display: inline-block; padding: 10px 20px; background: #0056b3; color: white; text-decoration: none; border-radius: 5px;'>Acceder al panel</a></p>";
+                break;
+                
+            // Aquí en el futuro puedes añadir el 'case' para 'recuperar_password'
+        }
+
+        $body .= "<hr style='border: none; border-top: 1px solid #eee; margin-top: 30px;' />";
+        $body .= "<p style='font-size: 12px; color: #999;'>Este es un mensaje automático de la plataforma Steel Inox. Por favor, no respondas a este correo.</p>";
         $body .= "</div>";
 
         return [$subject, $body];
