@@ -76,7 +76,6 @@ class DocumentController {
                 return;
             }
 
-            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
             if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
                 echo json_encode([
@@ -87,7 +86,6 @@ class DocumentController {
                 ]);
                 return;
             }
-            // -------------------------------------------
 
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
@@ -161,6 +159,8 @@ class DocumentController {
             $documentModel = new Document();
             $existingId = $documentModel->findDocumentByTitle($projectId, $title);
 
+            require_once APP_PATH . '/Services/NotificationService.php';
+
             if ($existingId) {
                 $newVersionId = $documentModel->uploadNewVersion($existingId, $versionData);
                 
@@ -171,6 +171,9 @@ class DocumentController {
                     'tamaño_archivo'   => $file['size'],
                     'auto_versionado'  => true
                 ]);
+
+                // --- NOTIFICAR NUEVA VERSIÓN ---
+                NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, ['titulo' => $title]);
 
                 echo json_encode([
                     'success' => true,
@@ -188,6 +191,9 @@ class DocumentController {
                     'tamaño_archivo'   => $file['size'],
                     'mime_type'        => $realMime
                 ]);
+
+                // --- NOTIFICAR NUEVA PROPUESTA/DOCUMENTO ---
+                NotificationService::queueProjectEvent($projectId, 'nueva_propuesta', $userId, ['titulo' => $title]);
 
                 echo json_encode([
                     'success' => true,
@@ -229,7 +235,6 @@ class DocumentController {
                 return;
             }
 
-            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
             if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
                 echo json_encode([
@@ -240,7 +245,6 @@ class DocumentController {
                 ]);
                 return;
             }
-            // -------------------------------------------
 
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
@@ -304,6 +308,13 @@ class DocumentController {
                 'tamaño_archivo'   => $file['size'],
                 'auto_versioned'   => false
             ]);
+
+            // --- NOTIFICAR NUEVA VERSIÓN ---
+            require_once APP_PATH . '/Services/NotificationService.php';
+            NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, [
+                'titulo' => $docInfo ? $docInfo['title'] : 'Desconocido'
+            ]);
+            // -------------------------------
 
             echo json_encode([
                 'success' => true,

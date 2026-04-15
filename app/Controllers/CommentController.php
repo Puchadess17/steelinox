@@ -100,7 +100,6 @@ class CommentController {
                 return;
             }
 
-            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
             if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
                 echo json_encode([
@@ -111,7 +110,6 @@ class CommentController {
                 ]);
                 return;
             }
-            // -------------------------------------------
 
             $documentModel = new Document();
             $docInfo = $documentModel->getForDownload($documentId, $projectId);
@@ -175,6 +173,13 @@ class CommentController {
                     'version_id'       => $versionIdToSave,
                     'body_snippet'     => mb_substr($safeBody, 0, 50, 'UTF-8') . (mb_strlen($safeBody, 'UTF-8') > 50 ? '...' : '')
                 ]);
+
+                // --- INYECCIÓN DE NOTIFICACIÓN ---
+                require_once APP_PATH . '/Services/NotificationService.php';
+                NotificationService::queueProjectEvent($projectId, 'nuevo_comentario', $userId, [
+                    'comentario' => $safeBody
+                ]);
+                // ---------------------------------
 
                 http_response_code(200);
                 echo json_encode([

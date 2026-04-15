@@ -48,6 +48,8 @@ $router->get('/api/projects/(\d+)', 'ProjectController@show');
 $router->put('/api/projects/(\d+)', 'ProjectController@update');
 $router->put('/api/projects/(\d+)/status', 'ProjectController@changeStatus');
 
+$router->post('/api/projects/(\d+)/approve', 'ProjectController@approve');
+
 /**
  * COMENTARIOS DE DOCUMENTOS
  * Sistema de comunicación anidado dentro de los archivos del proyecto.

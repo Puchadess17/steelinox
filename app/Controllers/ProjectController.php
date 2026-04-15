@@ -11,17 +11,11 @@ class ProjectController
     public function search()
     {
         AuthMiddleware::check();
-
         header('Content-Type: application/json; charset=utf-8');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             http_response_code(405);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Método no permitido',
-                'data' => null,
-                'errors' => ['method' => 'Se esperaba una petición GET']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba una petición GET']]);
             return;
         }
 
@@ -30,10 +24,8 @@ class ProjectController
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            // 1. Extraemos parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Extraemos filtros extra (incluyendo la ordenación dinámica de comerciales)
             $filters = [
                 'search'   => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
                 'status'   => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all',
@@ -54,12 +46,7 @@ class ProjectController
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno del servidor al recuperar los proyectos',
-                'data' => null,
-                'errors' => ['server' => 'Error interno'] 
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno'] ]);
         }
     }
 
@@ -84,21 +71,11 @@ class ProjectController
 
         if (!$proyecto) {
             http_response_code(404); 
-            echo json_encode([
-                'success' => false,
-                'message' => 'Proyecto no encontrado o no tienes permisos para visualizarlo',
-                'data' => null,
-                'errors' => ['project' => 'Recurso inaccesible']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
             return;
         }
 
-        echo json_encode([
-            'success' => true,
-            'message' => 'Detalle del proyecto recuperado correctamente',
-            'data' => $proyecto,
-            'errors' => null
-        ]);
+        echo json_encode(['success' => true, 'message' => 'Detalle del proyecto', 'data' => $proyecto, 'errors' => null]);
     }
 
     public function getAssignedUsers($projectId)
@@ -123,32 +100,17 @@ class ProjectController
 
             if (!$projectDetails) {
                 http_response_code(404);
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Proyecto no encontrado o sin permisos',
-                    'data' => null,
-                    'errors' => ['project' => 'Recurso inaccesible']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
                 return;
             }
 
             $assignedUsers = $projectModel->getAssignedUsers($projectId);
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Usuarios asignados recuperados correctamente',
-                'data' => $assignedUsers,
-                'errors' => null
-            ]);
+            echo json_encode(['success' => true, 'message' => 'Usuarios asignados recuperados', 'data' => $assignedUsers, 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al recuperar los usuarios asignados',
-                'data' => null,
-                'errors' => ['server' => 'Error interno']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -159,7 +121,7 @@ class ProjectController
 
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores o comerciales pueden asignar personal']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
             return;
         }
 
@@ -181,22 +143,15 @@ class ProjectController
 
             if (!$projectDetails) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
                 return;
             }
 
-            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
             if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Proyecto cerrado', 
-                    'data'    => null, 
-                    'errors'  => ['status' => 'No se puede asignar personal a un proyecto cerrado.']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['status' => 'No se puede asignar personal.']]);
                 return;
             }
-            // -------------------------------------------
 
             $added = $projectModel->assignUser($projectId, $userId);
 
@@ -211,24 +166,14 @@ class ProjectController
                     'nombre_comercial'    => $nombreComercial
                 ]);
 
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Usuario asignado al proyecto correctamente',
-                    'data' => ['project_id' => $projectId, 'user_id' => $userId],
-                    'errors' => null
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Usuario asignado', 'data' => ['project_id' => $projectId, 'user_id' => $userId], 'errors' => null]);
             } else {
-                throw new Exception("No se pudo registrar la asignación en la base de datos.");
+                throw new Exception("Error base de datos.");
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al asignar el usuario',
-                'data' => null,
-                'errors' => ['server' => 'Error al asignar']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno al asignar', 'data' => null, 'errors' => ['server' => 'Error al asignar']]);
         }
     }
 
@@ -239,12 +184,7 @@ class ProjectController
 
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Acceso denegado',
-                'data' => null,
-                'errors' => ['role' => 'Privilegios insuficientes. Solo un administrador puede revocar accesos.']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes.']]);
             return;
         }
 
@@ -266,22 +206,15 @@ class ProjectController
 
             if (!$projectDetails) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
                 return;
             }
 
-            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
             if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Proyecto cerrado', 
-                    'data'    => null, 
-                    'errors'  => ['status' => 'No se puede desasignar personal de un proyecto cerrado.']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['status' => 'No se puede desasignar personal.']]);
                 return;
             }
-            // -------------------------------------------
 
             $removed = $projectModel->removeUser($projectId, $userId);
 
@@ -296,24 +229,14 @@ class ProjectController
                     'nombre_comercial'    => $nombreComercial 
                 ]);
 
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Comercial desasignado del proyecto correctamente',
-                    'data' => null,
-                    'errors' => null
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Comercial desasignado', 'data' => null, 'errors' => null]);
             } else {
-                throw new Exception("No se pudo ejecutar la desasignación.");
+                throw new Exception("Error de base de datos.");
             }
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al desasignar al usuario',
-                'data' => null,
-                'errors' => ['server' => 'Error de desasignación']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error de desasignación']]);
         }
     }
 
@@ -353,21 +276,11 @@ class ProjectController
             $userModel = new User();
             $availableUsers = $userModel->getAvailableForProject($projectId);
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Usuarios disponibles recuperados correctamente',
-                'data' => $availableUsers,
-                'errors' => null
-            ]);
+            echo json_encode(['success' => true, 'message' => 'Usuarios recuperados', 'data' => $availableUsers, 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al recuperar los usuarios disponibles',
-                'data' => null,
-                'errors' => ['server' => 'Error interno']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -378,7 +291,7 @@ class ProjectController
 
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no pueden crear proyectos directamente']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no pueden crear proyectos']]);
             return;
         }
 
@@ -413,7 +326,7 @@ class ProjectController
 
         if (!empty($errors)) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios o son incorrectos.', 'data' => null, 'errors' => $errors]);
+            echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios', 'data' => null, 'errors' => $errors]);
             return;
         }
 
@@ -427,7 +340,7 @@ class ProjectController
 
             if (!$clientDetails) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado o sin permisos', 'data' => null, 'errors' => ['client_id' => 'No tiene permisos para crear proyectos en este cliente']]);
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado', 'data' => null, 'errors' => ['client_id' => 'Sin permisos']]);
                 return;
             }
 
@@ -455,35 +368,16 @@ class ProjectController
                 'estado'     => $dataToInsert['status']
             ]);
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Proyecto creado correctamente',
-                'data' => [
-                    'id' => $newProjectId,
-                    'reference' => $generatedReference 
-                ],
-                'errors' => null
-            ]);
+            echo json_encode(['success' => true, 'message' => 'Proyecto creado', 'data' => ['id' => $newProjectId, 'reference' => $generatedReference], 'errors' => null]);
 
         } catch (Exception $e) {
             if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
                 http_response_code(409); 
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Se ha producido una colisión al generar el código de referencia. Por favor, pulsa en Guardar de nuevo.',
-                    'data' => null,
-                    'errors' => ['reference' => 'Código duplicado generado aleatoriamente']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Colisión al generar código.', 'data' => null, 'errors' => ['reference' => 'Código duplicado']]);
                 return;
             }
-
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error interno al crear el proyecto',
-                'data' => null,
-                'errors' => ['server' => 'Error al crear proyecto']
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al crear']]);
         }
     }
 
@@ -515,22 +409,15 @@ class ProjectController
             $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
             if (!$projectDetails) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
-            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
             if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'El proyecto está cerrado.', 
-                    'data'    => null, 
-                    'errors'  => ['status' => 'No se puede editar un proyecto cerrado. Reábrelo primero si necesitas hacer cambios.']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado.', 'data' => null, 'errors' => ['status' => 'No se puede editar.']]);
                 return;
             }
-            // -------------------------------------------
 
             $input = json_decode(file_get_contents('php://input'), true);
             $errors = [];
@@ -553,7 +440,7 @@ class ProjectController
             
             if ($role === 'admin' && !empty($input['reference'])) {
                 if (!preg_match('/^PRJ-\d{4}-\d{4}$/', trim($input['reference']))) {
-                    $errors['reference'] = 'La referencia de proyecto debe tener el formato PRJ-AAAA-XXXX (Ej: PRJ-2026-0001)';
+                    $errors['reference'] = 'El formato debe ser PRJ-AAAA-XXXX';
                 }
             } elseif ($role !== 'admin' && isset($input['reference'])) {
                 unset($input['reference']);
@@ -561,7 +448,7 @@ class ProjectController
 
             if (!empty($errors)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios o son incorrectos.', 'data' => null, 'errors' => $errors]);
+                echo json_encode(['success' => false, 'message' => 'Faltan campos', 'data' => null, 'errors' => $errors]);
                 return;
             }
 
@@ -593,12 +480,7 @@ class ProjectController
             } catch (Exception $e) {
                 if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
                     http_response_code(409); 
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'El código de referencia introducido ya pertenece a otro proyecto.',
-                        'data' => null,
-                        'errors' => ['reference' => 'Código duplicado']
-                    ]);
+                    echo json_encode(['success' => false, 'message' => 'El código ya existe.', 'data' => null, 'errors' => ['reference' => 'Código duplicado']]);
                     return;
                 }
                 throw $e; 
@@ -608,11 +490,11 @@ class ProjectController
                 AuditLogger::log('proyecto_actualizado', 'project', $id, $id, ['cambios' => $changes]);
             }
 
-            echo json_encode(['success' => true, 'message' => 'Proyecto actualizado correctamente', 'data' => ['id' => $id], 'errors' => null]);
+            echo json_encode(['success' => true, 'message' => 'Proyecto actualizado', 'data' => ['id' => $id], 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar', 'data' => null, 'errors' => ['server' => 'Error en la actualización']]);
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -644,7 +526,7 @@ class ProjectController
             $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
             if (!$projectDetails) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
@@ -655,7 +537,7 @@ class ProjectController
             $validStatuses = ['propuesta', 'aprobado', 'ejecucion', 'cerrado'];
             if (!in_array($newStatus, $validStatuses)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Estado inválido', 'data' => null, 'errors' => ['status' => 'El estado enviado no es reconocido']]);
+                echo json_encode(['success' => false, 'message' => 'Estado inválido', 'data' => null, 'errors' => ['status' => 'Estado no reconocido']]);
                 return;
             }
 
@@ -663,12 +545,7 @@ class ProjectController
 
             if ($oldStatus === $newStatus) {
                 http_response_code(422); 
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'El proyecto ya se encuentra en estado "' . ucfirst($newStatus) . '".', 
-                    'data'    => null, 
-                    'errors'  => ['status' => 'El nuevo estado no puede ser igual al actual.']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'El proyecto ya tiene ese estado.', 'data' => null, 'errors' => ['status' => 'Igual al actual.']]);
                 return;
             }
 
@@ -676,19 +553,12 @@ class ProjectController
                 'propuesta' => ['aprobado'],         
                 'aprobado'  => ['ejecucion'],        
                 'ejecucion' => ['cerrado'],          
-                'cerrado'   => ['propuesta'] // <-- LA REAPERTURA ESTÁ PERMITIDA AQUÍ
+                'cerrado'   => ['propuesta'] 
             ];
 
             if (!isset($allowedTransitions[$oldStatus]) || !in_array($newStatus, $allowedTransitions[$oldStatus])) {
                 http_response_code(422);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Transición de estado no permitida', 
-                    'data'    => null, 
-                    'errors'  => [
-                        'status' => "No se puede pasar directamente de '" . ucfirst($oldStatus) . "' a '" . ucfirst($newStatus) . "'."
-                    ]
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Transición no permitida', 'data' => null, 'errors' => ['status' => "No puedes pasar de $oldStatus a $newStatus"]]);
                 return;
             }
 
@@ -702,11 +572,96 @@ class ProjectController
                 'motivo'          => $reason
             ]);
 
+            // --- INYECCIÓN DE NOTIFICACIÓN DE ESTADO ---
+            require_once APP_PATH . '/Services/NotificationService.php';
+            NotificationService::queueProjectEvent($id, 'cambio_estado', $userId, [
+                'nuevo_estado' => $newStatus
+            ]);
+            // -------------------------------------------
+
             echo json_encode(['success' => true, 'message' => 'Estado actualizado y registrado', 'data' => ['status' => $newStatus], 'errors' => null]);
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al cambiar el estado', 'data' => null, 'errors' => ['server' => 'Error al cambiar estado']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al cambiar estado']]);
+        }
+    }
+
+    public function approve($id)
+    {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        if ($_SESSION['role'] === 'comercial') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los comerciales no pueden realizar la aprobación formal.']]);
+            return;
+        }
+
+        try {
+            $id = (int)$id;
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+            $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
+
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            if ($projectDetails['status'] !== 'propuesta') {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no en fase de propuesta.', 'data' => null, 'errors' => ['status' => 'Ya ha sido aprobado.']]);
+                return;
+            }
+
+            // --- Verificar si hay al menos un documento ---
+            $db = Database::getInstance()->getConnection();
+            $stmtDoc = $db->prepare("SELECT COUNT(*) FROM documents WHERE project_id = ? AND deleted_at IS NULL AND (type = 'propuesta' OR type = 'presupuesto')");
+            $stmtDoc->execute([$id]);
+            
+            if ($stmtDoc->fetchColumn() == 0) {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'No se puede aprobar el proyecto.', 
+                    'data'    => null, 
+                    'errors'  => ['document' => 'No hay ninguna propuesta o presupuesto subido para aprobar.']
+                ]);
+                return;
+            }
+            // ----------------------------------------------------------------------
+
+            $projectModel->updateStatus($id, 'aprobado', $userId, 'Aprobación formal por doble confirmación.');
+
+            AuditLogger::log('propuesta_aprobada', 'project', $id, $id, [
+                'aprobado_por_usuario_id' => $userId,
+                'rol_aprobador'           => $role,
+                'ip_aprobacion'           => $_SERVER['REMOTE_ADDR'] ?? 'Desconocida',
+                'estado_anterior'         => 'propuesta',
+                'nuevo_estado'            => 'aprobado'
+            ]);
+
+            // --- INYECCIÓN DE NOTIFICACIÓN DE APROBACIÓN ---
+            require_once APP_PATH . '/Services/NotificationService.php';
+            NotificationService::queueProjectEvent($id, 'propuesta_aprobada', $userId);
+            // -----------------------------------------------
+
+            echo json_encode(['success' => true, 'message' => 'Proyecto aprobado correctamente.', 'data' => ['status' => 'aprobado'], 'errors' => null]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error de servidor']]);
         }
     }
 
