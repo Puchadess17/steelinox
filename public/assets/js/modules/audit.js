@@ -334,8 +334,8 @@ window.SIModules.audit = {
 
         const m = log.metadata || {};
         const docActions = [
-            'documento_subido', 'documento_nueva_version', 'documento_descargado', 
-            'documento_visualizado', 'comentario_creado', 'document_comment', 
+            'documento_subido', 'documento_nueva_version', 'documento_descargado',
+            'documento_visualizado', 'comentario_creado', 'document_comment',
             'document_commentd', 'document_deleted'
         ];
 
@@ -371,7 +371,6 @@ window.SIModules.audit = {
                 `;
             }
         } else {
-            // Acción normal si no es documento
             actionHtml = `
                 <span class="text-[13px] font-black text-[#1a1b25] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
                 ${log.metadata ? `<span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${this._formatMetadata(log.metadata)}</span>` : ''}
@@ -447,13 +446,15 @@ window.SIModules.audit = {
                             <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="p-2 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-full transition-all group/btn" title="Ver detalles JSON">
                                 <svg class="w-5 h-5 transition-transform group-hover/btn:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
                             </button>
-                        ` : ''}
+                        ` : `
+                            <div class="w-9 h-9"></div>
+                        `}
                     </div>
                 </td>
             </tr>
             ${log.metadata ? `
                 <tr id="meta-${log.id}" class="hidden bg-[#FAFAFA]">
-                    <td colspan="8" class="px-10 py-6">
+                    <td colspan="7" class="px-10 py-6">
                         <div class="bg-white border border-gray-100 rounded-[1.5rem] p-6 shadow-sm overflow-hidden">
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
@@ -695,7 +696,7 @@ window.SIModules.audit = {
 
     selectOption(filterKey, value, label) {
         this.filters[filterKey === 'actor' ? 'actor_user_id' : (filterKey === 'action' ? 'action_key' : 'entity_type')] = value;
-        this.currentPage = 1; 
+        this.currentPage = 1;
         document.getElementById(`label-${filterKey}`).textContent = label;
         document.getElementById(`drop-${filterKey}`).classList.add('hidden');
         document.getElementById(`btn-drop-${filterKey}`).querySelector('svg').style.transform = 'rotate(0deg)';
@@ -707,7 +708,7 @@ window.SIModules.audit = {
     _updateFilterUIState() {
         const hasFilters = Object.values(this.filters).some(v => v !== '');
         const btnReset = document.getElementById('btn-reset-filters');
-        
+
         if (btnReset) {
             if (hasFilters) {
                 btnReset.classList.remove('hidden');
@@ -930,8 +931,8 @@ window.SIModules.audit = {
 
         // Formateo de booleanos
         if (typeof value === 'boolean') {
-            return value 
-                ? '<span class="text-emerald-500 font-black tracking-widest text-[10px]">SÍ</span>' 
+            return value
+                ? '<span class="text-emerald-500 font-black tracking-widest text-[10px]">SÍ</span>'
                 : '<span class="text-gray-400 font-black tracking-widest text-[10px]">NO</span>';
         }
 
@@ -981,9 +982,9 @@ window.SIModules.audit = {
     _renderEntityLink(log) {
         const entityLabel = this._humanizeEntity(log.entity_type);
         const entityName = log.entity_name || (log.entity_id ? `#${log.entity_id}` : '');
-        
+
         const style = "group/link flex flex-col transition-colors no-underline text-left sm:text-left";
-        
+
         let href = null;
         let hoverClass = "group-hover/link:text-amber-500"; // Project default
 

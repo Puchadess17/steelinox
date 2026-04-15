@@ -109,110 +109,11 @@ SIModules.clientUserFormAdmin = {
                                     <p class="text-xs text-gray-400 mt-0.5">Datos de identificación y acceso del usuario.</p>
                                 </div>
                                 <div class="p-7 space-y-6 flex-1">
-
-                                    <!-- Empresa (Client) - CUSTOM DROPDOWN -->
-                                    <div class="space-y-2 relative" id="client-dropdown-container">
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
-                                            Empresa <span class="text-red-500">*</span>
-                                        </label>
-                                        
-                                        <!-- Valor oculto para el formulario -->
-                                        <input type="hidden" id="user-client-id" name="client_id" value="${data?.client_id || ''}" required>
-
-                                        <!-- Trigger del Dropdown -->
-                                        <button type="button" 
-                                            onclick="SIModules.clientUserFormAdmin.toggleClientDropdown(event)"
-                                            id="btn-client-dropdown" 
-                                            class="w-full px-5 py-3 bg-gray-50 border border-gray-200 text-sm font-bold text-gray-700 flex items-center justify-between hover:bg-white hover:border-orange-500 transition-all rounded-xl group">
-                                            <div class="flex items-center gap-3">
-                                                <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                                <span id="client-dropdown-label" class="truncate">${triggerLabel}</span>
-                                            </div>
-                                            <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform duration-300" id="icon-client-dropdown" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                                        </button>
-
-                                        <!-- Panel del Dropdown -->
-                                        <div id="drop-client-list" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl z-[60] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                            <!-- Buscador interno -->
-                                            <div class="p-3 border-b border-gray-50 bg-gray-50/50">
-                                                <div class="relative group">
-                                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                                    <input type="text" 
-                                                        id="client-search-input"
-                                                        oninput="SIModules.clientUserFormAdmin.filterClients(this.value)"
-                                                        placeholder="Buscar por nombre o ref..." 
-                                                        class="w-full pl-9 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:outline-none transition-all">
-                                                </div>
-                                            </div>
-                                            <!-- Listado de items -->
-                                            <ul id="client-items-list" class="max-h-60 overflow-y-auto py-1 custom-scrollbar">
-                                                <!-- Cargado por _renderClientList() -->
-                                            </ul>
-                                        </div>
-
-                                        <p class="text-[10px] text-gray-400 mt-1 font-medium">El usuario tendrá acceso a los proyectos de esta empresa.</p>
-                                    </div>
-
-                                    <!-- Nombre -->
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
-                                            Nombre Completo <span class="text-red-500">*</span>
-                                        </label>
-                                        <div class="relative">
-                                            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                            <input type="text" id="user-name" name="name" required
-                                                value="${data?.name || ''}"
-                                                placeholder="Ej: María García"
-                                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                        </div>
-                                    </div>
-
-                                    <!-- Email -->
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
-                                            Email <span class="text-red-500">*</span>
-                                        </label>
-                                        <div class="relative">
-                                            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                            <input type="email" id="user-email" name="email" required
-                                                oninput="SIApp.validateField(this, SIApp.constants.regex.EMAIL, 'Email no válido')"
-                                                value="${data?.email || ''}"
-                                                placeholder="ejemplo@empresa.com"
-                                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                        </div>
-                                    </div>
-
-                                    <!-- Contraseña -->
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
-                                            Contraseña ${isEdit ? '' : '<span class="text-red-500">*</span>'}
-                                        </label>
-                                        <div class="relative">
-                                            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            <input type="password" id="user-password" name="password"
-                                                ${isEdit ? '' : 'required'}
-                                                oninput="const hint = document.getElementById('password-hint'); if(hint) { if(this.value.length > 0) hint.classList.add('hidden'); else hint.classList.remove('hidden'); }; SIApp.validatePasswordRequirements(this);"
-                                                placeholder="${isEdit ? '' : 'Mínimo 8 caracteres'}"
-                                                class="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                            <button type="button" 
-                                                onclick="SIApp.togglePasswordVisibility(this)"
-                                                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                                <span class="eye-open">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </span>
-                                                <span class="eye-closed hidden">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                                    </svg>
-                                                </span>
-                                            </button>
-                                        </div>
-                                        ${isEdit ? '<p id="password-hint" class="text-[10px] text-gray-400 mt-1 font-medium italic">Solo rellena este campo si deseas cambiar la contraseña actual.</p>' : ''}
-                                    </div>
-
+                                    ${SITemplates.fragments.userFields(data || {}, {
+                                        includeClientSelector: true,
+                                        clients: this.clients,
+                                        moduleName: 'clientUserFormAdmin'
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -256,8 +157,6 @@ SIModules.clientUserFormAdmin = {
                             <!-- Guardar Button -->
                             <button type="button" id="btn-save-user" onclick="SIModules.clientUserFormAdmin.save()"
                                 class="w-full flex items-center justify-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-                                <svg id="save-spinner" class="w-4 h-4 hidden animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                <svg id="save-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                 ${isEdit ? 'Guardar Cambios' : 'Crear Usuario'}
                             </button>
                         </div>
@@ -365,72 +264,38 @@ SIModules.clientUserFormAdmin = {
 
     /** 5. GUARDAR */
     async save() {
-        const form = document.getElementById('form-user');
-        if (!form) return;
+        const data = SIApp.getValidatedFormData('form-user');
+        if (!data) return;
 
-        const id = form.querySelector('[name="id"]').value;
-        const isEdit = !!id;
+        const isEdit = !!data.id;
 
-        // Validate
-        const regexEmail = SIApp.constants.regex.EMAIL;
-        const email = document.getElementById('user-email').value.trim();
-        if (!regexEmail.test(email)) {
-            SIApp.showToast('Email no válido', 'Por favor, ingresa un correo electrónico con formato correcto.', 'error');
+        // Extra validation for password on create
+        if (!isEdit && !data.password) {
+            SIApp.showToast('Contraseña requerida', 'La contraseña es obligatoria para nuevos usuarios.', 'error');
             return;
         }
 
-        const clientId = document.getElementById('user-client-id').value;
-        if (!clientId) {
-            SIApp.showToast('Empresa requerida', 'Debes seleccionar una empresa para el usuario.', 'error');
-            return;
-        }
-
-        const spinner = document.getElementById('save-spinner');
-        const icon = document.getElementById('save-icon');
-        const btn = document.getElementById('btn-save-user');
-
-        spinner?.classList.remove('hidden');
-        icon?.classList.add('hidden');
-        if (btn) btn.disabled = true;
-
-        const payload = {
-            client_id: clientId,
-            name: document.getElementById('user-name').value.trim(),
-            email: email,
-            is_active: document.getElementById('user-is-active').checked ? 1 : 0
-        };
-
-        const password = document.getElementById('user-password').value;
-        if (password) payload.password = password;
+        SIApp.setBtnLoading('btn-save-user', true, isEdit ? 'Guardando...' : 'Creando...');
 
         try {
             let res;
             if (isEdit) {
-                res = await API.put(`/users/${id}`, payload);
+                res = await API.put(`/users/${data.id}`, data);
             } else {
-                payload.password = password; // Required for new
-                if (!password) {
-                    SIApp.showToast('Contraseña requerida', 'La contraseña es obligatoria para nuevos usuarios.', 'error');
-                    return;
-                }
-                res = await API.post('/users', payload);
+                res = await API.post('/users', data);
             }
 
             if (res.success) {
                 SIApp.showToast('Éxito', res.message || (isEdit ? 'Usuario actualizado.' : 'Usuario creado.'), 'success');
                 setTimeout(() => SIRouter.navigate('users'), 1000);
             } else {
-                let errorMsg = res.message || 'Error desconocido';
-                if (res.errors) errorMsg += ': ' + Object.values(res.errors).join(', ');
-                SIApp.showToast('Error', errorMsg, 'error');
+                SIApp.showToast('Error', res.message || 'Error en la operación', 'error');
             }
         } catch (e) {
             console.error(e);
             SIApp.showToast('Error', e.message, 'error');
         } finally {
-            spinner?.classList.add('hidden');
-            icon?.classList.remove('hidden');
-            if (btn) btn.disabled = false;
+            SIApp.setBtnLoading('btn-save-user', false, isEdit ? 'Guardar Cambios' : 'Crear Usuario');
         }
     }
 };

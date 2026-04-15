@@ -602,136 +602,22 @@ SIModules.clientDetailAdmin = {
         if (!modalsEl) return;
 
         modalsEl.innerHTML = `
-            <!-- MODAL USUARIO -->
-            <div id="user-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                        <h3 id="user-modal-title" class="text-xl font-extrabold text-gray-900">Añadir Usuario</h3>
-                        <button onclick="ClientDetailAdmin.closeUserModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                    <div class="p-6 overflow-y-auto">
-                        <form id="user-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveUser();" class="space-y-4">
-                            <input type="hidden" id="user-id" name="user_id">
-                            
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre</label>
-                                <input type="text" id="user-name" name="name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Juan Pérez">
-                            </div>
+            ${SITemplates.modal({
+            id: 'user-modal',
+            title: 'Usuario Cliente',
+            contentHtml: SITemplates.fragments.userFields({}, { type: 'user' }),
+            saveBtnLabel: 'Guardar Usuario',
+            saveActionLabel: 'ClientDetailAdmin.saveUser()'
+        })}
 
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Email <span class="text-red-500">*</span></label>
-                                <input type="email" id="user-email" name="email" required 
-                                    oninput="SIApp.validateField(this, SIApp.constants.regex.EMAIL, 'Email no válido')"
-                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="ejemplo@empresa.com">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Contraseña</label>
-                                <div class="relative">
-                                    <input type="password" id="user-password" name="password" 
-                                        oninput="const hint = document.getElementById('user-password-hint'); const isEdit = document.getElementById('user-id').value !== ''; if(hint && isEdit) { if(this.value.length > 0) hint.classList.add('hidden'); else hint.classList.remove('hidden'); }; SIApp.validatePasswordRequirements(this);"
-                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="">
-                                    <button type="button" 
-                                        onclick="SIApp.togglePasswordVisibility(this)"
-                                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                        <span class="eye-open">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </span>
-                                        <span class="eye-closed hidden">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                            </svg>
-                                        </span>
-                                    </button>
-                                </div>
-                                <p id="user-password-hint" class="text-[10px] text-gray-400 mt-1 font-medium italic">Solo rellena este campo si deseas cambiar la contraseña actual.</p>
-                            </div>
-
-                            <div class="flex items-center gap-2 mt-2">
-                                <input type="checkbox" id="user-is-active" name="is_active" class="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500">
-                                <label for="user-is-active" class="text-sm font-bold text-gray-700">Usuario Activo</label>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3">
-                         <button onclick="ClientDetailAdmin.closeUserModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
-                         <button onclick="ClientDetailAdmin.saveUser()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center gap-2">
-                             <svg class="w-4 h-4 hidden" id="user-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                             Guardar Usuario
-                         </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODAL PROYECTO -->
-            <div id="project-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                        <h3 class="text-xl font-extrabold text-gray-900">Crear Nuevo Proyecto</h3>
-                        <button onclick="ClientDetailAdmin.closeProjectModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                    <div class="p-6 overflow-y-auto">
-                        <form id="project-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveProject();" class="space-y-4">
-                            
-                            <div class="grid grid-cols-1 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
-                                    <input type="text" id="project-name" name="name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Nave Industrial">
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€)</label>
-                                    <input type="number" min="0" step="50" id="project-budget" name="budget_amount" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: 150000">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
-                                    <input type="number" min="0" step="1" id="project-surface" name="surface" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: 1200">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
-                                    <input type="text" id="project-type" name="project_type" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Ej: Estructura, Revestimiento">
-                                </div>
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Estado</label>
-                                <div class="relative">
-                                    <input type="hidden" id="project-status" name="status" value="propuesta">
-                                    <div class="w-full px-4 py-3 bg-gray-100 border border-gray-200 text-gray-500 rounded-xl font-medium text-sm flex items-center gap-2 cursor-not-allowed">
-                                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                        <span>Propuesta</span>
-                                        <svg class="w-3.5 h-3.5 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                    </div>
-                                    <p class="text-[10px] text-gray-400 mt-1 font-medium italic">Los nuevos proyectos se inician siempre como propuesta.</p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
-                                <textarea id="project-desc" name="description" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Notas sobre el nuevo proyecto..."></textarea>
-                            </div>
-
-                        </form>
-                    </div>
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
-                         <button onclick="ClientDetailAdmin.closeProjectModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
-                         <button onclick="ClientDetailAdmin.saveProject()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center gap-2">
-                             <svg class="w-4 h-4 hidden" id="project-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                             Crear Proyecto
-                         </button>
-                    </div>
-                </div>
-            </div>
+            ${SITemplates.modal({
+            id: 'project-modal',
+            title: 'Crear Nuevo Proyecto',
+            contentHtml: SITemplates.fragments.projectFields({}, false),
+            saveBtnLabel: 'Crear Proyecto',
+            saveActionLabel: 'ClientDetailAdmin.saveProject()',
+            maxWidth: 'max-w-xl'
+        })}
         `;
     },
 
@@ -1016,102 +902,67 @@ SIModules.clientDetailAdmin = {
     },
 
     openUserModal(user = null) {
-        const modal = document.getElementById('user-modal');
-        const form = document.getElementById('user-form');
-        const title = document.getElementById('user-modal-title');
-        const hint = document.getElementById('user-password-hint');
+        const modalId = 'user-modal';
+        const container = document.querySelector(`#${modalId} .p-6.overflow-y-auto`);
+        const titleEl = document.querySelector(`#${modalId} h3`);
 
-        form.reset();
-
-        if (user) {
-            title.textContent = 'Editar Usuario';
-            document.getElementById('user-id').value = user.id;
-            document.getElementById('user-name').value = user.name;
-            document.getElementById('user-email').value = user.email;
-            document.getElementById('user-is-active').checked = user.is_active == 1 || user.is_active === true;
-            document.getElementById('user-password').required = false;
-            
-            // Mostrar hint solo en edición (opcional cambiar pass)
-            if (hint) hint.classList.remove('hidden');
-        } else {
-            document.getElementById('user-id').value = '';
-            document.getElementById('user-is-active').checked = true;
-            document.getElementById('user-password').required = true;
-            
-            // Ocultar hint en creación (la pass es obligatoria, no opcional)
-            if (hint) hint.classList.add('hidden');
+        if (container) {
+            container.innerHTML = `
+                <form id="${modalId}-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveUser();" class="space-y-4">
+                    ${SITemplates.fragments.userFields(user || {}, { type: 'user' })}
+                </form>
+            `;
         }
+        if (titleEl) titleEl.textContent = user ? 'Editar Usuario' : 'Añadir Usuario Cliente';
 
-        modal.classList.remove('hidden');
-        // trigger reflow
-        void modal.offsetWidth;
-        modal.classList.remove('opacity-0');
-        modal.querySelector('div').classList.remove('scale-95');
+        SIApp.modal.open(modalId);
     },
 
     closeUserModal() {
-        const modal = document.getElementById('user-modal');
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
+        SIApp.modal.close('user-modal');
     },
 
     async saveUser() {
-        const form = document.getElementById('user-form');
-        if (!form.reportValidity()) return;
+        const modalId = 'user-modal';
+        const formData = SIApp.getValidatedFormData(`${modalId}-form`);
+        if (!formData) return;
 
-        const id = document.getElementById('user-id').value;
-        const spinner = document.getElementById('user-save-spinner');
+        const id = formData.id;
+        const isEdit = !!id;
 
         const payload = {
             client_id: this.clientId,
-            name: document.getElementById('user-name').value,
-            email: document.getElementById('user-email').value,
-            is_active: document.getElementById('user-is-active').checked ? 1 : 0
+            name: formData.name,
+            email: formData.email,
+            is_active: formData.is_active ? 1 : 0
         };
 
-        const pwd = document.getElementById('user-password').value;
-        if (pwd) {
-            payload.password = pwd;
-        }
+        if (formData.password) payload.password = formData.password;
 
-        // Email Validation (Format)
-        const regexEmail = SIApp.constants.regex.EMAIL;
-        if (!regexEmail.test(payload.email)) {
-            if (window.SIApp) SIApp.showToast('Email no válido', 'Por favor, ingrese un correo electrónico con formato correcto.', 'error');
-            return;
-        }
-
-        spinner.classList.remove('hidden');
-        spinner.classList.add('animate-spin');
+        SIApp.setBtnLoading(`${modalId}-btn-save`, true, isEdit ? 'Guardando...' : 'Creando...');
 
         try {
             let res;
-            if (id) {
+            if (isEdit) {
                 res = await API.put('/users/' + id, payload);
             } else {
                 res = await API.post('/users', payload);
             }
 
             if (res.success) {
-                if (window.SIApp) SIApp.showToast('Éxito', res.message, 'success');
+                SIApp.showToast('Éxito', res.message, 'success');
                 this.closeUserModal();
                 await this.loadClientData();
             } else {
                 let errorMsg = res.message || 'Error desconocido';
-                if (res.errors) {
-                    errorMsg += ': ' + Object.values(res.errors).join(', ');
-                }
-                if (window.SIApp) SIApp.showToast('Error', errorMsg, 'error');
+                if (res.errors) errorMsg += ': ' + Object.values(res.errors).join(', ');
+                SIApp.showToast('Error', errorMsg, 'error');
             }
         } catch (e) {
             console.error(e);
-            if (window.SIApp) SIApp.showToast('Error', e.message, 'error');
+            SIApp.showToast('Error', e.message, 'error');
         } finally {
-            spinner.classList.add('hidden');
-            spinner.classList.remove('animate-spin');
+            SIApp.setBtnLoading(`${modalId}-btn-save`, false, isEdit ? 'Guardar Cambios' : 'Crear Usuario');
         }
     },
 
@@ -1136,24 +987,17 @@ SIModules.clientDetailAdmin = {
     },
 
     openProjectModal() {
-        const modal = document.getElementById('project-modal');
-        const form = document.getElementById('project-form');
-        form.reset();
-        document.getElementById('project-status').value = 'propuesta';
-
-        modal.classList.remove('hidden');
-        void modal.offsetWidth; // Reflow
-        modal.classList.remove('opacity-0');
-        modal.querySelector('div').classList.remove('scale-95');
-
-        // Close dropdown when clicking outside
-        const closeFn = (e) => {
-            if (!e.target.closest('.si-custom-dropdown') && !e.target.closest('button[onclick*="toggleDropdown"]')) {
-                document.querySelectorAll('.si-custom-dropdown').forEach(d => d.classList.add('hidden'));
-            }
-        };
-        document.addEventListener('click', closeFn);
-        modal._closeFn = closeFn;
+        const modalId = 'project-modal';
+        const container = document.querySelector(`#${modalId} .p-6.overflow-y-auto`);
+        if (container) {
+            container.innerHTML = `
+                <form id="${modalId}-form" onsubmit="event.preventDefault(); ClientDetailAdmin.saveProject();" class="space-y-4">
+                    ${SITemplates.fragments.projectFields({}, false)}
+                    <input type="hidden" name="status" value="propuesta">
+                </form>
+            `;
+        }
+        SIApp.modal.open(modalId);
     },
 
     toggleDropdown(id) {
@@ -1186,55 +1030,39 @@ SIModules.clientDetailAdmin = {
 
     closeProjectModal() {
         const modal = document.getElementById('project-modal');
-        if (modal._closeFn) {
+        if (modal && modal._closeFn) {
             document.removeEventListener('click', modal._closeFn);
             delete modal._closeFn;
         }
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
+        SIApp.modal.close('project-modal');
     },
 
     async saveProject() {
-        const form = document.getElementById('project-form');
-        if (!form.reportValidity()) return;
+        const modalId = 'project-modal';
+        const data = SIApp.getValidatedFormData(`${modalId}-form`);
+        if (!data) return;
 
-        const spinner = document.getElementById('project-save-spinner');
+        data.client_id = this.clientId;
+        if (!data.status) data.status = 'propuesta';
 
-        const payload = {
-            client_id: this.clientId,
-            name: document.getElementById('project-name').value,
-            budget_amount: document.getElementById('project-budget').value || null,
-            surface: document.getElementById('project-surface').value || null,
-            project_type: document.getElementById('project-type').value || null,
-            status: document.getElementById('project-status').value || 'propuesta',
-            description: document.getElementById('project-desc').value || null
-        };
-
-        spinner.classList.remove('hidden');
-        spinner.classList.add('animate-spin');
+        SIApp.setBtnLoading(`${modalId}-btn-save`, true, 'Creando...');
 
         try {
-            const res = await API.post('/projects', payload);
+            const res = await API.post('/projects', data);
             if (res.success) {
-                if (window.SIApp) SIApp.showToast('Éxito', res.message, 'success');
+                SIApp.showToast('Éxito', res.message, 'success');
                 this.closeProjectModal();
                 await this.loadClientData();
             } else {
                 let errorMsg = res.message || 'Error desconocido';
-                if (res.errors) {
-                    errorMsg += ': ' + Object.values(res.errors).join(', ');
-                }
-                if (window.SIApp) SIApp.showToast('Error', errorMsg, 'error');
+                if (res.errors) errorMsg += ': ' + Object.values(res.errors).join(', ');
+                SIApp.showToast('Error', errorMsg, 'error');
             }
         } catch (e) {
             console.error(e);
-            if (window.SIApp) SIApp.showToast('Error', e.message, 'error');
+            SIApp.showToast('Error', e.message, 'error');
         } finally {
-            spinner.classList.add('hidden');
-            spinner.classList.remove('animate-spin');
+            SIApp.setBtnLoading(`${modalId}-btn-save`, false, 'Crear Proyecto');
         }
     }
 };

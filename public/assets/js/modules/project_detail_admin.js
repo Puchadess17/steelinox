@@ -184,7 +184,7 @@ SIModules.projectDetailAdmin = {
                                     <input type="hidden" id="doc-upload-access" name="access_mode" value="download">
                                     <button type="button" onclick="SIModules.projectDetailAdmin.toggleCustomDropdown('dropdown-access-menu')" 
                                             class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 flex items-center justify-between hover:bg-white hover:border-gray-200 transition-all group">
-                                        <span id="doc-upload-access-label">Descargar</span>
+                                        <span id="doc-upload-access-label">Solo Descargar</span>
                                         <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
                                     <div id="dropdown-access-menu" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -585,66 +585,17 @@ SIModules.projectDetailAdmin = {
         }
 
         const p = this.project;
+
         container.innerHTML = `
-            <!-- MODAL: EDITAR PROYECTO -->
-            <div id="edit-project-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                        <h3 class="text-xl font-extrabold text-gray-900">Editar Proyecto</h3>
-                        <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                    <div class="p-6 overflow-y-auto">
-                        <form id="edit-project-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectEdits();" class="space-y-4">
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
-                                    <input type="text" id="edit-project-name" name="name" value="${p.name || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
-                                    <input type="text" id="edit-project-ref" name="reference" value="${p.reference || ''}" required 
-                                           oninput="SIApp.validateField(this, SIApp.constants.regex.PRJ, 'Formato inválido: PRJ-AAAA-XXXX')"
-                                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€)</label>
-                                    <input type="number" min="0" step="50" id="edit-project-budget" name="budget_amount" value="${p.budget_amount || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
-                                    <input type="number" min="0" step="1" id="edit-project-surface" name="surface" value="${p.surface || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                            </div>
+            ${SITemplates.modal({
+            id: 'edit-project-modal',
+            title: 'Editar Proyecto',
+            contentHtml: SITemplates.fragments.projectFields(p, true),
+            saveBtnLabel: 'Guardar Cambios',
+            saveActionLabel: 'SIModules.projectDetailAdmin.saveProjectEdits()',
+            maxWidth: 'max-w-xl'
+        })}
 
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
-                                <input type="text" id="edit-project-type" name="project_type" value="${p.project_type || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
-                                <textarea id="edit-project-desc" name="description" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">${p.description || ''}</textarea>
-                            </div>
-
-                        </form>
-                    </div>
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
-                         <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
-                         <button onclick="SIModules.projectDetailAdmin.saveProjectEdits()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
-                             <svg class="w-4 h-4 hidden" id="edit-project-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                             Guardar Cambios
-                         </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODAL: CAMBIAR ESTADO -->
             <div id="change-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col">
                     <div class="p-6 border-b border-gray-100 flex items-center justify-between">
@@ -695,8 +646,7 @@ SIModules.projectDetailAdmin = {
                     </div>
                     <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
                          <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
-                         <button onclick="SIModules.projectDetailAdmin.saveProjectStatus()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
-                             <svg class="w-4 h-4 hidden" id="change-status-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                         <button onclick="SIModules.projectDetailAdmin.saveProjectStatus()" id="btn-save-status" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
                              Actualizar
                          </button>
                      </div>
@@ -1143,13 +1093,13 @@ SIModules.projectDetailAdmin = {
         // --- LÓGICA DE FILTRADO PARA RESETEO (REAPERTURA) ---
         // Buscamos el índice del último log de reapertura (si existe) para "invalidar" lo anterior
         const lastReopenIdx = logs.findIndex(l => l.action_key === 'proyecto_reabierto');
-        
+
         // Logs que se consideran para el flujo actual (solo los posteriores a la última reapertura)
         const currentCycleLogs = lastReopenIdx !== -1 ? logs.slice(0, lastReopenIdx) : logs;
         const reopenLog = lastReopenIdx !== -1 ? logs[lastReopenIdx] : null;
 
         const findInCycle = (status) => {
-            return currentCycleLogs.find(l => 
+            return currentCycleLogs.find(l =>
                 (l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod') &&
                 (l.metadata?.estado_nuevo === status || l.metadata?.new_status === status)
             );
@@ -1166,7 +1116,7 @@ SIModules.projectDetailAdmin = {
 
         // 2. Aprobación (Solo si ocurrió en el ciclo actual)
         const approvalLog = findInCycle('aprobado');
-        const isApproved = !!approvalLog || (p.status !== 'propuesta' && lastReopenIdx === -1); 
+        const isApproved = !!approvalLog || (p.status !== 'propuesta' && lastReopenIdx === -1);
         nodes.push(entry(
             dot('bg-blue-400', isApproved),
             'Propuesta Aprobada',
@@ -1430,25 +1380,25 @@ SIModules.projectDetailAdmin = {
         }
 
         const icons = {
-            'status': { 
-                color: 'bg-[#E57B23]', 
+            'status': {
+                color: 'bg-[#E57B23]',
                 badge: 'text-orange-500 bg-orange-50 border-orange-100',
-                icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' 
+                icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>'
             },
-            'document': { 
-                color: 'bg-blue-500', 
+            'document': {
+                color: 'bg-blue-500',
                 badge: 'text-blue-500 bg-blue-50 border-blue-100',
-                icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' 
+                icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'
             },
-            'chat': { 
-                color: 'bg-gray-100', 
+            'chat': {
+                color: 'bg-gray-100',
                 badge: 'text-blue-500 bg-blue-50 border-blue-100',
-                icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>' 
+                icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>'
             },
-            'edit': { 
-                color: 'bg-indigo-500', 
+            'edit': {
+                color: 'bg-indigo-500',
                 badge: 'text-indigo-500 bg-indigo-50 border-indigo-100',
-                icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' 
+                icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>'
             }
         };
         const node = icons[type] || icons.edit;
@@ -1637,11 +1587,26 @@ SIModules.projectDetailAdmin = {
                             <div class="min-w-0 flex-1 w-full">
                                 <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-2 w-full truncate group-hover:text-blue-500 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
                                 <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                                    <button onclick="SIModules.projectDetailAdmin.toggleVersionHistory(${doc.id}, this)" 
-                                            class="w-max px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-1 shrink-0">
-                                        ${icon.label} (v${doc.version_number})
-                                        <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
-                                    </button>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <button onclick="SIModules.projectDetailAdmin.toggleVersionHistory(${doc.id}, this)" 
+                                                class="w-max px-2.5 py-0.5 rounded ${icon.badgeBg} ${icon.badgeText} text-[10px] font-black tracking-widest uppercase hover:opacity-80 transition-opacity flex items-center gap-1 shrink-0">
+                                            ${icon.label} (v${doc.version_number})
+                                            <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                                        </button>
+                                        <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-black tracking-widest uppercase border border-gray-200">
+                                            ${(() => {
+                                                const labels = {
+                                                    'propuesta': 'Propuesta',
+                                                    'presupuesto': 'Presupuesto',
+                                                    'plano': 'Plano',
+                                                    'documento_tecnico': 'Doc. Técnico',
+                                                    'materiales': 'Materiales',
+                                                    'otros': 'Otros'
+                                                };
+                                                return labels[doc.type] || 'Archivo';
+                                            })()}
+                                        </span>
+                                    </div>
                                     <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80 w-full md:w-auto inline-block">${size} • ${date}</span>
                                 </div>
                             </div>
@@ -1824,7 +1789,7 @@ SIModules.projectDetailAdmin = {
         // Reset custom labels
         document.getElementById('doc-upload-type-label').textContent = 'Otros';
         document.getElementById('doc-upload-type').value = 'otros';
-        document.getElementById('doc-upload-access-label').textContent = 'Descargar';
+        document.getElementById('doc-upload-access-label').textContent = 'Solo Descargar';
         document.getElementById('doc-upload-access').value = 'download';
         document.getElementById('doc-file-selected-name').textContent = 'Haz clic o arrastra un archivo';
 
@@ -2513,11 +2478,6 @@ SIModules.projectDetailAdmin = {
     async submitDocComment() {
         const docId = document.getElementById('chat-current-doc-id').value;
         const input = document.getElementById('preview-chat-input');
-        const submitBtn = document.getElementById('preview-chat-submit');
-        const spinner = document.getElementById('preview-chat-send-spinner');
-        const icon = document.getElementById('preview-chat-send-icon');
-        // La version_id SIEMPRE la dictamina el header dropdown (versión del visualizador),
-        // no el select de filtrado del chat que solo controla la vista.
         const activeVersionId = document.getElementById('chat-current-version-id')?.value;
 
         if (!docId) return;
@@ -2525,9 +2485,7 @@ SIModules.projectDetailAdmin = {
         const bodyText = input.value.trim();
         if (!bodyText) return;
 
-        submitBtn.disabled = true;
-        icon.classList.add('hidden');
-        spinner.classList.remove('hidden');
+        SIApp.setBtnLoading('preview-chat-submit', true, '...');
 
         try {
             const data = { body: bodyText };
@@ -2549,11 +2507,9 @@ SIModules.projectDetailAdmin = {
             }
         } catch (e) {
             console.error('Error enviando comentario:', e);
-            if (window.SIApp) SIApp.showToast('Error', 'No se pudo comunicar con el servidor', 'error');
+            if (window.SIApp) SIApp.showToast('Error', 'Error de conexión', 'error');
         } finally {
-            submitBtn.disabled = false;
-            icon.classList.remove('hidden');
-            spinner.classList.add('hidden');
+            SIApp.setBtnLoading('preview-chat-submit', false);
         }
     },
 
@@ -2569,16 +2525,10 @@ SIModules.projectDetailAdmin = {
     },
 
     closePreviewModal() {
-        const modal = document.getElementById('preview-doc-modal');
         const iframe = document.getElementById('preview-iframe');
-        if (!modal) return;
-
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            if (iframe) iframe.src = 'about:blank';
-        }, 300);
+        SIApp.modal.close('preview-doc-modal');
+        // Clear iframe src after transition
+        setTimeout(() => { if (iframe) iframe.src = 'about:blank'; }, 305);
 
         // --- SPA: Sincronizar URL al cerrar ---
         const baseUrl = `/steelinox/project/${this.projectId}/documents`;
@@ -2755,22 +2705,12 @@ SIModules.projectDetailAdmin = {
     },
 
     openAssignCommercialModal() {
-        const modal = document.getElementById('assign-commercial-modal');
-        modal.classList.remove('hidden');
-        void modal.offsetWidth; // force reflow
-        modal.classList.remove('opacity-0');
-        modal.querySelector('div').classList.remove('scale-95');
-
+        SIApp.modal.open('assign-commercial-modal');
         this.loadAvailableUsers();
     },
 
     closeAssignCommercialModal() {
-        const modal = document.getElementById('assign-commercial-modal');
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
+        SIApp.modal.close('assign-commercial-modal');
     },
 
     async loadAvailableUsers() {
@@ -2844,70 +2784,41 @@ SIModules.projectDetailAdmin = {
     // ────────────────────────────────────────────────────────────────────────
 
     openEditProjectModal() {
-        const modal = document.getElementById('edit-project-modal');
-        if (!modal) return;
-        modal.classList.remove('hidden');
-        void modal.offsetWidth;
-        modal.classList.remove('opacity-0');
-        modal.querySelector('div').classList.remove('scale-95');
+        SIApp.modal.open('edit-project-modal');
     },
 
     closeEditProjectModal() {
-        const modal = document.getElementById('edit-project-modal');
-        if (!modal) return;
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
+        SIApp.modal.close('edit-project-modal');
     },
 
     async saveProjectEdits() {
-        const form = document.getElementById('edit-project-form');
-        const spinner = document.getElementById('edit-project-save-spinner');
+        const modalId = 'edit-project-modal';
+        const data = SIApp.getValidatedFormData(`${modalId}-form`);
+        if (!data) return;
 
-        if (!form.checkValidity()) {
-            form.reportValidity();
+        // Project Reference Validation (extra rule beyond HTML5)
+        if (data.reference && !SIApp.constants.regex.PRJ.test(data.reference)) {
+            SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXXX (Ej: PRJ-2026-0001)', 'error');
             return;
         }
 
-        const btn = spinner.parentElement;
-        const oldText = btn.innerHTML;
-        btn.innerHTML = spinner.outerHTML + ' Guardando...';
-        btn.querySelector('svg').classList.remove('hidden');
-        btn.querySelector('svg').classList.add('animate-spin');
-        btn.disabled = true;
+        SIApp.setBtnLoading(`${modalId}-btn-save`, true, 'Guardar Cambios');
 
         try {
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-            // Convertir strings vacíos a null para floats/ints
-            if (data.budget_amount === '') data.budget_amount = null;
-            if (data.surface === '') data.surface = null;
-
-            // Project Reference Validation
-            const regexPrj = SIApp.constants.regex.PRJ;
-            if (!regexPrj.test(data.reference)) {
-                if (window.SIApp) SIApp.showToast('Referencia Inválida', 'El formato debe ser PRJ-AAAA-XXXX (Ej: PRJ-2026-0001)', 'error');
-                btn.innerHTML = oldText;
-                btn.disabled = false;
-                return;
-            }
-
             const res = await API.put('/projects/' + this.projectId, data);
 
             if (res && res.success) {
-                if (window.SIApp) SIApp.showToast('Proyecto actualizado', 'Datos guardados correctamente', 'success');
+                SIApp.showToast('Proyecto actualizado', 'Datos guardados correctamente', 'success');
                 this.closeEditProjectModal();
-                await this.loadProjectData(); // Refresca la vista
+                await this.loadProjectData();
             } else {
-                if (window.SIApp) SIApp.showToast('Error al actualizar', res?.message || 'Revisa los campos', 'error');
+                SIApp.showToast('Error al actualizar', res?.message || 'Revisa los campos', 'error');
             }
         } catch (error) {
             console.error(error);
-            if (window.SIApp) SIApp.showToast('Error', 'Error al modificar el proyecto', 'error');
+            SIApp.showToast('Error', 'Error al modificar el proyecto', 'error');
         } finally {
-            btn.innerHTML = oldText;
-            btn.disabled = false;
+            SIApp.setBtnLoading(`${modalId}-btn-save`, false, 'Guardar Cambios');
         }
     },
 
@@ -2916,56 +2827,29 @@ SIModules.projectDetailAdmin = {
     // ────────────────────────────────────────────────────────────────────────
 
     openChangeStatusModal() {
-        const modal = document.getElementById('change-status-modal');
-        if (!modal) return;
-        modal.classList.remove('hidden');
-        void modal.offsetWidth;
-        modal.classList.remove('opacity-0');
-        modal.querySelector('div').classList.remove('scale-95');
+        SIApp.modal.open('change-status-modal');
     },
 
     closeChangeStatusModal() {
-        const modal = document.getElementById('change-status-modal');
-        if (!modal) return;
-
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
+        SIApp.modal.close('change-status-modal');
     },
 
-    async saveProjectStatus(newStatusVal) {
-        // Encontramos el formulario activo según el valor de status enviado
-        // (En el stepper cada paso tiene su propio form con el input hidden correspondiente)
-        const form = Array.from(document.querySelectorAll('#change-status-form')).find(f => {
-            const input = f.querySelector('input[name="status"]');
-            return input && input.value === newStatusVal;
-        });
+    async saveProjectStatus() {
+        // En el stepper cada paso tiene su propio form con el input hidden correspondiente
+        // o si es desde el modal genérico, usamos 'change-status-form'
+        const formId = 'change-status-form';
+        const data = SIApp.getValidatedFormData(formId);
+        if (!data) return;
 
-        if (!form) return;
-
-        // Spinner dinámico: puede ser reopen-spinner o change-status-spinner
-        const spinner = form.querySelector('.si-spinner');
-        const btn = form.querySelector('button[type="submit"]');
-
-        if (!btn) return;
-
-        const oldText = btn.innerHTML;
-        if (spinner) {
-            spinner.classList.remove('hidden');
-            spinner.classList.add('animate-spin');
-        }
-        btn.disabled = true;
+        SIApp.setBtnLoading('btn-save-status', true, 'Actualizar');
 
         try {
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
             const res = await API.put('/projects/' + this.projectId + '/status', data);
 
             if (res && res.success) {
                 if (window.SIApp) SIApp.showToast('Estado actualizado', 'El proyecto ha avanzado en el flujo.', 'success');
                 this.closeChangeStatusModal();
-                await this.loadProjectData(); // Refresca la vista completa (incluyendo el sidebar de Ciclo de Vida)
+                await this.loadProjectData();
             } else {
                 if (window.SIApp) SIApp.showToast('Error', res?.message || 'No se pudo cambiar el estado', 'error');
             }
@@ -2973,10 +2857,7 @@ SIModules.projectDetailAdmin = {
             console.error(error);
             if (window.SIApp) SIApp.showToast('Error', 'Error al actualizar el estado', 'error');
         } finally {
-            if (btn) {
-                btn.innerHTML = oldText;
-                btn.disabled = false;
-            }
+            SIApp.setBtnLoading('btn-save-status', false, 'Actualizar');
         }
     },
 
@@ -2989,11 +2870,7 @@ SIModules.projectDetailAdmin = {
         );
         if (!confirmed) return;
 
-        const btn = document.getElementById('btn-approve-project');
-        const spinner = document.getElementById('approve-spinner');
-
-        if (btn) btn.disabled = true;
-        if (spinner) spinner.classList.remove('hidden');
+        SIApp.setBtnLoading('btn-approve-project', true, 'Aprobando...');
 
         try {
             const res = await API.put('/projects/' + this.projectId + '/status', {
@@ -3003,7 +2880,7 @@ SIModules.projectDetailAdmin = {
 
             if (res.success) {
                 SIApp.showToast('¡Enhorabuena!', 'Has aprobado la propuesta. El equipo de Steel Inox comenzará la ejecución en breve.', 'success');
-                await this.loadProjectData(); // Recarga para mostrar nuevo estado y quitar botón
+                await this.loadProjectData();
             } else {
                 SIApp.showToast('Error', res.message || 'No se pudo procesar la aprobación.', 'error');
             }
@@ -3011,8 +2888,7 @@ SIModules.projectDetailAdmin = {
             console.error(e);
             SIApp.showToast('Error', 'Error de conexión al procesar la aprobación.', 'error');
         } finally {
-            if (btn) btn.disabled = false;
-            if (spinner) spinner.classList.add('hidden');
+            SIApp.setBtnLoading('btn-approve-project', false, 'Aprobar');
         }
     }
 };

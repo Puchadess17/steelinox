@@ -40,7 +40,7 @@
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
         <!-- Logo -->
         <div class="flex items-center gap-2.5 mb-8">
-            <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-12 w-auto">
+            <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-12 w-auto">
         </div>
 
         <!-- Card de login -->

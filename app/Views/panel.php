@@ -178,6 +178,8 @@
     <script
         src="/steelinox/public/assets/js/app.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/app.js'); ?>"></script>
     <script
+        src="/steelinox/public/assets/js/modules/templates.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/templates.js'); ?>"></script>
+    <script
         src="/steelinox/public/assets/js/modules/dashboard.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/dashboard.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/modules/projects.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/projects.js'); ?>"></script>
