@@ -2,7 +2,6 @@
 // core/Router.php
 
 /**
- * ====================
  * ROUTER (ENRUTADOR)
  * ====================
  * El cerebro de la aplicación. Se encarga de mapear las URLs que solicita

@@ -1,20 +1,34 @@
 <?php
 // app/Helpers/PaginationHelper.php
 
+/**
+ * PAGINATION HELPER
+ * ====================
+ * Utilidad estática para la gestión centralizada de la paginación.
+ * Sanitiza los parámetros de entrada y estandariza la estructura
+ * de los metadatos de navegación devueltos al Frontend.
+ */
 class PaginationHelper {
     
     /**
-     * Extrae y sanitiza la página actual y el límite permitido (15, 30, 50).
-     * Retorna un array con: [Página actual, Límite, Offset para la BBDD]
+     * EXTRACCIÓN Y SANITIZACIÓN DE PARÁMETROS
+     * Obtiene y valida la página actual y el límite de resultados desde 
+     * la petición GET. Calcula el desplazamiento (offset) exacto requerido 
+     * por las sentencias SQL en la base de datos.
      */
     public static function getParams() {
         $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $limit = isset($_GET['limit']) && is_numeric($_GET['limit']) ? (int)$_GET['limit'] : 15;
         
-        // Bloqueamos que el usuario pueda enviar "limit=10000" hackeando la URL
+        /**
+         * RESTRICCIÓN DE LÍMITES (PREVENCIÓN DE OVERFLOW)
+         * Bloquea la manipulación maliciosa de la URL evitando consultas 
+         * desproporcionadas a la base de datos. Establece un valor por defecto 
+         * seguro si el parámetro entrante no coincide con los valores permitidos.
+         */
         $allowedLimits = [15, 30, 50];
         if (!in_array($limit, $allowedLimits)) {
-            $limit = 15; // Por defecto siempre caemos en 15 si manipulan el dato
+            $limit = 15;
         }
         
         $offset = ($page - 1) * $limit;
@@ -23,7 +37,10 @@ class PaginationHelper {
     }
 
     /**
-     * Formatea los datos de salida de la paginación al estándar del front-end.
+     * FORMATEO DE RESPUESTA
+     * Construye el array de metadatos requerido por la capa de presentación,
+     * calculando automáticamente el total de páginas y definiendo banderas
+     * booleanas para habilitar o deshabilitar los controles de navegación.
      */
     public static function format($total, $limit, $page) {
         $totalPages = (int) ceil($total / $limit);

@@ -3,18 +3,34 @@
 
 require_once CORE_PATH . '/Database.php';
 
+/**
+ * MODELO DE PROYECTO (PROJECT)
+ * ====================
+ * Capa de acceso a datos para la gestión de proyectos/expedientes.
+ * Centraliza la lógica de negocio relacionada con la creación, edición,
+ * asignación de personal y transiciones de estado de los proyectos.
+ */
 class Project {
     private $db;
 
+    /**
+     * CONSTRUCTOR E INYECCIÓN DE CONEXIÓN
+     * Inicializa la instancia obteniendo la conexión PDO activa.
+     */
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    // Lista de proyectos dashboard, filtrada por rol, usuario y paginada
+    /**
+     * LISTADO PAGINADO Y FILTRADO (DASHBOARD)
+     * Extrae los proyectos aplicando reglas de visibilidad basadas en el rol.
+     * Soporta búsqueda por texto, filtrado por estado, conteo de comerciales y ordenación dinámica.
+     */
     public function getListByUser($userId, $role, $clientId, $limit = 15, $offset = 0, $filters = []) {
         $params = [];
         $where = ["p.deleted_at IS NULL"];
 
+        // Reglas de visibilidad (Multitenant y Asignación)
         if ($role === 'cliente') {
             $where[] = "p.client_id = :client_id";
             $params['client_id'] = $clientId;
@@ -23,7 +39,7 @@ class Project {
             $params['user_id'] = $userId;
         }
 
-        // 2. Filtros Externos (Search / Status)
+        // Filtros de búsqueda y estado
         if (!empty($filters['search'])) {
             $q = "%" . $filters['search'] . "%";
             $where[] = "(p.name LIKE :search1 OR p.reference LIKE :search2)";
@@ -38,7 +54,27 @@ class Project {
 
         $whereSql = "WHERE " . implode(" AND ", $where);
 
-        // 1. Contar el total de registros
+        // --- ORDENACIÓN DINÁMICA SECURE (Lista Blanca) ---
+        $allowedSortColumns = ['client_name', 'name', 'reference', 'commercials_count', 'created_at'];
+        $sortBy = isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns) ? $filters['sort_by'] : 'created_at';
+        $sortDir = isset($filters['sort_dir']) && strtoupper($filters['sort_dir']) === 'ASC' ? 'ASC' : 'DESC';
+
+        if ($sortBy === 'client_name') {
+            $orderBy = "c.name";
+        } elseif ($sortBy === 'name') {
+            $orderBy = "p.name";
+        } elseif ($sortBy === 'reference') {
+            $orderBy = "p.reference";
+        } elseif ($sortBy === 'commercials_count') {
+            $orderBy = "commercials_count";
+        } else {
+            $orderBy = "p.created_at";
+        }
+        
+        $orderByClause = "ORDER BY $orderBy $sortDir";
+        // -------------------------------------------------
+
+        // Cálculo del total de registros para paginación
         $countSql = "SELECT COUNT(*) FROM projects p LEFT JOIN clients c ON p.client_id = c.id " . $whereSql;
         $stmtCount = $this->db->prepare($countSql);
         foreach ($params as $key => $val) {
@@ -47,12 +83,13 @@ class Project {
         $stmtCount->execute();
         $total = (int)$stmtCount->fetchColumn();
 
-        // 2. Extraer datos paginados
-        $dataSql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name 
+        // Extracción de datos paginados con el recuento de comerciales
+        $dataSql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name,
+                           (SELECT COUNT(*) FROM project_user pu_count WHERE pu_count.project_id = p.id) AS commercials_count
                     FROM projects p
                     LEFT JOIN clients c ON p.client_id = c.id
                     $whereSql
-                    ORDER BY p.created_at DESC
+                    $orderByClause
                     LIMIT :limit OFFSET :offset";
 
         $stmtData = $this->db->prepare($dataSql);
@@ -60,7 +97,6 @@ class Project {
             $stmtData->bindValue(":$key", $val);
         }
         
-        // Bindeamos los parámetros de paginación asegurando que son enteros
         $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();
@@ -71,7 +107,11 @@ class Project {
         ];
     }
 
-    // Proyecto individual->fetch
+    /**
+     * RECUPERACIÓN DE PROYECTO INDIVIDUAL
+     * Obtiene los detalles completos de un expediente cruzando datos del cliente.
+     * Valida estrictamente los permisos de acceso antes de devolver el registro.
+     */
     public function getById($projectId, $userId, $role, $clientId) {
         $sql = "SELECT p.*, 
                        c.name AS client_name, 
@@ -83,7 +123,7 @@ class Project {
 
         $params = ['project_id' => $projectId];
 
-        // Reglas de seguridad
+        // Inyección de reglas de seguridad
         if ($role === 'cliente') {
             $sql .= " AND p.client_id = :client_id";
             $params['client_id'] = $clientId;
@@ -99,7 +139,10 @@ class Project {
         return $stmt->fetch(); 
     }
 
-    /** Obtiene la lista de comerciales asignados a un proyecto */
+    /**
+     * COMERCIALES ASIGNADOS
+     * Extrae la lista del personal interno con acceso al proyecto.
+     */
     public function getAssignedUsers($projectId) {
         $sql = "SELECT u.id, u.name, u.email, u.role, u.is_active, u.last_login_at 
                 FROM users u
@@ -114,7 +157,11 @@ class Project {
         return $stmt->fetchAll();
     }
 
-    /** Asigna un comercial a un proyecto */
+    /**
+     * ASIGNACIÓN DE PERSONAL (TABLA PIVOTE)
+     * Vincula un usuario comercial a un expediente. Utiliza INSERT IGNORE
+     * para prevenir errores por duplicidad de asignaciones.
+     */
     public function assignUser($projectId, $userId) {
         $sql = "INSERT IGNORE INTO project_user (project_id, user_id) 
                 VALUES (:project_id, :user_id)";
@@ -126,7 +173,10 @@ class Project {
         ]);
     }
 
-    /** Elimina la asignación de un usuario a un proyecto específico */
+    /**
+     * REVOCACIÓN DE ACCESO
+     * Elimina el vínculo entre un usuario comercial y un proyecto.
+     */
     public function removeUser($projectId, $userId) {
         $sql = "DELETE FROM project_user 
                 WHERE project_id = :project_id AND user_id = :user_id";
@@ -138,10 +188,14 @@ class Project {
         ]);
     }
 
-    /** Crea un nuevo proyecto y auto-asigna al creador si es comercial */
+    /**
+     * CREACIÓN TRANSACCIONAL DE PROYECTO
+     * Genera un nuevo registro y, si el creador es un usuario de perfil
+     * comercial, lo auto-asigna de inmediato al proyecto. Asegura la 
+     * consistencia de los datos mediante el uso de transacciones.
+     */
     public function createWithAutoAssign($data, $userId, $role) {
         try {
-            // Iniciamos la transacción
             $this->db->beginTransaction();
 
             $sql = "INSERT INTO projects (client_id, name, reference, status, budget_amount, description, surface, project_type, created_by, created_at) 
@@ -162,7 +216,6 @@ class Project {
 
             $newProjectId = $this->db->lastInsertId();
 
-            // Si es un comercial, lo auto-asignamos a la tabla pivote de inmediato
             if ($role === 'comercial') {
                 $sqlAssign = "INSERT INTO project_user (project_id, user_id) VALUES (:project_id, :user_id)";
                 $stmtAssign = $this->db->prepare($sqlAssign);
@@ -172,18 +225,20 @@ class Project {
                 ]);
             }
 
-            // Si todo ha ido bien, consolidamos los cambios
             $this->db->commit();
             return $newProjectId;
 
         } catch (Exception $e) {
-            // Si algo falla, deshacemos todo
             $this->db->rollBack();
             throw $e;
         }
     }
 
-    /** Actualiza la información general del proyecto (EXCLUYENDO el estado) */
+    /**
+     * ACTUALIZACIÓN DE DATOS MAESTROS
+     * Modifica la información general de un proyecto, excluyendo su estado 
+     * para garantizar que las transiciones queden registradas correctamente.
+     */
     public function update($id, $data) {
         $sql = "UPDATE projects 
                 SET name = :name, 
@@ -206,27 +261,28 @@ class Project {
         ]);
     }
 
-    /** Actualiza exclusivamente el estado del proyecto */
+    /**
+     * TRANSICIÓN DE ESTADO CONTROLADA
+     * Actualiza la fase del proyecto y genera un registro automático en 
+     * la tabla de logs de estado para preservar el histórico de evolución.
+     */
     public function updateStatus($projectId, $newStatus, $userId, $reason = null) {
         try {
             $this->db->beginTransaction();
 
-            // 1. Obtener el estado actual antes de cambiarlo
             $stmtOld = $this->db->prepare("SELECT status FROM projects WHERE id = :id");
             $stmtOld->execute(['id' => $projectId]);
             $oldStatus = $stmtOld->fetchColumn();
 
-            // Si el estado es el mismo, no hacemos nada para evitar logs basura
+            // Prevención de registros redundantes
             if ($oldStatus === $newStatus) {
                 $this->db->rollBack();
                 return true;
             }
 
-            // 2. Actualizar el estado en el proyecto
             $stmtUpdate = $this->db->prepare("UPDATE projects SET status = :status WHERE id = :id");
             $stmtUpdate->execute(['status' => $newStatus, 'id' => $projectId]);
 
-            // 3. Insertar el registro en project_status_logs
             $sqlLog = "INSERT INTO project_status_logs 
                         (project_id, changed_by_user_id, old_status, new_status, reason, created_at) 
                        VALUES (:project_id, :user_id, :old_status, :new_status, :reason, NOW())";
@@ -236,7 +292,7 @@ class Project {
                 'user_id'    => $userId,
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
-                'reason'     => $reason // El comercial puede justificar por qué lo cambia
+                'reason'     => $reason 
             ]);
 
             $this->db->commit();
@@ -249,29 +305,27 @@ class Project {
     }
 
     /**
-     * Genera la siguiente referencia secuencial de forma automática.
-     * Formato: PRJ-YYYY-XXXX (Ej: PRJ-2026-0001)
+     * GENERADOR SECUENCIAL DE REFERENCIAS
+     * Calcula automáticamente el identificador único del proyecto basado 
+     * en el año actual (Ej: PRJ-2026-0001). Previene colisiones consultando
+     * el último registro insertado.
      */
     public function generateNextReference() {
         $year = date('Y');
         $prefix = "PRJ-$year-";
 
-        // Buscar la última referencia de este año
         $sql = "SELECT reference FROM projects WHERE reference LIKE :prefix ORDER BY id DESC LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['prefix' => $prefix . '%']);
         $lastReference = $stmt->fetchColumn();
 
         if ($lastReference) {
-            // Extraer los últimos 4 dígitos y sumarle 1
             $lastNumber = (int) substr($lastReference, -4);
             $nextNumber = $lastNumber + 1;
         } else {
-            // Si es el primer proyecto del año, empezamos por el 1
             $nextNumber = 1;
         }
 
-        // Formatear añadiendo ceros a la izquierda para mantener los 4 dígitos
         return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

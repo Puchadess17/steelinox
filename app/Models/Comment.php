@@ -3,18 +3,34 @@
 
 require_once CORE_PATH . '/Database.php';
 
+/**
+ * MODELO DE COMENTARIOS (COMMENT)
+ * ====================
+ * Capa de acceso a datos para el sistema de comunicación anidado.
+ * Gestiona la inserción y recuperación de los hilos de mensajes asociados
+ * a los documentos del proyecto y sus iteraciones (versiones) específicas.
+ */
 class Comment {
     private $db;
 
+    /**
+     * CONSTRUCTOR E INYECCIÓN DE CONEXIÓN
+     * Inicializa la instancia obteniendo la conexión PDO activa.
+     */
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    /** Hilo de comentarios de un documento con paginación */
+    /**
+     * EXTRACCIÓN DE HILOS DE CONVERSACIÓN (PAGINADOS)
+     * Recupera los comentarios vinculados a un documento. Permite filtrar
+     * opcionalmente por una versión específica del archivo. Cruza datos
+     * relacionales para incluir la información del autor en tiempo real.
+     */
     public function getByDocument($documentId, $versionId = null, $limit = 15, $offset = 0) {
         $baseWhere = "WHERE c.document_id = :document_id AND c.deleted_at IS NULL";
         
-        // 1. Contar el total de comentarios
+        // 1. Cálculo del volumen total para metadatos de paginación
         $countSql = "SELECT COUNT(*) FROM comments c " . $baseWhere;
         if ($versionId !== null) {
             $countSql .= " AND c.document_version_id = :version_id";
@@ -28,7 +44,7 @@ class Comment {
         $stmtCount->execute();
         $total = (int)$stmtCount->fetchColumn();
 
-        // 2. Obtener los comentarios paginados
+        // 2. Extracción de carga útil con resolución de relaciones (JOINs)
         $dataSql = "SELECT c.id, c.body, c.created_at, c.updated_at,
                            u.id AS author_id, u.name AS author_name, u.role AS author_role,
                            dv.version_number, dv.id AS version_id
@@ -54,7 +70,12 @@ class Comment {
         
         $rows = $stmtData->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Castear campos numéricos
+        /**
+         * SANITIZACIÓN DE TIPOS (TYPE CASTING)
+         * Asegura que los identificadores numéricos se devuelvan como enteros (int)
+         * en lugar de cadenas (string), garantizando un JSON estricto y predecible
+         * para la capa del frontend.
+         */
         $mappedRows = array_map(function($row) {
             $row['id']             = (int) $row['id'];
             $row['author_id']      = (int) $row['author_id'];
@@ -69,7 +90,11 @@ class Comment {
         ];
     }
 
-    /** Inserta un nuevo comentario en la base de datos */
+    /**
+     * INSERCIÓN DE NUEVO COMENTARIO
+     * Registra el mensaje en la base de datos vinculándolo a su contexto
+     * jerárquico completo: Proyecto -> Documento -> Versión -> Autor.
+     */
     public function create($data) {
         $sql = "INSERT INTO comments (project_id, document_id, document_version_id, author_user_id, body, created_at) 
                 VALUES (:project_id, :document_id, :document_version_id, :author_user_id, :body, NOW())";

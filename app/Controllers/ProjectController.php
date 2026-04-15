@@ -33,17 +33,17 @@ class ProjectController
             // 1. Extraemos parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Extraemos filtros extra
+            // 2. Extraemos filtros extra (incluyendo la ordenación dinámica de comerciales)
             $filters = [
-                'search' => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
-                'status' => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all'
+                'search'   => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
+                'status'   => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all',
+                'sort_by'  => isset($_GET['sort_by']) ? $_GET['sort_by'] : 'created_at',
+                'sort_dir' => isset($_GET['sort_dir']) ? $_GET['sort_dir'] : 'DESC'
             ];
             
-            // 3. Extraemos datos y el total desde el modelo
             $projectModel = new Project();
             $result = $projectModel->getListByUser($userId, $role, $clientId, $limit, $offset, $filters);
 
-            // 3. Devolvemos el JSON uniforme
             echo json_encode([
                 'success'    => true,
                 'message'    => 'Proyectos recuperados correctamente',
@@ -58,7 +58,7 @@ class ProjectController
                 'success' => false,
                 'message' => 'Error interno del servidor al recuperar los proyectos',
                 'data' => null,
-                'errors' => ['server' => 'Error interno'] // NUNCA DEVOLVEMOS $e->getMessage() EN PRODUCCIÓN
+                'errors' => ['server' => 'Error interno'] 
             ]);
         }
     }
@@ -74,9 +74,7 @@ class ProjectController
             return;
         }
 
-        // Sanitización del ID de URL
         $id = (int)$id;
-
         $userId = $_SESSION['user_id'];
         $role = $_SESSION['role'];
         $clientId = $_SESSION['client_id'] ?? null;
@@ -103,7 +101,6 @@ class ProjectController
         ]);
     }
 
-    // Obtener todos los usuarios asignados a un proyecto (GET /api/projects/{projectId}/users)
     public function getAssignedUsers($projectId)
     {
         AuthMiddleware::check();
@@ -122,8 +119,6 @@ class ProjectController
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-
-            // Escudo de Autorización
             $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
 
             if (!$projectDetails) {
@@ -157,13 +152,11 @@ class ProjectController
         }
     }
 
-    // Asignar un comercial a un proyecto (POST /api/projects/{projectId}/users/{userId})
     public function assignUser($projectId, $userId)
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores o comerciales pueden asignar personal']]);
@@ -179,8 +172,32 @@ class ProjectController
         try {
             $projectId = (int)$projectId;
             $userId = (int)$userId;
+            $actorUserId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
+            $projectDetails = $projectModel->getById($projectId, $actorUserId, $role, $clientId);
+
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
+                return;
+            }
+
+            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
+            if ($projectDetails['status'] === 'cerrado') {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Proyecto cerrado', 
+                    'data'    => null, 
+                    'errors'  => ['status' => 'No se puede asignar personal a un proyecto cerrado.']
+                ]);
+                return;
+            }
+            // -------------------------------------------
+
             $added = $projectModel->assignUser($projectId, $userId);
 
             if ($added) {
@@ -215,13 +232,11 @@ class ProjectController
         }
     }
 
-    // Eliminar a un comercial de un proyecto (DELETE /api/projects/{projectId}/users/{userId})
     public function removeUser($projectId, $userId)
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización Estricto
         if ($_SESSION['role'] !== 'admin') {
             http_response_code(403);
             echo json_encode([
@@ -242,8 +257,32 @@ class ProjectController
         try {
             $projectId = (int)$projectId;
             $userId = (int)$userId;
+            $actorUserId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
+            $projectDetails = $projectModel->getById($projectId, $actorUserId, $role, $clientId);
+
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
+                return;
+            }
+
+            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
+            if ($projectDetails['status'] === 'cerrado') {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Proyecto cerrado', 
+                    'data'    => null, 
+                    'errors'  => ['status' => 'No se puede desasignar personal de un proyecto cerrado.']
+                ]);
+                return;
+            }
+            // -------------------------------------------
+
             $removed = $projectModel->removeUser($projectId, $userId);
 
             if ($removed) {
@@ -254,7 +293,7 @@ class ProjectController
 
                 AuditLogger::log('proyecto_comercial_removido', 'project', $projectId, $projectId, [
                     'usuario_removido_id' => $userId,
-                    'nombre_comercial'    => $nombreComercial // <-- NUEVO
+                    'nombre_comercial'    => $nombreComercial 
                 ]);
 
                 echo json_encode([
@@ -278,7 +317,6 @@ class ProjectController
         }
     }
 
-    // Obtener usuarios disponibles para añadir a un proyecto (GET /api/projects/{projectId}/available-users)
     public function getAvailableUsers($projectId)
     {
         AuthMiddleware::check();
@@ -303,8 +341,6 @@ class ProjectController
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-
-            // Escudo de Autorización
             $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
 
             if (!$projectDetails) {
@@ -335,13 +371,11 @@ class ProjectController
         }
     }
 
-    // Crear un nuevo proyecto (POST /api/projects)
     public function store()
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        // Muro de Autorización General
         if ($_SESSION['role'] === 'cliente') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no pueden crear proyectos directamente']]);
@@ -357,25 +391,29 @@ class ProjectController
         $input = json_decode(file_get_contents('php://input'), true);
         $errors = [];
 
-        // --- SANITIZACIÓN ---
-        $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
-        $cleanDesc = isset($input['description']) ? htmlspecialchars(trim($input['description']), ENT_QUOTES, 'UTF-8') : null;
-        $cleanSurface = isset($input['surface']) ? htmlspecialchars(trim($input['surface']), ENT_QUOTES, 'UTF-8') : null;
-        $cleanStatus = isset($input['status']) ? htmlspecialchars(trim($input['status']), ENT_QUOTES, 'UTF-8') : 'propuesta';
-        $cleanProjectType = isset($input['project_type']) ? htmlspecialchars(trim($input['project_type']), ENT_QUOTES, 'UTF-8') : null;
-        // --------------------
+        $cleanName        = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+        $cleanDesc        = isset($input['description']) ? htmlspecialchars(trim($input['description']), ENT_QUOTES, 'UTF-8') : null;
+        $cleanSurface     = isset($input['surface']) ? htmlspecialchars(trim($input['surface']), ENT_QUOTES, 'UTF-8') : null;
+        $cleanStatus      = isset($input['status']) ? htmlspecialchars(trim($input['status']), ENT_QUOTES, 'UTF-8') : 'propuesta';
+        $cleanProjectType = isset($input['project_type']) ? htmlspecialchars(trim($input['project_type']), ENT_QUOTES, 'UTF-8') : '';
+        $budgetAmount     = isset($input['budget_amount']) ? trim($input['budget_amount']) : '';
 
-        // Validaciones obligatorias (ya no pedimos reference)
         if (empty($input['client_id'])) {
             $errors['client_id'] = 'El cliente es obligatorio.';
         }
         if (empty($cleanName)) {
             $errors['name'] = 'El nombre del proyecto es obligatorio.';
         }
+        if ($cleanProjectType === '') {
+            $errors['project_type'] = 'El tipo de proyecto es obligatorio.';
+        }
+        if ($budgetAmount === '' || !is_numeric($budgetAmount)) {
+            $errors['budget_amount'] = 'El presupuesto es obligatorio y debe ser un valor numérico.';
+        }
 
         if (!empty($errors)) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
+            echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios o son incorrectos.', 'data' => null, 'errors' => $errors]);
             return;
         }
 
@@ -394,21 +432,18 @@ class ProjectController
             }
 
             $projectModel = new Project();
-
-            // --- GENERACIÓN SECUENCIAL INTELIGENTE ---
             $generatedReference = $projectModel->generateNextReference();
-            // -----------------------------------------
 
             $dataToInsert = [
-                'client_id' => (int) $input['client_id'],
-                'name' => $cleanName,
-                'reference' => $generatedReference,
-                'status' => $cleanStatus,
-                'budget_amount' => $input['budget_amount'] ?? null,
-                'description' => $cleanDesc,
-                'surface' => $cleanSurface,
-                'project_type' => $cleanProjectType,
-                'created_by' => $userId
+                'client_id'     => (int) $input['client_id'],
+                'name'          => $cleanName,
+                'reference'     => $generatedReference,
+                'status'        => $cleanStatus,
+                'budget_amount' => (float) $budgetAmount,
+                'description'   => $cleanDesc,
+                'surface'       => $cleanSurface,
+                'project_type'  => $cleanProjectType,
+                'created_by'    => $userId
             ];
 
             $newProjectId = $projectModel->createWithAutoAssign($dataToInsert, $userId, $role);
@@ -425,14 +460,14 @@ class ProjectController
                 'message' => 'Proyecto creado correctamente',
                 'data' => [
                     'id' => $newProjectId,
-                    'reference' => $generatedReference // Le devolvemos el código generado para que Joan lo vea
+                    'reference' => $generatedReference 
                 ],
                 'errors' => null
             ]);
 
         } catch (Exception $e) {
             if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
-                http_response_code(409); // 409 Conflict
+                http_response_code(409); 
                 echo json_encode([
                     'success' => false,
                     'message' => 'Se ha producido una colisión al generar el código de referencia. Por favor, pulsa en Guardar de nuevo.',
@@ -452,7 +487,6 @@ class ProjectController
         }
     }
 
-    // Actualizar datos de un proyecto (PUT /api/projects/{id})
     public function update($id)
     {
         AuthMiddleware::check();
@@ -485,45 +519,60 @@ class ProjectController
                 return;
             }
 
+            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
+            if ($projectDetails['status'] === 'cerrado') {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'El proyecto está cerrado.', 
+                    'data'    => null, 
+                    'errors'  => ['status' => 'No se puede editar un proyecto cerrado. Reábrelo primero si necesitas hacer cambios.']
+                ]);
+                return;
+            }
+            // -------------------------------------------
+
             $input = json_decode(file_get_contents('php://input'), true);
             $errors = [];
 
-            // --- SANITIZACIÓN ---
-            $cleanName = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
-            $cleanDesc = isset($input['description']) ? htmlspecialchars(trim($input['description']), ENT_QUOTES, 'UTF-8') : null;
-            $cleanSurface = isset($input['surface']) ? htmlspecialchars(trim($input['surface']), ENT_QUOTES, 'UTF-8') : null;
-            $cleanProjectType = isset($input['project_type']) ? htmlspecialchars(trim($input['project_type']), ENT_QUOTES, 'UTF-8') : null;
-            // --------------------
+            $cleanName        = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
+            $cleanDesc        = isset($input['description']) ? htmlspecialchars(trim($input['description']), ENT_QUOTES, 'UTF-8') : null;
+            $cleanSurface     = isset($input['surface']) ? htmlspecialchars(trim($input['surface']), ENT_QUOTES, 'UTF-8') : null;
+            $cleanProjectType = isset($input['project_type']) ? htmlspecialchars(trim($input['project_type']), ENT_QUOTES, 'UTF-8') : '';
+            $budgetAmount     = isset($input['budget_amount']) ? trim($input['budget_amount']) : '';
 
             if (empty($cleanName)) {
                 $errors['name'] = 'El nombre es obligatorio.';
             }
+            if ($cleanProjectType === '') {
+                $errors['project_type'] = 'El tipo de proyecto es obligatorio.';
+            }
+            if ($budgetAmount === '' || !is_numeric($budgetAmount)) {
+                $errors['budget_amount'] = 'El presupuesto es obligatorio y debe ser un valor numérico.';
+            }
             
-            // EL ESCUDO DEL ADMINISTRADOR: Solo el admin puede editar 'reference'
             if ($role === 'admin' && !empty($input['reference'])) {
                 if (!preg_match('/^PRJ-\d{4}-\d{4}$/', trim($input['reference']))) {
                     $errors['reference'] = 'La referencia de proyecto debe tener el formato PRJ-AAAA-XXXX (Ej: PRJ-2026-0001)';
                 }
             } elseif ($role !== 'admin' && isset($input['reference'])) {
-                // Si es un comercial e intenta hackear la petición mandando el campo 'reference', lo fulminamos silenciosamente.
                 unset($input['reference']);
             }
 
             if (!empty($errors)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $errors]);
+                echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios o son incorrectos.', 'data' => null, 'errors' => $errors]);
                 return;
             }
 
             $newData = [
-                'name' => $cleanName,
-                'budget_amount' => $input['budget_amount'] ?? null,
-                'description' => $cleanDesc,
-                'surface' => $cleanSurface,
-                'project_type' => $cleanProjectType
+                'name'          => $cleanName,
+                'budget_amount' => (float) $budgetAmount,
+                'description'   => $cleanDesc,
+                'surface'       => $cleanSurface,
+                'project_type'  => $cleanProjectType
             ];
 
-            // Inyectar la nueva referencia SOLO si pasó el escudo del admin
             if ($role === 'admin' && !empty($input['reference'])) {
                 $newData['reference'] = htmlspecialchars(trim($input['reference']), ENT_QUOTES, 'UTF-8');
             }
@@ -533,18 +582,17 @@ class ProjectController
                 $oldValue = $projectDetails[$key] ?? null;
                 if ((string)$oldValue !== (string)$newValue) {
                     $changes[$key] = [
-                        'antes' => $oldValue,
-                        'despues'  => $newValue
+                        'antes'   => $oldValue,
+                        'despues' => $newValue
                     ];
                 }
             }
 
-            // Envolvemos en Try/Catch específico por si el Admin mete un código duplicado
             try {
                 $projectModel->update($id, $newData);
             } catch (Exception $e) {
                 if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
-                    http_response_code(409); // 409 Conflict
+                    http_response_code(409); 
                     echo json_encode([
                         'success' => false,
                         'message' => 'El código de referencia introducido ya pertenece a otro proyecto.',
@@ -553,7 +601,7 @@ class ProjectController
                     ]);
                     return;
                 }
-                throw $e; // Si no es error de duplicado, lo lanzamos al Catch principal
+                throw $e; 
             }
 
             if (!empty($changes)) {
@@ -568,7 +616,6 @@ class ProjectController
         }
     }
 
-    // Cambiar estado de un proyecto (PUT /api/projects/{id}/status)
     public function changeStatus($id)
     {
         AuthMiddleware::check();
@@ -629,7 +676,7 @@ class ProjectController
                 'propuesta' => ['aprobado'],         
                 'aprobado'  => ['ejecucion'],        
                 'ejecucion' => ['cerrado'],          
-                'cerrado'   => ['propuesta']         
+                'cerrado'   => ['propuesta'] // <-- LA REAPERTURA ESTÁ PERMITIDA AQUÍ
             ];
 
             if (!isset($allowedTransitions[$oldStatus]) || !in_array($newStatus, $allowedTransitions[$oldStatus])) {
@@ -663,17 +710,11 @@ class ProjectController
         }
     }
 
-    /** Helper privado para limpiar y formatear nombres
-     * Ej: "   nave   industrial norte " => "Nave Industrial Norte"
-     */
     private function sanitizeName($name) {
         if (empty($name)) return '';
         $name = trim($name);
         $name = preg_replace('/\s+/', ' ', $name);
-        
-        // Ponemos todo en minúsculas y capitalizamos la primera letra de cada palabra
         $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
-        
         return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }

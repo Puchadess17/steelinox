@@ -4,7 +4,6 @@
 require_once CORE_PATH . '/Database.php';
 
 /**
- * ====================
  * AUDIT LOGGER (SERVICIO)
  * ====================
  * Servicio estático responsable de registrar la trazabilidad de acciones

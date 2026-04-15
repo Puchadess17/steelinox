@@ -2,7 +2,6 @@
 // core/DotEnvLoader.php
 
 /**
- * ====================
  * DOTENV LOADER
  * ====================
  * Analizador y cargador de variables de entorno. Su misión es leer el

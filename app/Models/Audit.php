@@ -3,16 +3,33 @@
 
 require_once CORE_PATH . '/Database.php';
 
+/**
+ * MODELO DE AUDITORÍA (AUDIT)
+ * ====================
+ * Capa de acceso a datos para la trazabilidad del sistema.
+ * Gestiona la extracción, filtrado y cruce relacional de los registros
+ * inmutables de actividad almacenados en la tabla audit_logs.
+ */
 class Audit
 {
     private $db;
 
+    /**
+     * CONSTRUCTOR E INYECCIÓN DE CONEXIÓN
+     * Obtiene la instancia Singleton de PDO para ejecutar consultas.
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    /** HELPER PRIVADO: Genera el bloque SELECT para obtener el nombre de la entidad */
+    /**
+     * RESOLUTOR DINÁMICO DE NOMBRES (SELECT)
+     * Helper privado que construye un bloque SQL condicional (CASE WHEN).
+     * Evita realizar múltiples consultas aisladas resolviendo el nombre 
+     * semántico de la entidad afectada (Proyecto, Documento, Usuario, etc.)
+     * directamente en la consulta principal.
+     */
     private function getSelectEntityNameSql() {
         return ", CASE 
                     WHEN a.entity_type = 'project' THEN p_ent.name
@@ -30,7 +47,12 @@ class Audit
                  COALESCE(p_ctx.client_id, CASE WHEN a.entity_type = 'client' THEN a.entity_id ELSE NULL END) AS client_id_ctx";
     }
 
-    /** HELPER PRIVADO: Genera los JOINs necesarios para cruzar las entidades */
+    /**
+     * MOTOR DE UNIONES RELACIONALES (JOIN)
+     * Helper privado que construye los LEFT JOINs dinámicos necesarios 
+     * para cruzar la tabla polimórfica de auditoría con las tablas físicas
+     * del sistema y obtener el contexto (Nombres, Referencias).
+     */
     private function getJoinEntityNameSql() {
         return " LEFT JOIN projects p_ent ON a.entity_type = 'project' AND a.entity_id = p_ent.id
                  LEFT JOIN documents d_ent ON a.entity_type = 'document' AND a.entity_id = d_ent.id
@@ -42,7 +64,12 @@ class Audit
                  LEFT JOIN clients c_ent_direct ON a.entity_type = 'client' AND a.entity_id = c_ent_direct.id ";
     }
 
-    /** Obtiene el historial de un proyecto específico con paginación */
+    /**
+     * HISTORIAL ESPECÍFICO POR PROYECTO
+     * Extrae el ciclo de vida completo de un expediente, incluyendo acciones
+     * sobre sus documentos, versiones y comentarios anidados. 
+     * Implementa paginación nativa SQL para optimizar memoria.
+     */
     public function getByProject($projectId, $limit = 15, $offset = 0)
     {
         $countSql = "SELECT COUNT(*) FROM audit_logs WHERE project_id = :project_id";
@@ -72,7 +99,12 @@ class Audit
         return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
-    /** Obtiene el historial de un cliente específico con paginación */
+    /**
+     * HISTORIAL CRUZADO POR CLIENTE
+     * Recupera la actividad vinculada a una empresa (Cliente), incluyendo
+     * acciones directas sobre la entidad, sus usuarios (contactos) y 
+     * todos los proyectos que tiene asignados.
+     */
     public function getByClient($clientId, $limit = 15, $offset = 0)
     {
         $whereSql = "WHERE (a.entity_type = 'client' AND a.entity_id = :c1)
@@ -108,7 +140,11 @@ class Audit
         return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
-    /** Obtiene el log global del sistema con paginación */
+    /**
+     * HISTORIAL GLOBAL (SUPERADMIN)
+     * Extrae la línea temporal completa del sistema. Diseñado para
+     * auditorías y trazabilidad por parte del admin.
+     */
     public function getGlobalLogs($limit = 15, $offset = 0)
     {
         $total = (int) $this->db->query("SELECT COUNT(*) FROM audit_logs")->fetchColumn();
@@ -133,7 +169,13 @@ class Audit
         return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
-    /** Obtiene logs filtrados con búsqueda avanzada y paginación */
+    /**
+     * BÚSQUEDA AVANZADA MULTICRITERIO
+     * Construye dinámicamente sentencias WHERE basadas en los filtros 
+     * proporcionados (Actor, Acción, Fechas). Utiliza una función anónima 
+     * para vincular los parámetros de forma segura y evitar 
+     * inyección SQL en consultas de estructura variable.
+     */
     public function getFilteredLogs($filters = [], $limit = 15, $offset = 0)
     {
         $where = [];
@@ -192,6 +234,11 @@ class Audit
         return ['total' => $total, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
     }
 
+    /**
+     * SELECTORES DE FILTRO (DISTINCT)
+     * Recupera los valores únicos existentes en la base de datos para
+     * poblar dinámicamente los menús desplegables del panel de auditoría.
+     */
     public function getUniqueActions()
     {
         $sql = "SELECT DISTINCT action_key FROM audit_logs ORDER BY action_key ASC";
@@ -204,6 +251,12 @@ class Audit
         return $this->db->query($sql)->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    /**
+     * PREVENCIÓN DE FUERZA BRUTA (RATE LIMITING)
+     * Cuenta los intentos de acceso fallidos desde una IP específica en 
+     * un margen de tiempo determinado. Utilizado para bloquear temporalmente
+     * ataques automatizados o ingresos no autorizados.
+     */
     public function countRecentFailedLogins($ip, $minutes = 15)
     {
         $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));

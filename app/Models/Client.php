@@ -3,17 +3,37 @@
 
 require_once CORE_PATH . '/Database.php';
 
+/**
+ * MODELO DE CLIENTE (CLIENT / EMPRESA)
+ * ====================
+ * Capa de acceso a datos para la gestión de las empresas cliente.
+ * Implementa una estructura multitenant donde el acceso y la visibilidad 
+ * de los datos (proyectos, usuarios, KPIs) están estrictamente segregados 
+ * en función del rol del usuario que realiza la consulta.
+ */
 class Client
 {
     private $db;
 
+    /**
+     * CONSTRUCTOR E INYECCIÓN DE CONEXIÓN
+     * Inicializa la instancia obteniendo la conexión PDO activa.
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
     }
 
+    /**
+     * LISTADO PAGINADO CON KPIs (DASHBOARD)
+     * Extrae el catálogo de empresas. Aplica un blindaje de seguridad 
+     * devolviendo un conjunto vacío si el rol es 'cliente' (un cliente no 
+     * puede ver a otros clientes). Para comerciales, restringe la vista 
+     * a su cartera asignada.
+     */
     public function getListByUser($userId, $role, $limit = 15, $offset = 0, $filters = [])
     {
+        // Barrera de seguridad para usuarios finales
         if ($role === 'cliente') {
             return ['total' => 0, 'data' => [], 'kpis' => []];
         }
@@ -21,14 +41,14 @@ class Client
         $params = [];
         $where = ["deleted_at IS NULL"];
 
-        // 1. Filtros según Rol
+        // 1. Filtros Multitenant según Rol
         if ($role === 'comercial') {
             $where[] = "(c.created_by = :user_id_1 OR pu.user_id = :user_id_2)";
             $params['user_id_1'] = $userId;
             $params['user_id_2'] = $userId;
         }
 
-        // 2. Filtros Externos (Search / Status)
+        // 2. Filtros Externos (Búsqueda y Estado)
         if (!empty($filters['search'])) {
             $q = "%" . $filters['search'] . "%";
             if ($role === 'admin') {
@@ -54,21 +74,25 @@ class Client
             }
         }
 
-        // --- 3. ORDENACIÓN DINÁMICA (Blindaje contra Inyección SQL) ---
+        /**
+         * ORDENACIÓN DINÁMICA SEGURA
+         * Valida el campo de ordenación contra una lista blanca (whitelist)
+         * para prevenir ataques de inyección SQL a través de los parámetros GET.
+         */
         $allowedSortColumns = ['name', 'reference', 'projects_count', 'users_count', 'created_at'];
         $sortBy = isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns) ? $filters['sort_by'] : 'created_at';
         $sortDir = isset($filters['sort_dir']) && strtoupper($filters['sort_dir']) === 'ASC' ? 'ASC' : 'DESC';
 
-        // Añadimos el prefijo 'c.' para evitar ambigüedades en la query del comercial
+        // Resolución de prefijos para evitar ambigüedades en consultas complejas (Comercial)
         $orderBy = $sortBy;
         if ($role === 'comercial' && in_array($sortBy, ['name', 'reference', 'created_at'])) {
             $orderBy = "c." . $sortBy;
         }
         $orderByClause = "ORDER BY $orderBy $sortDir";
-        // --------------------------------------------------------------
 
         $whereSql = "WHERE " . implode(" AND ", $where);
 
+        // --- CONSTRUCCIÓN DE CONSULTAS POR ROL ---
         if ($role === 'admin') {
             $countSql = "SELECT COUNT(*) FROM clients $whereSql";
             $dataSql = "SELECT id, name, reference, is_active, created_at,
@@ -80,7 +104,7 @@ class Client
                         LIMIT :limit OFFSET :offset";
 
         } else {
-            // Comercial
+            // Comercial (Requiere cruzar datos con proyectos y asignaciones)
             $countSql = "SELECT COUNT(DISTINCT c.id) 
                          FROM clients c
                          LEFT JOIN projects p ON c.id = p.client_id AND p.deleted_at IS NULL
@@ -98,7 +122,7 @@ class Client
                         LIMIT :limit OFFSET :offset";
         }
 
-        // --- EJECUCIÓN ---
+        // --- EJECUCIÓN (Paginación) ---
         $stmtCount = $this->db->prepare($countSql);
         foreach ($params as $key => $val) {
             $stmtCount->bindValue(":$key", $val);
@@ -114,7 +138,8 @@ class Client
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();
 
-        // 4. KPIs Globales
+        // --- 4. EXTRACCIÓN DE KPIs GLOBALES ---
+        // Calcula métricas de alto nivel respetando las reglas de visibilidad del rol
         $kpiSql = "SELECT COUNT(*) as total,
                           SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as new_this_month,
                           (SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL " . ($role === 'comercial' ? "AND id IN (SELECT project_id FROM project_user WHERE user_id = :kpi_user_id)" : "") . ") as total_projects,
@@ -144,6 +169,10 @@ class Client
         ];
     }
 
+    /**
+     * RECUPERACIÓN BÁSICA
+     * Obtiene los datos esenciales de la empresa sin validación de contexto.
+     */
     public function getById($id)
     {
         $sql = "SELECT * FROM clients WHERE id = :id AND deleted_at IS NULL";
@@ -152,12 +181,19 @@ class Client
         return $stmt->fetch();
     }
 
+    /**
+     * VISTA 360 DEL CLIENTE (DETALLE COMPLETO)
+     * Construye un perfil íntegro de la empresa, agregando su información base,
+     * sus empleados (usuarios), su cartera de proyectos y calculando métricas 
+     * financieras en tiempo real (Revenue/Presupuesto total).
+     */
     public function getDetailsById($clientId, $userId, $role)
     {
         if ($role === 'cliente') {
-            return false;
+            return false; // Autoprotección
         }
 
+        // 1. Datos Maestros
         $sqlClient = "SELECT c.id, c.name, c.reference, c.is_active, c.created_at, u.name AS creator_name 
                       FROM clients c
                       LEFT JOIN users u ON c.created_by = u.id
@@ -165,6 +201,7 @@ class Client
 
         $params = ['client_id' => $clientId];
 
+        // Validación de permisos para Comerciales
         if ($role === 'comercial') {
             $sqlClient .= " AND (c.created_by = :user_id_1 OR c.id IN (
                                 SELECT p.client_id FROM projects p 
@@ -183,6 +220,7 @@ class Client
             return false;
         }
 
+        // 2. Personal/Contactos (Usuarios de la empresa)
         $sqlUsers = "SELECT id, name, role, email, is_active, last_login_at 
                      FROM users 
                      WHERE client_id = :client_id AND deleted_at IS NULL";
@@ -190,6 +228,7 @@ class Client
         $stmtUsers->execute(['client_id' => $clientId]);
         $usersList = $stmtUsers->fetchAll();
 
+        // 3. Expedientes vinculados (Proyectos)
         $sqlProjects = "SELECT id, name, reference, status, budget_amount, created_at 
                         FROM projects 
                         WHERE client_id = :client_id AND deleted_at IS NULL";
@@ -197,6 +236,7 @@ class Client
         $stmtProjects->execute(['client_id' => $clientId]);
         $projectsList = $stmtProjects->fetchAll();
 
+        // 4. Procesamiento de Métricas y KPIs
         $activeProjectsCount = 0;
         $annualRevenue = 0.0;
 
@@ -217,18 +257,21 @@ class Client
         }
 
         return [
-            'info' => $clientData,
-            'kpis' => [
-                'total_projects' => count($projectsList),
+            'info'     => $clientData,
+            'kpis'     => [
+                'total_projects'  => count($projectsList),
                 'active_projects' => $activeProjectsCount,
-                'active_users' => $activeUsersCount,
-                'annual_revenue' => $annualRevenue
+                'active_users'    => $activeUsersCount,
+                'annual_revenue'  => $annualRevenue
             ],
             'projects' => $projectsList,
-            'users' => $usersList
+            'users'    => $usersList
         ];
     }
 
+    /**
+     * CREACIÓN DE REGISTRO
+     */
     public function create($data)
     {
         $sql = "INSERT INTO clients (name, reference, is_active, created_by, created_at) 
@@ -236,15 +279,18 @@ class Client
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            'name' => $data['name'],
-            'reference' => $data['reference'] ?? null,
-            'is_active' => $data['is_active'] ?? 1,
+            'name'       => $data['name'],
+            'reference'  => $data['reference'] ?? null,
+            'is_active'  => $data['is_active'] ?? 1,
             'created_by' => $data['created_by']
         ]);
 
         return $this->db->lastInsertId();
     }
 
+    /**
+     * ACTUALIZACIÓN DE DATOS MAESTROS
+     */
     public function update($id, $data)
     {
         $sql = "UPDATE clients 
@@ -255,13 +301,18 @@ class Client
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            'name' => $data['name'],
+            'name'      => $data['name'],
             'reference' => $data['reference'] ?? null,
             'is_active' => isset($data['is_active']) ? (int) $data['is_active'] : 1,
-            'id' => $id
+            'id'        => $id
         ]);
     }
 
+    /**
+     * BORRADO LÓGICO (SOFT DELETE)
+     * Desactiva y marca el registro como borrado preservando el historial
+     * de auditoría y evitando romper relaciones en cascada.
+     */
     public function delete($id)
     {
         $sql = "UPDATE clients 
@@ -272,6 +323,11 @@ class Client
         return $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * GENERADOR SECUENCIAL DE REFERENCIAS
+     * Calcula automáticamente el identificador único del cliente
+     * (Ej: CLI-0001). Previene colisiones consultando el último registro.
+     */
     public function generateNextReference()
     {
         $prefix = "CLI-";

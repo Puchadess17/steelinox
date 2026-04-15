@@ -4,8 +4,7 @@
 require_once ROOT_PATH . '/config/database.php';
 
 /**
- * ====================
- * DATABASE (SINGLETON)
+ * DATABASE (SINGLETON PDO)
  * ====================
  * Gestiona la conexión a la base de datos MySQL mediante PDO.
  * Implementa el patrón de diseño Singleton para garantizar que solo

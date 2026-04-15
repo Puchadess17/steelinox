@@ -9,7 +9,6 @@ require_once APP_PATH . '/Helpers/PaginationHelper.php';
 
 class DocumentController {
 
-    // Listar los documentos de un proyecto (GET /api/projects/{projectId}/documents)
     public function index($projectId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -26,7 +25,6 @@ class DocumentController {
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            // Escudo de Autorización: Reutilizamos el modelo Project
             $projectModel = new Project();
             if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
                 http_response_code(404);
@@ -34,14 +32,11 @@ class DocumentController {
                 return;
             }
 
-            // 1. Extraemos los parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Extraemos los datos con límites del modelo
             $documentModel = new Document();
             $result = $documentModel->getListByProject($projectId, $role, $limit, $offset);
 
-            // 3. Devolvemos el JSON uniforme
             echo json_encode([
                 'success'    => true, 
                 'message'    => 'Documentos recuperados correctamente',
@@ -56,7 +51,6 @@ class DocumentController {
         }
     }
 
-    // Subir un nuevo documento (POST /api/projects/{projectId}/documents)
     public function store($projectId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -73,15 +67,28 @@ class DocumentController {
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            // Escudo de Autorización
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+            
+            if (!$projectDetails) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
                 return;
             }
 
-            // Validar que se ha enviado un archivo
+            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
+            if ($projectDetails['status'] === 'cerrado') {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Proyecto cerrado', 
+                    'data'    => null, 
+                    'errors'  => ['status' => 'El proyecto está cerrado y no admite la carga de nuevos documentos.']
+                ]);
+                return;
+            }
+            // -------------------------------------------
+
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido o superó el límite de tamaño', 'data' => null, 'errors' => ['file' => 'Archivo inválido']]);
@@ -90,7 +97,6 @@ class DocumentController {
 
             $file = $_FILES['file'];
             
-            // --- SANITIZACIÓN ESTRICTA ---
             $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
             $rawTitle = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
             $title = $this->sanitizeName($rawTitle);
@@ -98,9 +104,7 @@ class DocumentController {
             $type = isset($_POST['type']) ? htmlspecialchars(trim($_POST['type']), ENT_QUOTES, 'UTF-8') : 'otros';
             $accessMode = isset($_POST['access_mode']) ? htmlspecialchars(trim($_POST['access_mode']), ENT_QUOTES, 'UTF-8') : 'download';
             $isVisible = isset($_POST['is_visible_to_client']) ? (int)$_POST['is_visible_to_client'] : 0;
-            // -----------------------------
 
-            // Seguridad: Tipos MIME permitidos
             $allowedMimes = [
                 'application/pdf', 
                 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/heic', 'image/heif',
@@ -158,10 +162,8 @@ class DocumentController {
             $existingId = $documentModel->findDocumentByTitle($projectId, $title);
 
             if ($existingId) {
-                // AUTO-VERSIONADO
                 $newVersionId = $documentModel->uploadNewVersion($existingId, $versionData);
                 
-                // AUDITORÍA
                 AuditLogger::log('documento_nueva_version', 'document_version', $newVersionId, $projectId, [
                     'nombre_archivo'   => $safeFileName,
                     'documento_id'     => $existingId,
@@ -177,10 +179,8 @@ class DocumentController {
                     'errors'  => null
                 ]);
             } else {
-                // DOCUMENTO NUEVO
                 $newDocId = $documentModel->uploadNewDocument($docData, $versionData);
                 
-                // AUDITORÍA
                 AuditLogger::log('documento_subido', 'document', $newDocId, $projectId, [
                     'nombre_archivo'   => $safeFileName,
                     'documento_id'     => $newDocId,
@@ -203,7 +203,6 @@ class DocumentController {
         }
     }
 
-    // Subir una nueva versión de un documento existente (POST /api/projects/{projectId}/documents/{documentId}/versions)
     public function addVersion($projectId, $documentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -222,11 +221,26 @@ class DocumentController {
             $clientId = $_SESSION['client_id'] ?? null;
 
             $projectModel = new Project();
-            if (!$projectModel->getById($projectId, $userId, $role, $clientId)) {
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+            
+            if (!$projectDetails) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este proyecto', 'data' => null, 'errors' => ['project' => 'Denegado']]);
                 return;
             }
+
+            // --- CANDADO UNIVERSAL: PROYECTO CERRADO ---
+            if ($projectDetails['status'] === 'cerrado') {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Proyecto cerrado', 
+                    'data'    => null, 
+                    'errors'  => ['status' => 'El proyecto está cerrado y no admite actualizaciones de archivos.']
+                ]);
+                return;
+            }
+            // -------------------------------------------
 
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
@@ -235,10 +249,7 @@ class DocumentController {
             }
 
             $file = $_FILES['file'];
-            
-            // --- SANITIZACIÓN ---
             $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
-            // --------------------
 
             $allowedMimes = [
                 'application/pdf', 
@@ -283,8 +294,7 @@ class DocumentController {
             $documentModel = new Document();
             $versionId = $documentModel->uploadNewVersion($documentId, $versionData);
 
-            // AUDITORÍA
-            $docInfo = $documentModel->getForDownload($documentId, $projectId); // Recuperamos info para el log
+            $docInfo = $documentModel->getForDownload($documentId, $projectId); 
 
             AuditLogger::log('documento_nueva_version', 'document_version', $versionId, $projectId, [
                 'nombre_archivo'   => $safeFileName,
@@ -308,7 +318,6 @@ class DocumentController {
         }
     }
 
-    // Obtener historial de versiones (GET /api/projects/{projectId}/documents/{documentId}/versions)
     public function versions($projectId, $documentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -344,17 +353,14 @@ class DocumentController {
         }
     }
 
-    // Descargar documento de forma segura (GET /api/projects/{projectId}/documents/{documentId}/download)
     public function download($projectId, $documentId) {
         $this->serveFile($projectId, $documentId, 'attachment');
     }
 
-    // Visualizar documento de forma segura (GET /api/projects/{projectId}/documents/{documentId}/view)
     public function view($projectId, $documentId) {
         $this->serveFile($projectId, $documentId, 'inline');
     }
 
-    /** Helper privado para servir archivos con control de modo de acceso y soporte de streaming (Range) */
     private function serveFile($projectId, $documentId, $disposition) {
         AuthMiddleware::check();
 
@@ -371,9 +377,7 @@ class DocumentController {
                 die("Proyecto no encontrado o sin permisos.");
             }
 
-            // --- SANITIZACIÓN ---
             $versionId = isset($_GET['version_id']) ? (int)$_GET['version_id'] : null;
-            // --------------------
 
             $documentModel = new Document();
             $docInfo = $documentModel->getForDownload($documentId, $projectId, $versionId);
@@ -399,7 +403,6 @@ class DocumentController {
                 }
             }
 
-            // IMPORTANTE: Liberar el bloqueo de sesión de PHP ANTES del bucle de descarga.
             session_write_close();
 
             $storageDir = __DIR__ . '/../../storage/documents/';
@@ -464,7 +467,6 @@ class DocumentController {
             $buffer = 64 * 1024; 
             $aborted = false; 
 
-            // Bucle de streaming
             while (!feof($fp) && ($p = ftell($fp)) <= $end) {
                 if ($p + $buffer > $end) {
                     $buffer = $end - $p + 1;
@@ -472,7 +474,6 @@ class DocumentController {
                 set_time_limit(0); 
                 echo fread($fp, $buffer);
                 
-                // Forzamos a PHP a empujar los datos por la red
                 ob_flush(); 
                 flush(); 
                 
@@ -484,7 +485,6 @@ class DocumentController {
 
             fclose($fp);
 
-            // --- AUDITORÍA ---
             $isChunked = isset($_SERVER['HTTP_RANGE']);
             $isFirstChunk = $isChunked ? (strpos($_SERVER['HTTP_RANGE'], 'bytes=0-') !== false) : true;
 
@@ -508,9 +508,6 @@ class DocumentController {
         }
     }
 
-    /** Helper privado para limpiar y formatear nombres
-     * Ej: "   presupuesto   final  " => "Presupuesto Final"
-     */
     private function sanitizeName($name) {
         if (empty($name)) return '';
         $name = trim($name);

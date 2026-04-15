@@ -3,15 +3,31 @@
 
 require_once CORE_PATH . '/Database.php';
 
+/**
+ * MODELO DE USUARIO (USER)
+ * ====================
+ * Capa de acceso a datos para la gestión unificada de cuentas.
+ * Administra el ciclo de vida, autenticación y permisos de los diferentes
+ * tipos de actores del sistema (Administradores, Comerciales y Clientes).
+ */
 class User
 {
     private $db;
 
+    /**
+     * CONSTRUCTOR E INYECCIÓN DE CONEXIÓN
+     * Obtiene la instancia Singleton de PDO para ejecutar las sentencias.
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
     }
 
+    /**
+     * AUTENTICACIÓN Y BÚSQUEDA BASE
+     * Métodos para localizar usuarios verificando restricciones de estado 
+     * (activos y sin marcas de borrado lógico).
+     */
     public function findByEmail($email)
     {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = :email AND is_active = 1 AND deleted_at IS NULL");
@@ -36,12 +52,21 @@ class User
         return $stmt->fetch();
     }
 
+    /**
+     * TRAZABILIDAD DE ACCESO
+     * Actualiza la marca de tiempo del último inicio de sesión exitoso.
+     */
     public function updateLastLogin($userId)
     {
         $stmt = $this->db->prepare("UPDATE users SET last_login_at = NOW() WHERE id = :id");
         $stmt->execute(['id' => $userId]);
     }
 
+    /**
+     * VALIDACIÓN DE UNICIDAD (EMAIL)
+     * Comprueba la existencia previa de un correo para evitar duplicados.
+     * Soporta exclusión de ID para validaciones durante la edición de perfiles.
+     */
     public function emailExists($email, $excludeId = null)
     {
         $sql = "SELECT id FROM users WHERE email = :email";
@@ -57,6 +82,11 @@ class User
         return $stmt->fetch() !== false;
     }
 
+    /**
+     * OPERACIONES CRUD (ESCRITURA)
+     * Gestión de inserciones, actualizaciones parciales dinámicas y borrado 
+     * lógico (soft delete) para mantener la integridad referencial en auditorías.
+     */
     public function softDelete($id) {
         $sql = "UPDATE users 
                 SET deleted_at = NOW(), is_active = 0 
@@ -73,12 +103,12 @@ class User
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            'client_id' => $data['client_id'] ?? null,
-            'role' => $data['role'] ?? 'cliente',
-            'name' => $data['name'],
-            'email' => $data['email'],
+            'client_id'     => $data['client_id'] ?? null,
+            'role'          => $data['role'] ?? 'cliente',
+            'name'          => $data['name'],
+            'email'         => $data['email'],
             'password_hash' => $data['password_hash'],
-            'is_active' => $data['is_active'] ?? 1
+            'is_active'     => $data['is_active'] ?? 1
         ]);
 
         return $this->db->lastInsertId();
@@ -110,8 +140,9 @@ class User
             $params['client_id'] = (int) $data['client_id'];
         }
 
-        if (empty($updates))
+        if (empty($updates)) {
             return false;
+        }
 
         $updates[] = "updated_at = NOW()";
 
@@ -128,6 +159,11 @@ class User
         return $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * ASIGNACIÓN DE RECURSOS
+     * Filtra empleados comerciales que no estén previamente asignados 
+     * a un proyecto específico.
+     */
     public function getAvailableForProject($projectId)
     {
         $sql = "SELECT id, name, email, role 
@@ -146,6 +182,11 @@ class User
         return $stmt->fetchAll();
     }
 
+    /**
+     * RECUPERACIÓN DE CREDENCIALES (TOKENS)
+     * Genera, valida y destruye tokens criptográficos temporales con un 
+     * límite de tiempo predefinido (1 hora) para el reseteo de contraseñas.
+     */
     public function setResetToken($email, $token)
     {
         $sql = "UPDATE users SET reset_token = :token, reset_token_expires_at = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = :email AND deleted_at IS NULL";
@@ -168,14 +209,21 @@ class User
         return $stmt->execute(['id' => $userId]);
     }
 
-    /** ---COMERCIALES--- */
+    /**
+     * ====================
+     * ÁMBITO: COMERCIALES (PERSONAL INTERNO)
+     * ====================
+     */
 
-    /** La lista de todos los comerciales, estadísticas y paginación */
+    /**
+     * LISTADO EXHAUSTIVO Y KPIs
+     * Extrae el personal interno calculando dinámicamente sus métricas de 
+     * rendimiento (proyectos totales y activos). Soporta búsqueda y paginación.
+     */
     public function getCommercialsWithStats($limit = 15, $offset = 0, $filters = []) {
         $params = [];
         $where = ["u.role = 'comercial' AND u.deleted_at IS NULL"];
 
-        // Filtros Externos (Search / Status)
         if (!empty($filters['search'])) {
             $q = "%" . $filters['search'] . "%";
             $where[] = "(u.name LIKE :search1 OR u.email LIKE :search2)";
@@ -194,7 +242,7 @@ class User
 
         $whereSql = "WHERE " . implode(" AND ", $where);
 
-        // 1. KPIs Globales de comerciales
+        // Extracción de indicadores globales
         $kpiSql = "SELECT COUNT(*) as total,
                           SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) as activos,
                           SUM(CASE WHEN u.is_active = 0 THEN 1 ELSE 0 END) as inactivos
@@ -210,7 +258,7 @@ class User
 
         $total = (int)($kpiData['total'] ?? 0);
 
-        // 2. Extraer datos paginados
+        // Extracción de carga de datos paginada con métricas individuales
         $dataSql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at,
                            COUNT(DISTINCT pu.project_id) as total_projects,
                            COUNT(DISTINCT CASE WHEN p.status != 'cerrado' THEN p.id ELSE NULL END) as active_projects
@@ -318,13 +366,24 @@ class User
         return $stmt->fetchAll();
     }
 
-    /** ---CLIENTES (USUARIOS)--- */
+    /**
+     * ====================
+     * ÁMBITO: CLIENTES (CONTACTOS EXTERNOS)
+     * ====================
+     */
 
-    /** Listado de usuarios 'cliente' con KPIs globales, Paginación y Ordenación */
+    /**
+     * LISTADO SEGREGADO POR PERMISOS (MULTITENANT)
+     * Resuelve los accesos aplicando políticas de visibilidad estrictas:
+     * - Administrador: Acceso íntegro.
+     * - Comercial: Solo usuarios vinculados a sus proyectos asignados.
+     * - Cliente: Solo compañeros de su misma entidad corporativa.
+     */
     public function getClientUsersList($actorUserId, $actorRole, $limit = 15, $offset = 0, $filters = []) {
         $baseWhere = ["u.role = 'cliente' AND u.deleted_at IS NULL AND c.deleted_at IS NULL"];
         $params = [];
 
+        // Filtro de seguridad por rol
         if ($actorRole === 'comercial') {
             $baseWhere[] = "(c.created_by = :actor_id_1 OR c.id IN (
                             SELECT p.client_id FROM projects p 
@@ -338,7 +397,6 @@ class User
             $params['actor_id'] = $actorUserId;
         }
 
-        // Filtros Externos (Search / Status)
         if (!empty($filters['search'])) {
             $q = "%" . $filters['search'] . "%";
             $baseWhere[] = "(u.name LIKE :search1 OR u.email LIKE :search2 OR c.name LIKE :search3)";
@@ -360,7 +418,7 @@ class User
                     INNER JOIN clients c ON u.client_id = c.id
                     WHERE " . implode(" AND ", $baseWhere);
 
-        // 1. Ejecutar el Count + KPIs Globales (Ahora con empresas cubiertas)
+        // Extracción de indicadores globales
         $kpiSql = "SELECT COUNT(*) as total,
                           SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) as activos,
                           COUNT(DISTINCT u.client_id) as empresas_cubiertas
@@ -379,20 +437,22 @@ class User
 
         $total = (int)($kpiData['total'] ?? 0);
 
-        // --- ORDENACIÓN DINÁMICA ---
+        /**
+         * ORDENACIÓN DINÁMICA SEGURA
+         * Previene inyecciones SQL verificando la columna entrante contra
+         * una lista blanca estricta antes de integrarla en la cadena de consulta.
+         */
         $allowedSortColumns = ['name', 'email', 'company_name', 'last_login_at', 'created_at'];
         $sortBy = isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns) ? $filters['sort_by'] : 'created_at';
         $sortDir = isset($filters['sort_dir']) && strtoupper($filters['sort_dir']) === 'ASC' ? 'ASC' : 'DESC';
 
-        // Mapeo seguro de la columna
         if ($sortBy === 'company_name') {
             $orderByClause = "ORDER BY c.name $sortDir";
         } else {
             $orderByClause = "ORDER BY u.$sortBy $sortDir";
         }
-        // ---------------------------
 
-        // 2. Extraer datos paginados
+        // Extracción de datos paginados
         $dataSql = "SELECT u.id, u.name, u.email, u.is_active, u.last_login_at, u.created_at, 
                            c.name AS company_name, c.id AS client_id
                     " . $baseSql . " 

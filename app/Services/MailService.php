@@ -2,7 +2,6 @@
 // app/Services/MailService.php
 
 /**
- * ====================
  * MAIL SERVICE (BREVO API)
  * ====================
  * Servicio integrador para el envío de correos electrónicos transaccionales.
