@@ -74,7 +74,7 @@ class AuditController
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -138,7 +138,7 @@ class AuditController
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -197,7 +197,7 @@ class AuditController
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al obtener logs', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error al obtener logs', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 

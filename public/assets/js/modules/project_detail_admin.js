@@ -482,7 +482,10 @@ SIModules.projectDetailAdmin = {
     async loadProjectData() {
         try {
             const user = this.user;
-            const promises = [API.get('/projects/' + this.projectId)];
+            const promises = [
+                API.get('/projects/' + this.projectId),
+                API.get('/projects/' + this.projectId + '/documents')
+            ];
 
             // Solo cargar auditoría si no es un cliente
             if (user && user.role !== 'cliente') {
@@ -491,13 +494,15 @@ SIModules.projectDetailAdmin = {
 
             const results = await Promise.all(promises);
             const response = results[0];
-            const auditRes = results[1] || { success: false, data: [] };
+            const docsRes = results[1] || { success: false, data: [] };
+            const auditRes = results[2] || { success: false, data: [] };
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Error al cargar el proyecto.');
             }
 
             this.project = response.data;
+            this.documents = (docsRes.success && Array.isArray(docsRes.data)) ? docsRes.data : [];
             this.auditLogs = (auditRes.success && auditRes.data) ? auditRes.data : [];
 
             // Asegurar que la metadata JSON esté parseada para que _renderCicloDeVida pueda leerla
@@ -677,9 +682,9 @@ SIModules.projectDetailAdmin = {
         const user = this.user;
         const p = this.project;
         return `
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Columna Principal (8/12) -->
-                <div class="lg:col-span-8 space-y-6">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Columna Principal (Izquierda) -->
+                <div class="flex-1 space-y-6">
                     <!-- KPI Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
@@ -705,7 +710,7 @@ SIModules.projectDetailAdmin = {
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Proyecto & Info -->
                     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pr-12">
@@ -734,28 +739,33 @@ SIModules.projectDetailAdmin = {
                             </div>
                         </div>
 
-                        <!-- Comerciales Asignados -->
-                        <div class="mt-8 pt-8 border-t border-gray-50">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Comerciales Asignados</span>
-                                ${user && user.role === 'admin' ? `
-                                <button onclick="SIModules.projectDetailAdmin.openAssignCommercialModal()" class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                    Asignar
-                                </button>
-                                ` : ''}
-                            </div>
-                            <div id="assigned-commercials-container">
-                                ${this._renderAssignedCommercials()}
-                            </div>
+                    </div> <!-- /.bg-white (Proyecto & Info) -->
+
+                    <!-- Documentación Destacada (Propuesta) -->
+                    ${this._renderFeaturedDocuments()}
+
+                    <!-- Bloque de Comerciales Asignados -->
+                    <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                Comerciales Asignados
+                            </h4>
+                            ${user && user.role === 'admin' ? `
+                            <button onclick="SIModules.projectDetailAdmin.openAssignCommercialModal()" class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-white hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm bg-gray-50/50">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                Asignar
+                            </button>
+                            ` : ''}
+                        </div>
+                        <div id="assigned-commercials-container">
+                            ${this._renderAssignedCommercials()}
                         </div>
                     </div>
-
-
                 </div>
 
-                <!-- Barra Lateral Derecha (Sidebar Extra) (4/12) -->
-                <div class="lg:col-span-4 space-y-6">
+                <!-- Barra Lateral Derecha (Sidebar Extra) -->
+                <div class="w-full lg:w-[380px] lg:shrink-0 space-y-6">
                     <!-- Fechas y Ciclo de Vida (Dinámico desde Audit Logs) -->
                     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-bl-full -z-10"></div>
@@ -802,91 +812,11 @@ SIModules.projectDetailAdmin = {
                             </svg>
                         </button>
                         ` : ''}
-
-                        <!-- Flujo de Aprobación de Propuesta para el Cliente o Admin -->
-                        ${user && user.role !== 'comercial' && p.status === 'propuesta' ? `
-                        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-[2rem] p-6 border border-orange-200/50 shadow-sm relative overflow-hidden group">
-                            <div class="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-                            
-                            <div class="flex items-center gap-4 mb-5">
-                                <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-orange-600 shadow-sm ring-4 ring-orange-50">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                </div>
-                                <div>
-                                    <h5 class="text-sm font-black text-gray-900 uppercase tracking-tight">Autorización de Obra</h5>
-                                    <p class="text-[10px] font-bold text-orange-600 uppercase tracking-widest mt-0.5 animate-pulse">Pendiente de Conformidad</p>
-                                </div>
-                            </div>
-
-                            <p class="text-xs text-gray-600 leading-relaxed font-medium mb-6">
-                                Revisa los documentos adjuntos y, si estás de acuerdo con la propuesta técnica y económica, pulsa el botón para autorizar el inicio.
-                            </p>
-
-                            <button onclick="SIModules.projectDetailAdmin.approveProject()" id="btn-approve-project" class="w-full py-4 bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-2xl text-xs font-black shadow-lg shadow-orange-500/30 transition-all active:scale-95 uppercase tracking-[0.2em] flex items-center justify-center gap-3">
-                                <div id="approve-spinner" class="si-spinner w-3.5 h-3.5 border-white/30 border-t-white hidden"></div>
-                                <span>Aprobar Propuesta</span>
-                            </button>
-                        </div>
-                        ` : ''}
                     </div>
                 </div>
             </div>
 
-            <!-- MODAL: EDITAR PROYECTO -->
-            <div id="edit-project-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-xl shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh]">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                        <h3 class="text-xl font-extrabold text-gray-900">Editar Proyecto</h3>
-                        <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                    <div class="p-6 overflow-y-auto">
-                        <form id="edit-project-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectEdits();" class="space-y-4">
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
-                                    <input type="text" id="edit-project-name" name="name" value="${p.name || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
-                                    <input type="text" id="edit-project-ref" name="reference" value="${p.reference || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€)</label>
-                                    <input type="number" min="0" step="50" id="edit-project-budget" name="budget_amount" value="${p.budget_amount || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
-                                    <input type="number" min="0" step="1" id="edit-project-surface" name="surface" value="${p.surface || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                                </div>
-                            </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto</label>
-                                <input type="text" id="edit-project-type" name="project_type" value="${p.project_type || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
-                                <textarea id="edit-project-desc" name="description" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">${p.description || ''}</textarea>
-                            </div>
-
-                        </form>
-                    </div>
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
-                         <button onclick="SIModules.projectDetailAdmin.closeEditProjectModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
-                         <button onclick="SIModules.projectDetailAdmin.saveProjectEdits()" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
-                             <svg class="w-4 h-4 hidden" id="edit-project-save-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                             Guardar Cambios
-                         </button>
-                    </div>
-                </div>
-            </div>
 
             <!-- MODAL: CAMBIAR ESTADO (Stepper Vertical Linear) -->
             <div id="change-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
@@ -920,13 +850,13 @@ SIModules.projectDetailAdmin = {
                                         <h4 class="text-xl font-black text-gray-900 mb-2">Proyecto Finalizado</h4>
                                         <p class="text-sm text-gray-500 mb-8 px-4 leading-relaxed">El proyecto ha sido completado y cerrado. Toda la documentación está archivada.</p>
                                         
-                                        <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('propuesta');" class="w-full space-y-4">
+                                        <form id="reopen-project-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('reopen-project-form');" class="w-full space-y-4">
                                             <input type="hidden" name="status" value="propuesta">
                                             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Motivo de Reapertura (Opcional)</label>
                                                 <textarea name="reason" rows="2" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm text-left" placeholder="¿Por qué se reabre el proyecto?"></textarea>
                                             </div>
-                                            <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl py-4 px-6 text-sm font-black transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 group">
+                                            <button type="submit" id="reopen-project-form-btn-save" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl py-4 px-6 text-sm font-black transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 group">
                                                 <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                 Reabrir Proyecto
                                                 <div id="reopen-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
@@ -978,13 +908,13 @@ SIModules.projectDetailAdmin = {
                                                     
                                                     ${isNext ? `
                                                         <div class="mt-4 p-5 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-2">
-                                                            <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('${step.id}');" class="space-y-4">
+                                                            <form id="stepper-status-form-${step.id}" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('stepper-status-form-${step.id}');" class="space-y-4">
                                                                 <input type="hidden" name="status" value="${step.id}">
                                                                 <div>
                                                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Motivo / Notas del Cambio</label>
-                                                                    <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Opcional: detalla el avance del proyecto..."></textarea>
+                                                                    <textarea name="reason" rows="2" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Opcional: detalla el avance del proyecto..."></textarea>
                                                                 </div>
-                                                                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 px-4 text-xs font-black transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 group">
+                                                                <button type="submit" id="stepper-status-form-${step.id}-btn-save" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 px-4 text-xs font-black transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 group">
                                                                     Mover a ${step.label}
                                                                     <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                                                                     <div id="change-status-spinner" class="si-spinner w-3 h-3 border-white/30 border-t-white hidden"></div>
@@ -1058,6 +988,65 @@ SIModules.projectDetailAdmin = {
         `;
     },
 
+    /** Genera la sección de documentos destacados (Propuesta y Presupuesto) si existen */
+    _renderFeaturedDocuments() {
+        if (!this.documents || this.documents.length === 0) return '';
+
+        // Filtrar y ordenar por fecha (más reciente primero)
+        const sortedDocs = [...this.documents].sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
+
+        const propuesta = sortedDocs.find(d => d.type === 'propuesta');
+
+
+        if (!propuesta) return '';
+
+        const renderCard = (doc, label) => {
+            if (!doc) return '';
+            const icon = SIApp.getFileIcon(doc.mime_type);
+            const date = SIApp.formatDate(doc.uploaded_at);
+            return `
+                <div onclick="SIModules.projectDetailAdmin.openPreview(${doc.id})" 
+                     class="flex-1 min-w-[280px] bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group relative overflow-hidden">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 ${icon.bg} ${icon.text} rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            ${icon.svg}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <span class="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-0.5">${label}</span>
+                            <h5 class="text-sm font-extrabold text-[#1a1b25] truncate group-hover:text-blue-600 transition-colors">${SIApp.escapeHtml(doc.title)}</h5>
+                            <p class="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">${date} · v${doc.version_number}</p>
+                        </div>
+                        
+                        ${this.project.status === 'propuesta' && doc.type === 'propuesta' && this.user.role !== 'comercial' ? `
+                        <button onclick="event.stopPropagation(); SIModules.projectDetailAdmin.approveProjectProposal(${this.projectId}, ${doc.id})" 
+                                id="btn-approve-propuesta-${doc.id}" 
+                                class="h-10 px-4 bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-xl text-[10px] font-black shadow-lg shadow-orange-500/20 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 group/btn z-20">
+                            <svg class="w-3.5 h-3.5 group-hover/btn:scale-125 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            <span>Aprobar</span>
+                        </button>
+                        ` : `
+                        <div class="w-8 h-8 rounded-full border border-gray-50 flex items-center justify-center text-gray-300 group-hover:text-blue-500 group-hover:bg-blue-50 transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        };
+
+        return `
+            <div class="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Documentación Principal
+                </h4>
+                <div class="flex flex-wrap gap-4">
+                    ${renderCard(propuesta, 'Propuesta Técnica')}
+                </div>
+            </div>
+        `;
+    },
+
     /** Genera los nodos del Ciclo de Vida a partir de los audit logs reales */
     _renderCicloDeVida() {
         const p = this.project;
@@ -1105,6 +1094,19 @@ SIModules.projectDetailAdmin = {
             );
         };
 
+        // Busca logs de aprobación directa (botón "Aprobar propuesta") además del cambio de estado estándar
+        const findApprovalInCycle = () => {
+            // 1. Cambio de estado estándar a 'aprobado'
+            const byStatus = findInCycle('aprobado');
+            if (byStatus) return byStatus;
+            // 2. Log de aprobación directa via botón de propuesta
+            return currentCycleLogs.find(l =>
+                l.action_key === 'proyecto_aprobado' ||
+                l.action_key === 'proyecto_aprobadod' ||
+                l.action_key === 'propuesta_aprobada'
+            );
+        };
+
         // 1. Creación (Siempre del primer log o dato del proyecto)
         const createLog = logs.find(l => l.action_key === 'proyecto_creado' || l.action_key === 'proyecto_creadod');
         nodes.push(entry(
@@ -1115,8 +1117,10 @@ SIModules.projectDetailAdmin = {
         ));
 
         // 2. Aprobación (Solo si ocurrió en el ciclo actual)
-        const approvalLog = findInCycle('aprobado');
-        const isApproved = !!approvalLog || (p.status !== 'propuesta' && lastReopenIdx === -1);
+        const approvalLog = findApprovalInCycle();
+        // El proyecto se considera aprobado si: hay log de aprobación, o el status actual
+        // ya superó la fase de propuesta (independientemente de si hubo reapertura o no)
+        const isApproved = !!approvalLog || ['aprobado', 'ejecucion', 'cerrado'].includes(p.status);
         nodes.push(entry(
             dot('bg-blue-400', isApproved),
             'Propuesta Aprobada',
@@ -1595,16 +1599,16 @@ SIModules.projectDetailAdmin = {
                                         </button>
                                         <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-black tracking-widest uppercase border border-gray-200">
                                             ${(() => {
-                                                const labels = {
-                                                    'propuesta': 'Propuesta',
-                                                    'presupuesto': 'Presupuesto',
-                                                    'plano': 'Plano',
-                                                    'documento_tecnico': 'Doc. Técnico',
-                                                    'materiales': 'Materiales',
-                                                    'otros': 'Otros'
-                                                };
-                                                return labels[doc.type] || 'Archivo';
-                                            })()}
+                    const labels = {
+                        'propuesta': 'Propuesta',
+                        'presupuesto': 'Presupuesto',
+                        'plano': 'Plano',
+                        'documento_tecnico': 'Doc. Técnico',
+                        'materiales': 'Materiales',
+                        'otros': 'Otros'
+                    };
+                    return labels[doc.type] || 'Archivo';
+                })()}
                                         </span>
                                     </div>
                                     <span class="text-[11px] text-gray-400 font-bold uppercase tracking-tighter opacity-80 w-full md:w-auto inline-block">${size} • ${date}</span>
@@ -2834,20 +2838,20 @@ SIModules.projectDetailAdmin = {
         SIApp.modal.close('change-status-modal');
     },
 
-    async saveProjectStatus() {
-        // En el stepper cada paso tiene su propio form con el input hidden correspondiente
-        // o si es desde el modal genérico, usamos 'change-status-form'
-        const formId = 'change-status-form';
+    async saveProjectStatus(formId = 'change-status-form') {
+        // Obtenemos los datos del formulario específico
         const data = SIApp.getValidatedFormData(formId);
         if (!data) return;
 
-        SIApp.setBtnLoading('btn-save-status', true, 'Actualizar');
+        // Intentamos obtener el botón de guardado dentro de ese formulario o el global
+        const btnId = `${formId}-btn-save`;
+        SIApp.setBtnLoading(btnId, true, 'Actualizar');
 
         try {
             const res = await API.put('/projects/' + this.projectId + '/status', data);
 
             if (res && res.success) {
-                if (window.SIApp) SIApp.showToast('Estado actualizado', 'El proyecto ha avanzado en el flujo.', 'success');
+                if (window.SIApp) SIApp.showToast('Estado actualizado', 'El proyecto ha cambiado de estado.', 'success');
                 this.closeChangeStatusModal();
                 await this.loadProjectData();
             } else {
@@ -2857,38 +2861,40 @@ SIModules.projectDetailAdmin = {
             console.error(error);
             if (window.SIApp) SIApp.showToast('Error', 'Error al actualizar el estado', 'error');
         } finally {
-            SIApp.setBtnLoading('btn-save-status', false, 'Actualizar');
+            SIApp.setBtnLoading(btnId, false, 'Actualizar');
         }
     },
 
-    /** Aprobación de proyecto por parte del cliente */
-    async approveProject() {
+    /** Aprobación de proyecto por parte del cliente o admin, vinculada a un documento */
+    async approveProjectProposal(projectId, docId) {
+        if (!SIApp.confirm) return;
+
         const confirmed = await SIApp.confirm(
-            'Aprobar Propuesta',
-            '¿Confirmas que estás conforme con los términos y autorizas el inicio de la obra?',
-            'Aprobar'
+            'Confirmar Aprobación',
+            '¿Estás conforme con la propuesta técnica y autorizas el avance a la fase de obra?',
+            'Sí, Aprobar'
         );
         if (!confirmed) return;
 
-        SIApp.setBtnLoading('btn-approve-project', true, 'Aprobando...');
+        const btnId = `btn-approve-propuesta-${docId}`;
+        SIApp.setBtnLoading(btnId, true, '...');
 
         try {
-            const res = await API.put('/projects/' + this.projectId + '/status', {
-                status: 'aprobado',
-                reason: 'Aprobado por el cliente desde la extranet.'
-            });
+            // Nueva ruta unificada para aprobación formal
+            const res = await API.post('/projects/' + projectId + '/approve');
 
             if (res.success) {
-                SIApp.showToast('¡Enhorabuena!', 'Has aprobado la propuesta. El equipo de Steel Inox comenzará la ejecución en breve.', 'success');
+                SIApp.showToast('¡Éxito!', 'Propuesta aprobada correctamente. El proyecto ha cambiado de estado.', 'success');
+                // Recargar todo el estado del proyecto para actualizar badges, stepper, etc.
                 await this.loadProjectData();
             } else {
-                SIApp.showToast('Error', res.message || 'No se pudo procesar la aprobación.', 'error');
+                SIApp.showToast('No se puede aprobar', res.message || 'Error desconocido.', 'error');
             }
         } catch (e) {
             console.error(e);
-            SIApp.showToast('Error', 'Error de conexión al procesar la aprobación.', 'error');
+            SIApp.showToast('Error', 'Error de conexión con el servidor.', 'error');
         } finally {
-            SIApp.setBtnLoading('btn-approve-project', false, 'Aprobar');
+            SIApp.setBtnLoading(btnId, false, 'Aprobar');
         }
     }
 };

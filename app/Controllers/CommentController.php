@@ -67,7 +67,7 @@ class CommentController {
                 'errors'     => null
             ]);
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al recuperar comentarios']]);
         }
@@ -193,7 +193,7 @@ class CommentController {
                 echo json_encode(['success' => false, 'message' => 'No se pudo guardar el comentario', 'data' => null, 'errors' => ['database' => 'Error al guardar']]);
             }
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al publicar']]);
         }

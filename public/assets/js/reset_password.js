@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await API.post('/password/reset', { token, password }, { silent: true });
 
             if (res.success) {
+                const header = document.getElementById('reset-header');
+                if (header) header.classList.add('hidden');
+                
                 form.classList.add('hidden');
                 successBox.classList.remove('hidden');
                 successBox.classList.add('animate-in', 'fade-in', 'zoom-in-95', 'duration-500');

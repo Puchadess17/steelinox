@@ -270,9 +270,10 @@ class Project {
         try {
             $this->db->beginTransaction();
 
-            $stmtOld = $this->db->prepare("SELECT status FROM projects WHERE id = :id");
+            $stmtOld = $this->db->prepare("SELECT status, approved_at FROM projects WHERE id = :id");
             $stmtOld->execute(['id' => $projectId]);
-            $oldStatus = $stmtOld->fetchColumn();
+            $projectRow = $stmtOld->fetch();
+            $oldStatus = $projectRow['status'] ?? null;
 
             // Prevención de registros redundantes
             if ($oldStatus === $newStatus) {
@@ -280,7 +281,17 @@ class Project {
                 return true;
             }
 
-            $stmtUpdate = $this->db->prepare("UPDATE projects SET status = :status WHERE id = :id");
+            $dateUpdates = "";
+            if ($newStatus === 'aprobado' && empty($projectRow['approved_at'])) {
+                $dateUpdates = ", approved_at = NOW()";
+            } elseif ($newStatus === 'cerrado') {
+                $dateUpdates = ", closed_at = NOW()";
+            } elseif ($newStatus === 'propuesta' || $newStatus === 'aprobado') {
+                // Al reabrir o volver atrás, limpiamos la fecha de cierre si existía
+                $dateUpdates = ", closed_at = NULL";
+            }
+
+            $stmtUpdate = $this->db->prepare("UPDATE projects SET status = :status $dateUpdates WHERE id = :id");
             $stmtUpdate->execute(['status' => $newStatus, 'id' => $projectId]);
 
             $sqlLog = "INSERT INTO project_status_logs 

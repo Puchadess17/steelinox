@@ -10,8 +10,9 @@ require_once ROOT_PATH . '/config/database.php';
  * Implementa el patrón de diseño Singleton para garantizar que solo
  * exista una única conexión activa durante toda la ejecución de la petición.
  */
-class Database {
-    
+class Database
+{
+
     /**
      * INSTANCIA Y CONEXIÓN
      * Almacena la única instancia de la clase estáticamente y el objeto PDO subyacente.
@@ -24,9 +25,10 @@ class Database {
      * Bloquea la creación de múltiples instancias mediante 'new'. Configura el DSN
      * y establece atributos críticos de seguridad y rendimiento en PDO.
      */
-    private function __construct() {
+    private function __construct()
+    {
         $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHAR;
-        
+
         /**
          * CONFIGURACIÓN PDO
          * - ERRMODE_EXCEPTION: Obliga a lanzar excepciones ante errores SQL.
@@ -35,9 +37,9 @@ class Database {
          * bloqueando ataques de inyección SQL.
          */
         $options = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_EMULATE_PREPARES => false,
         ];
 
         try {
@@ -53,12 +55,25 @@ class Database {
             if (!is_dir($logDir)) {
                 mkdir($logDir, 0755, true);
             }
-            
+
             $logMessage = "[" . date('Y-m-d H:i:s') . "] Fallo de conexión DB: " . $e->getMessage() . PHP_EOL;
             error_log($logMessage, 3, $logDir . '/database_errors.log');
 
             http_response_code(500);
-            die("Error 500: Servicio temporalmente no disponible.");
+
+            // Si es una petición API, devolvemos JSON
+            if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Servicio temporalmente no disponible (DB Error)',
+                    'data' => null,
+                    'errors' => ['database' => 'Error database'] // En desarrollo mostramos el error real
+                ]);
+            } else {
+                die("Error 500: Servicio temporalmente no disponible.");
+            }
+            exit;
         }
     }
 
@@ -67,7 +82,8 @@ class Database {
      * Si no existe una instancia previa, la inicializa. Si ya existe, 
      * devuelve la que está en memoria, ahorrando recursos del servidor.
      */
-    public static function getInstance() {
+    public static function getInstance()
+    {
         if (self::$instance === null) {
             self::$instance = new self();
         }
@@ -79,7 +95,8 @@ class Database {
      * Expone el objeto PDO instanciado para ejecutar las consultas
      * directamente desde los Modelos de la aplicación.
      */
-    public function getConnection() {
+    public function getConnection()
+    {
         return $this->pdo;
     }
 }

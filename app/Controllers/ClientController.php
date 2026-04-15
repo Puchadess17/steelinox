@@ -57,7 +57,7 @@ class ClientController {
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al recuperar los clientes', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error al recuperar los clientes', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -95,7 +95,7 @@ class ClientController {
 
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al recuperar el cliente', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error al recuperar el cliente', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 

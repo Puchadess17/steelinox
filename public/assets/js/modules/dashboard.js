@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Steel Inox — Dashboard Module
  * 3 dashboards: Admin, Comercial, Cliente.
  * Usa datos de GET /api/projects/search para calcular KPIs client-side.
@@ -37,10 +37,12 @@ SIModules.dashboard = {
         this.currentAdminSearch = this.currentAdminSearch || '';
         this.currentAdminPage = this.currentAdminPage || 1;
         this.adminItemsPerPage = this.adminItemsPerPage || 10;
+        this.currentAdminSort = this.currentAdminSort || { field: 'created_at', dir: 'desc' };
 
         let url = `/projects/search?page=${this.currentAdminPage}&limit=${this.adminItemsPerPage}`;
         if (this.currentAdminFilter !== 'all') url += `&status=${this.currentAdminFilter}`;
         if (this.currentAdminSearch) url += `&search=${encodeURIComponent(this.currentAdminSearch)}`;
+        if (this.currentAdminSort.field) url += `&sort_by=${this.currentAdminSort.field}&sort_dir=${this.currentAdminSort.dir}`;
 
         const result = await API.get(url);
 
@@ -177,6 +179,13 @@ SIModules.dashboard = {
             </tr>
         `).join('');
 
+        this.currentAdminSort = this.currentAdminSort || { field: 'created_at', dir: 'desc' };
+        
+        const sortIcon = (field) => {
+            if (this.currentAdminSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
+            return this.currentAdminSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
+        };
+
         container.innerHTML = `
             <!-- VISTA MÓVIL: Grid de Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
@@ -188,11 +197,19 @@ SIModules.dashboard = {
                 <table class="w-full si-table text-center">
                     <thead>
                         <tr class="bg-gray-50/50">
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyecto ${sortIcon('name')}</span>
+                            </th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('reference')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Referencia ${sortIcon('reference')}</span>
+                            </th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('client_name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
+                            </th>
                             <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('created_at')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center font-bold">Creado ${sortIcon('created_at')}</span>
+                            </th>
                             <th class="px-5 py-3.5 text-right w-12"></th>
                         </tr>
                     </thead>
@@ -245,6 +262,16 @@ SIModules.dashboard = {
         this.loadAdminDashboard();
     },
 
+    /** Lógica de ordenación para administrador */
+    _sortAdminProjects(field) {
+        if (this.currentAdminSort.field === field) {
+            this.currentAdminSort.dir = this.currentAdminSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.currentAdminSort = { field: field, dir: 'asc' };
+        }
+        this.loadAdminDashboard();
+    },
+
     // ═══════════════════════════════════════
     // COMMERCIAL DASHBOARD
     // ═══════════════════════════════════════
@@ -256,10 +283,12 @@ SIModules.dashboard = {
         this.currentCommercialSearch = this.currentCommercialSearch || '';
         this.currentCommercialPage = this.currentCommercialPage || 1;
         this.commercialItemsPerPage = this.commercialItemsPerPage || 10;
+        this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
 
         let url = `/projects/search?page=${this.currentCommercialPage}&limit=${this.commercialItemsPerPage}`;
         if (this.currentCommercialFilter !== 'all') url += `&status=${this.currentCommercialFilter}`;
         if (this.currentCommercialSearch) url += `&search=${encodeURIComponent(this.currentCommercialSearch)}`;
+        if (this.currentCommercialSort.field) url += `&sort_by=${this.currentCommercialSort.field}&sort_dir=${this.currentCommercialSort.dir}`;
 
         const result = await API.get(url);
 
@@ -392,6 +421,13 @@ SIModules.dashboard = {
             </tr>
         `).join('');
 
+        this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
+        
+        const sortIcon = (field) => {
+            if (this.currentCommercialSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
+            return this.currentCommercialSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
+        };
+
         container.innerHTML = `
             <!-- VISTA MÓVIL: Grid de Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
@@ -403,11 +439,19 @@ SIModules.dashboard = {
                 <table class="w-full si-table text-center">
                     <thead>
                         <tr class="bg-gray-50/50">
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proyecto</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referencia</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cliente</th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyecto ${sortIcon('name')}</span>
+                            </th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('reference')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Referencia ${sortIcon('reference')}</span>
+                            </th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('client_name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
+                            </th>
                             <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                            <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creado</th>
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('created_at')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Creado ${sortIcon('created_at')}</span>
+                            </th>
                             <th class="px-5 py-3.5 text-right w-12 text-center items-center"></th>
                         </tr>
                     </thead>
@@ -448,6 +492,16 @@ SIModules.dashboard = {
     _searchCommercial(query) {
         this.currentCommercialSearch = query.toLowerCase().trim();
         this.currentCommercialPage = 1;
+        this.loadCommercialDashboard();
+    },
+
+    /** Lógica de ordenación para comercial */
+    _sortCommercialProjects(field) {
+        if (this.currentCommercialSort.field === field) {
+            this.currentCommercialSort.dir = this.currentCommercialSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.currentCommercialSort = { field: field, dir: 'asc' };
+        }
         this.loadCommercialDashboard();
     },
 

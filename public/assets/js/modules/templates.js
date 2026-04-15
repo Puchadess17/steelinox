@@ -10,39 +10,77 @@ SITemplates.fragments = {
     /** Campos para Proyectos (Nombre, Ref, Presupuesto, etc) */
     projectFields(data = {}, isEdit = false) {
         const p = data;
+        const user = window.SIApp ? window.SIApp.user : null;
+        const isAdmin = user && user.role === 'admin';
+        
+        // La referencia se oculta si: 
+        // 1. Es creación (!isEdit)
+        // 2. Es edición pero NO es admin (!isAdmin)
+        const showReference = isEdit && isAdmin;
+
         return `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nombre <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="${SIApp.escapeHtml(p.name || '')}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                <div class="${!showReference ? 'md:col-span-2' : ''}">
+                    <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2 transition-colors">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                        Nombre del Proyecto <span class="text-red-500 ml-0.5">*</span>
+                    </label>
+                    <input type="text" name="name" value="${SIApp.escapeHtml(p.name || '')}" required 
+                           class="w-full px-4 py-3 bg-transparent border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"
+                           placeholder="Ej: Reforma Planta 3 - Oficinas Centrales">
                 </div>
+                ${showReference ? `
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Referencia <span class="text-red-500">*</span></label>
+                    <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                        Referencia <span class="text-red-500 ml-0.5">*</span>
+                    </label>
                     <input type="text" name="reference" value="${SIApp.escapeHtml(p.reference || '')}" required 
-                        ${isEdit ? 'disabled class="w-full px-4 py-3 bg-gray-100 border border-gray-200 text-gray-400 rounded-xl cursor-not-allowed font-medium text-sm"' : 'class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"'}
-                    >
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-500 rounded-xl font-medium text-sm focus:ring-2 focus:ring-orange-500/20"
+                           placeholder="PRJ-2024-001">
                 </div>
+                ` : ''}
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Presupuesto (€) <span class="text-red-500">*</span></label>
-                    <input type="number" min="0" step="50" name="budget_amount" value="${p.budget_amount || ''}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                    <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Presupuesto (€) <span class="text-red-500 ml-0.5">*</span>
+                    </label>
+                    <input type="number" min="0" step="50" name="budget_amount" value="${p.budget_amount || ''}" required 
+                           class="w-full px-4 py-3 bg-transparent border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"
+                           placeholder="0.00">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Superficie Obra (m²)</label>
-                    <input type="number" min="0" step="1" name="surface" value="${p.surface || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                    <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                        Superficie Obra (m²)
+                    </label>
+                    <input type="number" min="0" step="1" name="surface" value="${p.surface || ''}" 
+                           class="w-full px-4 py-3 bg-transparent border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"
+                           placeholder="m²">
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Tipo de Proyecto <span class="text-red-500">*</span></label>
-                <input type="text" name="project_type" value="${SIApp.escapeHtml(p.project_type || '')}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">
+                <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    Tipo de Proyecto <span class="text-red-500 ml-0.5">*</span>
+                </label>
+                <input type="text" name="project_type" value="${SIApp.escapeHtml(p.project_type || '')}" required 
+                       class="w-full px-4 py-3 bg-transparent border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"
+                       placeholder="Ej: Instalación Industrial, Residencial, etc.">
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Descripción corta</label>
-                <textarea name="description" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm">${SIApp.escapeHtml(p.description || '')}</textarea>
+                <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h12"/></svg>
+                    Descripción corta
+                </label>
+                <textarea name="description" rows="3" 
+                          class="w-full px-4 py-3 bg-transparent border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"
+                          placeholder="Breve resumen del alcance...">${SIApp.escapeHtml(p.description || '')}</textarea>
             </div>
         `;
     },
