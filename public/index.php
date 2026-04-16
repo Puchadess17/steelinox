@@ -2,6 +2,19 @@
 // public/index.php
 
 /**
+ * ==========================================
+ * CABECERAS HTTP DE SEGURIDAD (DDS SEC-01)
+ * ==========================================
+ * Protegen contra Clickjacking, MIME-sniffing y XSS.
+ * El Content-Security-Policy está adaptado para permitir las librerías
+ * externas usadas en el panel (Tailwind, Google Fonts, jsDelivr, Unanime).
+ */
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://workspace.unanimecreativos.com; connect-src 'self';");
+
+/**
  * ====================
  * FRONT CONTROLLER
  * ====================

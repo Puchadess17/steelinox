@@ -3,8 +3,10 @@
 
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/ProjectPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php';
 
 class ProjectController
 {
@@ -45,8 +47,9 @@ class ProjectController
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::search');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno'] ]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno'] ]);
         }
     }
 
@@ -61,21 +64,28 @@ class ProjectController
             return;
         }
 
-        $id = (int)$id;
-        $userId = $_SESSION['user_id'];
-        $role = $_SESSION['role'];
-        $clientId = $_SESSION['client_id'] ?? null;
+        try {
+            $id = (int)$id;
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
 
-        $projectModel = new Project();
-        $proyecto = $projectModel->getById($id, $userId, $role, $clientId);
+            $projectModel = new Project();
+            $proyecto = $projectModel->getById($id, $userId, $role, $clientId);
 
-        if (!$proyecto) {
-            http_response_code(404); 
-            echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
-            return;
+            if (!$proyecto) {
+                http_response_code(404); 
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Recurso inaccesible']]);
+                return;
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Detalle del proyecto', 'data' => $proyecto, 'errors' => null]);
+            
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::show');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno'] ]);
         }
-
-        echo json_encode(['success' => true, 'message' => 'Detalle del proyecto', 'data' => $proyecto, 'errors' => null]);
     }
 
     public function getAssignedUsers($projectId)
@@ -109,8 +119,9 @@ class ProjectController
             echo json_encode(['success' => true, 'message' => 'Usuarios asignados recuperados', 'data' => $assignedUsers, 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::getAssignedUsers');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -118,12 +129,6 @@ class ProjectController
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
-
-        if ($_SESSION['role'] === 'cliente') {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
-            return;
-        }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -147,9 +152,9 @@ class ProjectController
                 return;
             }
 
-            if ($projectDetails['status'] === 'cerrado') {
+            if (!ProjectPolicy::canManageUsers($role, $projectDetails['status'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['status' => 'No se puede asignar personal.']]);
+                echo json_encode(['success' => false, 'message' => 'No permitido', 'data' => null, 'errors' => ['policy' => 'Operación no permitida por políticas de seguridad.']]);
                 return;
             }
 
@@ -172,8 +177,9 @@ class ProjectController
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::assignUser');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno al asignar', 'data' => null, 'errors' => ['server' => 'Error al asignar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al asignar']]);
         }
     }
 
@@ -181,12 +187,6 @@ class ProjectController
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
-
-        if ($_SESSION['role'] !== 'admin') {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes.']]);
-            return;
-        }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
             http_response_code(405);
@@ -210,9 +210,9 @@ class ProjectController
                 return;
             }
 
-            if ($projectDetails['status'] === 'cerrado') {
+            if (!ProjectPolicy::canRemoveUsers($role, $projectDetails['status'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['status' => 'No se puede desasignar personal.']]);
+                echo json_encode(['success' => false, 'message' => 'No permitido', 'data' => null, 'errors' => ['policy' => 'Operación no permitida por políticas de seguridad.']]);
                 return;
             }
 
@@ -235,8 +235,9 @@ class ProjectController
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::removeUser');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error de desasignación']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error de desasignación']]);
         }
     }
 
@@ -245,9 +246,9 @@ class ProjectController
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ProjectPolicy::canViewAvailableUsers($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Operación no permitida.']]);
             return;
         }
 
@@ -279,8 +280,9 @@ class ProjectController
             echo json_encode(['success' => true, 'message' => 'Usuarios recuperados', 'data' => $availableUsers, 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::getAvailableUsers');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -289,9 +291,9 @@ class ProjectController
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ProjectPolicy::canCreate($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no pueden crear proyectos']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Los clientes no pueden crear proyectos']]);
             return;
         }
 
@@ -376,8 +378,9 @@ class ProjectController
                 echo json_encode(['success' => false, 'message' => 'Colisión al generar código.', 'data' => null, 'errors' => ['reference' => 'Código duplicado']]);
                 return;
             }
+            ErrorLogger::log($e->getMessage(), 'ProjectController::store');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al crear']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al crear']]);
         }
     }
 
@@ -385,12 +388,6 @@ class ProjectController
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
-
-        if ($_SESSION['role'] === 'cliente') {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
-            return;
-        }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -413,9 +410,9 @@ class ProjectController
                 return;
             }
 
-            if ($projectDetails['status'] === 'cerrado') {
+            if (!ProjectPolicy::canEdit($role, $projectDetails['status'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado.', 'data' => null, 'errors' => ['status' => 'No se puede editar.']]);
+                echo json_encode(['success' => false, 'message' => 'No permitido.', 'data' => null, 'errors' => ['policy' => 'No puedes editar el proyecto en este estado.']]);
                 return;
             }
 
@@ -493,8 +490,9 @@ class ProjectController
             echo json_encode(['success' => true, 'message' => 'Proyecto actualizado', 'data' => ['id' => $id], 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::update');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al actualizar']]);
         }
     }
 
@@ -503,9 +501,9 @@ class ProjectController
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ProjectPolicy::canChangeStatus($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Operación no permitida.']]);
             return;
         }
 
@@ -549,16 +547,46 @@ class ProjectController
                 return;
             }
 
+            // --- REGLA DE NEGOCIO ESTRICTA MEDIANTE POLICY ---
+            if ($newStatus === 'aprobado' && !ProjectPolicy::canApprove($role, $oldStatus)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Acceso denegado', 
+                    'data'    => null, 
+                    'errors'  => ['policy' => 'No tienes permisos para aprobar propuestas de forma directa.']
+                ]);
+                return;
+            }
+
+            if ($oldStatus === 'cerrado' && empty($reason)) {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Motivo requerido', 
+                    'data'    => null, 
+                    'errors'  => ['reason' => 'Por normativa, es estrictamente obligatorio registrar un motivo para reabrir un proyecto cerrado.']
+                ]);
+                return;
+            }
+
             $allowedTransitions = [
                 'propuesta' => ['aprobado'],         
                 'aprobado'  => ['ejecucion'],        
                 'ejecucion' => ['cerrado'],          
-                'cerrado'   => ['propuesta'] 
+                'cerrado'   => ['ejecucion', 'propuesta'] 
             ];
 
             if (!isset($allowedTransitions[$oldStatus]) || !in_array($newStatus, $allowedTransitions[$oldStatus])) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Transición no permitida', 'data' => null, 'errors' => ['status' => "No puedes pasar de $oldStatus a $newStatus"]]);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Transición no permitida', 
+                    'data'    => null, 
+                    'errors'  => [
+                        'status' => "Normativa de flujo: No se puede pasar directamente de '" . ucfirst($oldStatus) . "' a '" . ucfirst($newStatus) . "'."
+                    ]
+                ]);
                 return;
             }
 
@@ -572,22 +600,21 @@ class ProjectController
                 'motivo'          => $reason
             ]);
 
-            // --- INYECCIÓN DE NOTIFICACIÓN DE ESTADO ---
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueProjectEvent($id, 'cambio_estado', $userId, [
                 'nuevo_estado' => $newStatus
             ]);
-            // -------------------------------------------
 
             echo json_encode(['success' => true, 'message' => 'Estado actualizado y registrado', 'data' => ['status' => $newStatus], 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::changeStatus');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al cambiar estado']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al cambiar estado']]);
         }
     }
 
-    public function approve($id)
+    public function requestApproval($id)
     {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -598,9 +625,9 @@ class ProjectController
             return;
         }
 
-        if ($_SESSION['role'] === 'comercial') {
+        if (!ProjectPolicy::canApprove($_SESSION['role'], 'propuesta')) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los comerciales no pueden realizar la aprobación formal.']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'No tienes permisos para realizar la aprobación.']]);
             return;
         }
 
@@ -619,13 +646,12 @@ class ProjectController
                 return;
             }
 
-            if ($projectDetails['status'] !== 'propuesta') {
+            if (!ProjectPolicy::canApprove($role, $projectDetails['status'])) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no en fase de propuesta.', 'data' => null, 'errors' => ['status' => 'Ya ha sido aprobado.']]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no en fase de propuesta.', 'data' => null, 'errors' => ['policy' => 'Ya ha sido aprobado o no es válido.']]);
                 return;
             }
 
-            // --- Verificar si hay al menos un documento ---
             $db = Database::getInstance()->getConnection();
             $stmtDoc = $db->prepare("SELECT COUNT(*) FROM documents WHERE project_id = ? AND deleted_at IS NULL AND (type = 'propuesta' OR type = 'presupuesto')");
             $stmtDoc->execute([$id]);
@@ -640,28 +666,119 @@ class ProjectController
                 ]);
                 return;
             }
-            // ----------------------------------------------------------------------
 
-            $projectModel->updateStatus($id, 'aprobado', $userId, 'Aprobación formal por doble confirmación.');
+            $token = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE id = ?");
+            $stmt->execute([$token, $id]);
+
+            require_once APP_PATH . '/Models/User.php';
+            $uModel = new User();
+            $userData = $uModel->findByIdWithInactive($userId);
+            $userEmail = $userData['email'];
+
+            $subject = "Código de seguridad - Aprobación de Proyecto";
+            $body = "<div style='font-family: Arial, sans-serif; color: #333;'>";
+            $body .= "<h2 style='color: #0056b3;'>Código de verificación</h2>";
+            $body .= "<p>Has solicitado aprobar el proyecto <strong>" . $projectDetails['reference'] . "</strong>.</p>";
+            $body .= "<p>Introduce el siguiente código de seguridad de 6 dígitos en la plataforma:</p>";
+            $body .= "<div style='font-size: 24px; font-weight: bold; background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; display: inline-block; border: 1px solid #ddd;'>" . $token . "</div>";
+            $body .= "<p><em>Este código caducará en 10 minutos.</em></p></div>";
+
+            $stmtQ = $db->prepare("INSERT INTO notifications_queue (recipient_user_id, event_type, recipient_email, subject, body, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+            $stmtQ->execute([$userId, 'codigo_aprobacion', $userEmail, $subject, $body]);
+
+            echo json_encode(['success' => true, 'message' => 'Código de verificación enviado al email.', 'data' => null, 'errors' => null]);
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::requestApproval');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al solicitar aprobación']]);
+        }
+    }
+
+    public function confirmApproval($id)
+    {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        if (!ProjectPolicy::canApprove($_SESSION['role'], 'propuesta')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Privilegios insuficientes.']]);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $tokenInput = isset($input['token']) ? trim($input['token']) : null;
+
+        if (empty($tokenInput)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Código requerido', 'data' => null, 'errors' => ['token' => 'El código de seguridad es obligatorio.']]);
+            return;
+        }
+
+        try {
+            $id = (int)$id;
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+            $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
+
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            if (!ProjectPolicy::canApprove($role, $projectDetails['status'])) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no en fase de propuesta.', 'data' => null, 'errors' => ['policy' => 'Ya ha sido aprobado o no está en propuesta.']]);
+                return;
+            }
+
+            if (empty($projectDetails['approval_token']) || $projectDetails['approval_token'] !== $tokenInput) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Código incorrecto', 'data' => null, 'errors' => ['token' => 'El código de seguridad no es válido.']]);
+                return;
+            }
+
+            if (strtotime($projectDetails['approval_token_expires_at']) < time()) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Código expirado', 'data' => null, 'errors' => ['token' => 'El código ha caducado. Solicita uno nuevo.']]);
+                return;
+            }
+
+            $projectModel->updateStatus($id, 'aprobado', $userId, 'Aprobación formal por doble confirmación con código de seguridad (2FA).');
+
+            $db = Database::getInstance()->getConnection();
+            $db->prepare("UPDATE projects SET approval_token = NULL, approval_token_expires_at = NULL WHERE id = ?")->execute([$id]);
 
             AuditLogger::log('propuesta_aprobada', 'project', $id, $id, [
                 'aprobado_por_usuario_id' => $userId,
                 'rol_aprobador'           => $role,
                 'ip_aprobacion'           => $_SERVER['REMOTE_ADDR'] ?? 'Desconocida',
                 'estado_anterior'         => 'propuesta',
-                'nuevo_estado'            => 'aprobado'
+                'nuevo_estado'            => 'aprobado',
+                'metodo'                  => 'token_2fa'
             ]);
 
-            // --- INYECCIÓN DE NOTIFICACIÓN DE APROBACIÓN ---
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueProjectEvent($id, 'propuesta_aprobada', $userId);
-            // -----------------------------------------------
 
             echo json_encode(['success' => true, 'message' => 'Proyecto aprobado correctamente.', 'data' => ['status' => 'aprobado'], 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::confirmApproval');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error de servidor']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error de servidor']]);
         }
     }
 

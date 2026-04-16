@@ -102,9 +102,7 @@
         </div>
     </header>
 
-    <!-- ═══════════════════════════════════ -->
     <!-- LAYOUT: SIDEBAR + MAIN              -->
-    <!-- ═══════════════════════════════════ -->
     <div class="pt-16 flex min-h-screen">
 
         <!-- Desktop Sidebar -->
@@ -153,9 +151,7 @@
         </main>
     </div>
 
-    <!-- ═══════════════════════════════════ -->
     <!-- FOOTER                              -->
-    <!-- ═══════════════════════════════════ -->
     <footer class="lg:ml-60 border-t border-gray-100 bg-white">
         <div class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
             <span>© <?= date('Y') ?> Steel Inox Extranet. Todos los derechos reservados.</span>
@@ -170,9 +166,7 @@
         </div>
     </footer>
 
-    <!-- ═══════════════════════════════════ -->
     <!-- SCRIPTS                             -->
-    <!-- ═══════════════════════════════════ -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script

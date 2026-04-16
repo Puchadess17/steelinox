@@ -1,5 +1,5 @@
 <?php
-// cron/process_notifications.php
+// cron/worker.php
 
 /**
  * ====================

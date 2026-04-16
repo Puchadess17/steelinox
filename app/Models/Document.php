@@ -239,4 +239,42 @@ class Document {
             throw $e;
         }
     }
+
+    /**
+     * RECUPERACIÓN DE METADATOS
+     * Obtiene los datos lógicos de un documento sin extraer sus iteraciones físicas.
+     */
+    public function getMetadata($documentId, $projectId) {
+        $sql = "SELECT id, title, type, is_visible_to_client, access_mode 
+                FROM documents 
+                WHERE id = :id AND project_id = :project_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $documentId, 'project_id' => $projectId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * ACTUALIZACIÓN DINÁMICA DE METADATOS
+     * Modifica las propiedades de visibilidad y clasificación sin alterar el archivo.
+     */
+    public function updateMetadata($documentId, $projectId, $data) {
+        $updates = [];
+        $params = ['document_id' => $documentId, 'project_id' => $projectId];
+
+        $allowedFields = ['title', 'type', 'is_visible_to_client', 'access_mode'];
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updates[] = "{$field} = :{$field}";
+                $params[$field] = $data[$field];
+            }
+        }
+
+        if (empty($updates)) {
+            return true;
+        }
+
+        $sql = "UPDATE documents SET " . implode(', ', $updates) . " WHERE id = :document_id AND project_id = :project_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
 }

@@ -3,8 +3,10 @@
 
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/UserPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php';
 
 class CommercialController {
 
@@ -14,13 +16,13 @@ class CommercialController {
         header('Content-Type: application/json; charset=utf-8');
 
         // Muro de Autorización Máxima: SOLO ADMINISTRADORES
-        if ($_SESSION['role'] !== 'admin') {
+        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
             http_response_code(403);
             echo json_encode([
                 'success' => false, 
                 'message' => 'Acceso denegado', 
                 'data'    => null, 
-                'errors'  => ['role' => 'Se requiere rol admin para ver la gestión de equipo']
+                'errors'  => ['policy' => 'Solo administradores']
             ]);
             return;
         }
@@ -56,10 +58,11 @@ class CommercialController {
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'CommercialController::index');
             http_response_code(500);
             echo json_encode([
                 'success' => false,
-                'message' => 'Error interno al recuperar los comerciales',
+                'message' => 'Error interno del servidor',
                 'data'    => null,
                 'errors'  => ['server' => 'Error interno']
             ]);
@@ -72,9 +75,9 @@ class CommercialController {
         header('Content-Type: application/json; charset=utf-8');
 
         // SOLO ADMINISTRADORES
-        if ($_SESSION['role'] !== 'admin') {
+        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo un administrador puede dar de alta a un comercial']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
             return;
         }
 
@@ -149,8 +152,9 @@ class CommercialController {
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'CommercialController::store');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -159,9 +163,9 @@ class CommercialController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] !== 'admin') {
+        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
             return;
         }
 
@@ -266,8 +270,9 @@ class CommercialController {
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'CommercialController::update');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -276,9 +281,9 @@ class CommercialController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] !== 'admin') {
+        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
             return;
         }
 
@@ -310,8 +315,9 @@ class CommercialController {
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'CommercialController::destroy');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -320,9 +326,9 @@ class CommercialController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] !== 'admin') {
+        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
             return;
         }
 
@@ -358,8 +364,9 @@ class CommercialController {
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'CommercialController::show');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 

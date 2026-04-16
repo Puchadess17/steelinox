@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-04-2026 a las 13:52:37
+-- Tiempo de generación: 16-04-2026 a las 09:39:26
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.4.19
 
@@ -64,7 +64,9 @@ CREATE TABLE `clients` (
 
 INSERT INTO `clients` (`id`, `name`, `reference`, `is_active`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 'Empresa Demo S.L.', 'CLI-0001', 1, 1, '2026-03-27 11:25:19', '2026-04-08 11:36:58', NULL),
-(2, 'Nike S.L.', 'CLI-0002', 0, 1, '2026-04-08 09:15:52', '2026-04-08 11:37:04', NULL);
+(2, 'Nike S.L.', 'CLI-0002', 0, 1, '2026-04-08 09:15:52', '2026-04-08 11:37:04', NULL),
+(12, 'Cliente 1 S.L.', 'CLI-0003', 1, 1, '2026-04-14 12:37:45', '2026-04-14 13:03:39', NULL),
+(17, 'Prueba SL', 'CLI-0004', 1, 1, '2026-04-14 14:21:39', '2026-04-14 14:21:39', NULL);
 
 -- --------------------------------------------------------
 
@@ -104,7 +106,6 @@ CREATE TABLE `documents` (
   `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
 -- --------------------------------------------------------
 
 --
@@ -126,7 +127,6 @@ CREATE TABLE `document_versions` (
   `archived_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
 -- --------------------------------------------------------
 
 --
@@ -147,6 +147,15 @@ CREATE TABLE `notifications_queue` (
   `error_log` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `notifications_queue`
+--
+
+INSERT INTO `notifications_queue` (`id`, `recipient_user_id`, `event_type`, `recipient_email`, `subject`, `body`, `status`, `attempts`, `created_at`, `sent_at`, `error_log`) VALUES
+(1, 5, 'nuevo_comentario', 'comercial1@email.com', 'Nuevo comentario en PRJ-2026-0001', '<div style=\'font-family: Arial, sans-serif; color: #333;\'><h2>Proyecto: PRJ-2026-0001 - Nave Industrial</h2><p>Se ha añadido un nuevo comentario en la plataforma:</p><blockquote style=\'background: #f9f9f9; padding: 10px; border-left: 4px solid #0056b3;\'>Hola!</blockquote><hr style=\'border: none; border-top: 1px solid #eee; margin-top: 20px;\' /><p style=\'font-size: 12px; color: #999;\'>Este es un mensaje automático de la plataforma Steel Inox. Por favor, no responda a este correo.</p></div>', 'sent', 0, '2026-04-15 12:19:48', '2026-04-15 12:58:42', NULL),
+(2, 2, 'nuevo_comentario', 'empresa@cliente.com', 'Nuevo comentario en PRJ-2026-0001', '<div style=\'font-family: Arial, sans-serif; color: #333;\'><h2>Proyecto: PRJ-2026-0001 - Nave Industrial</h2><p>Se ha añadido un nuevo comentario en la plataforma:</p><blockquote style=\'background: #f9f9f9; padding: 10px; border-left: 4px solid #0056b3;\'>Hola!</blockquote><hr style=\'border: none; border-top: 1px solid #eee; margin-top: 20px;\' /><p style=\'font-size: 12px; color: #999;\'>Este es un mensaje automático de la plataforma Steel Inox. Por favor, no responda a este correo.</p></div>', 'sent', 0, '2026-04-15 12:19:48', '2026-04-15 12:58:43', NULL),
+(3, NULL, 'alta_usuario', 'joanrdrc@gmail.com', 'Bienvenido a la plataforma de Steel Inox', '<div style=\'font-family: Arial, sans-serif; color: #333;\'><h2 style=\'color: #0056b3;\'>Hola, Joan Rodrigo</h2><p>Tu cuenta para acceder a la extranet privada de proyectos de Steel Inox ha sido creada con éxito.</p><div style=\'background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #ddd;\'><strong>Tus credenciales de acceso:</strong><br><br>Usuario: <strong>joanrdrc@gmail.com</strong><br>Contraseña: <strong>Password1234</strong></div><p>Por seguridad, te recomendamos cambiar esta contraseña desde los ajustes de tu perfil la primera vez que inicies sesión.</p><p><a href=\'https://tu-dominio.com/steelinox/\' style=\'display: inline-block; padding: 10px 20px; background: #0056b3; color: white; text-decoration: none; border-radius: 5px;\'>Acceder al panel</a></p><hr style=\'border: none; border-top: 1px solid #eee; margin-top: 30px;\' /><p style=\'font-size: 12px; color: #999;\'>Este es un mensaje automático de la plataforma Steel Inox. Por favor, no respondas a este correo.</p></div>', 'sent', 0, '2026-04-15 13:34:55', '2026-04-15 13:35:11', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -166,6 +175,8 @@ CREATE TABLE `projects` (
   `created_by` bigint(20) NOT NULL,
   `approved_at` datetime DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
+  `approval_token` varchar(10) DEFAULT NULL,
+  `approval_token_expires_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `deleted_at` datetime DEFAULT NULL
@@ -175,6 +186,10 @@ CREATE TABLE `projects` (
 -- Volcado de datos para la tabla `projects`
 --
 
+INSERT INTO `projects` (`id`, `client_id`, `name`, `reference`, `status`, `budget_amount`, `description`, `surface`, `project_type`, `created_by`, `approved_at`, `closed_at`, `approval_token`, `approval_token_expires_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(3, 1, 'Nave Industrial', 'PRJ-2026-0001', 'propuesta', 1000000.00, 'Creacion de Nave Industrial', '100', NULL, 1, NULL, NULL, NULL, NULL, '2026-04-14 11:55:54', '2026-04-15 13:50:49', NULL),
+(4, 2, 'Ejemplo Proyecto', 'PRJ-2026-0002', 'propuesta', 12000.00, NULL, '100', NULL, 1, NULL, NULL, NULL, NULL, '2026-04-15 09:01:59', '2026-04-15 09:01:59', NULL),
+(5, 1, 'Prueba J', 'PRJ-2026-0003', 'propuesta', 100.00, NULL, '10', NULL, 1, NULL, NULL, NULL, NULL, '2026-04-15 09:02:44', '2026-04-15 11:09:40', NULL);
 
 -- --------------------------------------------------------
 
@@ -192,7 +207,6 @@ CREATE TABLE `project_status_logs` (
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
 -- --------------------------------------------------------
 
 --
@@ -203,6 +217,13 @@ CREATE TABLE `project_user` (
   `project_id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `project_user`
+--
+
+INSERT INTO `project_user` (`project_id`, `user_id`) VALUES
+(3, 5);
 
 -- --------------------------------------------------------
 
@@ -231,8 +252,10 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `reset_token`, `reset_token_expires_at`, `is_active`, `last_login_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', NULL, NULL, 1, '2026-04-09 13:11:12', '2026-03-26 17:18:25', '2026-04-09 13:11:12', NULL),
-(2, 1, 'cliente', 'Cliente Empresa demo', 'empresa@cliente.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', NULL, NULL, 1, '2026-04-09 13:05:49', '2026-03-30 09:12:24', '2026-04-09 13:05:49', NULL);
+(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', NULL, NULL, 1, '2026-04-16 08:53:21', '2026-03-26 17:18:25', '2026-04-16 08:53:21', NULL),
+(2, 1, 'cliente', 'Cliente Empresa demo', 'empresa@cliente.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', NULL, NULL, 1, '2026-04-15 11:46:47', '2026-03-30 09:12:24', '2026-04-15 11:46:47', NULL),
+(4, 12, 'cliente', 'Maria De La O', 'mariadelao@email.com', '$2y$12$EFgYtvg5mYyOq4MH/VB/z.RC9c8JgdOfyYwd3N6RZ5Y8kiujnL9J2', NULL, NULL, 1, '2026-04-14 13:11:29', '2026-04-14 12:42:20', '2026-04-14 13:11:29', NULL),
+(5, NULL, 'comercial', 'Comercial 1', 'comercial1@email.com', '$2y$12$10nXe2.av4Fq..EXhd3mBONKoOfTW6tJ3yccledGJVcpuuMBzGQyy', NULL, NULL, 1, NULL, '2026-04-14 13:08:55', '2026-04-14 13:08:55', NULL);
 
 --
 -- Índices para tablas volcadas
@@ -333,55 +356,55 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT de la tabla `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
 
 --
 -- AUTO_INCREMENT de la tabla `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT de la tabla `comments`
 --
 ALTER TABLE `comments`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `document_versions`
 --
 ALTER TABLE `document_versions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `notifications_queue`
 --
 ALTER TABLE `notifications_queue`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `project_status_logs`
 --
 ALTER TABLE `project_status_logs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas

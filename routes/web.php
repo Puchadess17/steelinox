@@ -33,6 +33,7 @@ $router->get('/api/audit/filters', 'AuditController@getFiltersData');
  * hasta la recuperación de credenciales mediante tokens.
  */
 $router->get('/api/me', 'AuthController@me');
+$router->put('/api/me/password', 'UserController@updatePassword');
 $router->post('/api/login', 'AuthController@login');
 $router->post('/api/logout', 'AuthController@logout');
 $router->post('/api/password/forgot', 'PasswordResetController@sendResetEmail');
@@ -48,7 +49,9 @@ $router->get('/api/projects/(\d+)', 'ProjectController@show');
 $router->put('/api/projects/(\d+)', 'ProjectController@update');
 $router->put('/api/projects/(\d+)/status', 'ProjectController@changeStatus');
 
-$router->post('/api/projects/(\d+)/approve', 'ProjectController@approve');
+// RUTAS DE DOBLE VERIFICACIÓN
+$router->post('/api/projects/(\d+)/approve/request', 'ProjectController@requestApproval');
+$router->post('/api/projects/(\d+)/approve/confirm', 'ProjectController@confirmApproval');
 
 /**
  * COMENTARIOS DE DOCUMENTOS
@@ -104,6 +107,8 @@ $router->get('/api/projects/(\d+)/documents/(\d+)/download', 'DocumentController
 $router->get('/api/projects/(\d+)/documents/(\d+)/view', 'DocumentController@view');
 $router->get('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentController@versions');
 $router->post('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentController@addVersion');
+
+$router->put('/api/projects/(\d+)/documents/(\d+)', 'DocumentController@update');
 
 /**
  * ============================

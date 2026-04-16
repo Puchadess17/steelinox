@@ -4,8 +4,10 @@
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/UserPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php';
 
 class UserController {
 
@@ -17,9 +19,9 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
+        if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Privilegios insuficientes']]);
             return;
         }
 
@@ -55,8 +57,9 @@ class UserController {
                 'errors' => null
             ]);
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'UserController::index');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al cargar la lista de usuarios']]);
         }
     }
 
@@ -68,9 +71,9 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
+        if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Privilegios insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Privilegios insuficientes']]);
             return;
         }
 
@@ -102,8 +105,9 @@ class UserController {
 
             echo json_encode(['success' => true, 'message' => 'Detalle recuperado', 'data' => $user, 'errors' => null]);
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'UserController::show');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => $e->getMessage()]]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al cargar el detalle del usuario']]);
         }
     }
 
@@ -115,9 +119,9 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
+        if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Permisos insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Permisos insuficientes']]);
             return;
         }
 
@@ -213,9 +217,9 @@ class UserController {
             ]);
 
         } catch (Exception $e) {
-            error_log('UserController::store - ' . $e->getMessage());
+            ErrorLogger::log($e->getMessage(), 'UserController::store');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al crear el usuario.', 'data' => null, 'errors' => ['server' => 'Error al guardar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al guardar']]);
         }
     }
 
@@ -227,9 +231,9 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
+        if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Permisos insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Permisos insuficientes']]);
             return;
         }
 
@@ -364,9 +368,9 @@ class UserController {
             }
 
         } catch (Exception $e) {
-            error_log('UserController::update - ' . $e->getMessage());
+            ErrorLogger::log($e->getMessage(), 'UserController::update');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar el usuario.', 'data' => null, 'errors' => ['server' => 'Error de base de datos']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error de base de datos']]);
         }
     }
 
@@ -378,9 +382,9 @@ class UserController {
         $actorUserId = $_SESSION['user_id'];
         $actorRole = $_SESSION['role'];
 
-        if ($actorRole === 'cliente') {
+        if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Permisos insuficientes']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Permisos insuficientes']]);
             return;
         }
 
@@ -425,9 +429,84 @@ class UserController {
             }
 
         } catch (Exception $e) {
-            error_log('UserController::destroy - ' . $e->getMessage());
+            ErrorLogger::log($e->getMessage(), 'UserController::destroy');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al eliminar usuario.', 'data' => null, 'errors' => ['server' => 'Error al borrar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al borrar']]);
+        }
+    }
+
+    // Actualizar la contraseña del propio usuario (PUT /api/me/password)
+    public function updatePassword() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba PUT']]);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $currentPassword = $input['current_password'] ?? '';
+        $newPassword = $input['new_password'] ?? '';
+
+        if (empty($currentPassword) || empty($newPassword)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos', 'data' => null, 'errors' => ['password' => 'Ambas contraseñas son obligatorias.']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $userModel = new User();
+            $user = $userModel->findByIdWithInactive($userId);
+
+            // 1. Verificar que la contraseña actual es correcta
+            if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => 'Contraseña incorrecta', 'data' => null, 'errors' => ['current_password' => 'La contraseña actual no es correcta.']]);
+                return;
+            }
+
+            // 2. Evitar que ponga la misma contraseña que ya tenía
+            if ($currentPassword === $newPassword) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Misma contraseña', 'data' => null, 'errors' => ['new_password' => 'La nueva contraseña no puede ser igual a la anterior.']]);
+                return;
+            }
+
+            // 3. Validar la política de contraseñas robustas
+            $pwdCheck = $this->validatePasswordPolicy($newPassword, $user['email']);
+            if ($pwdCheck !== true) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Contraseña débil', 'data' => null, 'errors' => ['new_password' => $pwdCheck]]);
+                return;
+            }
+
+            // 4. Actualizar en base de datos
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updated = $userModel->update($userId, ['password_hash' => $hashedPassword]);
+
+            if ($updated) {
+                AuditLogger::log('password_cambiada', 'user', $userId);
+
+                // --- INYECCIÓN DE NOTIFICACIÓN DE SEGURIDAD ---
+                require_once APP_PATH . '/Services/NotificationService.php';
+                NotificationService::queueUserEvent($userId, 'cambio_password_seguridad', $user['email'], [
+                    'nombre' => $user['name']
+                ]);
+                // ----------------------------------------------
+
+                echo json_encode(['success' => true, 'message' => 'Contraseña actualizada correctamente.', 'data' => null, 'errors' => null]);
+            } else {
+                throw new Exception("Error al guardar en base de datos.");
+            }
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'UserController::updatePassword');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al cambiar contraseña']]);
         }
     }
 

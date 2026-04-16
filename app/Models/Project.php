@@ -235,30 +235,53 @@ class Project {
     }
 
     /**
-     * ACTUALIZACIÓN DE DATOS MAESTROS
-     * Modifica la información general de un proyecto, excluyendo su estado 
-     * para garantizar que las transiciones queden registradas correctamente.
+     * ACTUALIZACIÓN DE PROYECTO (DINÁMICA)
+     * Construye la consulta SQL sobre la marcha basándose únicamente en las 
+     * claves que vengan en el array $data. Evita sobrescribir con NULL 
+     * valores que no han sido enviados en la petición (ej: reference).
      */
-    public function update($id, $data) {
-        $sql = "UPDATE projects 
-                SET name = :name, 
-                    reference = :reference, 
-                    budget_amount = :budget_amount, 
-                    description = :description, 
-                    surface = :surface, 
-                    project_type = :project_type 
-                WHERE id = :id AND deleted_at IS NULL";
+    public function update($id, $data)
+    {
+        $updates = [];
+        $params = ['id' => $id];
+
+        // Mapeo dinámico de campos
+        if (isset($data['name'])) {
+            $updates[] = "name = :name";
+            $params['name'] = $data['name'];
+        }
+        if (array_key_exists('reference', $data)) {
+            // array_key_exists por si realmente el admin quiere forzar un NULL/vacío
+            $updates[] = "reference = :reference";
+            $params['reference'] = $data['reference'];
+        }
+        if (isset($data['budget_amount'])) {
+            $updates[] = "budget_amount = :budget_amount";
+            $params['budget_amount'] = $data['budget_amount'];
+        }
+        if (array_key_exists('description', $data)) {
+            $updates[] = "description = :description";
+            $params['description'] = $data['description'];
+        }
+        if (array_key_exists('surface', $data)) {
+            $updates[] = "surface = :surface";
+            $params['surface'] = $data['surface'];
+        }
+        if (isset($data['project_type'])) {
+            $updates[] = "project_type = :project_type";
+            $params['project_type'] = $data['project_type'];
+        }
+
+        // Si no hay nada que actualizar, se sale sin error
+        if (empty($updates)) {
+            return true;
+        }
+
+        // Construcción de la SQL final
+        $sql = "UPDATE projects SET " . implode(', ', $updates) . " WHERE id = :id AND deleted_at IS NULL";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'name'          => $data['name'],
-            'reference'     => $data['reference'],
-            'budget_amount' => !empty($data['budget_amount']) ? (float)$data['budget_amount'] : null,
-            'description'   => $data['description'] ?? null,
-            'surface'       => $data['surface'] ?? null,
-            'project_type'  => $data['project_type'] ?? null,
-            'id'            => $id
-        ]);
+        return $stmt->execute($params);
     }
 
     /**

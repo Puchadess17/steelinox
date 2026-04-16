@@ -294,7 +294,7 @@ class NotificationService
         <head>
             <meta charset='utf-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>Steelinox Notification</title>
+            <title>Notificación de Steelinox</title>
         </head>
         <body style='margin:0; padding:0; background-color:#f8fafc; font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;'>
             <div style='display:none; max-height:0; overflow:hidden;'>$preheader</div>
@@ -302,25 +302,22 @@ class NotificationService
                 <tr>
                     <td align='center'>
                         <table width='100%' max-width='600' border='0' cellspacing='0' cellpadding='0' style='max-width:600px; background-color:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);'>
-                            <!-- Cabecera -->
                             <tr>
                                 <td style='background-color:#1a1b25; padding:40px; text-align:center; border-bottom:5px solid #E57B23;'>
                                     <h1 style='margin:0; color:#ffffff; font-size:22px; font-weight:900; letter-spacing:3px; text-transform:uppercase;'>STEELINOX</h1>
                                     <span style='display:block; color:#E57B23; font-size:10px; font-weight:800; letter-spacing:1.5px; margin-top:5px;'>INGENIERÍA & INNOVACIÓN</span>
                                 </td>
                             </tr>
-                            <!-- Cuerpo -->
                             <tr>
                                 <td style='padding:50px 40px;'>
                                     $content
                                 </td>
                             </tr>
-                            <!-- Pie de página -->
                             <tr>
                                 <td style='background-color:#f1f5f9; padding:40px; text-align:center; border-top:1px solid #e2e8f0;'>
                                     <p style='margin:0 0 10px 0; color:#94a3b8; font-size:12px; font-weight:700;'>© 2026 STEELINOX S.L. · Todos los derechos reservados</p>
                                     <p style='margin:0; color:#cbd5e1; font-size:11px; line-height:1.6;'>
-                                        Has recibido este correo because formas parte de la extranet de Steelinox.<br>
+                                        Has recibido este correo porque formas parte de la extranet de Steelinox.<br>
                                         Por favor, no respondas directamente a este mensaje automático.
                                     </p>
                                 </td>

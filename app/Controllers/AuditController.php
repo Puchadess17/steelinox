@@ -5,7 +5,9 @@ require_once APP_PATH . '/Models/Audit.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/AuditPolicy.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php';
 
 class AuditController
 {
@@ -27,9 +29,9 @@ class AuditController
             $role = $_SESSION['role'];
             $clientId = $_SESSION['client_id'] ?? null;
 
-            if ($role === 'cliente') {
+            if (!AuditPolicy::canViewProjectAudit($role)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no tienen acceso a la auditoría']]);
+                echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Los clientes no tienen acceso a la auditoría']]);
                 return;
             }
 
@@ -55,13 +57,10 @@ class AuditController
                 
                 // --- RESOLUCIÓN Y FALLBACK DE NOMBRES ---
                 if (empty($log['entity_name']) && (int)$log['entity_id'] !== 0) {
-                    // Si no hay nombre pero hay ID, significa que la entidad fue borrada físicamente
                     $log['entity_name'] = 'ID: ' . $log['entity_id'] . ' (Eliminado/No disp.)';
                 } elseif ((int)$log['entity_id'] === 0) {
-                    // Eventos de sistema como login fallido
                     $log['entity_name'] = 'Sistema Global';
                 }
-                // ----------------------------------------
             }
 
             echo json_encode([
@@ -73,9 +72,9 @@ class AuditController
             ]);
 
         } catch (Exception $e) {
-            error_log("[AuditController] Error in getProjectTimeline: " . $e->getMessage());
+            ErrorLogger::log($e->getMessage(), 'AuditController::getProjectTimeline');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage(), 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -96,9 +95,9 @@ class AuditController
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
 
-            if ($role === 'cliente') {
+            if (!AuditPolicy::canViewClientAudit($role)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Los clientes no tienen acceso a la auditoría']]);
+                echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Los clientes no tienen acceso a la auditoría']]);
                 return;
             }
 
@@ -138,8 +137,9 @@ class AuditController
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'AuditController::getClientTimeline');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
     }
 
@@ -149,9 +149,9 @@ class AuditController
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] !== 'admin') {
+        if (!AuditPolicy::canViewGlobalLogs($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
             return;
         }
 
@@ -197,8 +197,9 @@ class AuditController
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'AuditController::getGlobalLogs');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al obtener logs', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al obtener logs']]);
         }
     }
 
@@ -207,9 +208,9 @@ class AuditController
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] !== 'admin') {
+        if (!AuditPolicy::canViewFiltersData($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Solo administradores']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
             return;
         }
 
@@ -229,8 +230,9 @@ class AuditController
                 'errors' => null
             ]);
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'AuditController::getFiltersData');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al obtener filtros', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al obtener filtros']]);
         }
     }
 }

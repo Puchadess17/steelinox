@@ -47,28 +47,22 @@ class Database
         } catch (\PDOException $e) {
             /**
              * MANEJO DE EXCEPCIÓN CRÍTICA (FALLBACK A ARCHIVO)
-             * Si la base de datos cae, es imposible registrar el error en ella.
-             * Se escribe el error real en un archivo físico aislado en /storage/logs
-             * y se detiene la ejecución mostrando un mensaje opaco por seguridad.
              */
-            $logDir = STORAGE_PATH . '/logs';
-            if (!is_dir($logDir)) {
-                mkdir($logDir, 0755, true);
-            }
-
-            $logMessage = "[" . date('Y-m-d H:i:s') . "] Fallo de conexión DB: " . $e->getMessage() . PHP_EOL;
-            error_log($logMessage, 3, $logDir . '/database_errors.log');
+            require_once APP_PATH . '/Services/ErrorLogger.php';
+            
+            // Usamos nuestro servicio pasándole el nombre del archivo específico para la DB
+            ErrorLogger::log($e->getMessage(), 'Database::Connection', 'database_errors.log');
 
             http_response_code(500);
 
-            // Si es una petición API, devolvemos JSON
+            // Si es una petición API, devolvemos JSON opaco por seguridad
             if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Servicio temporalmente no disponible (DB Error)',
-                    'data' => null,
-                    'errors' => ['database' => 'Error database'] // En desarrollo mostramos el error real
+                    'message' => 'Servicio temporalmente no disponible (Error interno)',
+                    'data'    => null,
+                    'errors'  => ['database' => 'Error de conexión a la base de datos.']
                 ]);
             } else {
                 die("Error 500: Servicio temporalmente no disponible.");

@@ -3,8 +3,10 @@
 
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/ClientPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php';
 
 class ClientController {
 
@@ -12,9 +14,9 @@ class ClientController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ClientPolicy::canManage($_SESSION['role'])) {
             http_response_code(403); 
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado.', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado.', 'data' => null, 'errors' => ['role' => 'Operación no permitida por políticas de seguridad.']]);
             return;
         }
 
@@ -28,10 +30,8 @@ class ClientController {
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role'];
 
-            // 1. Extraemos los parámetros de paginación
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
-            // 2. Extraemos filtros extra y parámetros de ordenación
             $filters = [
                 'search'   => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
                 'status'   => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all',
@@ -39,25 +39,24 @@ class ClientController {
                 'sort_dir' => isset($_GET['sort_dir']) ? htmlspecialchars(trim($_GET['sort_dir']), ENT_QUOTES, 'UTF-8') : 'desc'
             ];
 
-            // 3. Pedimos los datos con los límites, filtros y orden
             $clientModel = new Client();
             $result = $clientModel->getListByUser($userId, $role, $limit, $offset, $filters);
 
-            // 4. Devolvemos el JSON uniforme CON LOS KPIs INCLUIDOS
             echo json_encode([
                 'success'    => true, 
                 'message'    => 'Listado de clientes recuperado', 
                 'data'       => [
                     'list' => $result['data'],
-                    'kpis' => $result['kpis'] // <-- Aquí están los datos para las 3 tarjetas
+                    'kpis' => $result['kpis']
                 ], 
                 'pagination' => PaginationHelper::format($result['total'], $limit, $page),
                 'errors'     => null
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ClientController::index'); // <-- LOG SEGURO
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al recuperar los clientes', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al recuperar los clientes']]);
         }
     }
 
@@ -65,9 +64,9 @@ class ClientController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ClientPolicy::canManage($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Operación no permitida.']]);
             return;
         }
 
@@ -94,8 +93,9 @@ class ClientController {
             echo json_encode(['success' => true, 'message' => 'Detalle del cliente recuperado', 'data' => $clientDetails, 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ClientController::show'); // <-- LOG SEGURO
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al recuperar el cliente', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al recuperar el cliente']]);
         }
     }
 
@@ -103,9 +103,9 @@ class ClientController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ClientPolicy::canManage($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Operación no permitida.']]);
             return;
         }
 
@@ -132,7 +132,6 @@ class ClientController {
 
         try {
             $clientModel = new Client();
-            
             $generatedReference = $clientModel->generateNextReference();
 
             $newClientId = $clientModel->create([
@@ -158,19 +157,16 @@ class ClientController {
             ]);
 
         } catch (Exception $e) {
+            // Nota: Este condicional es correcto mantenerlo porque 1062 es un error de usuario esperado (colisión) y no un fallo del servidor
             if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
                 http_response_code(409); 
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Se ha producido una colisión al generar el código de referencia. Por favor, pulsa en Guardar de nuevo.',
-                    'data' => null,
-                    'errors' => ['reference' => 'Código duplicado generado automáticamente']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Se ha producido una colisión al generar el código de referencia.', 'data' => null, 'errors' => ['reference' => 'Código duplicado generado automáticamente']]);
                 return;
             }
 
+            ErrorLogger::log($e->getMessage(), 'ClientController::store'); // <-- LOG SEGURO
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno al crear el cliente', 'data' => null, 'errors' => ['server' => 'Error al guardar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al guardar']]);
         }
     }
 
@@ -178,9 +174,9 @@ class ClientController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ClientPolicy::canManage($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Operación no permitida.']]);
             return;
         }
 
@@ -279,8 +275,9 @@ class ClientController {
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ClientController::update'); // <-- LOG SEGURO
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno al actualizar el cliente', 'data' => null, 'errors' => ['server' => 'Error de actualización']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error de actualización']]);
         }
     }
 
@@ -288,9 +285,9 @@ class ClientController {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
-        if ($_SESSION['role'] === 'cliente') {
+        if (!ClientPolicy::canDelete($_SESSION['role'])) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Se requiere rol admin o comercial']]);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['role' => 'Operación no permitida.']]);
             return;
         }
 
@@ -325,26 +322,19 @@ class ClientController {
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ClientController::destroy'); // <-- LOG SEGURO
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno al eliminar el cliente', 'data' => null, 'errors' => ['server' => 'Error al borrar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al borrar']]);
         }
     }
 
-    /** Helper privado para limpiar y formatear nombres */
     private function sanitizeName($name) {
         if (empty($name)) return '';
-        
         $name = trim($name);
-        
-        // Reemplazar múltiples espacios en medio por un solo espacio
         $name = preg_replace('/\s+/', ' ', $name);
-        
-        // Poner SOLO la primera letra en mayúscula y respetar el resto
         $firstChar = mb_strtoupper(mb_substr($name, 0, 1, "UTF-8"), "UTF-8");
         $restOfText = mb_substr($name, 1, null, "UTF-8");
         $name = $firstChar . $restOfText;
-        
-        // Sanitización XSS
         return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }

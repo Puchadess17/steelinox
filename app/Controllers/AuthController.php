@@ -91,7 +91,8 @@ class AuthController {
     public function showLogin() {
         if (session_status() === PHP_SESSION_NONE) session_start();
         if (isset($_SESSION['user_id'])) {
-            header('Location: /steelinox/panel');
+            $baseUrl = $_ENV['APP_BASE_URL'] ?? '/steelinox';
+            header('Location: ' . $baseUrl . '/panel');
             exit;
         }
 

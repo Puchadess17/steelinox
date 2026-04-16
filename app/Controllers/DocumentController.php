@@ -4,8 +4,10 @@
 require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/DocumentPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php';
 
 class DocumentController {
 
@@ -46,9 +48,9 @@ class DocumentController {
             ]);
 
         } catch (Exception $e) {
-            error_log("[DocumentController] Error in index: " . $e->getMessage());
+            ErrorLogger::log($e->getMessage(), 'DocumentController::index');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage(), 'data' => null, 'errors' => ['server' => 'Error del servidor']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al recuperar documentos']]);
         }
     }
 
@@ -77,13 +79,13 @@ class DocumentController {
                 return;
             }
 
-            if ($projectDetails['status'] === 'cerrado') {
+            if (!DocumentPolicy::canUploadToProject($projectDetails['status'])) {
                 http_response_code(403);
                 echo json_encode([
                     'success' => false, 
                     'message' => 'Proyecto cerrado', 
                     'data'    => null, 
-                    'errors'  => ['status' => 'El proyecto está cerrado y no admite la carga de nuevos documentos.']
+                    'errors'  => ['policy' => 'El proyecto está cerrado y no admite la carga de nuevos documentos.']
                 ]);
                 return;
             }
@@ -173,7 +175,6 @@ class DocumentController {
                     'auto_versionado'  => true
                 ]);
 
-                // --- NOTIFICAR NUEVA VERSIÓN ---
                 NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, ['titulo' => $title]);
 
                 echo json_encode([
@@ -193,7 +194,6 @@ class DocumentController {
                     'mime_type'        => $realMime
                 ]);
 
-                // --- NOTIFICAR NUEVA PROPUESTA/DOCUMENTO ---
                 NotificationService::queueProjectEvent($projectId, 'nueva_propuesta', $userId, ['titulo' => $title]);
 
                 echo json_encode([
@@ -205,8 +205,9 @@ class DocumentController {
             }
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'DocumentController::store');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al subir documento']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al subir documento']]);
         }
     }
 
@@ -236,13 +237,13 @@ class DocumentController {
                 return;
             }
 
-            if ($projectDetails['status'] === 'cerrado') {
+            if (!DocumentPolicy::canUploadToProject($projectDetails['status'])) {
                 http_response_code(403);
                 echo json_encode([
                     'success' => false, 
                     'message' => 'Proyecto cerrado', 
                     'data'    => null, 
-                    'errors'  => ['status' => 'El proyecto está cerrado y no admite actualizaciones de archivos.']
+                    'errors'  => ['policy' => 'El proyecto está cerrado y no admite actualizaciones de archivos.']
                 ]);
                 return;
             }
@@ -310,12 +311,10 @@ class DocumentController {
                 'auto_versioned'   => false
             ]);
 
-            // --- NOTIFICAR NUEVA VERSIÓN ---
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, [
                 'titulo' => $docInfo ? $docInfo['title'] : 'Desconocido'
             ]);
-            // -------------------------------
 
             echo json_encode([
                 'success' => true,
@@ -325,8 +324,9 @@ class DocumentController {
             ]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'DocumentController::addVersion');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al subir version']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al subir versión']]);
         }
     }
 
@@ -360,8 +360,106 @@ class DocumentController {
             echo json_encode(['success' => true, 'message' => 'Versiones recuperadas', 'data' => $versions, 'errors' => null]);
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'DocumentController::versions');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error al obtener versiones', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al obtener versiones']]);
+        }
+    }
+
+    public function update($projectId, $documentId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!DocumentPolicy::canEditMetadata($_SESSION['role'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Privilegios insuficientes']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba PUT', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
+            return;
+        }
+
+        try {
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+            
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Denegado']]);
+                return;
+            }
+
+            if (!DocumentPolicy::canUploadToProject($projectDetails['status'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['policy' => 'El proyecto está cerrado y no admite edición de documentos.']]);
+                return;
+            }
+
+            $documentModel = new Document();
+            $currentDoc = $documentModel->getMetadata($documentId, $projectId);
+
+            if (!$currentDoc) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Documento no encontrado', 'data' => null, 'errors' => ['document' => 'No existe']]);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $newData = [];
+            $changes = [];
+
+            if (isset($input['title'])) {
+                $cleanTitle = $this->sanitizeName($input['title']);
+                if (!empty($cleanTitle) && $cleanTitle !== $currentDoc['title']) {
+                    $newData['title'] = $cleanTitle;
+                    $changes['title'] = ['antes' => $currentDoc['title'], 'despues' => $cleanTitle];
+                }
+            }
+
+            if (isset($input['type'])) {
+                $cleanType = htmlspecialchars(trim($input['type']), ENT_QUOTES, 'UTF-8');
+                if (!empty($cleanType) && $cleanType !== $currentDoc['type']) {
+                    $newData['type'] = $cleanType;
+                    $changes['type'] = ['antes' => $currentDoc['type'], 'despues' => $cleanType];
+                }
+            }
+
+            if (isset($input['is_visible_to_client'])) {
+                $newVis = (int)$input['is_visible_to_client'];
+                if ($newVis !== (int)$currentDoc['is_visible_to_client']) {
+                    $newData['is_visible_to_client'] = $newVis;
+                    $changes['is_visible_to_client'] = ['antes' => (int)$currentDoc['is_visible_to_client'], 'despues' => $newVis];
+                }
+            }
+
+            if (isset($input['access_mode'])) {
+                $newMode = htmlspecialchars(trim($input['access_mode']), ENT_QUOTES, 'UTF-8');
+                if (in_array($newMode, ['view', 'download', 'both']) && $newMode !== $currentDoc['access_mode']) {
+                    $newData['access_mode'] = $newMode;
+                    $changes['access_mode'] = ['antes' => $currentDoc['access_mode'], 'despues' => $newMode];
+                }
+            }
+
+            if (!empty($newData)) {
+                $documentModel->updateMetadata($documentId, $projectId, $newData);
+                AuditLogger::log('documento_actualizado', 'document', $documentId, $projectId, ['cambios' => $changes]);
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Metadatos actualizados', 'data' => null, 'errors' => null]);
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'DocumentController::update');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al actualizar documento']]);
         }
     }
 
@@ -399,20 +497,19 @@ class DocumentController {
                 die("Documento no encontrado.");
             }
 
-            if ($role === 'cliente') {
-                if ($docInfo['is_visible_to_client'] == 0) {
-                    http_response_code(403);
-                    die("Este documento es confidencial.");
-                }
+            if (!DocumentPolicy::canAccessDocument($role, $docInfo['is_visible_to_client'])) {
+                http_response_code(403);
+                die("Este documento es confidencial.");
+            }
 
-                if ($disposition === 'attachment' && $docInfo['access_mode'] === 'view') {
-                    http_response_code(403);
-                    die("Este documento solo está disponible para visualización online.");
-                }
-                if ($disposition === 'inline' && $docInfo['access_mode'] === 'download') {
-                    http_response_code(403);
-                    die("Este documento debe ser descargado para su visualización.");
-                }
+            if ($disposition === 'attachment' && !DocumentPolicy::canDownload($role, $docInfo['access_mode'])) {
+                http_response_code(403);
+                die("Este documento solo está disponible para visualización online.");
+            }
+
+            if ($disposition === 'inline' && !DocumentPolicy::canViewInline($role, $docInfo['access_mode'])) {
+                http_response_code(403);
+                die("Este documento debe ser descargado para su visualización.");
             }
 
             session_write_close();
@@ -431,8 +528,7 @@ class DocumentController {
             
             $fp = @fopen($filePath, 'rb');
             if (!$fp) {
-                http_response_code(500);
-                die("Error al abrir el archivo.");
+                throw new Exception("Error al abrir el archivo.");
             }
 
             if (isset($_SERVER['HTTP_RANGE'])) {
@@ -515,8 +611,9 @@ class DocumentController {
             exit;
 
         } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'DocumentController::serveFile');
             http_response_code(500);
-            die("Error interno.");
+            die("Error interno del servidor.");
         }
     }
 

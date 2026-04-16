@@ -5,8 +5,10 @@ require_once APP_PATH . '/Models/Comment.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Policies/CommentPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
+require_once APP_PATH . '/Services/ErrorLogger.php'; 
 
 class CommentController {
 
@@ -44,9 +46,10 @@ class CommentController {
                 return;
             }
 
-            if ($role === 'cliente' && $docInfo['is_visible_to_client'] == 0) {
+            // POLICY CHECK
+            if (!CommentPolicy::canView($role, $docInfo['is_visible_to_client'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Documento confidencial', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
+                echo json_encode(['success' => false, 'message' => 'Documento confidencial', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
                 return;
             }
 
@@ -68,8 +71,9 @@ class CommentController {
             ]);
 
         } catch (Throwable $e) {
+            ErrorLogger::log($e->getMessage(), 'CommentController::index');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al recuperar comentarios']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al recuperar comentarios']]);
         }
     }
 
@@ -100,13 +104,14 @@ class CommentController {
                 return;
             }
 
-            if ($projectDetails['status'] === 'cerrado') {
+            // POLICY CHECK (Proyecto abierto)
+            if (!CommentPolicy::canCreateOnProject($projectDetails['status'])) {
                 http_response_code(403);
                 echo json_encode([
                     'success' => false, 
                     'message' => 'Proyecto cerrado', 
                     'data'    => null, 
-                    'errors'  => ['status' => 'El proyecto está cerrado. Debe reabrirse para poder añadir comentarios.']
+                    'errors'  => ['policy' => 'El proyecto está cerrado. Debe reabrirse para poder añadir comentarios.']
                 ]);
                 return;
             }
@@ -120,9 +125,10 @@ class CommentController {
                 return;
             }
 
-            if ($role === 'cliente' && $docInfo['is_visible_to_client'] == 0) {
+            // POLICY CHECK (Visibilidad del documento)
+            if (!CommentPolicy::canCreateOnDocument($role, $docInfo['is_visible_to_client'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No puedes comentar en un documento interno', 'data' => null, 'errors' => ['permissions' => 'Denegado']]);
+                echo json_encode(['success' => false, 'message' => 'No puedes comentar en un documento interno', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
                 return;
             }
 
@@ -174,12 +180,10 @@ class CommentController {
                     'body_snippet'     => mb_substr($safeBody, 0, 50, 'UTF-8') . (mb_strlen($safeBody, 'UTF-8') > 50 ? '...' : '')
                 ]);
 
-                // --- INYECCIÓN DE NOTIFICACIÓN ---
                 require_once APP_PATH . '/Services/NotificationService.php';
                 NotificationService::queueProjectEvent($projectId, 'nuevo_comentario', $userId, [
                     'comentario' => $safeBody
                 ]);
-                // ---------------------------------
 
                 http_response_code(200);
                 echo json_encode([
@@ -194,8 +198,9 @@ class CommentController {
             }
 
         } catch (Throwable $e) {
+            ErrorLogger::log($e->getMessage(), 'CommentController::store');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al publicar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al publicar']]);
         }
     }
 
