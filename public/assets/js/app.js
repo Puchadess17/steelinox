@@ -27,7 +27,7 @@ const SIApp = {
         // Si no hay datos en sessionStorage, intentar recuperar la sesión del servidor.
         if (!this.user) {
             try {
-                const res = await fetch('/steelinox/api/me', {
+                const res = await fetch(`${window.API_BASE}/me`, {
                     method: 'GET',
                     credentials: 'same-origin',
                 });
@@ -540,6 +540,49 @@ const SIApp = {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     },
 
+    /**
+     * Muestra estado de carga en un botón
+     * @param {string} btnId ID del botón
+     * @param {boolean} loading true para activar, false para desactivar
+     * @param {string} text Texto temporal mientras carga
+     */
+    setBtnLoading(btnId, loading, text = '...') {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        btn.disabled = loading;
+        
+        // Si el botón ya tiene su propio spinner interno (como en project modals)
+        const nativeSpinner = btn.querySelector('.si-spinner');
+        if (nativeSpinner && btn.dataset.mode !== 'legacy') {
+            btn.dataset.mode = 'native';
+            if (loading) {
+                nativeSpinner.classList.remove('hidden');
+                btn.classList.add('opacity-80', 'pointer-events-none');
+            } else {
+                nativeSpinner.classList.add('hidden');
+                btn.classList.remove('opacity-80', 'pointer-events-none');
+            }
+            return;
+        }
+
+        // Modo estandar/legacy reescribiendo el innerHTML
+        btn.dataset.mode = 'legacy';
+        if (loading) {
+            if (!btn.dataset.oldHtml) btn.dataset.oldHtml = btn.innerHTML;
+            btn.innerHTML = `<span class="si-spinner inline-block" style="width:16px;height:16px;border-width:2px;margin-right:8px;vertical-align:middle;border-color:currentColor;border-bottom-color:transparent;"></span> <span class="align-middle">${text}</span>`;
+            btn.classList.add('opacity-80', 'pointer-events-none');
+        } else {
+            if (btn.dataset.oldHtml) {
+                btn.innerHTML = btn.dataset.oldHtml;
+                delete btn.dataset.oldHtml;
+            } else if (text && text !== '...') {
+                btn.innerHTML = text;
+            }
+            btn.classList.remove('opacity-80', 'pointer-events-none');
+        }
+    },
+
     /** Custom Toast Notification (Proxy a SIToast) */
     showToast(title, message, type = 'info') {
         if (typeof SIToast !== 'undefined') {
@@ -547,6 +590,21 @@ const SIApp = {
         } else {
             console.error('showToast: SIToast no está definido');
         }
+    },
+
+    /** Validar y obtener datos de un formulario */
+    getValidatedFormData(formId) {
+        const form = document.getElementById(formId);
+        if (!form) {
+            console.error(`Formulario no encontrado: #${formId}`);
+            return null;
+        }
+
+        if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+            return null; // El navegador ya mostró los tooltips de error nativos
+        }
+
+        return Object.fromEntries(new FormData(form));
     },
 
     /**
@@ -648,23 +706,58 @@ const SIApp = {
     // ──────────────────────────────────────
 
     modal: {
+        _escapeHandler: null,
+
         open(id) {
             const el = document.getElementById(id);
             if (!el) return;
+
+            // Marcar el modal con su propio ID para que el click-outside sepa cuál cerrar
+            el.dataset.modalId = id;
+
             el.classList.remove('hidden');
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 el.classList.add('opacity-100');
-                el.querySelector('div').classList.add('scale-100');
-                el.querySelector('div').classList.remove('scale-95');
-            }, 10);
+                const inner = el.querySelector(':scope > div');
+                if (inner) {
+                    inner.classList.add('scale-100');
+                    inner.classList.remove('scale-95');
+                }
+            });
+
+            // Click en backdrop cierra el modal
+            if (!el._backdropHandler) {
+                el._backdropHandler = (e) => {
+                    if (e.target === el) SIApp.modal.close(id);
+                };
+                el.addEventListener('click', el._backdropHandler);
+            }
+
+            // Escape cierra el modal más reciente
+            if (this._escapeHandler) document.removeEventListener('keydown', this._escapeHandler);
+            this._escapeHandler = (e) => {
+                if (e.key === 'Escape') SIApp.modal.close(id);
+            };
+            document.addEventListener('keydown', this._escapeHandler);
         },
+
         close(id) {
             const el = document.getElementById(id);
             if (!el) return;
+
             el.classList.remove('opacity-100');
-            el.querySelector('div').classList.remove('scale-100');
-            el.querySelector('div').classList.add('scale-95');
+            const inner = el.querySelector(':scope > div');
+            if (inner) {
+                inner.classList.remove('scale-100');
+                inner.classList.add('scale-95');
+            }
             setTimeout(() => el.classList.add('hidden'), 300);
+
+            // Limpiar el listener de Escape
+            if (this._escapeHandler) {
+                document.removeEventListener('keydown', this._escapeHandler);
+                this._escapeHandler = null;
+            }
         }
     },
 

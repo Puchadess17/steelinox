@@ -188,14 +188,14 @@ SIModules.projects = {
                         
                         <div class="flex items-center gap-2 pl-3">
                             ${canView ? `
-                            <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view" 
+                            <a href="${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/view" 
                                target="_blank"
                                class="w-9 h-9 flex items-center justify-center text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all" 
                                title="Visualizar">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </a>` : ''}
                             
-                            <a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
+                            <a href="${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/download" 
                                target="_blank"
                                class="w-9 h-9 flex items-center justify-center text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all" 
                                title="Descargar">
@@ -286,10 +286,10 @@ SIModules.projects = {
                     </div>
                     <div class="flex items-center gap-1 opacity-20 group-hover/v:opacity-100 transition-opacity">
                         ${canView ? `
-                        <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${v.id}" target="_blank" class="p-1 hover:text-blue-500 transition-colors">
+                        <a href="${window.API_BASE}/projects/${this.projectId}/documents/${docId}/view?version_id=${v.id}" target="_blank" class="p-1 hover:text-blue-500 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </a>` : ''}
-                        <a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" target="_blank" class="p-1 hover:text-orange-500 transition-colors">
+                        <a href="${window.API_BASE}/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" target="_blank" class="p-1 hover:text-orange-500 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         </a>
                     </div>

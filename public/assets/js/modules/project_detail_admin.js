@@ -88,9 +88,9 @@ SIModules.projectDetailAdmin = {
                 </div>
                 <div class="shrink-0 flex items-center">
                     ${user && user.role !== 'cliente' ? `
-                    <button onclick="SIModules.projectDetailAdmin.openEditProjectModal()" class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:border-orange-500 hover:text-orange-600 transition-all flex items-center gap-2 shadow-sm group">
-                        <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        Editar Proyecto
+                    <button onclick="SIModules.projectDetailAdmin.openEditProjectModal()" class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:border-indigo-500 hover:text-indigo-600 transition-all flex items-center gap-2 shadow-sm group">
+                        <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-500 group-hover:scale-110 group-hover:rotate-12 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <span>Editar Proyecto</span>
                     </button>
                     ` : ''}
                 </div>
@@ -628,9 +628,9 @@ SIModules.projectDetailAdmin = {
                                             <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
                                             ${p.status === 'propuesta' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-blue-400"></span> Aprobado
-                                            ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : (p.status === 'cerrado' || (this.user && this.user.role === 'comercial') ? 'text-gray-300 bg-gray-50/50 cursor-not-allowed pointer-events-none' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600')}">
+                                            <span class="w-2 h-2 rounded-full ${p.status === 'cerrado' || (this.user && this.user.role === 'comercial') && p.status !== 'aprobado' ? 'bg-gray-300' : 'bg-blue-400'}"></span> Aprobado
+                                            ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : (p.status === 'cerrado' || (this.user && this.user.role === 'comercial') ? '<svg class="w-4 h-4 ml-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>' : '')}
                                         </li>
                                         <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('ejecucion', 'Ejecución', 'bg-orange-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'ejecucion' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
                                             <span class="w-2 h-2 rounded-full bg-orange-400"></span> Ejecución
@@ -644,8 +644,8 @@ SIModules.projectDetailAdmin = {
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Motivo / Notas</label>
-                                <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Añade un motivo"></textarea>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Motivo / Notas${p.status === 'cerrado' ? ' <span class="text-red-500">*</span>' : ''}</label>
+                                <textarea id="change-status-reason" name="reason" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm" placeholder="Añade un motivo" ${p.status === 'cerrado' ? 'required' : ''}></textarea>
                             </div>
                         </form>
                     </div>
@@ -655,6 +655,122 @@ SIModules.projectDetailAdmin = {
                              Actualizar
                          </button>
                      </div>
+                </div>
+            </div>
+
+            <div id="approve-2fa-modal" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden">
+                    <div class="p-8 text-center relative">
+                        <!-- Botón de cerrar (x) -->
+                        <button type="button" onclick="SIApp.modal.close('approve-2fa-modal')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        
+                        <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-blue-50/50 shadow-inner">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-black text-gray-900 mb-2">Código de Seguridad</h3>
+                        <p class="text-[13px] text-gray-500 mb-6 font-medium leading-relaxed">Hemos enviado un código de 6 dígitos con validez de 10 minutos a tu email registrado.</p>
+                        
+                        <form id="approve-2fa-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.confirmApproveProjectProposal();" class="space-y-6">
+                            <div>
+                                <input type="text" id="approve-2fa-token" name="token" maxlength="6" class="w-full text-center text-3xl tracking-[0.5em] font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-2xl py-4 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none uppercase" placeholder="------" required autocomplete="off">
+                            </div>
+                            
+                            <button type="submit" id="btn-confirm-2fa" class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-4 px-6 text-sm font-black transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 group">
+                                <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Confirmar Código
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- MODAL: EDITAR METADATOS DOCUMENTO -->
+            <div id="edit-document-modal" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+                <div class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh] overflow-hidden">
+                    <div class="p-6 sm:p-8 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-[#1a1b25] tracking-tight">Editar Documento</h3>
+                            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Metadatos y Visibilidad</p>
+                        </div>
+                        <button type="button" onclick="SIApp.modal.close('edit-document-modal')" class="w-10 h-10 flex items-center justify-center rounded-2xl text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-all focus:outline-none click-burst">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 sm:p-8 overflow-y-auto si-scrollbar">
+                        <form id="edit-document-form" class="space-y-6">
+                            <input type="hidden" id="edit-doc-id" name="doc_id">
+                            <div>
+                                <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Título del Documento</label>
+                                <input type="text" id="edit-doc-title" name="title" required class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#E57B23]/20 focus:border-[#E57B23] transition-all font-semibold text-sm shadow-sm" placeholder="Ej: Plano Planta Baja">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Tipo de Archivo <span class="text-red-500">*</span></label>
+                                <input type="hidden" id="edit-doc-type" name="type" required>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div onclick="SIModules.projectDetailAdmin._selectEditDocType('presupuesto', this)" class="edit-doc-type-card p-3 border border-gray-100 rounded-xl bg-gray-50/50 cursor-pointer hover:border-orange-200 hover:bg-orange-50/30 transition-all flex flex-col items-center gap-2" data-value="presupuesto">
+                                        <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-orange-500 shadow-sm border border-gray-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-tight text-gray-600">Presupuesto</span>
+                                    </div>
+                                    <div onclick="SIModules.projectDetailAdmin._selectEditDocType('propuesta', this)" class="edit-doc-type-card p-3 border border-gray-100 rounded-xl bg-gray-50/50 cursor-pointer hover:border-orange-200 hover:bg-orange-50/30 transition-all flex flex-col items-center gap-2" data-value="propuesta">
+                                        <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-blue-500 shadow-sm border border-gray-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-tight text-gray-600">Propuesta</span>
+                                    </div>
+                                    <div onclick="SIModules.projectDetailAdmin._selectEditDocType('plano', this)" class="edit-doc-type-card p-3 border border-gray-100 rounded-xl bg-gray-50/50 cursor-pointer hover:border-orange-200 hover:bg-orange-50/30 transition-all flex flex-col items-center gap-2" data-value="plano">
+                                        <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-indigo-500 shadow-sm border border-gray-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-tight text-gray-600">Plano</span>
+                                    </div>
+                                    <div onclick="SIModules.projectDetailAdmin._selectEditDocType('documento_tecnico', this)" class="edit-doc-type-card p-3 border border-gray-100 rounded-xl bg-gray-50/50 cursor-pointer hover:border-orange-200 hover:bg-orange-50/30 transition-all flex flex-col items-center gap-2" data-value="documento_tecnico">
+                                        <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-500 shadow-sm border border-gray-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-tight text-gray-600">Doc. Técnico</span>
+                                    </div>
+                                    <div onclick="SIModules.projectDetailAdmin._selectEditDocType('materiales', this)" class="edit-doc-type-card p-3 border border-gray-100 rounded-xl bg-gray-50/50 cursor-pointer hover:border-orange-200 hover:bg-orange-50/30 transition-all flex flex-col items-center gap-2" data-value="materiales">
+                                        <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-amber-500 shadow-sm border border-gray-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-tight text-gray-600">Materiales</span>
+                                    </div>
+                                    <div onclick="SIModules.projectDetailAdmin._selectEditDocType('otros', this)" class="edit-doc-type-card p-3 border border-gray-100 rounded-xl bg-gray-50/50 cursor-pointer hover:border-orange-200 hover:bg-orange-50/30 transition-all flex flex-col items-center gap-2" data-value="otros">
+                                        <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-gray-400 shadow-sm border border-gray-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-tight text-gray-600">Otros</span>
+                                    </div>
+                                </div>
+                                <p id="edit-doc-type-error" class="hidden text-[10px] font-bold text-red-500 mt-2 ml-1 uppercase">Debes seleccionar un tipo de documento</p>
+                            </div>
+
+                            <div class="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 space-y-4">
+                                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Privacidad Cliente</h4>
+                                
+                                <div class="flex items-center justify-between gap-4">
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-900">Visibilidad</p>
+                                        <p class="text-xs text-gray-500 font-medium tracking-tight">¿El cliente puede ver este documento?</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                        <input type="checkbox" id="edit-doc-visible" name="is_visible_to_client" value="1" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+
+                                <div class="pt-2">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Modo de Acceso (Si es visible)</label>
+                                    <input type="hidden" id="edit-doc-access" name="access_mode" value="both">
+                                    <div class="flex flex-wrap gap-2">
+                                        <div onclick="SIModules.projectDetailAdmin._selectEditDocAccess('view', this)" class="edit-doc-access-card px-4 py-2 bg-white border border-gray-100 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all text-gray-400" data-value="view">Solo Leer</div>
+                                        <div onclick="SIModules.projectDetailAdmin._selectEditDocAccess('download', this)" class="edit-doc-access-card px-4 py-2 bg-white border border-gray-100 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all text-gray-400" data-value="download">Descargar</div>
+                                        <div onclick="SIModules.projectDetailAdmin._selectEditDocAccess('both', this)" class="edit-doc-access-card px-4 py-2 bg-white border border-gray-100 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all text-gray-400" data-value="both">Ambos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-end gap-3 shrink-0">
+                        <button type="button" onclick="SIApp.modal.close('edit-document-modal')" class="w-full sm:w-auto px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                        <button type="button" id="btn-save-edit-doc" onclick="SIModules.projectDetailAdmin.saveDocumentEdits()" class="w-full sm:w-auto px-6 py-3 text-sm font-black text-white bg-[#E57B23] rounded-xl hover:bg-[#c9661c] transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 group">
+                            Guardar Cambios
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -780,7 +896,7 @@ SIModules.projectDetailAdmin = {
 
                     <!-- Botones de Acción -->
                     <div class="space-y-3">
-                        ${user && user.role === 'admin' ? `
+                        ${user && user.role !== 'cliente' ? `
                         <button onclick="SIModules.projectDetailAdmin.openChangeStatusModal()" class="w-full bg-white border border-gray-100 hover:border-orange-500 hover:text-orange-600 text-gray-700 rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-sm flex items-center justify-between group">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -851,10 +967,42 @@ SIModules.projectDetailAdmin = {
                                         <p class="text-sm text-gray-500 mb-8 px-4 leading-relaxed">El proyecto ha sido completado y cerrado. Toda la documentación está archivada.</p>
                                         
                                         <form id="reopen-project-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('reopen-project-form');" class="w-full space-y-4">
-                                            <input type="hidden" name="status" value="propuesta">
-                                            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Motivo de Reapertura (Opcional)</label>
-                                                <textarea name="reason" rows="2" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm text-left" placeholder="¿Por qué se reabre el proyecto?"></textarea>
+                                            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 text-left space-y-4">
+                                                <input type="hidden" id="reopen-status-value" name="status" value="">
+
+                                                <div>
+                                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Estado de Reapertura <span class="text-red-500">*</span></label>
+                                                    <div class="grid grid-cols-2 gap-3">
+                                                        <div onclick="SIModules.projectDetailAdmin._selectReopenStatus('ejecucion', this)"
+                                                             data-reopen-option="ejecucion"
+                                                             class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-orange-300 hover:bg-orange-50/30 group">
+                                                            <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-400 flex items-center justify-center transition-colors group-[.selected]:bg-orange-500 group-[.selected]:text-white">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                            </div>
+                                                            <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-orange-600">Ejecución</span>
+                                                            <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-orange-500 group-[.selected]:bg-orange-500">
+                                                                <div class="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-[.selected]:opacity-100 transition-opacity"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div onclick="SIModules.projectDetailAdmin._selectReopenStatus('propuesta', this)"
+                                                             data-reopen-option="propuesta"
+                                                             class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-amber-300 hover:bg-amber-50/30 group">
+                                                            <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-400 flex items-center justify-center transition-colors group-[.selected]:bg-amber-500 group-[.selected]:text-white">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                            </div>
+                                                            <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-amber-600">Propuesta</span>
+                                                            <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-amber-500 group-[.selected]:bg-amber-500">
+                                                                <div class="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-[.selected]:opacity-100 transition-opacity"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <p id="reopen-status-error" class="hidden text-[10px] text-red-500 font-bold mt-2 px-1">Selecciona un estado de reapertura.</p>
+                                                </div>
+
+                                                <div>
+                                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Motivo de Reapertura <span class="text-red-500">*</span></label>
+                                                    <textarea name="reason" rows="2" required class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm text-left" placeholder="Añade el motivo obligatorio (Ej. El cliente ha solicitado un remate extra...)"></textarea>
+                                                </div>
                                             </div>
                                             <button type="submit" id="reopen-project-form-btn-save" class="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-2xl py-4 px-6 text-sm font-black transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 group">
                                                 <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -906,7 +1054,24 @@ SIModules.projectDetailAdmin = {
                                                     </div>
                                                     <h5 class="text-sm font-black ${isPast ? 'line-through text-gray-400' : (isCurrent ? 'text-gray-900' : (isNext ? 'text-gray-700' : 'text-gray-300'))} transition-colors">${step.label}</h5>
                                                     
-                                                    ${isNext ? `
+                                                    ${isNext ? (() => {
+                                        // Bloqueo: el comercial no puede aprobar propuestas
+                                        if (step.id === 'aprobado' && user && user.role === 'comercial') {
+                                            return `
+                                                        <div class="mt-4 p-5 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-2">
+                                                            <div class="flex items-start gap-3">
+                                                                <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                                </div>
+                                                                <div>
+                                                                    <p class="text-xs font-black text-amber-800 uppercase tracking-wide">Aprobación Restringida</p>
+                                                                    <p class="text-xs text-amber-700 mt-1 leading-relaxed">Solo el <strong>Cliente</strong> o el <strong>Administrador</strong> pueden aprobar una propuesta. Esta acción requiere confirmación 2FA del cliente.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    `;
+                                        }
+                                        return `
                                                         <div class="mt-4 p-5 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-2">
                                                             <form id="stepper-status-form-${step.id}" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('stepper-status-form-${step.id}');" class="space-y-4">
                                                                 <input type="hidden" name="status" value="${step.id}">
@@ -921,7 +1086,8 @@ SIModules.projectDetailAdmin = {
                                                                 </button>
                                                             </form>
                                                         </div>
-                                                    ` : ''}
+                                                    `;
+                                    })() : ''}
                                                 </div>
                                             </div>
                                         `;
@@ -935,11 +1101,16 @@ SIModules.projectDetailAdmin = {
         `;
     },
 
-    /** PESTAÑA: DOCUMENTOS (Mock) */
+    /** PESTAÑA: DOCUMENTOS */
     _renderDocumentos() {
         const user = this.user;
-        // Disparar la carga real si no tenemos datos o queremos refrescar
-        setTimeout(() => this.loadProjectDocuments(), 50);
+        // Si ya tenemos documentos en caché (cargados en loadProjectData), renderizamos directamente.
+        // Si no, hacemos fetch. Esto evita la race condition de peticiones paralelas al inicio.
+        if (this.documents && this.documents.length > 0) {
+            setTimeout(() => this.renderDocumentList(), 50);
+        } else {
+            setTimeout(() => this.loadProjectDocuments(), 50);
+        }
 
         return `
             <div class="space-y-6">
@@ -1166,8 +1337,12 @@ SIModules.projectDetailAdmin = {
 
     /** PESTAÑA: HISTORIAL (Dinámico) */
     _renderHistorial() {
-        // Disparar carga de datos
-        setTimeout(() => this.loadProjectTimeline(), 50);
+        // Si ya tenemos auditoría en caché, renderizamos directamente sin hacer fetch.
+        if (this.auditLogs && this.auditLogs.length > 0) {
+            setTimeout(() => this.loadProjectTimeline(), 50);
+        } else {
+            setTimeout(() => this.loadProjectTimeline(), 50);
+        }
 
         return `
             <div class="space-y-6 pb-6 w-full max-w-full">
@@ -1519,10 +1694,16 @@ SIModules.projectDetailAdmin = {
     // DOCUMENTOS: LÓGICA DE NEGOCIO REAL
     // ────────────────────────────────────────────────────────────────────────
 
-    /** Cargar documentos desde la API */
-    async loadProjectDocuments() {
+    /** Cargar documentos desde la API (solo hace fetch si no hay caché o se fuerza) */
+    async loadProjectDocuments(forceRefresh = false) {
         const container = document.getElementById('doc-cards-container');
         if (!container) return;
+
+        // Si ya tenemos datos en caché y no se fuerza recarga, renderizar directamente
+        if (!forceRefresh && this.documents && this.documents.length > 0 && this.docPage === 1) {
+            this.renderDocumentList();
+            return;
+        }
 
         try {
             const res = await API.get(`/projects/${this.projectId}/documents?page=${this.docPage}&limit=${this.docLimit}`, { silent: true });
@@ -1618,24 +1799,29 @@ SIModules.projectDetailAdmin = {
                         <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0 sm:pl-3">
                             <div class="flex items-center gap-1 border-r border-gray-100 pr-3 mr-1">
                                 <button onclick='SIModules.projectDetailAdmin.openPreviewModal(${JSON.stringify(doc).replace(/'/g, "&#39;")})' 
-                                   class="p-2 text-gray-300 hover:text-blue-500 transition-colors transform hover:scale-110 active:scale-95 flex items-center justify-center relative group/btn" 
+                                   class="p-2 text-gray-300 hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center relative group/btn" 
                                    title="${canClientView ? 'Ver / Comentar' : 'Comentar'}">
                                     <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${canView ? 'opacity-100 group-hover/btn:opacity-0' : 'hidden'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <svg class="w-5 h-5 absolute inset-0 m-auto transition-opacity duration-300 ${!canView ? 'opacity-100' : 'opacity-0 group-hover/btn:opacity-100'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                 </button>
                                 
-                                ${canClientDownload ? `<a href="/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download" 
+                                ${canClientDownload ? `<a href="${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/download" 
                                    target="_blank"
-                                   class="p-2 text-gray-300 hover:text-orange-500 transition-colors transform hover:scale-110 active:scale-95" 
+                                   class="p-2 text-gray-300 hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95" 
                                    title="Descargar Archivo">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                 </a>` : ''}
 
                                 ${user && user.role !== 'cliente' ? `
                                 <button onclick="SIModules.projectDetailAdmin.triggerVersionUpload(${doc.id})"
-                                        class="p-2 text-gray-300 hover:text-emerald-500 transition-colors transform hover:scale-110 active:scale-95" 
+                                        class="p-2 text-gray-300 hover:text-emerald-500 transition-all transform hover:scale-110 active:scale-95" 
                                         title="Subir Nueva Versión">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                </button>
+                                <button onclick='SIModules.projectDetailAdmin.openEditDocumentModal(${JSON.stringify(doc).replace(/'/g, "&#39;")})'
+                                        class="p-2 text-gray-300 hover:text-indigo-500 transition-all transform hover:scale-110 active:scale-95 hover:rotate-12" 
+                                        title="Editar Metadatos">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                 </button>
                                 ` : ''}
                             </div>
@@ -1680,8 +1866,8 @@ SIModules.projectDetailAdmin = {
                 SIApp.renderPaginationControls(
                     pagContainer,
                     pagination,
-                    (page) => { this.docPage = page; this.loadProjectDocuments(); },
-                    (limit) => { this.docLimit = limit; this.docPage = 1; this.loadProjectDocuments(); }
+                    (page) => { this.docPage = page; this.loadProjectDocuments(true); },
+                    (limit) => { this.docLimit = limit; this.docPage = 1; this.loadProjectDocuments(true); }
                 );
             }
         }
@@ -1766,7 +1952,7 @@ SIModules.projectDetailAdmin = {
                             <svg class="w-4 h-4 transition-opacity duration-300 ${!canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             <svg class="w-4 h-4 transition-opacity duration-300 ${canView ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                         </button>
-                        ${canClientDownload ? `<a href="/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
+                        ${canClientDownload ? `<a href="${window.API_BASE}/projects/${this.projectId}/documents/${docId}/download?version_id=${v.id}" 
                            target="_blank"
                            class="p-1.5 text-gray-400 hover:text-orange-500 transition-colors" title="Descargar esta versión">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -1911,8 +2097,8 @@ SIModules.projectDetailAdmin = {
         this._updatePreviewHeader(doc);
 
         // URLs
-        const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/view?${versionId ? 'version_id=' + versionId + '&' : ''}_t=${Date.now()}`;
-        const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id=' + versionId : ''}`;
+        const viewUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/view?${versionId ? 'version_id=' + versionId + '&' : ''}_t=${Date.now()}`;
+        const downloadUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id=' + versionId : ''}`;
 
         // --- SPA: Sincronizar URL para Deep Linking ---
         const previewUrl = `/steelinox/project/${this.projectId}/documents/${doc.id}`;
@@ -2207,8 +2393,8 @@ SIModules.projectDetailAdmin = {
             const isPdf = mime === 'application/pdf';
             const isText = mime.startsWith('text/') || mime === 'application/json';
 
-            const viewUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
-            const downloadUrl = `/steelinox/api/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
+            const viewUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${docId}/view?version_id=${versionId}`;
+            const downloadUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${docId}/download?version_id=${versionId}`;
 
             // Check Permissions
             const isClient = this.user && this.user.role === 'cliente';
@@ -2826,9 +3012,135 @@ SIModules.projectDetailAdmin = {
         }
     },
 
+    // MODAL: EDITAR DOCUMENTO METADATA
+    /** Helpers para selección visual en el modal de edición de documentos */
+    _selectEditDocType(value, clickedEl) {
+        const hidden = document.getElementById('edit-doc-type');
+        if (hidden) hidden.value = value;
+        const errorEl = document.getElementById('edit-doc-type-error');
+        if (errorEl) errorEl.classList.add('hidden');
+
+        document.querySelectorAll('.edit-doc-type-card').forEach(card => {
+            card.classList.remove('selected', 'border-orange-400', 'bg-orange-50/50', 'ring-2', 'ring-orange-500/10');
+            card.classList.add('border-gray-100');
+        });
+
+        if (clickedEl) {
+            clickedEl.classList.add('selected', 'border-orange-400', 'bg-orange-50/50', 'ring-2', 'ring-orange-500/10');
+            clickedEl.classList.remove('border-gray-100');
+        }
+    },
+
+    _selectEditDocAccess(value, clickedEl) {
+        const hidden = document.getElementById('edit-doc-access');
+        if (hidden) hidden.value = value;
+
+        document.querySelectorAll('.edit-doc-access-card').forEach(card => {
+            card.classList.remove('bg-blue-500', 'text-white', 'border-blue-500', 'shadow-md', 'shadow-blue-500/20');
+            card.classList.add('bg-white', 'border-gray-100', 'text-gray-400');
+        });
+
+        if (clickedEl) {
+            clickedEl.classList.add('bg-blue-500', 'text-white', 'border-blue-500', 'shadow-md', 'shadow-blue-500/20');
+            clickedEl.classList.remove('bg-white', 'border-gray-100', 'text-gray-400');
+        }
+    },
+
+    openEditDocumentModal(doc) {
+        document.getElementById('edit-doc-id').value = doc.id;
+        document.getElementById('edit-doc-title').value = doc.title || '';
+        document.getElementById('edit-doc-visible').checked = (doc.is_visible_to_client == 1);
+        
+        // Inicializar cards de Tipo
+        const typeValue = doc.type || 'otros';
+        const typeCard = document.querySelector(`.edit-doc-type-card[data-value="${typeValue}"]`);
+        this._selectEditDocType(typeValue, typeCard);
+
+        // Inicializar cards de Acceso
+        const accessValue = doc.access_mode || 'both';
+        const accessCard = document.querySelector(`.edit-doc-access-card[data-value="${accessValue}"]`);
+        this._selectEditDocAccess(accessValue, accessCard);
+        
+        SIApp.modal.open('edit-document-modal');
+    },
+
+    async saveDocumentEdits() {
+        const formId = 'edit-document-form';
+        const docId = document.getElementById('edit-doc-id').value;
+        const btnId = 'btn-save-edit-doc';
+        
+        const data = SIApp.getValidatedFormData(formId);
+        if (!data) return;
+
+        data.is_visible_to_client = document.getElementById('edit-doc-visible').checked ? 1 : 0;
+
+        SIApp.setBtnLoading(btnId, true, 'Guardando...');
+
+        try {
+            const res = await API.put('/projects/' + this.projectId + '/documents/' + docId, data);
+
+            if (res && res.success) {
+                SIApp.showToast('Documento actualizado', 'Metadatos guardados correctamente', 'success');
+                SIApp.modal.close('edit-document-modal');
+                await this.loadProjectDocuments();
+                // Por si afecta a documentos destacados como la Propuesta
+                if(this.project.status === 'propuesta' || this.project.status === 'ejecucion') this.loadProjectData(); 
+            } else {
+                SIApp.showToast('Error', res?.message || 'Revisa los campos', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            SIApp.showToast('Error', 'Error al modificar documento', 'error');
+        } finally {
+            SIApp.setBtnLoading(btnId, false, 'Guardar Cambios');
+        }
+    },
+
     // ────────────────────────────────────────────────────────────────────────
     // MODAL: CAMBIAR ESTADO (Stepper Vertical Linear)
     // ────────────────────────────────────────────────────────────────────────
+
+    toggleDropdown(id) {
+        document.querySelectorAll('.si-custom-dropdown').forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden');
+    },
+
+    selectCustomStatus(val, label, colorClass, liElement) {
+        const input = document.getElementById('change-status-select');
+        if (input) input.value = val;
+        
+        const display = document.getElementById('change-status-display');
+        if (display) display.textContent = label;
+
+        const circle = document.getElementById('change-status-circle');
+        if (circle) circle.className = 'w-2 h-2 rounded-full ' + colorClass;
+
+        if (liElement) {
+            const ul = document.getElementById('status-dropdown-menu');
+            if (ul) {
+                const lis = ul.querySelectorAll('li');
+                lis.forEach(li => {
+                    // Only reset if not disabled to preserve "Cerrado -> Aprobado" lockout
+                    if (!li.classList.contains('pointer-events-none')) {
+                        li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600';
+                    } else if (li.classList.contains('cursor-default') && li.innerText.trim().toLowerCase() !== label.toLowerCase()) {
+                         // remove selected state classes from the previously selected disabled item (so it doesn't look fully selected)
+                         if (liElement !== li) {
+                             // retain disabled but not active
+                             li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-400 cursor-default pointer-events-none';
+                         }
+                    }
+                    const check = li.querySelector('.status-check');
+                    if (check) check.remove();
+                });
+                liElement.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner';
+                liElement.insertAdjacentHTML('beforeend', '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>');
+            }
+        }
+
+        this.toggleDropdown('status-dropdown-menu');
+    },
 
     openChangeStatusModal() {
         SIApp.modal.open('change-status-modal');
@@ -2839,6 +3151,17 @@ SIModules.projectDetailAdmin = {
     },
 
     async saveProjectStatus(formId = 'change-status-form') {
+        // Validación custom para el form de reapertura (usa hidden input en vez de select)
+        if (formId === 'reopen-project-form') {
+            const hiddenStatus = document.getElementById('reopen-status-value');
+            const errorEl = document.getElementById('reopen-status-error');
+            if (!hiddenStatus || !hiddenStatus.value) {
+                if (errorEl) errorEl.classList.remove('hidden');
+                return;
+            }
+            if (errorEl) errorEl.classList.add('hidden');
+        }
+
         // Obtenemos los datos del formulario específico
         const data = SIApp.getValidatedFormData(formId);
         if (!data) return;
@@ -2865,6 +3188,30 @@ SIModules.projectDetailAdmin = {
         }
     },
 
+    /** Selección visual de la tarjeta en el formulario de reapertura */
+    _selectReopenStatus(value, clickedEl) {
+        // Actualizar el hidden input con el valor
+        const hidden = document.getElementById('reopen-status-value');
+        if (hidden) hidden.value = value;
+
+        // Ocultar mensaje de error si estaba visible
+        const errorEl = document.getElementById('reopen-status-error');
+        if (errorEl) errorEl.classList.add('hidden');
+
+        // Resetear todas las tarjetas
+        document.querySelectorAll('.reopen-option-card').forEach(card => {
+            card.classList.remove('selected', 'border-orange-400', 'border-amber-400', 'bg-orange-50/50', 'bg-amber-50/50');
+            card.classList.add('border-gray-200');
+        });
+
+        // Activar la tarjeta seleccionada con el color correcto
+        const isEjecucion = value === 'ejecucion';
+        clickedEl.classList.add('selected');
+        clickedEl.classList.remove('border-gray-200');
+        clickedEl.classList.add(isEjecucion ? 'border-orange-400' : 'border-amber-400');
+        clickedEl.classList.add(isEjecucion ? 'bg-orange-50/50' : 'bg-amber-50/50');
+    },
+
     /** Aprobación de proyecto por parte del cliente o admin, vinculada a un documento */
     async approveProjectProposal(projectId, docId) {
         if (!SIApp.confirm) return;
@@ -2880,21 +3227,62 @@ SIModules.projectDetailAdmin = {
         SIApp.setBtnLoading(btnId, true, '...');
 
         try {
-            // Nueva ruta unificada para aprobación formal
-            const res = await API.post('/projects/' + projectId + '/approve');
+            // STEP 1: Solicitud de confirmación 2FA (envía email)
+            const res = await API.post('/projects/' + projectId + '/approve/request');
 
             if (res.success) {
-                SIApp.showToast('¡Éxito!', 'Propuesta aprobada correctamente. El proyecto ha cambiado de estado.', 'success');
-                // Recargar todo el estado del proyecto para actualizar badges, stepper, etc.
-                await this.loadProjectData();
+                SIApp.showToast('Código enviado', 'Revisa tu bandeja de entrada o spam', 'info');
+                
+                // Mostrar el modal de confirmación 2FA
+                const input = document.getElementById('approve-2fa-token');
+                if (input) input.value = '';
+                SIApp.modal.open('approve-2fa-modal');
+                // Auto focus tras la animación del modal
+                setTimeout(() => { if (input) input.focus(); }, 350);
             } else {
-                SIApp.showToast('No se puede aprobar', res.message || 'Error desconocido.', 'error');
+                SIApp.showToast('No se puede aprobar', res.message || 'Error validando permisos o estado.', 'error');
             }
         } catch (e) {
             console.error(e);
-            SIApp.showToast('Error', 'Error de conexión con el servidor.', 'error');
+            SIApp.showToast('Error', 'Error de conexión enviando código.', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Aprobar');
+        }
+    },
+
+    /** Consumo del código 2FA para la aprobación definitiva */
+    async confirmApproveProjectProposal() {
+        const input = document.getElementById('approve-2fa-token');
+        const token = input ? input.value.trim() : '';
+        const btnId = 'btn-confirm-2fa';
+
+        if (!token || token.length < 6) {
+            SIApp.showToast('Aviso', 'Introduce los 6 dígitos del código.', 'info');
+            return;
+        }
+
+        SIApp.setBtnLoading(btnId, true, 'Verificando...');
+
+        try {
+            // STEP 3: Confirm 2FA Token
+            const res = await API.post('/projects/' + this.projectId + '/approve/confirm', { token });
+
+            if (res.success) {
+                SIApp.showToast('¡Aprobado!', 'Propuesta aprobada correctamente. El proyecto ha cambiado a Ejecución.', 'success');
+                SIApp.modal.close('approve-2fa-modal');
+                await this.loadProjectData();
+            } else {
+                SIApp.showToast('Código Inválido', res.message || 'El código es incorrecto o ha caducado.', 'error');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            SIApp.showToast('Error', 'Error de conexión verificando código.', 'error');
+        } finally {
+            SIApp.setBtnLoading(btnId, false, 'Confirmar Código');
         }
     }
 };

@@ -174,7 +174,7 @@ SIModules.dashboard = {
                     ${SIApp.formatDate(p.created_at)}
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <svg class="w-5 h-5 text-gray-200 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-indigo-500 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
                 </td>
             </tr>
         `).join('');
@@ -258,10 +258,16 @@ SIModules.dashboard = {
     /** Filtro de buscador en tiempo real administrador */
     _searchAdmin(query = null) {
         if (query !== null) {
-            this.currentAdminSearch = query.toLowerCase().trim();
+            query = query.trim();
+            if (query.length > 0 && query.length < 3) return;
+            this.currentAdminSearch = query.toLowerCase();
         }
-        this.currentAdminPage = 1;
-        this.loadAdminDashboard();
+        
+        if (this.searchTimeoutAdmin) clearTimeout(this.searchTimeoutAdmin);
+        this.searchTimeoutAdmin = setTimeout(() => {
+            this.currentAdminPage = 1;
+            this.loadAdminDashboard();
+        }, 400);
     },
 
     /** Lógica de ordenación para administrador */
@@ -494,9 +500,15 @@ SIModules.dashboard = {
 
     /** Buscador comercial */
     _searchCommercial(query) {
-        this.currentCommercialSearch = query.toLowerCase().trim();
-        this.currentCommercialPage = 1;
-        this.loadCommercialDashboard();
+        query = query.trim();
+        if (query.length > 0 && query.length < 3) return;
+        this.currentCommercialSearch = query.toLowerCase();
+        
+        if (this.searchTimeoutComm) clearTimeout(this.searchTimeoutComm);
+        this.searchTimeoutComm = setTimeout(() => {
+            this.currentCommercialPage = 1;
+            this.loadCommercialDashboard();
+        }, 400);
     },
 
     /** Lógica de ordenación para comercial */
@@ -602,8 +614,14 @@ SIModules.dashboard = {
 
     /** Buscar por texto libre */
     _searchClient(query) {
+        query = query.trim();
+        if (query.length > 0 && query.length < 3) return;
         this._clientSearch = query.toLowerCase();
-        this._applyClientFilters();
+        
+        if (this.searchTimeoutClientVal) clearTimeout(this.searchTimeoutClientVal);
+        this.searchTimeoutClientVal = setTimeout(() => {
+            this._applyClientFilters();
+        }, 300);
     },
 
     /** Aplicar ambos filtros y renderizar */
@@ -1089,8 +1107,11 @@ SIModules.dashboard = {
 
     /** Al buscar, reiniciamos a la página 1 y recargamos */
     _searchClients(query) {
-        if (this.searchTimeout) clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(() => {
+        query = query.trim();
+        if (query.length > 0 && query.length < 3) return;
+        
+        if (this.searchTimeoutClients) clearTimeout(this.searchTimeoutClients);
+        this.searchTimeoutClients = setTimeout(() => {
             this.currentClientSearch = query.toLowerCase();
             this.currentClientPage = 1;
             this.loadClientsList();
@@ -1268,9 +1289,12 @@ SIModules.dashboard = {
     },
 
     _searchProjectsList(query) {
+        query = query.trim();
+        if (query.length > 0 && query.length < 3) return;
+        
         if (this.projSearchTimeout) clearTimeout(this.projSearchTimeout);
         this.projSearchTimeout = setTimeout(() => {
-            this.currentProjListSearch = query;
+            this.currentProjListSearch = query.toLowerCase();
             this.currentProjListPage = 1;
             this.loadProjectsList();
         }, 400);

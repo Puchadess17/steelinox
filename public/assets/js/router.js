@@ -31,7 +31,7 @@ const SIRouter = {
             if (!href.startsWith('/steelinox/')) return;
 
             // No interceptar rutas de API
-            if (href.startsWith('/steelinox/api/')) return;
+            if (href.startsWith(window.API_BASE)) return;
 
             e.preventDefault();
 

@@ -10,8 +10,12 @@
  * @property {*}       data    - Datos de respuesta (objeto, array, null)
  * @property {Object|null} errors - Map de errores por campo { campo: 'msg' }
  */
+// Variable global para parametrizar la ruta de la API.
+// En producción, si se despliega en la raíz, cambiar a '/api'
+window.API_BASE = '/steelinox/api';
+
 const API = {
-    baseUrl: '/steelinox/api',
+    baseUrl: window.API_BASE,
     csrfToken: null,
     _csrfPromise: null,
 

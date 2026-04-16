@@ -345,9 +345,15 @@ SIModules.clientUsersAdmin = {
     },
 
     _search(val) {
-        this.currentSearch = val.toLowerCase().trim();
-        this.currentPage = 1;
-        this.loadList();
+        val = val.trim();
+        if (val.length > 0 && val.length < 3) return;
+        
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.currentSearch = val.toLowerCase();
+            this.currentPage = 1;
+            this.loadList();
+        }, 400);
     },
 
     async _confirmDelete(id, name) {

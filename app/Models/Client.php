@@ -229,11 +229,23 @@ class Client
         $usersList = $stmtUsers->fetchAll();
 
         // 3. Expedientes vinculados (Proyectos)
-        $sqlProjects = "SELECT id, name, reference, status, budget_amount, created_at 
-                        FROM projects 
-                        WHERE client_id = :client_id AND deleted_at IS NULL";
+        $sqlProjects = "SELECT p.id, p.name, p.reference, p.status, p.budget_amount, p.created_at 
+                        FROM projects p";
+        
+        $projectParams = ['client_id' => $clientId];
+
+        if ($role === 'comercial') {
+            $sqlProjects .= " INNER JOIN project_user pu ON p.id = pu.project_id 
+                              WHERE p.client_id = :client_id 
+                              AND pu.user_id = :user_id 
+                              AND p.deleted_at IS NULL";
+            $projectParams['user_id'] = $userId;
+        } else {
+            $sqlProjects .= " WHERE p.client_id = :client_id AND p.deleted_at IS NULL";
+        }
+
         $stmtProjects = $this->db->prepare($sqlProjects);
-        $stmtProjects->execute(['client_id' => $clientId]);
+        $stmtProjects->execute($projectParams);
         $projectsList = $stmtProjects->fetchAll();
 
         // 4. Procesamiento de Métricas y KPIs
