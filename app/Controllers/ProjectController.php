@@ -28,11 +28,15 @@ class ProjectController
 
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
+            $allowedSortColumns = ['client_name', 'name', 'reference', 'commercials_count', 'created_at'];
+            $sortBy = isset($_GET['sort_by']) ? trim($_GET['sort_by']) : 'created_at';
+            $sortDir = isset($_GET['sort_dir']) ? strtoupper(trim($_GET['sort_dir'])) : 'DESC';
+            
             $filters = [
                 'search'   => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
                 'status'   => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all',
-                'sort_by'  => isset($_GET['sort_by']) ? $_GET['sort_by'] : 'created_at',
-                'sort_dir' => isset($_GET['sort_dir']) ? $_GET['sort_dir'] : 'DESC'
+                'sort_by'  => in_array($sortBy, $allowedSortColumns) ? $sortBy : 'created_at',
+                'sort_dir' => in_array($sortDir, ['ASC', 'DESC']) ? $sortDir : 'DESC'
             ];
             
             $projectModel = new Project();

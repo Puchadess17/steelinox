@@ -85,18 +85,20 @@ class Document {
      * barreras de visibilidad (is_visible_to_client) si la petición
      * proviene de un usuario externo.
      */
-    public function getListByProject($projectId, $role, $limit = 15, $offset = 0) {
+    public function getListByProject($projectId, $role, $clientId = null, $limit = 15, $offset = 0) {
+        $params = ['project_id' => $projectId];
         $baseWhere = "WHERE d.project_id = :project_id AND d.deleted_at IS NULL";
         
-        // Filtro estricto de seguridad multitenant
+        // Filtro estricto de seguridad multitenant intencionado en el modelo
         if ($role === 'cliente') {
-            $baseWhere .= " AND d.is_visible_to_client = 1";
+            $baseWhere .= " AND d.is_visible_to_client = 1 AND p.client_id = :client_id";
+            $params['client_id'] = $clientId;
         }
 
         // Cálculo del total para metadatos de paginación
-        $countSql = "SELECT COUNT(*) FROM documents d " . $baseWhere;
+        $countSql = "SELECT COUNT(*) FROM documents d LEFT JOIN projects p ON d.project_id = p.id " . $baseWhere;
         $stmtCount = $this->db->prepare($countSql);
-        $stmtCount->execute(['project_id' => $projectId]);
+        $stmtCount->execute($params);
         $total = (int)$stmtCount->fetchColumn();
 
         // Extracción cruzando datos de la versión activa y el autor
@@ -106,12 +108,15 @@ class Document {
                     FROM documents d
                     INNER JOIN document_versions v ON d.current_version_id = v.id
                     LEFT JOIN users u ON v.uploaded_by = u.id
+                    LEFT JOIN projects p ON d.project_id = p.id
                     $baseWhere
                     ORDER BY d.created_at DESC
                     LIMIT :limit OFFSET :offset";
 
         $stmtData = $this->db->prepare($dataSql);
-        $stmtData->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        foreach ($params as $key => $val) {
+            $stmtData->bindValue(":$key", $val);
+        }
         $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();

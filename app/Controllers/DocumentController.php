@@ -37,7 +37,7 @@ class DocumentController {
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
             $documentModel = new Document();
-            $result = $documentModel->getListByProject($projectId, $role, $limit, $offset);
+            $result = $documentModel->getListByProject($projectId, $role, $clientId, $limit, $offset);
 
             echo json_encode([
                 'success'    => true, 
@@ -92,11 +92,27 @@ class DocumentController {
 
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido o superó el límite de tamaño', 'data' => null, 'errors' => ['file' => 'Archivo inválido']]);
+                echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo válido o superó el límite de tamaño de servidor', 'data' => null, 'errors' => ['file' => 'Archivo inválido']]);
                 return;
             }
 
             $file = $_FILES['file'];
+            
+            // --- VALIDACIÓN DE TAMAÑO MÁXIMO ---
+            $maxFileSizeMB = isset($_ENV['MAX_FILE_SIZE_MB']) ? (int)$_ENV['MAX_FILE_SIZE_MB'] : 100;
+            $maxFileSizeBytes = $maxFileSizeMB * 1024 * 1024;
+            
+            if ($file['size'] > $maxFileSizeBytes) {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'El archivo supera el tamaño máximo permitido.', 
+                    'data'    => null, 
+                    'errors'  => ['file' => 'El tamaño máximo es de ' . $maxFileSizeMB . 'MB']
+                ]);
+                return;
+            }
+            // -----------------------------------
             
             $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
             $rawTitle = $_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
@@ -315,6 +331,23 @@ class DocumentController {
             }
 
             $file = $_FILES['file'];
+            
+            // --- VALIDACIÓN DE TAMAÑO MÁXIMO ---
+            $maxFileSizeMB = isset($_ENV['MAX_FILE_SIZE_MB']) ? (int)$_ENV['MAX_FILE_SIZE_MB'] : 100;
+            $maxFileSizeBytes = $maxFileSizeMB * 1024 * 1024;
+            
+            if ($file['size'] > $maxFileSizeBytes) {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'El archivo supera el tamaño máximo permitido.', 
+                    'data'    => null, 
+                    'errors'  => ['file' => 'El tamaño máximo es de ' . $maxFileSizeMB . 'MB']
+                ]);
+                return;
+            }
+            // -----------------------------------
+            
             $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
 
             $allowedMimes = [
