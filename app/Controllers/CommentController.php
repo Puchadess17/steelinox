@@ -204,6 +204,66 @@ class CommentController {
         }
     }
 
+    public function destroy($projectId, $documentId, $commentId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba DELETE', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
+            $commentId = (int)$commentId;
+
+            $projectModel = new Project();
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            if (!CommentPolicy::canCreateOnProject($projectDetails['status'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['policy' => 'El proyecto está cerrado y no se pueden eliminar comentarios.']]);
+                return;
+            }
+
+            $commentModel = new Comment();
+            
+            if ($commentModel->delete($commentId, $projectId)) {
+                AuditLogger::log('comentario_eliminado', 'comment', $commentId, $projectId, [
+                    'documento_id' => $documentId
+                ]);
+
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Comentario eliminado correctamente',
+                    'data'    => null,
+                    'errors'  => null
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'No se pudo eliminar el comentario', 'data' => null, 'errors' => ['database' => 'Error al eliminar']]);
+            }
+            
+        } catch (Throwable $e) {
+            ErrorLogger::log($e->getMessage(), 'CommentController::destroy');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al eliminar']]);
+        }
+    }
+
     private function sanitizeCommentBody($text) {
         if (empty($text)) return '';
         $text = trim($text);

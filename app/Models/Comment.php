@@ -110,4 +110,17 @@ class Comment {
         
         return $this->db->lastInsertId();
     }
+
+    /**
+     * BORRADO LÓGICO
+     * Oculta un comentario utilizando el campo deleted_at para preservar la auditoría.
+     */
+    public function delete($commentId, $projectId) {
+        $sql = "UPDATE comments SET deleted_at = NOW() WHERE id = :comment_id AND project_id = :project_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'comment_id' => $commentId,
+            'project_id' => $projectId
+        ]);
+    }
 }

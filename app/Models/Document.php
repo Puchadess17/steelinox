@@ -282,4 +282,15 @@ class Document {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
     }
+
+    /**
+     * BORRADO LÓGICO
+     * Implementa la eliminación suave de un documento, preservando la
+     * integridad referencial e historial para auditorías.
+     */
+    public function delete($documentId, $projectId) {
+        $sql = "UPDATE documents SET deleted_at = NOW() WHERE id = :document_id AND project_id = :project_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['document_id' => $documentId, 'project_id' => $projectId]);
+    }
 }

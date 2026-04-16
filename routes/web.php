@@ -59,6 +59,7 @@ $router->post('/api/projects/(\d+)/approve/confirm', 'ProjectController@confirmA
  */
 $router->get('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@index');
 $router->post('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@store');
+$router->delete('/api/projects/(\d+)/documents/(\d+)/comments/(\d+)', 'CommentController@destroy');
 
 /**
  * ASIGNACIÓN DE PERSONAL (TABLA PIVOTE)
@@ -109,6 +110,7 @@ $router->get('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentController
 $router->post('/api/projects/(\d+)/documents/(\d+)/versions', 'DocumentController@addVersion');
 
 $router->put('/api/projects/(\d+)/documents/(\d+)', 'DocumentController@update');
+$router->delete('/api/projects/(\d+)/documents/(\d+)', 'DocumentController@destroy');
 
 /**
  * ============================

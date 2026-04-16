@@ -575,6 +575,61 @@ class DocumentController {
         }
     }
 
+    public function destroy($projectId, $documentId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba DELETE', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
+            return;
+        }
+
+        try {
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+            
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Denegado']]);
+                return;
+            }
+
+            if (!DocumentPolicy::canUploadToProject($projectDetails['status'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['policy' => 'El proyecto está cerrado y no admite la eliminación de documentos.']]);
+                return;
+            }
+
+            $documentModel = new Document();
+            $currentDoc = $documentModel->getMetadata($documentId, $projectId);
+
+            if (!$currentDoc) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Documento no encontrado', 'data' => null, 'errors' => ['document' => 'No existe']]);
+                return;
+            }
+
+            $documentModel->delete($documentId, $projectId);
+            AuditLogger::log('documento_eliminado', 'document', $documentId, $projectId, [
+                'titulo_documento' => $currentDoc['title']
+            ]);
+
+            echo json_encode(['success' => true, 'message' => 'Documento eliminado correctamente', 'data' => null, 'errors' => null]);
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'DocumentController::destroy');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al eliminar documento']]);
+        }
+    }
+
     public function download($projectId, $documentId) {
         $this->serveFile($projectId, $documentId, 'attachment');
     }
