@@ -402,6 +402,17 @@ SIModules.projectDetailAdmin = {
                                              </button>
                                          </div>
                                      </form>
+
+                                     <!-- Aviso de Proyecto Cerrado (DDS 4.4) -->
+                                     <div id="preview-chat-closed-notice" class="hidden p-4 bg-gray-50 border border-gray-100 rounded-2xl flex items-center gap-3 transition-all">
+                                         <div class="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 shrink-0">
+                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                         </div>
+                                         <div>
+                                             <p class="text-xs font-black text-gray-900 uppercase tracking-tight">Proyecto Cerrado</p>
+                                             <p class="text-[10px] text-gray-500 font-medium">Los comentarios están bloqueados en este estado.</p>
+                                         </div>
+                                     </div>
                                 </div>
                             </div>
                         </div>
@@ -658,28 +669,30 @@ SIModules.projectDetailAdmin = {
                 </div>
             </div>
 
-            <div id="approve-2fa-modal" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden">
-                    <div class="p-8 text-center relative">
-                        <!-- Botón de cerrar (x) -->
-                        <button type="button" onclick="SIApp.modal.close('approve-2fa-modal')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <div id="approve-2fa-modal" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4 backdrop-blur-sm">
+                <div class="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden border border-gray-100">
+                    <div class="p-10 text-center relative">
+                        <!-- Botón Atrás (Flechita) -->
+                        <button type="button" onclick="SIApp.modal.close('approve-2fa-modal')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-[#1a1b25] transition-all group">
+                            <svg class="w-6 h-6 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
                         </button>
                         
-                        <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-blue-50/50 shadow-inner">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <div class="w-20 h-20 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-8 ring-8 ring-orange-50/50 shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
-                        <h3 class="text-xl font-black text-gray-900 mb-2">Código de Seguridad</h3>
-                        <p class="text-[13px] text-gray-500 mb-6 font-medium leading-relaxed">Hemos enviado un código de 6 dígitos con validez de 10 minutos a tu email registrado.</p>
+                        <h3 class="text-2xl font-black text-[#1a1b25] mb-3 tracking-tight uppercase">Seguridad 2FA</h3>
+                        <p class="text-[13px] text-gray-500 mb-8 font-medium leading-relaxed">Se ha enviado un código de verificación a tu email. Por seguridad, introduce los 6 dígitos para confirmar.</p>
                         
-                        <form id="approve-2fa-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.confirmApproveProjectProposal();" class="space-y-6">
+                        <form id="approve-2fa-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.confirmApproveProjectProposal();" class="space-y-8">
                             <div>
-                                <input type="text" id="approve-2fa-token" name="token" maxlength="6" class="w-full text-center text-3xl tracking-[0.5em] font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-2xl py-4 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none uppercase" placeholder="------" required autocomplete="off">
+                                <input type="text" id="approve-2fa-token" name="token" maxlength="6" 
+                                    class="w-full text-center text-4xl tracking-[0.4em] font-black text-[#1a1b25] bg-gray-50 border-2 border-gray-100 rounded-2xl py-5 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white transition-all outline-none uppercase placeholder:text-gray-200" 
+                                    placeholder="000000" required autocomplete="off">
                             </div>
                             
-                            <button type="submit" id="btn-confirm-2fa" class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-4 px-6 text-sm font-black transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 group">
-                                <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Confirmar Código
+                            <button type="submit" id="btn-confirm-2fa" class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-2xl py-4.5 px-6 text-sm font-black transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 group uppercase tracking-widest">
+                                <span>Verificar Identidad</span>
+                                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                             </button>
                         </form>
                     </div>
@@ -2206,6 +2219,21 @@ SIModules.projectDetailAdmin = {
             versionId || null,
             doc.version_number || null
         );
+
+        // --- ENFORCEMENT: BLOQUEO POR ESTADO CERRADO (DDS 4.4) ---
+        const chatForm = document.getElementById('preview-chat-form');
+        const closedNotice = document.getElementById('preview-chat-closed-notice');
+        const isClosed = (this.project && this.project.status === 'cerrado');
+
+        if (chatForm && closedNotice) {
+            if (isClosed) {
+                chatForm.classList.add('hidden');
+                closedNotice.classList.remove('hidden');
+            } else {
+                chatForm.classList.remove('hidden');
+                closedNotice.classList.add('hidden');
+            }
+        }
     },
 
     /** Actualiza la zona de metadatos del header del preview con los datos de una versión */
@@ -2666,6 +2694,12 @@ SIModules.projectDetailAdmin = {
     },
 
     async submitDocComment() {
+        // --- PREVENT SUBMISSION IF PROJECT IS CLOSED (DDS 4.4) ---
+        if (this.project && this.project.status === 'cerrado') {
+            if (window.SIApp) SIApp.showToast('Proyecto Cerrado', 'No se pueden añadir comentarios a un proyecto finalizado.', 'info');
+            return;
+        }
+
         const docId = document.getElementById('chat-current-doc-id').value;
         const input = document.getElementById('preview-chat-input');
         const activeVersionId = document.getElementById('chat-current-version-id')?.value;
@@ -3233,10 +3267,10 @@ SIModules.projectDetailAdmin = {
             if (res.success) {
                 SIApp.showToast('Código enviado', 'Revisa tu bandeja de entrada o spam', 'info');
                 
-                // Mostrar el modal de confirmación 2FA
+                // Mostrar el modal de confirmación 2FA (bloqueado para cierre accidental)
                 const input = document.getElementById('approve-2fa-token');
                 if (input) input.value = '';
-                SIApp.modal.open('approve-2fa-modal');
+                SIApp.modal.open('approve-2fa-modal', { allowOutsideClick: false, allowEscape: false });
                 // Auto focus tras la animación del modal
                 setTimeout(() => { if (input) input.focus(); }, 350);
             } else {

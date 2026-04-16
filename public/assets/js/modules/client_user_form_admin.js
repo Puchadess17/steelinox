@@ -144,7 +144,8 @@ SIModules.clientUserFormAdmin = {
                                             <p class="text-xs text-gray-400 mt-0.5">El usuario puede iniciar sesión</p>
                                         </div>
                                         <div class="relative">
-                                            <input type="checkbox" id="user-is-active" name="is_active"
+                                            <input type="hidden" name="is_active_sent" value="1">
+                                            <input type="checkbox" id="user-is-active" name="is_active" value="1"
                                                 class="sr-only peer"
                                                 ${!isEdit || data?.is_active == 1 ? 'checked' : ''}>
                                             <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 transition-colors peer-focus:ring-2 peer-focus:ring-orange-500/20"></div>

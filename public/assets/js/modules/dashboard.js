@@ -31,47 +31,15 @@ SIModules.dashboard = {
     // ═══════════════════════════════════════
 
     async loadAdminDashboard() {
-        const user = Auth.getUser();
-
         this.currentAdminFilter = this.currentAdminFilter || 'all';
         this.currentAdminSearch = this.currentAdminSearch || '';
         this.currentAdminPage = this.currentAdminPage || 1;
         this.adminItemsPerPage = this.adminItemsPerPage || 10;
         this.currentAdminSort = this.currentAdminSort || { field: 'created_at', dir: 'desc' };
 
-        let url = `/projects/search?page=${this.currentAdminPage}&limit=${this.adminItemsPerPage}`;
-        if (this.currentAdminFilter !== 'all') url += `&status=${this.currentAdminFilter}`;
-        if (this.currentAdminSearch) url += `&search=${encodeURIComponent(this.currentAdminSearch)}`;
-        if (this.currentAdminSort.field) url += `&sort_by=${this.currentAdminSort.field}&sort_dir=${this.currentAdminSort.dir}`;
-
-        const result = await API.get(url);
-
-        // Manejar error
-        if (!result.success) {
-            this.container.innerHTML = this._errorState('No se pudieron cargar los datos del dashboard.');
-            return;
-        }
-
-        const rawData = result.data;
-        const projects = rawData.list || rawData || [];
-        const pagination = result.pagination;
-
-        // Calcular KPIs
-        const kpis = rawData.kpis || {
-            total: pagination ? pagination.total_results : projects.length,
-            ejecucion: projects.filter(p => p.status === 'ejecucion').length,
-            propuesta: projects.filter(p => p.status === 'propuesta').length,
-            cerrado: projects.filter(p => p.status === 'cerrado').length,
-            aprobado: projects.filter(p => p.status === 'aprobado').length,
-        };
-
-        this.adminProjects = projects; // Caché para buscador y filtros interactivos
-
-        // El renderizado usará this.currentAdminFilter para poner la clase active
-
+        // Renderizar estructura base si no existe o si es necesario refrescar todo
         this.container.innerHTML = `
             <div class="fade-in">
-                <!-- Header con saludo y nueva UX -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
@@ -81,17 +49,11 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- KPI Grid Premium -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
-                    ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
-                    ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
-                    ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
-                    ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+                <div id="admin-kpis-container" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
+                    <!-- KPIs se cargarán dinámicamente -->
                 </div>
 
-                <!-- Tabs y Búsqueda Interactiva -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
-                    <!-- Fila de Tabs con scroll horizontal nativo -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
                             <button class="tab-client tab-admin ${this.currentAdminFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterAdmin('all', this)">Todos</button>
@@ -102,29 +64,72 @@ SIModules.dashboard = {
                         </div>
                     </div>
 
-                    <!-- Buscador -->
                     <div class="relative w-full xl:w-80 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchAdmin(this.value)" placeholder="Buscar cliente, nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchAdmin(this.value)" value="${this.currentAdminSearch}" placeholder="Buscar cliente, nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
-                <!-- Content Grid (Tabla Principal) -->
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                     <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
                         <h2 class="text-base font-bold text-[#1a1b25]">Listado Global de Proyectos</h2>
-                        <span id="admin-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest">${kpis.total} RESULTADOS</span>
+                        <span id="admin-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Cargando...</span>
                     </div>
-                    <!-- Contenedor adaptativo (Cards en móvil, Tabla en Desktop) -->
-                    <div id="admin-table-container" class="select-none bg-gray-50/20">
-                        <!-- El renderizado de _renderAdminTable inyectará aquí la tabla o grid -->
+                    <div id="admin-table-container" class="select-none bg-gray-50/20 min-h-[200px]">
+                        <!-- La tabla se inyectará aquí -->
                     </div>
+                    <div id="admin-table-pagination" class="mt-6 px-4 pb-4"></div>
                 </div>
             </div>
         `;
 
-        // Renderizar la tabla inicial
-        this._renderAdminTable(this.adminProjects);
+        // Cargar datos iniciales
+        await this._reloadAdminTable();
+    },
+
+    /** Recarga solo los datos de la tabla admin sin destruir el input */
+    async _reloadAdminTable() {
+        let url = `/projects/search?page=${this.currentAdminPage}&limit=${this.adminItemsPerPage}`;
+        if (this.currentAdminFilter !== 'all') url += `&status=${this.currentAdminFilter}`;
+        if (this.currentAdminSearch) url += `&search=${encodeURIComponent(this.currentAdminSearch)}`;
+        if (this.currentAdminSort.field) url += `&sort_by=${this.currentAdminSort.field}&sort_dir=${this.currentAdminSort.dir}`;
+
+        const result = await API.get(url);
+        const tableContainer = document.getElementById('admin-table-container');
+        const counter = document.getElementById('admin-table-counter');
+        const kpisContainer = document.getElementById('admin-kpis-container');
+
+        if (!result.success) {
+            if (tableContainer) tableContainer.innerHTML = this._errorState('No se pudieron cargar los datos.');
+            return;
+        }
+
+        const rawData = result.data;
+        const projects = rawData.list || rawData || [];
+        const pagination = result.pagination;
+
+        // Calcular e inyectar KPIs
+        const kpis = rawData.kpis || {
+            total: pagination ? pagination.total_results : projects.length,
+            ejecucion: projects.filter(p => p.status === 'ejecucion').length,
+            propuesta: projects.filter(p => p.status === 'propuesta').length,
+            cerrado: projects.filter(p => p.status === 'cerrado').length,
+            aprobado: projects.filter(p => p.status === 'aprobado').length,
+        };
+
+        if (kpisContainer) {
+            kpisContainer.innerHTML = `
+                ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
+                ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
+                ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+            `;
+        }
+
+        if (counter) counter.innerText = `${kpis.total} RESULTADOS`;
+
+        this.adminProjects = projects;
+        this._renderAdminTable(projects, pagination);
     },
 
     // ═══════════════════════════════════════
@@ -170,7 +175,7 @@ SIModules.dashboard = {
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
                 </td>
-                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase">
+                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
                     ${SIApp.formatDate(p.created_at)}
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
@@ -180,7 +185,7 @@ SIModules.dashboard = {
         `).join('');
 
         this.currentAdminSort = this.currentAdminSort || { field: 'created_at', dir: 'desc' };
-        
+
         const sortIcon = (field) => {
             if (this.currentAdminSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
             return this.currentAdminSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
@@ -227,46 +232,42 @@ SIModules.dashboard = {
                 paginationContainer,
                 pagination,
                 (newPage) => {
-                    this.currentAdminPage = newPage;
-                    this.loadAdminDashboard();
+                    this._goToAdminPage(newPage);
                 },
                 (newLimit) => {
                     this.adminItemsPerPage = newLimit;
                     this.currentAdminPage = 1;
-                    this.loadAdminDashboard();
+                    this._reloadAdminTable();
                 }
             );
         }
     },
 
     /** Filtro de tabs en panel administrador */
-    _filterAdmin(status, btnElement) {
-        const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
-        document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove(...activeClasses));
-
-        if (btnElement) {
-            btnElement.classList.add(...activeClasses);
-        } else {
-            document.querySelector(`.tab-admin[data-filter="${status}"]`)?.classList.add(...activeClasses);
-        }
-
+    _filterAdmin(status, btn) {
+        document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'));
+        btn.classList.add('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
         this.currentAdminFilter = status;
         this.currentAdminPage = 1;
-        this.loadAdminDashboard();
+        this._reloadAdminTable();
+    },
+
+    async _goToAdminPage(page) {
+        this.currentAdminPage = page;
+        await this._reloadAdminTable();
     },
 
     /** Filtro de buscador en tiempo real administrador */
     _searchAdmin(query = null) {
         if (query !== null) {
             query = query.trim();
-            if (query.length > 0 && query.length < 3) return;
             this.currentAdminSearch = query.toLowerCase();
         }
-        
+
         if (this.searchTimeoutAdmin) clearTimeout(this.searchTimeoutAdmin);
         this.searchTimeoutAdmin = setTimeout(() => {
             this.currentAdminPage = 1;
-            this.loadAdminDashboard();
+            this._reloadAdminTable();
         }, 400);
     },
 
@@ -277,7 +278,7 @@ SIModules.dashboard = {
         } else {
             this.currentAdminSort = { field: field, dir: 'asc' };
         }
-        this.loadAdminDashboard();
+        this._reloadAdminTable();
     },
 
     // ═══════════════════════════════════════
@@ -285,43 +286,11 @@ SIModules.dashboard = {
     // ═══════════════════════════════════════
 
     async loadCommercialDashboard() {
-        const user = Auth.getUser();
-
         this.currentCommercialFilter = this.currentCommercialFilter || 'all';
         this.currentCommercialSearch = this.currentCommercialSearch || '';
         this.currentCommercialPage = this.currentCommercialPage || 1;
         this.commercialItemsPerPage = this.commercialItemsPerPage || 10;
         this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
-
-        let url = `/projects/search?page=${this.currentCommercialPage}&limit=${this.commercialItemsPerPage}`;
-        if (this.currentCommercialFilter !== 'all') url += `&status=${this.currentCommercialFilter}`;
-        if (this.currentCommercialSearch) url += `&search=${encodeURIComponent(this.currentCommercialSearch)}`;
-        if (this.currentCommercialSort.field) url += `&sort_by=${this.currentCommercialSort.field}&sort_dir=${this.currentCommercialSort.dir}`;
-
-        const result = await API.get(url);
-
-        if (!result.success) {
-            this.container.innerHTML = this._errorState('No se pudieron cargar tus proyectos.');
-            return;
-        }
-
-        const rawData = result.data;
-        const projects = rawData.list || rawData || [];
-        const pagination = result.pagination;
-
-        // Calcular KPIs para comercial
-        const kpis = rawData.kpis || {
-            total: pagination ? pagination.total_results : projects.length,
-            propuesta: projects.filter(p => p.status === 'propuesta').length,
-            ejecucion: projects.filter(p => p.status === 'ejecucion').length,
-            aprobado: projects.filter(p => p.status === 'aprobado').length,
-            cerrado: projects.filter(p => p.status === 'cerrado').length,
-        };
-
-        // Cachear datos para filtrado frontend
-        this.commercialProjects = projects;
-
-        // Se renderizará con ternario usando this.currentCommercialFilter
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -336,11 +305,8 @@ SIModules.dashboard = {
                 </div>
 
                 <!-- KPI Grid Premium -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
-                    ${this._kpiCardClient('TOTALES', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
-                    ${this._kpiCardClient('PENDIENTES', kpis.propuesta, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
-                    ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
-                    ${this._kpiCardClient('APROBADOS', kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+                <div id="commercial-kpis-container" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
+                    <!-- KPIs dinámicos -->
                 </div>
 
                 <!-- Tabs y Búsqueda Interactiva -->
@@ -359,7 +325,7 @@ SIModules.dashboard = {
                     <!-- Buscador -->
                     <div class="relative w-full xl:w-80 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" value="${this.currentCommercialSearch}" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -367,16 +333,50 @@ SIModules.dashboard = {
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                     <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
                         <h2 class="text-base font-bold text-[#1a1b25]">Listado de Mis Proyectos</h2>
-                        <span id="commercial-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest">${kpis.total} RESULTADOS</span>
+                        <span id="commercial-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Cargando...</span>
                     </div>
                     <!-- Contenedor adaptativo -->
-                    <div id="commercial-table-container" class="select-none bg-gray-50/20">
+                    <div id="commercial-table-container" class="select-none bg-gray-50/20 min-h-[200px]">
                         <!-- Renderizado dinámico -->
                     </div>
                     <div id="commercial-table-pagination" class="mt-6 px-4 pb-4"></div>
                 </div>
             </div>
         `;
+
+        await this._reloadCommercialTable();
+    },
+
+    async _reloadCommercialTable() {
+        let url = `/projects/search?page=${this.currentCommercialPage}&limit=${this.commercialItemsPerPage}`;
+        if (this.currentCommercialFilter !== 'all') url += `&status=${this.currentCommercialFilter}`;
+        if (this.currentCommercialSearch) url += `&search=${encodeURIComponent(this.currentCommercialSearch)}`;
+        if (this.currentCommercialSort.field) url += `&sort_by=${this.currentCommercialSort.field}&sort_dir=${this.currentCommercialSort.dir}`;
+
+        const result = await API.get(url);
+        if (!result.success) return;
+
+        const rawData = result.data;
+        const projects = rawData.list || rawData || [];
+        const pagination = result.pagination;
+
+        const kpisContainer = document.getElementById('commercial-kpis-container');
+        const kpis = rawData.kpis || {
+            total: pagination ? pagination.total_results : projects.length,
+            ejecucion: projects.filter(p => p.status === 'ejecucion').length,
+            propuesta: projects.filter(p => p.status === 'propuesta').length,
+            cerrado: projects.filter(p => p.status === 'cerrado').length,
+            aprobado: projects.filter(p => p.status === 'aprobado').length,
+        };
+
+        if (kpisContainer) {
+            kpisContainer.innerHTML = `
+                ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
+                ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
+                ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+            `;
+        }
 
         this._renderCommercialTable(projects, pagination);
     },
@@ -420,7 +420,7 @@ SIModules.dashboard = {
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
                 </td>
-                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase">
+                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
                     ${SIApp.formatDate(p.created_at)}
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
@@ -430,7 +430,7 @@ SIModules.dashboard = {
         `).join('');
 
         this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
-        
+
         const sortIcon = (field) => {
             if (this.currentCommercialSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
             return this.currentCommercialSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
@@ -477,13 +477,12 @@ SIModules.dashboard = {
                 paginationContainer,
                 pagination,
                 (newPage) => {
-                    this.currentCommercialPage = newPage;
-                    this.loadCommercialDashboard();
+                    this._goToCommercialPage(newPage);
                 },
                 (newLimit) => {
                     this.commercialItemsPerPage = newLimit;
                     this.currentCommercialPage = 1;
-                    this.loadCommercialDashboard();
+                    this._reloadCommercialTable();
                 }
             );
         }
@@ -491,23 +490,26 @@ SIModules.dashboard = {
 
     /** Filtro comercial */
     _filterCommercial(status, btn) {
-        document.querySelectorAll('.tab-commercial').forEach(t => t.classList.remove('active'));
-        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.tab-commercial').forEach(t => t.classList.remove('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'));
+        btn.classList.add('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
         this.currentCommercialFilter = status;
         this.currentCommercialPage = 1;
-        this.loadCommercialDashboard();
+        this._reloadCommercialTable();
+    },
+
+    async _goToCommercialPage(page) {
+        this.currentCommercialPage = page;
+        await this._reloadCommercialTable();
     },
 
     /** Buscador comercial */
     _searchCommercial(query) {
-        query = query.trim();
-        if (query.length > 0 && query.length < 3) return;
-        this.currentCommercialSearch = query.toLowerCase();
-        
+        this.currentCommercialSearch = query.trim().toLowerCase();
+
         if (this.searchTimeoutComm) clearTimeout(this.searchTimeoutComm);
         this.searchTimeoutComm = setTimeout(() => {
             this.currentCommercialPage = 1;
-            this.loadCommercialDashboard();
+            this._reloadCommercialTable();
         }, 400);
     },
 
@@ -518,7 +520,7 @@ SIModules.dashboard = {
         } else {
             this.currentCommercialSort = { field: field, dir: 'asc' };
         }
-        this.loadCommercialDashboard();
+        this._reloadCommercialTable();
     },
 
     // ═══════════════════════════════════════
@@ -617,7 +619,7 @@ SIModules.dashboard = {
         query = query.trim();
         if (query.length > 0 && query.length < 3) return;
         this._clientSearch = query.toLowerCase();
-        
+
         if (this.searchTimeoutClientVal) clearTimeout(this.searchTimeoutClientVal);
         this.searchTimeoutClientVal = setTimeout(() => {
             this._applyClientFilters();
@@ -833,34 +835,10 @@ SIModules.dashboard = {
         this.currentClientSearch = this.currentClientSearch || '';
         this.currentClientPage = this.currentClientPage || 1;
         this.clientsPerPage = this.clientsPerPage || 15;
-
-        // 1. Inicializar el estado de ordenación por defecto si no existe
         this.currentClientSort = this.currentClientSort || { field: 'name', dir: 'asc' };
-
-        let url = `/clients?page=${this.currentClientPage}&limit=${this.clientsPerPage}`;
-        if (this.currentClientFilter !== 'all') url += `&status=${this.currentClientFilter}`;
-        if (this.currentClientSearch) url += `&search=${encodeURIComponent(this.currentClientSearch)}`;
-
-        // 2. Añadir los parámetros de ordenación a la URL de la API
-        if (this.currentClientSort.field) {
-            url += `&sort_by=${this.currentClientSort.field}&sort_dir=${this.currentClientSort.dir}`;
-        }
-
-        const result = await API.get(url);
-
-        if (!result.success) {
-            this.container.innerHTML = this._errorState('No se pudieron cargar los datos de clientes.');
-            return;
-        }
-
-        // 3. NUEVA ESTRUCTURA: Extraer list y kpis desde result.data
-        const clients = result.data?.list || [];
-        const kpis = result.data?.kpis || { total: 0, newThisMonth: 0, totalProjects: 0, totalUsers: 0 };
-        const pagination = result.pagination;
 
         this.container.innerHTML = `
             <div class="fade-in">
-                <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
@@ -875,16 +853,11 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- KPI Grid Premium (Estilo Flat / Captura) -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-                    ${this._kpiStatFlat('Clientes Totales', pagination.total_results, `+${kpis.newThisMonth} registrados este mes`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>')}
-                    ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, `Vinculados a tu cartera`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>')}
-                    ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>')}
+                <div id="clients-kpis-container" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+                    <!-- KPIs dinámicos -->
                 </div>
 
-                <!-- Buscador y Tabs -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
-                    <!-- Fila de Tabs con scroll horizontal nativo -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
                             <button class="tab-client tab-admin-client ${this.currentClientFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClientsAdmin('all', this)">Todos</button>
@@ -893,22 +866,44 @@ SIModules.dashboard = {
                         </div>
                     </div>
 
-                    <!-- Buscador -->
                     <div class="relative w-full xl:w-96 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" value="${this.currentClientSearch}" placeholder="Buscar por nombre o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
-                <!-- Lista de Clientes -->
                 <div id="clients-table-container">
                     <!-- Renderizado dinámico aquí -->
                 </div>
 
-                <!-- Paginación Global -->
                 <div id="clients-pagination-container"></div>
             </div>
         `;
+
+        await this._reloadClientsTable();
+    },
+
+    async _reloadClientsTable() {
+        let url = `/clients?page=${this.currentClientPage}&limit=${this.clientsPerPage}`;
+        if (this.currentClientFilter !== 'all') url += `&status=${this.currentClientFilter}`;
+        if (this.currentClientSearch) url += `&search=${encodeURIComponent(this.currentClientSearch)}`;
+        if (this.currentClientSort.field) url += `&sort_by=${this.currentClientSort.field}&sort_dir=${this.currentClientSort.dir}`;
+
+        const result = await API.get(url);
+        if (!result.success) return;
+
+        const clients = result.data?.list || [];
+        const kpis = result.data?.kpis || { total: 0, newThisMonth: 0, totalProjects: 0, totalUsers: 0 };
+        const pagination = result.pagination;
+
+        const kpisContainer = document.getElementById('clients-kpis-container');
+        if (kpisContainer) {
+            kpisContainer.innerHTML = `
+                ${this._kpiStatFlat('Clientes Totales', pagination.total_results, `+${kpis.newThisMonth} registrados este mes`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>')}
+                ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, `Vinculados a tu cartera`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>')}
+                ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>')}
+            `;
+        }
 
         this._renderClientsTable(clients, pagination);
     },
@@ -1107,13 +1102,12 @@ SIModules.dashboard = {
 
     /** Al buscar, reiniciamos a la página 1 y recargamos */
     _searchClients(query) {
-        query = query.trim();
-        if (query.length > 0 && query.length < 3) return;
-        
+        this.currentClientSearch = query.trim().toLowerCase();
+
         if (this.searchTimeoutClients) clearTimeout(this.searchTimeoutClients);
         this.searchTimeoutClients = setTimeout(() => {
-            this.currentClientSearch = query.toLowerCase();
             this.currentClientPage = 1;
+            this._reloadClientsTable();
             this.loadClientsList();
         }, 400); // Pequeño debounce para no saturar la API
     },
@@ -1158,26 +1152,12 @@ SIModules.dashboard = {
         this.currentProjListFilter = this.currentProjListFilter || 'all';
         this.currentProjListSearch = this.currentProjListSearch || '';
 
-        let url = `/projects/search?page=${this.currentProjListPage}&limit=${this.projListPerPage}`;
-        if (this.currentProjListFilter !== 'all') url += `&status=${this.currentProjListFilter}`;
-        if (this.currentProjListSearch) url += `&search=${encodeURIComponent(this.currentProjListSearch)}`;
-
-        const result = await API.get(url);
-
-        if (!result.success) {
-            this.container.innerHTML = this._errorState('No se pudieron cargar los proyectos.');
-            return;
-        }
-
-        const projects = result.data.list || result.data || [];
-        const pagination = result.pagination;
-
         this.container.innerHTML = `
             <div class="fade-in">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Proyectos</h1>
                     ${user.role !== 'cliente' ? `
-                        <button onclick="SIModules.projectDetailAdmin.openCreateModal()" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <button onclick="SIRouter.navigate('clients'); toastr.info('Selecciona un cliente para crear un nuevo proyecto.');" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Nuevo Proyecto
                         </button>
@@ -1207,6 +1187,19 @@ SIModules.dashboard = {
             </div>
         `;
 
+        await this._reloadProjectsListTable();
+    },
+
+    async _reloadProjectsListTable() {
+        let url = `/projects/search?page=${this.currentProjListPage}&limit=${this.projListPerPage}`;
+        if (this.currentProjListFilter !== 'all') url += `&status=${this.currentProjListFilter}`;
+        if (this.currentProjListSearch) url += `&search=${encodeURIComponent(this.currentProjListSearch)}`;
+
+        const result = await API.get(url);
+        if (!result.success) return;
+
+        const projects = result.data?.list || [];
+        const pagination = result.pagination;
         this._renderProjectsListTable(projects, pagination);
     },
 
@@ -1285,18 +1278,16 @@ SIModules.dashboard = {
 
         this.currentProjListFilter = status;
         this.currentProjListPage = 1;
-        this.loadProjectsList();
+        this._reloadProjectsListTable();
     },
 
     _searchProjectsList(query) {
-        query = query.trim();
-        if (query.length > 0 && query.length < 3) return;
-        
+        this.currentProjListSearch = query.trim().toLowerCase();
+
         if (this.projSearchTimeout) clearTimeout(this.projSearchTimeout);
         this.projSearchTimeout = setTimeout(() => {
-            this.currentProjListSearch = query.toLowerCase();
             this.currentProjListPage = 1;
-            this.loadProjectsList();
+            this._reloadProjectsListTable();
         }, 400);
     }
 };

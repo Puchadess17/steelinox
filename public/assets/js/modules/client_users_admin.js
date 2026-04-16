@@ -20,17 +20,71 @@ SIModules.clientUsersAdmin = {
 
     /** 1. CARGAR LISTADO GLOBAL */
     async loadList() {
+        const user = Auth.getUser();
+        this.container.innerHTML = `
+            <div class="fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Usuarios Cliente</h1>
+                        </div>
+                    </div>
+                    ${user && user.role !== 'cliente' ? `
+                    <div class="flex items-center gap-2">
+                        <button onclick="SIRouter.navigate('user-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Nuevo Usuario
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div id="users-kpis-container" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+                    <!-- KPIs dinámicos -->
+                </div>
+
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client tab-users ${this.currentFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.clientUsersAdmin._filter('all', this)">Todos</button>
+                            <button class="tab-client tab-users ${this.currentFilter === 'activo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.clientUsersAdmin._filter('activo', this)">Activos</button>
+                            <button class="tab-client tab-users ${this.currentFilter === 'inactivo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.clientUsersAdmin._filter('inactivo', this)">Inactivos</button>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full xl:w-96 flex-shrink-0 group">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" oninput="SIModules.clientUsersAdmin._search(this.value)" value="${this.currentSearch}" placeholder="Buscar por nombre, email o empresa..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Usuarios</h2>
+                    <span id="users-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
+                </div>
+
+                <div id="users-table-container"></div>
+                <div id="users-pagination" class="mt-6"></div>
+            </div>
+        `;
+
+        await this._reloadListTable();
+    },
+
+    /** Recarga solo los datos de la tabla sin destruir el input */
+    async _reloadListTable() {
         try {
             let url = `/users?page=${this.currentPage}&limit=${this.itemsPerPage}`;
             if (this.currentFilter !== 'all') url += `&status=${this.currentFilter}`;
             if (this.currentSearch) url += `&search=${encodeURIComponent(this.currentSearch)}`;
-
-            // Usamos sort_by y sort_dir para coincidir con la convención de la API
             if (this.currentSortCol) url += `&sort_by=${this.currentSortCol}&sort_dir=${this.currentSortDir}`;
 
             const result = await API.get(url);
+            const tableContainer = document.getElementById('users-table-container');
+            const kpisContainer = document.getElementById('users-kpis-container');
+
             if (!result.success) {
-                this.container.innerHTML = `<div class="p-10 text-center text-red-500">${result.message}</div>`;
+                if (tableContainer) tableContainer.innerHTML = `<div class="p-10 text-center text-red-500">${result.message}</div>`;
                 return;
             }
 
@@ -39,63 +93,18 @@ SIModules.clientUsersAdmin = {
             const kpis = rawData.kpis || { total: 0, activos: 0, empresas_cubiertas: 0 };
             const pagination = result.pagination;
 
-            // Ahora sí usamos el dato real de la API
-            const uniqueCompanies = kpis.empresas_cubiertas || 0;
-
-            this.container.innerHTML = `
-                <div class="fade-in">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Usuarios Cliente</h1>
-                            </div>
-                        </div>
-                        ${window.SIApp && SIApp.user && SIApp.user.role !== 'cliente' ? `
-                        <div class="flex items-center gap-2">
-                            <button onclick="SIRouter.navigate('user-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Nuevo Usuario
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-                        ${this._renderKpiCard('Usuarios Totales', kpis.total, 'Accesos creados en el sistema', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
-                        ${this._renderKpiCard('Usuarios Activos', kpis.activos, 'Con acceso habilitado', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>')}
-                        ${this._renderKpiCard('Empresas Cubiertas', uniqueCompanies, 'Clientes con al menos 1 usuario', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
-                    </div>
-
-                    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
-                        <div class="w-full xl:w-auto">
-                            <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                                <button class="tab-client tab-users ${this.currentFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.clientUsersAdmin._filter('all', this)">Todos</button>
-                                <button class="tab-client tab-users ${this.currentFilter === 'activo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.clientUsersAdmin._filter('activo', this)">Activos</button>
-                                <button class="tab-client tab-users ${this.currentFilter === 'inactivo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.clientUsersAdmin._filter('inactivo', this)">Inactivos</button>
-                            </div>
-                        </div>
-
-                        <div class="relative w-full xl:w-96 flex-shrink-0 group">
-                            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <input type="text" oninput="SIModules.clientUsersAdmin._search(this.value)" placeholder="Buscar por nombre, email o empresa..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Usuarios</h2>
-                        <span id="users-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
-                    </div>
-
-                    <div id="users-table-container"></div>
-                    <div id="users-pagination" class="mt-6"></div>
-                </div>
-            `;
+            if (kpisContainer) {
+                kpisContainer.innerHTML = `
+                    ${this._renderKpiCard('Usuarios Totales', kpis.total, 'Accesos creados en el sistema', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
+                    ${this._renderKpiCard('Usuarios Activos', kpis.activos, 'Con acceso habilitado', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>')}
+                    ${this._renderKpiCard('Empresas Cubiertas', kpis.empresas_cubiertas || 0, 'Clientes con al menos 1 usuario', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
+                `;
+            }
 
             this._renderTable(usersList, pagination);
 
         } catch (error) {
-            console.error('Error loading client users:', error);
-            this.container.innerHTML = `<div class="p-10 text-center text-red-500">Error al conectar con el servidor.</div>`;
+            console.error('Error reloading client users:', error);
         }
     },
 
@@ -122,6 +131,7 @@ SIModules.clientUsersAdmin = {
             return;
         }
 
+        const user = Auth.getUser();
         const colors = [
             'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700',
             'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700',
@@ -164,7 +174,7 @@ SIModules.clientUsersAdmin = {
                     </td>
                     <td class="px-6 py-4 text-right whitespace-nowrap">
                         <div class="flex items-center justify-end gap-1.5">
-                            ${SIApp.user && SIApp.user.role !== 'cliente' ? `
+                            ${user && user.role !== 'cliente' ? `
                             <a href="/steelinox/user/edit/${u.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </a>
@@ -210,7 +220,7 @@ SIModules.clientUsersAdmin = {
                         Último acceso: ${lastAccessText}
                     </div>
                 </div>
-                ${SIApp.user && SIApp.user.role !== 'cliente' ? `
+                ${user && user.role !== 'cliente' ? `
                 <div class="mt-auto px-5 pb-4 pt-1 flex justify-center gap-2 border-t border-gray-50">
                     <a href="/steelinox/user/edit/${u.id}" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
@@ -226,12 +236,10 @@ SIModules.clientUsersAdmin = {
             `;
         }).join('');
 
-
-
         container.innerHTML = `
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
-<thead>
+                    <thead>
                         <tr class="bg-gray-50 border-b border-gray-100">
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Usuario ${this._getSortIcon('name')}</span>
@@ -245,7 +253,7 @@ SIModules.clientUsersAdmin = {
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('last_login_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Último Acceso ${this._getSortIcon('last_login_at')}</span>
                             </th>
-                            ${window.SIApp && SIApp.user && SIApp.user.role !== 'cliente' ? `
+                            ${user && user.role !== 'cliente' ? `
                             <th class="px-6 py-4 text-right w-32">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Acciones</span>
                             </th>
@@ -268,21 +276,20 @@ SIModules.clientUsersAdmin = {
                 paginationContainer,
                 pagination,
                 (newPage) => {
-                    this.currentPage = newPage;
-                    this.loadList();
+                    this._goToPage(newPage);
                 },
                 (newLimit) => {
                     this.itemsPerPage = newLimit;
                     this.currentPage = 1;
-                    this.loadList();
+                    this._reloadListTable();
                 }
             );
         }
     },
 
-    _goToPage(page) {
+    async _goToPage(page) {
         this.currentPage = page;
-        this.loadList();
+        await this._reloadListTable();
     },
 
     _renderKpiCard(title, value, subtitle, iconHtml) {
@@ -311,7 +318,7 @@ SIModules.clientUsersAdmin = {
 
         this.currentFilter = status;
         this.currentPage = 1;
-        this.loadList();
+        this._reloadListTable();
     },
 
     _sort(col) {
@@ -336,7 +343,7 @@ SIModules.clientUsersAdmin = {
 
         // Volvemos a la página 1 y recargamos
         this.currentPage = 1;
-        this.loadList();
+        this._reloadListTable();
     },
 
     _getSortIcon(col) {
@@ -345,14 +352,12 @@ SIModules.clientUsersAdmin = {
     },
 
     _search(val) {
-        val = val.trim();
-        if (val.length > 0 && val.length < 3) return;
-        
+        this.currentSearch = val.trim().toLowerCase();
+
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
-            this.currentSearch = val.toLowerCase();
             this.currentPage = 1;
-            this.loadList();
+            this._reloadListTable();
         }, 400);
     },
 

@@ -708,11 +708,14 @@ const SIApp = {
     modal: {
         _escapeHandler: null,
 
-        open(id) {
+        open(id, options = {}) {
             const el = document.getElementById(id);
             if (!el) return;
 
-            // Marcar el modal con su propio ID para que el click-outside sepa cuál cerrar
+            const defaults = { allowOutsideClick: true, allowEscape: true };
+            const opts = { ...defaults, ...options };
+
+            // Marcar el modal con su propio ID
             el.dataset.modalId = id;
 
             el.classList.remove('hidden');
@@ -725,18 +728,21 @@ const SIApp = {
                 }
             });
 
-            // Click en backdrop cierra el modal
-            if (!el._backdropHandler) {
-                el._backdropHandler = (e) => {
-                    if (e.target === el) SIApp.modal.close(id);
-                };
-                el.addEventListener('click', el._backdropHandler);
-            }
+            // Click en backdrop
+            if (el._backdropHandler) el.removeEventListener('click', el._backdropHandler);
+            el._backdropHandler = (e) => {
+                if (e.target === el && opts.allowOutsideClick) {
+                    SIApp.modal.close(id);
+                }
+            };
+            el.addEventListener('click', el._backdropHandler);
 
-            // Escape cierra el modal más reciente
+            // Escape cierra el modal (si está permitido)
             if (this._escapeHandler) document.removeEventListener('keydown', this._escapeHandler);
             this._escapeHandler = (e) => {
-                if (e.key === 'Escape') SIApp.modal.close(id);
+                if (e.key === 'Escape' && opts.allowEscape) {
+                    SIApp.modal.close(id);
+                }
             };
             document.addEventListener('keydown', this._escapeHandler);
         },

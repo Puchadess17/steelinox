@@ -20,14 +20,73 @@ SIModules.commercialsAdmin = {
 
     /** 1. CARGAR LISTADO GLOBAL */
     async loadList() {
+        this.container.innerHTML = `
+            <div class="fade-in">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Directorio de Comerciales</h1>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="SIRouter.navigate('commercial-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Nuevo Comercial
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Grid Premium -->
+                <div id="commercial-kpis-container" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+                    <!-- KPIs dinámicos -->
+                </div>
+
+                <!-- Buscador y Tabs -->
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
+                    <div class="w-full xl:w-auto">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
+                            <button class="tab-client tab-comerciales ${this.currentFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.commercialsAdmin._filter('all', this)">Todos</button>
+                            <button class="tab-client tab-comerciales ${this.currentFilter === 'activo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.commercialsAdmin._filter('activo', this)">Activos</button>
+                            <button class="tab-client tab-comerciales ${this.currentFilter === 'inactivo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.commercialsAdmin._filter('inactivo', this)">Inactivos</button>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full xl:w-96 flex-shrink-0 group">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" oninput="SIModules.commercialsAdmin._search(this.value)" value="${this.currentSearch}" placeholder="Buscar por nombre o email..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Gestores</h2>
+                    <span id="commercial-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
+                </div>
+
+                <!-- Lista de Comerciales -->
+                <div id="commercials-table-container"></div>
+                <div id="commercials-pagination" class="mt-6"></div>
+            </div>
+        `;
+
+        await this._reloadListTable();
+    },
+
+    /** Recarga solo los datos de la tabla sin destruir el input */
+    async _reloadListTable() {
         try {
             let url = `/commercials?page=${this.currentPage}&limit=${this.itemsPerPage}`;
             if (this.currentFilter !== 'all') url += `&status=${this.currentFilter}`;
             if (this.currentSearch) url += `&search=${encodeURIComponent(this.currentSearch)}`;
             if (this.currentSortCol) url += `&sort_by=${this.currentSortCol}&sort_dir=${this.currentSortDir}`;
+
             const result = await API.get(url);
+            const tableContainer = document.getElementById('commercials-table-container');
+            const counter = document.getElementById('commercial-results-count');
+            const kpisContainer = document.getElementById('commercial-kpis-container');
+
             if (!result.success) {
-                this.container.innerHTML = `<div class="p-10 text-center text-red-500">${result.message}</div>`;
+                if (tableContainer) tableContainer.innerHTML = `<div class="p-10 text-center text-red-500">${result.message}</div>`;
                 return;
             }
 
@@ -36,68 +95,22 @@ SIModules.commercialsAdmin = {
             const kpis = rawData.kpis || { total: 0, activos: 0, inactivos: 0 };
             const pagination = result.pagination;
 
-            // Calculate dynamic mock KPIs (Nota: esto solo sumará los de la página actual si el backend no lo envía en los KPIs globales)
+            // Calculate dynamic mock KPIs
             const totalProyectosActivos = commercialsList.reduce((acc, c) => acc + (parseInt(c.active_projects) || 0), 0);
             const cargaMedia = kpis.activos > 0 ? (totalProyectosActivos / kpis.activos).toFixed(1) : '0';
 
-            this.container.innerHTML = `
-                <div class="fade-in">
-                    <!-- Header -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Directorio de Comerciales</h1>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="SIRouter.navigate('commercial-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Nuevo Comercial
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- KPI Grid Premium (Estilo Flat / Captura) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-                        ${this._renderKpiCard('Comerciales Totales', kpis.total, 'Red comercial completa', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>')}
-                        ${this._renderKpiCard('Proyectos en Curso', totalProyectosActivos, 'Carga media: ' + cargaMedia + ' proy/com', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
-                        ${this._renderKpiCard('Comerciales Activos', kpis.activos, 'Cuentas con acceso', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
-                    </div>
-
-                    <!-- Buscador y Tabs -->
-                    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
-                        <!-- Fila de Tabs con scroll horizontal nativo -->
-                        <div class="w-full xl:w-auto">
-                            <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                                <button class="tab-client tab-comerciales ${this.currentFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.commercialsAdmin._filter('all', this)">Todos</button>
-                                <button class="tab-client tab-comerciales ${this.currentFilter === 'activo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="activo" onclick="SIModules.commercialsAdmin._filter('activo', this)">Activos</button>
-                                <button class="tab-client tab-comerciales ${this.currentFilter === 'inactivo' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="inactivo" onclick="SIModules.commercialsAdmin._filter('inactivo', this)">Inactivos</button>
-                            </div>
-                        </div>
-
-                        <!-- Buscador -->
-                        <div class="relative w-full xl:w-96 flex-shrink-0 group">
-                            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <input type="text" oninput="SIModules.commercialsAdmin._search(this.value)" placeholder="Buscar por nombre o email..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Gestores</h2>
-                        <span id="commercial-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
-                    </div>
-
-                    <!-- Lista de Comerciales -->
-                    <div id="commercials-table-container"></div>
-                    <div id="commercials-pagination" class="mt-6"></div>
-                </div>
-            `;
+            if (kpisContainer) {
+                kpisContainer.innerHTML = `
+                    ${this._renderKpiCard('Comerciales Totales', kpis.total, 'Red comercial completa', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>')}
+                    ${this._renderKpiCard('Proyectos en Curso', totalProyectosActivos, 'Carga media: ' + cargaMedia + ' proy/com', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
+                    ${this._renderKpiCard('Comerciales Activos', kpis.activos, 'Cuentas con acceso', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
+                `;
+            }
 
             this._renderTable(commercialsList, pagination);
 
         } catch (error) {
-            console.error('Error loading commercials:', error);
-            this.container.innerHTML = `<div class="p-10 text-center text-red-500">Error al conectar con el servidor.</div>`;
+            console.error('Error reloading commercials:', error);
         }
     },
 
@@ -267,21 +280,20 @@ SIModules.commercialsAdmin = {
                 paginationContainer,
                 pagination,
                 (newPage) => {
-                    this.currentPage = newPage;
-                    this.loadList();
+                    this._goToPage(newPage);
                 },
                 (newLimit) => {
                     this.itemsPerPage = newLimit;
                     this.currentPage = 1;
-                    this.loadList();
+                    this._reloadListTable();
                 }
             );
         }
     },
 
-    _goToPage(page) {
+    async _goToPage(page) {
         this.currentPage = page;
-        this.loadList();
+        await this._reloadListTable();
     },
 
     /** 3. CARGAR DETALLE COMERCIAL */
@@ -426,7 +438,7 @@ SIModules.commercialsAdmin = {
 
         this.currentFilter = status;
         this.currentPage = 1;
-        this.loadList();
+        this._reloadListTable();
     },
 
     _sort(col) {
@@ -449,7 +461,7 @@ SIModules.commercialsAdmin = {
         }
 
         this.currentPage = 1;
-        this.loadList();
+        this._reloadListTable();
     },
 
     _getSortIcon(col) {
@@ -458,14 +470,12 @@ SIModules.commercialsAdmin = {
     },
 
     _search(val) {
-        val = val.trim();
-        if (val.length > 0 && val.length < 3) return;
-        
+        this.currentSearch = val.trim().toLowerCase();
+
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
-            this.currentSearch = val.toLowerCase();
             this.currentPage = 1;
-            this.loadList();
+            this._reloadListTable();
         }, 400);
     },
 

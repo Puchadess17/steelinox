@@ -188,7 +188,7 @@ class UserController {
                 'name'          => $cleanName,
                 'email'         => $cleanEmail,
                 'password_hash' => $hashedPassword,
-                'is_active'     => isset($input['is_active']) ? (int)$input['is_active'] : 1
+                'is_active'     => isset($input['is_active']) ? 1 : 0
             ]);
 
             // AUDITORÍA
@@ -312,8 +312,8 @@ class UserController {
                 }
             }
 
-            if (isset($input['is_active'])) {
-                $newStatus = (int)$input['is_active'];
+            if (isset($input['is_active_sent'])) {
+                $newStatus = isset($input['is_active']) ? 1 : 0;
                 $updateData['is_active'] = $newStatus;
                 if ($newStatus !== (int)$user['is_active']) {
                     $changes['is_active'] = ['antes' => (int)$user['is_active'], 'despues' => $newStatus];
