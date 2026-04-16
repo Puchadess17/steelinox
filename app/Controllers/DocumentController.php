@@ -106,21 +106,81 @@ class DocumentController {
             $accessMode = isset($_POST['access_mode']) ? htmlspecialchars(trim($_POST['access_mode']), ENT_QUOTES, 'UTF-8') : 'download';
             $isVisible = isset($_POST['is_visible_to_client']) ? (int)$_POST['is_visible_to_client'] : 0;
 
+            // --- WHITELIST ESTRICTA: TYPE Y ACCESS_MODE ---
+            $allowedTypes = ['propuesta', 'presupuesto', 'pdf', 'imagen', 'video', 'plano', 'documento_tecnico', 'materiales', 'otros'];
+            if (!in_array($type, $allowedTypes)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['type' => 'Tipo de documento no válido']]);
+                return;
+            }
+
+            $allowedAccessModes = ['view', 'download', 'both'];
+            if (!in_array($accessMode, $allowedAccessModes)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['access_mode' => 'Modo de acceso no válido']]);
+                return;
+            }
+            // ----------------------------------------------
+
             $allowedMimes = [
-                'application/pdf', 
-                'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/heic', 'image/heif',
-                'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska',
-                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                // Documentos Estándar
+                'application/pdf',
+                'text/plain',
+                'text/csv',
+                'text/markdown',
+                'application/json',
+                'application/x-yaml',
+                'text/yaml',
+
+                // Imágenes (Web y Alta resolución)
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+                'image/svg+xml',
+                'image/heic',
+                'image/heif',
+                'image/vnd.adobe.photoshop',
+                'application/postscript', // .ai / .eps
+
+                // Video (Revisión de obra/Drones)
+                'video/mp4',
+                'video/quicktime',
+                'video/webm',
+                'video/x-matroska',
+
+                // Office (Word, Excel, Powerpoint)
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
                 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'text/markdown', 'text/csv', 'text/plain', 'application/json', 'application/x-yaml', 'text/yaml',
-                'image/vnd.adobe.photoshop', 'application/postscript',
-                'image/vnd.dwg', 'image/vnd.dxf', 'application/acad', 'application/dxf',
-                'model/obj', 'model/stl', 'application/octet-stream'
+
+                // CAD e Ingeniería (AutoCAD y variantes)
+                'image/vnd.dwg',
+                'image/x-dwg',
+                'application/acad',
+                'application/x-acad',
+                'application/autocad_dwg',
+                'image/vnd.dxf',
+                'application/dxf',
+                'application/x-dxf',
+
+                // Modelado 3D (Impresión/Estructuras)
+                'model/obj',
+                'model/stl',
+                'application/sla',
+
+                // Archivos comprimidos (Paquetes de proyectos)
+                'application/zip',
+                'application/x-zip-compressed',
+                'application/x-7z-compressed',
+                'application/x-rar-compressed'
             ];
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $realMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
 
             if (!in_array($realMime, $allowedMimes)) {
                 http_response_code(422);
@@ -272,6 +332,7 @@ class DocumentController {
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $realMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
 
             if (!in_array($realMime, $allowedMimes)) {
                 http_response_code(422);
@@ -425,27 +486,45 @@ class DocumentController {
                 }
             }
 
+            // --- WHITELIST ESTRICTA EN UPDATE ---
             if (isset($input['type'])) {
                 $cleanType = htmlspecialchars(trim($input['type']), ENT_QUOTES, 'UTF-8');
-                if (!empty($cleanType) && $cleanType !== $currentDoc['type']) {
+                $allowedTypes = ['propuesta', 'presupuesto', 'pdf', 'imagen', 'video', 'plano', 'documento_tecnico', 'materiales', 'otros'];
+                
+                if (!in_array($cleanType, $allowedTypes)) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['type' => 'Tipo de documento no válido']]);
+                    return;
+                }
+                
+                if ($cleanType !== $currentDoc['type']) {
                     $newData['type'] = $cleanType;
                     $changes['type'] = ['antes' => $currentDoc['type'], 'despues' => $cleanType];
                 }
             }
+
+            if (isset($input['access_mode'])) {
+                $newMode = htmlspecialchars(trim($input['access_mode']), ENT_QUOTES, 'UTF-8');
+                $allowedAccessModes = ['view', 'download', 'both'];
+                
+                if (!in_array($newMode, $allowedAccessModes)) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['access_mode' => 'Modo de acceso no válido']]);
+                    return;
+                }
+                
+                if ($newMode !== $currentDoc['access_mode']) {
+                    $newData['access_mode'] = $newMode;
+                    $changes['access_mode'] = ['antes' => $currentDoc['access_mode'], 'despues' => $newMode];
+                }
+            }
+            // ------------------------------------
 
             if (isset($input['is_visible_to_client'])) {
                 $newVis = (int)$input['is_visible_to_client'];
                 if ($newVis !== (int)$currentDoc['is_visible_to_client']) {
                     $newData['is_visible_to_client'] = $newVis;
                     $changes['is_visible_to_client'] = ['antes' => (int)$currentDoc['is_visible_to_client'], 'despues' => $newVis];
-                }
-            }
-
-            if (isset($input['access_mode'])) {
-                $newMode = htmlspecialchars(trim($input['access_mode']), ENT_QUOTES, 'UTF-8');
-                if (in_array($newMode, ['view', 'download', 'both']) && $newMode !== $currentDoc['access_mode']) {
-                    $newData['access_mode'] = $newMode;
-                    $changes['access_mode'] = ['antes' => $currentDoc['access_mode'], 'despues' => $newMode];
                 }
             }
 
