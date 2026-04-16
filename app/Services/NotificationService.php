@@ -146,6 +146,9 @@ class NotificationService
     {
         $projRef = $project['reference'];
         $projName = htmlspecialchars($project['name'], ENT_QUOTES, 'UTF-8');
+        
+        // Cargar URL base desde el entorno, con fallback de seguridad
+        $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://steelinox.es', '/');
 
         $subject = "Steelinox: Notificación de Proyecto $projRef";
         $content = ""; // Aquí construiremos el cuerpo específico
@@ -200,9 +203,9 @@ class NotificationService
                 break;
         }
 
-        // Añadir botón de acción siempre que haya un proyecto
+        // Botón de acción con URL dinámica basada en el entorno
         $content .= "<div style='margin-top:40px; text-align:center;'>
-                        <a href='https://steelinox.es/proyectos' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px; box-shadow: 0 4px 12px rgba(229, 123, 35, 0.3); transition: transform 0.2s;'>Ver Detalles del Proyecto</a>
+                        <a href='{$baseUrl}/proyectos' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px; box-shadow: 0 4px 12px rgba(229, 123, 35, 0.3); transition: transform 0.2s;'>Ver Detalles del Proyecto</a>
                      </div>";
 
         $body = self::getHtmlWrapper($content, "Notificación importante sobre el proyecto $projRef");
@@ -215,11 +218,6 @@ class NotificationService
      * ====================
      * Encola una notificación directa a un usuario, independiente de cualquier proyecto.
      * Ideal para emails de bienvenida, recuperación de contraseñas o avisos de seguridad.
-     *
-     * @param int $recipientUserId ID del usuario que recibe el correo
-     * @param string $eventName Tipo de evento (ej: 'alta_usuario')
-     * @param string $recipientEmail Email de destino
-     * @param array $data Metadatos extra (nombre, contraseña plana, tokens, etc.)
      */
     public static function queueUserEvent($recipientUserId, $eventName, $recipientEmail, $data = [])
     {
@@ -247,6 +245,9 @@ class NotificationService
      */
     private static function buildUserEmailTemplate($eventName, $data)
     {
+        // Cargar URL base desde el entorno, con fallback de seguridad
+        $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://steelinox.es', '/');
+        
         $subject = "Notificación de Steelinox";
         $content = "";
 
@@ -271,7 +272,7 @@ class NotificationService
                              </div>";
                 $content .= "<p style='margin:0 0 20px 0; font-size:13px; color:#94a3b8;'>Por seguridad, se recomienda cambiar esta contraseña desde los ajustes de tu perfil tras el primer inicio de sesión.</p>";
                 $content .= "<div style='text-align:center;'>
-                                <a href='https://steelinox.es' style='display:inline-block; background:#1a1b25; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Iniciar Sesión Ahora</a>
+                                <a href='{$baseUrl}/' style='display:inline-block; background:#1a1b25; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Iniciar Sesión Ahora</a>
                              </div>";
                 break;
         }
