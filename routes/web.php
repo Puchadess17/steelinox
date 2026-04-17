@@ -48,6 +48,7 @@ $router->post('/api/projects', 'ProjectController@store');
 $router->get('/api/projects/(\d+)', 'ProjectController@show');
 $router->put('/api/projects/(\d+)', 'ProjectController@update');
 $router->put('/api/projects/(\d+)/status', 'ProjectController@changeStatus');
+$router->delete('/api/projects/(\d+)', 'ProjectController@destroy');
 
 // RUTAS DE DOBLE VERIFICACIÓN
 $router->post('/api/projects/(\d+)/approve/request', 'ProjectController@requestApproval');

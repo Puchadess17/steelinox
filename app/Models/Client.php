@@ -321,18 +321,64 @@ class Client
     }
 
     /**
-     * BORRADO LÓGICO (SOFT DELETE)
-     * Desactiva y marca el registro como borrado preservando el historial
-     * de auditoría y evitando romper relaciones en cascada.
+     * BORRADO LÓGICO EN CASCADA (SOFT DELETE PROFUNDO)
+     * Desactiva y marca el registro de la empresa como borrado.
+     * Propaga esta eliminación a todos sus usuarios, proyectos, 
+     * documentos y comentarios asociados en una única transacción atómica.
      */
     public function delete($id)
     {
-        $sql = "UPDATE clients 
-                SET deleted_at = NOW(), is_active = 0 
-                WHERE id = :id AND deleted_at IS NULL";
+        try {
+            $this->db->beginTransaction();
 
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute(['id' => $id]);
+            // 1. Borrado lógico de COMENTARIOS asociados a los proyectos del cliente
+            $sqlComments = "UPDATE comments 
+                            SET deleted_at = NOW() 
+                            WHERE project_id IN (SELECT id FROM projects WHERE client_id = :id) 
+                              AND deleted_at IS NULL";
+            $stmtComments = $this->db->prepare($sqlComments);
+            $stmtComments->execute(['id' => $id]);
+
+            // 2. Borrado lógico de DOCUMENTOS asociados a los proyectos del cliente
+            $sqlDocs = "UPDATE documents 
+                        SET deleted_at = NOW() 
+                        WHERE project_id IN (SELECT id FROM projects WHERE client_id = :id) 
+                          AND deleted_at IS NULL";
+            $stmtDocs = $this->db->prepare($sqlDocs);
+            $stmtDocs->execute(['id' => $id]);
+
+            // 3. Borrado lógico de los PROYECTOS del cliente
+            $sqlProjects = "UPDATE projects 
+                            SET deleted_at = NOW() 
+                            WHERE client_id = :id 
+                              AND deleted_at IS NULL";
+            $stmtProjects = $this->db->prepare($sqlProjects);
+            $stmtProjects->execute(['id' => $id]);
+
+            // 4. Borrado lógico y desactivación de los USUARIOS del cliente
+            // Esto corta el acceso al sistema inmediatamente.
+            $sqlUsers = "UPDATE users 
+                         SET deleted_at = NOW(), is_active = 0 
+                         WHERE client_id = :id 
+                           AND deleted_at IS NULL";
+            $stmtUsers = $this->db->prepare($sqlUsers);
+            $stmtUsers->execute(['id' => $id]);
+
+            // 5. Borrado lógico y desactivación del CLIENTE (Padre)
+            $sqlClient = "UPDATE clients 
+                          SET deleted_at = NOW(), is_active = 0 
+                          WHERE id = :id 
+                            AND deleted_at IS NULL";
+            $stmtClient = $this->db->prepare($sqlClient);
+            $stmtClient->execute(['id' => $id]);
+
+            $this->db->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     /**

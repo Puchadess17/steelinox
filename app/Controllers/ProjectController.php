@@ -500,6 +500,53 @@ class ProjectController
         }
     }
 
+    public function destroy($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        try {
+            $id = (int)$id;
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectModel = new Project();
+
+            $projectDetails = $projectModel->getById($id, $userId, $role, $clientId);
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            if (!ProjectPolicy::canDelete($role, $projectDetails['status'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'No permitido.', 'data' => null, 'errors' => ['policy' => 'No tienes permisos para eliminar proyectos.']]);
+                return;
+            }
+
+            $projectModel->delete($id);
+
+            AuditLogger::log('proyecto_eliminado', 'project', $id, $id, [
+                'nombre'     => $projectDetails['name'],
+                'referencia' => $projectDetails['reference']
+            ]);
+
+            echo json_encode(['success' => true, 'message' => 'Proyecto eliminado', 'data' => null, 'errors' => null]);
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'ProjectController::destroy');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al eliminar']]);
+        }
+    }
+
     public function changeStatus($id)
     {
         AuthMiddleware::check();

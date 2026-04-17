@@ -284,13 +284,38 @@ class Document {
     }
 
     /**
-     * BORRADO LÓGICO
-     * Implementa la eliminación suave de un documento, preservando la
-     * integridad referencial e historial para auditorías.
+     * BORRADO LÓGICO EN CASCADA
+     * Implementa la eliminación suave de un documento y propaga el borrado
+     * lógico a todos sus comentarios asociados, preservando la integridad 
+     * referencial mediante transacciones.
      */
     public function delete($documentId, $projectId) {
-        $sql = "UPDATE documents SET deleted_at = NOW() WHERE id = :document_id AND project_id = :project_id AND deleted_at IS NULL";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute(['document_id' => $documentId, 'project_id' => $projectId]);
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Borrado lógico del documento padre
+            $sqlDoc = "UPDATE documents SET deleted_at = NOW() WHERE id = :document_id AND project_id = :project_id AND deleted_at IS NULL";
+            $stmtDoc = $this->db->prepare($sqlDoc);
+            $stmtDoc->execute([
+                'document_id' => $documentId, 
+                'project_id'  => $projectId
+            ]);
+
+            // 2. Borrado lógico en cascada de los comentarios asociados a este documento
+            $sqlComments = "UPDATE comments SET deleted_at = NOW() WHERE document_id = :document_id AND deleted_at IS NULL";
+            $stmtComments = $this->db->prepare($sqlComments);
+            $stmtComments->execute(['document_id' => $documentId]);
+
+            // Nota: Las iteraciones físicas en 'document_versions' se mantienen 
+            // intactas, ya que actúan como registro inmutable y el propio modelo 
+            // ya bloquea su acceso si el documento padre está en deleted_at.
+
+            $this->db->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 }

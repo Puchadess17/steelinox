@@ -339,6 +339,44 @@ class Project {
     }
 
     /**
+     * BORRADO LÓGICO EN CASCADA
+     * Marca el proyecto como eliminado y propaga el borrado lógico a todas 
+     * sus entidades dependientes (documentos y comentarios) usando una transacción
+     * para asegurar la integridad de los datos.
+     */
+    public function delete($projectId) {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Borrado lógico del proyecto
+            $sqlProject = "UPDATE projects SET deleted_at = NOW() WHERE id = :id AND deleted_at IS NULL";
+            $stmtProject = $this->db->prepare($sqlProject);
+            $stmtProject->execute(['id' => $projectId]);
+
+            // 2. Borrado lógico en cascada de los documentos asociados
+            $sqlDocs = "UPDATE documents SET deleted_at = NOW() WHERE project_id = :id AND deleted_at IS NULL";
+            $stmtDocs = $this->db->prepare($sqlDocs);
+            $stmtDocs->execute(['id' => $projectId]);
+
+            // 3. Borrado lógico en cascada de los comentarios asociados
+            $sqlComments = "UPDATE comments SET deleted_at = NOW() WHERE project_id = :id AND deleted_at IS NULL";
+            $stmtComments = $this->db->prepare($sqlComments);
+            $stmtComments->execute(['id' => $projectId]);
+
+            // La tabla project_user (asignaciones) se deja intacta a propósito. 
+            // Así, si el día de mañana se desarrolla una función de "Restaurar Proyecto", 
+            // el equipo comercial original seguirá estando asignado.
+
+            $this->db->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * GENERADOR SECUENCIAL DE REFERENCIAS
      * Calcula automáticamente el identificador único del proyecto basado 
      * en el año actual (Ej: PRJ-2026-0001). Previene colisiones consultando

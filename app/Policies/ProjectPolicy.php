@@ -38,4 +38,10 @@ class ProjectPolicy
     public static function canViewAvailableUsers($role) {
         return in_array($role, ['admin', 'comercial']);
     }
+
+    public static function canDelete($role, $projectStatus) {
+        if ($role !== 'admin') return false; // Solo el admin puede eliminar proyectos
+        if ($projectStatus !== 'cerrado') return false; // Solo se eliminan proyectos cerrados para evitar pérdida de datos en proyectos activos
+        return true;
+    }
 }
