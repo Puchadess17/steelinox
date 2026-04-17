@@ -109,7 +109,7 @@ class Audit
     {
         $whereSql = "WHERE (a.entity_type = 'client' AND a.entity_id = :c1)
                         OR (a.entity_type = 'user' AND a.entity_id IN (SELECT id FROM users WHERE client_id = :c2))
-                        OR (a.entity_type = 'project' AND a.entity_id IN (SELECT id FROM projects WHERE client_id = :c3))";
+                        OR (a.project_id IN (SELECT id FROM projects WHERE client_id = :c3))";
 
         $countSql = "SELECT COUNT(*) FROM audit_logs a " . $whereSql;
         $stmtCount = $this->db->prepare($countSql);

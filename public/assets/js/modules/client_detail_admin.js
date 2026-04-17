@@ -102,6 +102,7 @@ SIModules.clientDetailAdmin = {
         }
 
         this.projectsLimit = 4;
+        this.activeTab = 'resumen';
         await this.loadClientData();
     },
 
@@ -319,10 +320,11 @@ SIModules.clientDetailAdmin = {
     },
 
     async loadClientTimeline() {
+        const triggerId = this.clientId;
         try {
-            const res = await API.get('/clients/' + this.clientId + '/audit');
+            const res = await API.get('/clients/' + triggerId + '/audit');
             const container = document.getElementById('client-historial-timeline');
-            if (!container) return;
+            if (!container || this.clientId !== triggerId) return;
 
             if (!res.success) {
                 container.innerHTML = `<div class="text-center text-red-500 py-10 font-bold">${res.message}</div>`;
@@ -445,17 +447,23 @@ SIModules.clientDetailAdmin = {
             case 'proyecto_cambio_estadod':
                 type = 'project';
                 actionTitle = 'ESTADO DE PROYECTO';
-                title = log.metadata?.name || 'Cambio de Estado';
-                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || '-'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
-                if (log.metadata?.reason) {
-                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason)}"</span>`;
+                title = log.project_name ? `Proyecto: ${log.project_name}` : (log.metadata?.name || 'Cambio de Estado');
+                content = `Cambio de estado: De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.old_status || log.metadata?.estado_anterior || '-'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || log.metadata?.estado_nuevo || '-'}</strong>`;
+                if (log.metadata?.reason || log.metadata?.motivo) {
+                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason || log.metadata.motivo)}"</span>`;
+                }
+                if (log.project_ref) {
+                    content += `<br><span class="text-[10px] font-black text-orange-400 uppercase tracking-tighter mt-1 block">${log.project_ref}</span>`;
                 }
                 break;
             case 'proyecto_reabierto':
                 type = 'project';
                 actionTitle = 'PROYECTO REABIERTO';
-                title = log.metadata?.name || 'Proyecto Reabierto';
-                content = `De <strong class="uppercase text-gray-400">${log.metadata?.previous_status || 'CERRADO'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || '-'}</strong>`;
+                title = log.project_name ? `Proyecto: ${log.project_name}` : (log.metadata?.name || 'Proyecto Reabierto');
+                content = `El proyecto ha sido reabierto: de <strong class="uppercase text-gray-400">${log.metadata?.previous_status || log.metadata?.estado_anterior || 'CERRADO'}</strong> a <strong class="uppercase text-orange-500">${log.metadata?.new_status || log.metadata?.estado_nuevo || '-'}</strong>`;
+                if (log.metadata?.reason || log.metadata?.motivo) {
+                    content += `<br><span class="text-[11px] italic text-gray-500 mt-1 block">"${SIApp.escapeHtml(log.metadata.reason || log.metadata.motivo)}"</span>`;
+                }
                 break;
             case 'proyecto_comercial_asignado':
                 type = 'user';
@@ -476,7 +484,7 @@ SIModules.clientDetailAdmin = {
                 actionTitle = 'NUEVO DOCUMENTO';
                 title = log.metadata?.title || log.metadata?.file_name || 'Documento Subido';
                 isAttachment = true;
-                content = `Archivo subido al expediente del proyecto.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
+                content = `Archivo subido al proyecto <strong>${log.project_name || 'Subordinado'}</strong>.<br><span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter mt-1 block">${log.metadata?.category || 'General'}</span>`;
                 break;
             case 'documento_nueva_version':
                 type = 'document';
@@ -508,7 +516,7 @@ SIModules.clientDetailAdmin = {
             case 'comentario_creado':
                 type = 'chat';
                 actionTitle = 'COMENTARIO';
-                title = '';
+                title = log.project_name ? `Comentario en ${log.project_name}` : 'Comentario';
                 content = `"${SIApp.escapeHtml(log.metadata?.comment || log.metadata?.text || '')}"`;
                 break;
 

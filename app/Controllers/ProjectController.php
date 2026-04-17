@@ -646,9 +646,11 @@ class ProjectController
             $actionKey = ($oldStatus === 'cerrado') ? 'proyecto_reabierto' : 'proyecto_cambio_estado';
 
             AuditLogger::log($actionKey, 'project', $id, $id, [
-                'estado_anterior' => $oldStatus,
-                'estado_nuevo'    => $newStatus,
-                'motivo'          => $reason
+                'previous_status'   => $oldStatus,
+                'new_status'        => $newStatus,
+                'reason'            => $reason,
+                'project_name'      => $projectDetails['name'],
+                'project_reference' => $projectDetails['reference']
             ]);
 
             require_once APP_PATH . '/Services/NotificationService.php';
@@ -813,12 +815,14 @@ class ProjectController
             $db->prepare("UPDATE projects SET approval_token = NULL, approval_token_expires_at = NULL WHERE id = ?")->execute([$id]);
 
             AuditLogger::log('propuesta_aprobada', 'project', $id, $id, [
-                'aprobado_por_usuario_id' => $userId,
-                'rol_aprobador'           => $role,
-                'ip_aprobacion'           => $_SERVER['REMOTE_ADDR'] ?? 'Desconocida',
-                'estado_anterior'         => 'propuesta',
-                'nuevo_estado'            => 'aprobado',
-                'metodo'                  => 'token_2fa'
+                'actor_user_id'     => $userId,
+                'actor_role'        => $role,
+                'ip_address'        => $_SERVER['REMOTE_ADDR'] ?? 'Desconocida',
+                'previous_status'   => 'propuesta',
+                'new_status'        => 'aprobado',
+                'method'            => 'token_2fa',
+                'project_name'      => $projectDetails['name'],
+                'project_reference' => $projectDetails['reference']
             ]);
 
             require_once APP_PATH . '/Services/NotificationService.php';

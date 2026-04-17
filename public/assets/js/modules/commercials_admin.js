@@ -58,10 +58,6 @@ SIModules.commercialsAdmin = {
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Gestores</h2>
-                    <span id="commercial-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
-                </div>
 
                 <!-- Lista de Comerciales -->
                 <div id="commercials-table-container"></div>
@@ -82,7 +78,6 @@ SIModules.commercialsAdmin = {
 
             const result = await API.get(url);
             const tableContainer = document.getElementById('commercials-table-container');
-            const counter = document.getElementById('commercial-results-count');
             const kpisContainer = document.getElementById('commercial-kpis-container');
 
             if (!result.success) {
@@ -117,11 +112,10 @@ SIModules.commercialsAdmin = {
     /** 2. RENDERIZAR TABLA */
     _renderTable(data, pagination) {
         const container = document.getElementById('commercials-table-container');
-        const countSpan = document.getElementById('commercial-results-count');
         const paginationContainer = document.getElementById('commercials-pagination');
         if (!container) return;
 
-        if (countSpan && pagination) countSpan.textContent = `Viendo ${data.length} de ${pagination.total_results}`;
+        const user = Auth.getUser();
 
         if (data.length === 0) {
             container.innerHTML = `
@@ -185,6 +179,11 @@ SIModules.commercialsAdmin = {
                             <a href="/steelinox/commercial/edit/${u.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </a>
+                            ${user && user.role === 'admin' ? `
+                            <button onclick="SIModules.commercialsAdmin._confirmDelete(${u.id})" class="p-2 text-gray-400 hover:text-red-500 transition-all hover:scale-110" title="Eliminar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -232,6 +231,12 @@ SIModules.commercialsAdmin = {
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         Editar
                     </a>
+                    ${user && user.role === 'admin' ? `
+                    <button onclick="SIModules.commercialsAdmin._confirmDelete(${u.id})" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Eliminar
+                    </button>
+                    ` : ''}
                 </div>
             </div>
             `;

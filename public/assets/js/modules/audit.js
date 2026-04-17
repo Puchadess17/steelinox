@@ -316,7 +316,7 @@ window.SIModules.audit = {
         if (!m || typeof m !== 'object') return '';
         const parts = [];
         for (const [k, v] of Object.entries(m)) {
-            if (typeof v !== 'object' && !['version_id', 'project_id', 'proyecto_id', 'client_id', 'documento_id', 'file_name', 'nombre_archivo', 'title'].includes(k)) {
+            if (typeof v !== 'object' && !['version_id', 'project_id', 'proyecto_id', 'client_id', 'documento_id', 'file_name', 'nombre_archivo', 'title', 'project_name', 'project_reference'].includes(k)) {
                 parts.push(`${this._humanizeMetadataKey(k)}: ${v}`);
             }
         }
@@ -886,6 +886,7 @@ window.SIModules.audit = {
 
             // --- Proyectos ---
             'estado_anterior': 'Estado anterior',
+            'previous_status': 'Estado anterior',
             'old_status': 'Estado anterior', // Legacy
             'estado_nuevo': 'Estado nuevo',
             'new_status': 'Estado nuevo', // Legacy
@@ -913,6 +914,8 @@ window.SIModules.audit = {
             'es_version_especifica': 'Descarga de versión específica',
             'is_specific_version': 'Descarga de versión específica', // Legacy
             'version_id': 'ID de la Versión',
+            'project_name': 'Nombre del proyecto',
+            'project_reference': 'Referencia del proyecto',
 
             // --- Comentarios ---
             'body_snippet': 'Extracto del comentario'

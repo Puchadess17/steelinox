@@ -71,15 +71,11 @@ SIModules.dashboard = {
                 </div>
 
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
-                        <h2 class="text-base font-bold text-[#1a1b25]">Listado Global de Proyectos</h2>
-                        <span id="admin-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Cargando...</span>
-                    </div>
                     <div id="admin-table-container" class="select-none bg-gray-50/20 min-h-[200px]">
                         <!-- La tabla se inyectará aquí -->
                     </div>
-                    <div id="admin-table-pagination" class="mt-6 px-4 pb-4"></div>
                 </div>
+                <div id="admin-table-pagination" class="mt-6 px-4 pb-4"></div>
             </div>
         `;
 
@@ -96,7 +92,6 @@ SIModules.dashboard = {
 
         const result = await API.get(url);
         const tableContainer = document.getElementById('admin-table-container');
-        const counter = document.getElementById('admin-table-counter');
         const kpisContainer = document.getElementById('admin-kpis-container');
 
         if (!result.success) {
@@ -126,7 +121,6 @@ SIModules.dashboard = {
             `;
         }
 
-        if (counter) counter.innerText = `${kpis.total} RESULTADOS`;
 
         this.adminProjects = projects;
         this._renderAdminTable(projects, pagination);
@@ -139,12 +133,10 @@ SIModules.dashboard = {
     /** Renderiza la tabla limpia de proyectos administador basándose en data filtrada **/
     _renderAdminTable(data, pagination) {
         const container = document.getElementById('admin-table-container');
-        const counter = document.getElementById('admin-table-counter');
         const paginationContainer = document.getElementById('admin-table-pagination');
         if (!container) return;
 
-        if (counter && pagination) counter.innerText = `Viendo ${data.length} de ${pagination.total_results} RESULTADOS`;
-        else if (counter) counter.innerText = `${data.length} RESULTADOS`;
+        const user = Auth.getUser();
 
         if (data.length === 0) {
             container.innerHTML = `
@@ -158,16 +150,20 @@ SIModules.dashboard = {
         }
 
         const tbody = data.map(p => `
-            <tr class="hover:bg-orange-50/30 transition-colors group">
+            <tr class="transition-colors group border-b border-gray-50/80 last:border-0">
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
                     ${p.client_id ? `
-                        <a href="/steelinox/client/${p.client_id}" class="text-gray-600 group-hover:text-orange-600 transition-colors no-underline">
+                        <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             ${SIApp.escapeHtml(p.client_name)}
                         </a>
-                    ` : 'Sin Asignar'}
+                    ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(p.name)}</a>
+                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
+                        <svg class="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        ${SIApp.escapeHtml(p.name)}
+                    </a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
@@ -179,7 +175,16 @@ SIModules.dashboard = {
                     ${SIApp.formatDate(p.created_at)}
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <svg class="w-5 h-5 text-gray-200 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-indigo-500 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                    <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-indigo-500 transition-all hover:scale-110 rounded-lg hover:bg-indigo-50" title="Ver Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                        ${user && user.role !== 'cliente' ? `
+                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -217,7 +222,9 @@ SIModules.dashboard = {
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('created_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center font-bold">Creado ${sortIcon('created_at')}</span>
                             </th>
-                            <th class="px-5 py-3.5 text-right w-12 border-l border-gray-100/50"></th>
+                            <th class="px-5 py-3.5 text-right w-28 border-l border-gray-100/50">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block text-right">Acciones</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/80">
@@ -333,7 +340,6 @@ SIModules.dashboard = {
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                     <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
                         <h2 class="text-base font-bold text-[#1a1b25]">Listado de Mis Proyectos</h2>
-                        <span id="commercial-table-counter" class="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Cargando...</span>
                     </div>
                     <!-- Contenedor adaptativo -->
                     <div id="commercial-table-container" class="select-none bg-gray-50/20 min-h-[200px]">
@@ -388,12 +394,8 @@ SIModules.dashboard = {
     /** Renderiza la tabla de proyectos para el comercial */
     _renderCommercialTable(data, pagination) {
         const container = document.getElementById('commercial-table-container');
-        const counter = document.getElementById('commercial-table-counter');
         const paginationContainer = document.getElementById('commercial-table-pagination');
         if (!container) return;
-
-        if (counter && pagination) counter.innerText = `Viendo ${data.length} de ${pagination.total_results} RESULTADOS`;
-        else if (counter) counter.innerText = `${data.length} RESULTADOS`;
 
         if (data.length === 0) {
             container.innerHTML = `
@@ -423,8 +425,13 @@ SIModules.dashboard = {
                 <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
                     ${SIApp.formatDate(p.created_at)}
                 </td>
-                <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <svg class="w-4 h-4 text-gray-300 inline-block transform -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <td class="px-5 py-4 text-right whitespace-nowrap flex items-center justify-end gap-2">
+                    <svg class="w-4 h-4 text-gray-300 inline-block opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    ${Auth.getUser() && Auth.getUser().role !== 'cliente' ? `
+                    <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1 text-gray-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100" title="Eliminar">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                    ` : ''}
                 </td>
             </tr>
         `).join('');
@@ -646,6 +653,8 @@ SIModules.dashboard = {
             return `<div class="col-span-full si-empty border border-gray-100 rounded-2xl bg-white"><p class="text-sm">No se han encontrado proyectos que coincidan con la búsqueda.</p></div>`;
         }
 
+        const user = Auth.getUser();
+
         // Diseño del status badge exacto a la imagen
         const getCustomBadge = (status) => {
             const labels = {
@@ -672,9 +681,16 @@ SIModules.dashboard = {
                 <!-- Cabecera Oscura / Imagen Placeholder -->
                 <div class="h-36 sm:h-40 bg-[#1e1e24] relative flex items-center justify-center overflow-hidden">
                     <!-- Status Badge absolute top-right -->
-                    <div class="absolute top-4 right-4 z-10">
+                    <div class="absolute top-4 right-4 z-10 flex space-x-2">
                         ${getCustomBadge(p.status)}
                     </div>
+                    ${user && user.role !== 'cliente' ? `
+                    <div class="absolute top-4 left-4 z-20">
+                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-md transition-colors" title="Eliminar Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                    ` : ''}
                     
                     <!-- Decoración / Placeholder Logo -->
                     <div class="absolute inset-0 bg-gradient-to-br from-[#26262e] to-[#121216] opacity-80"></div>
@@ -911,6 +927,7 @@ SIModules.dashboard = {
     _renderClientsTable(pagedData, pagination) {
         const container = document.getElementById('clients-table-container');
         if (!container) return;
+        const user = Auth.getUser();
 
         if (pagedData.length === 0) {
             container.innerHTML = `
@@ -962,6 +979,11 @@ SIModules.dashboard = {
                             <a href="/steelinox/client/edit/${c.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </a>
+                            ${user && user.role !== 'cliente' ? `
+                            <button onclick="SIModules.dashboard._confirmDeleteClient(${c.id}, '${SIApp.escapeHtml(c.name)}')" class="p-2 text-gray-400 hover:text-red-500 transition-all hover:scale-110" title="Eliminar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
@@ -1044,6 +1066,7 @@ SIModules.dashboard = {
         const initials = SIApp._getInitials(c.name);
         // El status en azul para activo (similar al mock) y gris para inactivo
         const statusBadge = window.SIApp ? SIApp.activeBadge(c.is_active) : '';
+        const user = Auth.getUser();
 
         return `
             <div class="bg-white border-l-[3.5px] border-l-orange-500 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg block group relative">
@@ -1083,6 +1106,12 @@ SIModules.dashboard = {
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         Editar
                     </a>
+                    ${user && user.role !== 'cliente' ? `
+                    <button onclick="SIModules.dashboard._confirmDeleteClient(${c.id}, '${SIApp.escapeHtml(c.name)}')" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Eliminar
+                    </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1289,5 +1318,44 @@ SIModules.dashboard = {
             this.currentProjListPage = 1;
             this._reloadProjectsListTable();
         }, 400);
+    },
+
+    async _confirmDeleteClient(id, name) {
+        const ok = await SIApp.confirm('¿Eliminar cliente?', `¿Seguro que deseas eliminar a "${name}"? Todas sus cuentas de usuario también perderán el acceso.`);
+        if (ok) {
+            try {
+                const res = await API.delete(`/clients/${id}`);
+                if (res.success) {
+                    SIApp.showToast('Eliminado', 'El cliente ha sido eliminado correctamente.', 'success');
+                    await this._reloadClientsTable();
+                } else {
+                    SIApp.showToast('Error', res.message, 'error');
+                }
+            } catch (e) {
+                SIApp.showToast('Error', 'No se pudo eliminar el cliente.', 'error');
+            }
+        }
+    },
+
+    async _confirmDeleteProject(id, name) {
+        const ok = await SIApp.confirm('¿Eliminar proyecto?', `¿Seguro que deseas eliminar el proyecto "${name}"?`);
+        if (ok) {
+            try {
+                const res = await API.delete(`/projects/${id}`);
+                if (res.success) {
+                    SIApp.showToast('Eliminado', 'El proyecto ha sido eliminado correctamente.', 'success');
+                    if (document.getElementById('commercial-table-container')) {
+                        await this._reloadCommercialTable();
+                    }
+                    if (document.getElementById('projects-list-table-container')) {
+                        await this._reloadProjectsListTable();
+                    }
+                } else {
+                    SIApp.showToast('Error', res.message, 'error');
+                }
+            } catch (e) {
+                SIApp.showToast('Error', 'No se pudo eliminar el proyecto.', 'error');
+            }
+        }
     }
 };

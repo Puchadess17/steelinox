@@ -493,20 +493,15 @@ SIModules.projectDetailAdmin = {
     async loadProjectData() {
         try {
             const user = this.user;
-            const promises = [
-                API.get('/projects/' + this.projectId),
-                API.get('/projects/' + this.projectId + '/documents')
-            ];
+            const prjRes = await API.get('/projects/' + this.projectId);
+            const docsRes = await API.get('/projects/' + this.projectId + '/documents');
+            let auditRes = { success: false, data: [] };
 
-            // Solo cargar auditoría si no es un cliente
             if (user && user.role !== 'cliente') {
-                promises.push(API.get('/projects/' + this.projectId + '/audit'));
+                auditRes = await API.get('/projects/' + this.projectId + '/audit');
             }
 
-            const results = await Promise.all(promises);
-            const response = results[0];
-            const docsRes = results[1] || { success: false, data: [] };
-            const auditRes = results[2] || { success: false, data: [] };
+            const response = prjRes;
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Error al cargar el proyecto.');
@@ -986,17 +981,6 @@ SIModules.projectDetailAdmin = {
                                                 <div>
                                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Estado de Reapertura <span class="text-red-500">*</span></label>
                                                     <div class="grid grid-cols-2 gap-3">
-                                                        <div onclick="SIModules.projectDetailAdmin._selectReopenStatus('ejecucion', this)"
-                                                             data-reopen-option="ejecucion"
-                                                             class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-orange-300 hover:bg-orange-50/30 group">
-                                                            <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-400 flex items-center justify-center transition-colors group-[.selected]:bg-orange-500 group-[.selected]:text-white">
-                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                                            </div>
-                                                            <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-orange-600">Ejecución</span>
-                                                            <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-orange-500 group-[.selected]:bg-orange-500">
-                                                                <div class="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-[.selected]:opacity-100 transition-opacity"></div>
-                                                            </div>
-                                                        </div>
                                                         <div onclick="SIModules.projectDetailAdmin._selectReopenStatus('propuesta', this)"
                                                              data-reopen-option="propuesta"
                                                              class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-amber-300 hover:bg-amber-50/30 group">
@@ -1005,6 +989,17 @@ SIModules.projectDetailAdmin = {
                                                             </div>
                                                             <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-amber-600">Propuesta</span>
                                                             <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-amber-500 group-[.selected]:bg-amber-500">
+                                                                <div class="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-[.selected]:opacity-100 transition-opacity"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div onclick="SIModules.projectDetailAdmin._selectReopenStatus('ejecucion', this)"
+                                                             data-reopen-option="ejecucion"
+                                                             class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-orange-300 hover:bg-orange-50/30 group">
+                                                            <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-400 flex items-center justify-center transition-colors group-[.selected]:bg-orange-500 group-[.selected]:text-white">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                            </div>
+                                                            <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-orange-600">Ejecución</span>
+                                                            <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-orange-500 group-[.selected]:bg-orange-500">
                                                                 <div class="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-[.selected]:opacity-100 transition-opacity"></div>
                                                             </div>
                                                         </div>
@@ -1156,9 +1151,6 @@ SIModules.projectDetailAdmin = {
                 <!-- Header de Lista -->
                 <div class="flex flex-col pt-2 pb-2 gap-2">
                     <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide text-center sm:text-left">Expediente del Proyecto</h3>
-                    <div class="flex justify-center sm:justify-start">
-                        <div id="doc-counter" class="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">0 ARCHIVOS</div>
-                    </div>
                 </div>
 
                 <!-- Lista de Archivos Dynamic -->
@@ -1267,22 +1259,23 @@ SIModules.projectDetailAdmin = {
         // Buscamos el índice del último log de reapertura (si existe) para "invalidar" lo anterior
         const lastReopenIdx = logs.findIndex(l => l.action_key === 'proyecto_reabierto');
 
-        // Logs que se consideran para el flujo actual (solo los posteriores a la última reapertura)
-        const currentCycleLogs = lastReopenIdx !== -1 ? logs.slice(0, lastReopenIdx) : logs;
+        // Logs que se consideran para el flujo actual (solo los posteriores e incluyendo la última reapertura)
+        const currentCycleLogs = lastReopenIdx !== -1 ? logs.slice(0, lastReopenIdx + 1) : logs;
         const reopenLog = lastReopenIdx !== -1 ? logs[lastReopenIdx] : null;
 
         const findInCycle = (status) => {
             return currentCycleLogs.find(l =>
-                (l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod') &&
-                (l.metadata?.estado_nuevo === status || l.metadata?.new_status === status)
+                ((l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod' || l.action_key === 'proyecto_reabierto') &&
+                (l.metadata?.estado_nuevo === status || l.metadata?.new_status === status))
             );
         };
 
         // Busca logs de aprobación directa (botón "Aprobar propuesta") además del cambio de estado estándar
         const findApprovalInCycle = () => {
-            // 1. Cambio de estado estándar a 'aprobado'
+            // 1. Cambio de estado estándar a 'aprobado' (o reapertura a aprobado, aunque no es común)
             const byStatus = findInCycle('aprobado');
             if (byStatus) return byStatus;
+            
             // 2. Log de aprobación directa via botón de propuesta
             return currentCycleLogs.find(l =>
                 l.action_key === 'proyecto_aprobado' ||
@@ -1302,9 +1295,10 @@ SIModules.projectDetailAdmin = {
 
         // 2. Aprobación (Solo si ocurrió en el ciclo actual)
         const approvalLog = findApprovalInCycle();
-        // El proyecto se considera aprobado si: hay log de aprobación, o el status actual
-        // ya superó la fase de propuesta (independientemente de si hubo reapertura o no)
+        // El proyecto se considera aprobado si: hay log de aprobación en este ciclo,
+        // o el status actual ya superó la fase de propuesta
         const isApproved = !!approvalLog || ['aprobado', 'ejecucion', 'cerrado'].includes(p.status);
+        
         nodes.push(entry(
             dot('bg-blue-400', isApproved),
             'Propuesta Aprobada',
@@ -1315,7 +1309,8 @@ SIModules.projectDetailAdmin = {
 
         // 3. Ejecución (Solo si ocurrió en el ciclo actual)
         const ejecucionLog = findInCycle('ejecucion');
-        const isInExecution = !!ejecucionLog || (['ejecucion', 'cerrado'].includes(p.status) && lastReopenIdx === -1);
+        const isInExecution = !!ejecucionLog || (['ejecucion', 'cerrado'].includes(p.status));
+        
         nodes.push(entry(
             dot('bg-orange-400', isInExecution),
             'Inicio de Ejecución',
@@ -1681,9 +1676,6 @@ SIModules.projectDetailAdmin = {
                 wrapper.style.display = 'none';
             }
         });
-
-        const counter = document.getElementById('doc-counter');
-        if (counter) counter.textContent = `${visibleCount} ARCHIVOS`;
     },
 
     /** Establecer filtro por tipo documental */
@@ -1736,10 +1728,7 @@ SIModules.projectDetailAdmin = {
     renderDocumentList(pagination) {
         const user = this.user;
         const container = document.getElementById('doc-cards-container');
-        const counter = document.getElementById('doc-counter');
         if (!container) return;
-
-        if (counter) counter.textContent = `${pagination ? pagination.total_results : this.documents.length} ARCHIVOS`;
 
         if (this.documents.length === 0) {
             container.innerHTML = `
@@ -1835,6 +1824,11 @@ SIModules.projectDetailAdmin = {
                                         class="p-2 text-gray-300 hover:text-indigo-500 transition-all transform hover:scale-110 active:scale-95 hover:rotate-12" 
                                         title="Editar Metadatos">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                                <button onclick='event.stopPropagation(); SIModules.projectDetailAdmin._confirmDeleteDocument(${doc.id}, "${SIApp.escapeHtml(doc.title)}")'
+                                        class="p-2 text-gray-300 hover:text-red-500 transition-all transform hover:scale-110 active:scale-95 hover:rotate-12" 
+                                        title="Eliminar Documento">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
                                 ` : ''}
                             </div>
@@ -2653,6 +2647,7 @@ SIModules.projectDetailAdmin = {
                          <div class="flex flex-col items-end max-w-[88%]">
                              <!-- Nombre + Rol + Versión -->
                              <div class="flex items-center gap-1.5 mb-1.5 px-1 flex-wrap justify-end">
+                                 ${this.project && this.project.status !== 'cerrado' ? `<button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
                                  <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${myRc.badgeCss}">${myRc.label}</span>
                                  <span class="text-[11px] font-black ${myRc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
                                  <span class="text-[9px] font-black uppercase tracking-widest bg-[#1a1b25]/10 text-[#1a1b25] px-1.5 py-0.5 rounded border border-[#1a1b25]/10">v${c.version_number}</span>
@@ -2678,6 +2673,7 @@ SIModules.projectDetailAdmin = {
                                  <span class="text-[11px] font-black ${rc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
                                  <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${rc.badgeCss}">${rc.label}</span>
                                  <span class="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">v${c.version_number}</span>
+                                 ${me && me.role === 'admin' && this.project && this.project.status !== 'cerrado' ? `<button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario de Otro"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
                              </div>
                              <!-- Burbuja -->
                              <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-[#1a1b25] text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
@@ -3057,11 +3053,15 @@ SIModules.projectDetailAdmin = {
         document.querySelectorAll('.edit-doc-type-card').forEach(card => {
             card.classList.remove('selected', 'border-orange-400', 'bg-orange-50/50', 'ring-2', 'ring-orange-500/10');
             card.classList.add('border-gray-100');
+            // Restaurar hover para los no seleccionados
+            card.classList.add('hover:border-orange-200', 'hover:bg-orange-50/30');
         });
 
         if (clickedEl) {
             clickedEl.classList.add('selected', 'border-orange-400', 'bg-orange-50/50', 'ring-2', 'ring-orange-500/10');
             clickedEl.classList.remove('border-gray-100');
+            // Quitar hover para el seleccionado (así no cambia el color al pasar el mouse)
+            clickedEl.classList.remove('hover:border-orange-200', 'hover:bg-orange-50/30');
         }
     },
 
@@ -3072,11 +3072,15 @@ SIModules.projectDetailAdmin = {
         document.querySelectorAll('.edit-doc-access-card').forEach(card => {
             card.classList.remove('bg-blue-500', 'text-white', 'border-blue-500', 'shadow-md', 'shadow-blue-500/20');
             card.classList.add('bg-white', 'border-gray-100', 'text-gray-400');
+            // Restaurar hover para los no seleccionados
+            card.classList.add('hover:border-blue-200', 'hover:bg-blue-50/30');
         });
 
         if (clickedEl) {
             clickedEl.classList.add('bg-blue-500', 'text-white', 'border-blue-500', 'shadow-md', 'shadow-blue-500/20');
             clickedEl.classList.remove('bg-white', 'border-gray-100', 'text-gray-400');
+            // Quitar hover para el seleccionado (así no cambia el color al pasar el mouse)
+            clickedEl.classList.remove('hover:border-blue-200', 'hover:bg-blue-50/30');
         }
     },
 
@@ -3317,6 +3321,44 @@ SIModules.projectDetailAdmin = {
             SIApp.showToast('Error', 'Error de conexión verificando código.', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Confirmar Código');
+        }
+    },
+
+    async _confirmDeleteDocument(docId, docTitle) {
+        if (!this.projectId) return;
+        const ok = await SIApp.confirm('¿Eliminar documento?', `¿Seguro que deseas eliminar definitivamente "${docTitle}"? Perderás todo su historial y comentarios.`);
+        if (ok) {
+            try {
+                const res = await API.delete(`/projects/${this.projectId}/documents/${docId}`);
+                if (res.success) {
+                    SIApp.showToast('Eliminado', 'El documento se eliminó correctamente.', 'success');
+                    // Recargar datos y volver a renderizar (evitando loop)
+                    await this.loadProjectData(true);
+                } else {
+                    SIApp.showToast('Error', res.message, 'error');
+                }
+            } catch (e) {
+                SIApp.showToast('Error', 'No se pudo eliminar el documento de la base de datos.', 'error');
+            }
+        }
+    },
+
+    async _confirmDeleteComment(commentId) {
+        if (!this.projectId || !this.currentDocId) return;
+        const ok = await SIApp.confirm('¿Eliminar comentario?', `Esta acción no se puede deshacer.`);
+        if (ok) {
+            try {
+                const res = await API.delete(`/projects/${this.projectId}/documents/${this.currentDocId}/comments/${commentId}`);
+                if (res.success) {
+                    SIApp.showToast('Eliminado', 'Se ha eliminado el comentario.', 'success');
+                    // Actualizar el doc activo
+                    this.openPreview(this.currentDocId);
+                } else {
+                    SIApp.showToast('Error', res.message, 'error');
+                }
+            } catch (e) {
+                SIApp.showToast('Error', 'Hubo un error del servidor intentando descartar este mensaje de chat.', 'error');
+            }
         }
     }
 };

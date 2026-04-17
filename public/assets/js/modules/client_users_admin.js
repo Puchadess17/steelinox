@@ -58,11 +58,6 @@ SIModules.clientUsersAdmin = {
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-bold text-[#1a1b25]">Listado de Usuarios</h2>
-                    <span id="users-results-count" class="text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 italic">Cargando resultados...</span>
-                </div>
-
                 <div id="users-table-container"></div>
                 <div id="users-pagination" class="mt-6"></div>
             </div>
@@ -111,11 +106,9 @@ SIModules.clientUsersAdmin = {
     /** 2. RENDERIZAR TABLA */
     _renderTable(data, pagination) {
         const container = document.getElementById('users-table-container');
-        const countSpan = document.getElementById('users-results-count');
         const paginationContainer = document.getElementById('users-pagination');
         if (!container) return;
 
-        if (countSpan && pagination) countSpan.textContent = `Viendo ${data.length} de ${pagination.total_results}`;
 
         if (data.length === 0) {
             container.innerHTML = `
