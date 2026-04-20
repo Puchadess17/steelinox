@@ -5,6 +5,9 @@ $errorTitle = ($errorCode == 403) ? 'Acceso Denegado' : 'Página no encontrada';
 $errorMessage = ($errorCode == 403) 
     ? 'No tienes los permisos necesarios para acceder a esta sección del sistema.' 
     : 'Lo sentimos, la página que estás buscando no existe o ha sido movida permanentemente.';
+
+// Fallback dinámico para rutas absolutas
+$baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? '', '/');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -13,22 +16,18 @@ $errorMessage = ($errorCode == 403)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steel Inox Extranet — <?php echo $errorTitle; ?></title>
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/steelinox/public/assets/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/steelinox/public/assets/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/steelinox/public/assets/img/favicon-16x16.png">
-    <link rel="manifest" href="/steelinox/public/assets/img/site.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $baseUrl; ?>/public/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo $baseUrl; ?>/public/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo $baseUrl; ?>/public/assets/img/favicon-16x16.png">
+    <link rel="manifest" href="<?php echo $baseUrl; ?>/public/assets/img/site.webmanifest">
 
-    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/steelinox/public/assets/css/app.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>/public/assets/css/app.css">
 
     <style>
         * { font-family: 'Inter', sans-serif; }
@@ -43,12 +42,10 @@ $errorMessage = ($errorCode == 403)
 <body class="bg-gray-50 flex items-center justify-center min-h-screen p-6 antialiased">
 
     <div class="max-w-md w-full text-center">
-        <!-- Logo -->
         <div class="flex items-center justify-center gap-2.5 mb-12">
-            <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-12 w-auto">
+            <img src="<?php echo $baseUrl; ?>/public/logo-header.svg" alt="Steel Inox" class="h-12 w-auto">
         </div>
 
-        <!-- Error Content -->
         <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 md:p-12 border border-gray-100">
             <h1 class="error-num text-8xl font-black mb-4"><?php echo $errorCode; ?></h1>
             <h2 class="text-2xl font-bold text-gray-900 mb-4"><?php echo $errorTitle; ?></h2>
@@ -56,7 +53,7 @@ $errorMessage = ($errorCode == 403)
                 <?php echo $errorMessage; ?>
             </p>
 
-            <a href="/steelinox/panel" class="inline-flex items-center justify-center gap-2 w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold transition-all hover:shadow-lg hover:shadow-orange-500/25 active:transform active:scale-[0.98]">
+            <a href="<?php echo $baseUrl; ?>/panel" class="inline-flex items-center justify-center gap-2 w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold transition-all hover:shadow-lg hover:shadow-orange-500/25 active:transform active:scale-[0.98]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                 <span>Volver al Dashboard</span>
             </a>

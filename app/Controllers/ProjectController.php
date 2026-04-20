@@ -7,9 +7,11 @@ require_once APP_PATH . '/Policies/ProjectPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php'; 
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
 require_once APP_PATH . '/Services/ErrorLogger.php';
+require_once APP_PATH . '/Requests/ProjectRequest.php';
 
 class ProjectController
 {
+
     public function search()
     {
         AuthMiddleware::check();
@@ -290,6 +292,7 @@ class ProjectController
         }
     }
 
+
     public function store()
     {
         AuthMiddleware::check();
@@ -307,32 +310,12 @@ class ProjectController
             return;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        $errors = [];
+        // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
+        $request = new ProjectRequest();
 
-        $cleanName        = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
-        $cleanDesc        = isset($input['description']) ? htmlspecialchars(trim($input['description']), ENT_QUOTES, 'UTF-8') : null;
-        $cleanSurface     = isset($input['surface']) ? htmlspecialchars(trim($input['surface']), ENT_QUOTES, 'UTF-8') : null;
-        $cleanStatus      = isset($input['status']) ? htmlspecialchars(trim($input['status']), ENT_QUOTES, 'UTF-8') : 'propuesta';
-        $cleanProjectType = isset($input['project_type']) ? htmlspecialchars(trim($input['project_type']), ENT_QUOTES, 'UTF-8') : '';
-        $budgetAmount     = isset($input['budget_amount']) ? trim($input['budget_amount']) : '';
-
-        if (empty($input['client_id'])) {
-            $errors['client_id'] = 'El cliente es obligatorio.';
-        }
-        if (empty($cleanName)) {
-            $errors['name'] = 'El nombre del proyecto es obligatorio.';
-        }
-        if ($cleanProjectType === '') {
-            $errors['project_type'] = 'El tipo de proyecto es obligatorio.';
-        }
-        if ($budgetAmount === '' || !is_numeric($budgetAmount)) {
-            $errors['budget_amount'] = 'El presupuesto es obligatorio y debe ser un valor numérico.';
-        }
-
-        if (!empty($errors)) {
+        if (!$request->validateStore()) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios', 'data' => null, 'errors' => $errors]);
+            echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios', 'data' => null, 'errors' => $request->errors()]);
             return;
         }
 
@@ -342,7 +325,7 @@ class ProjectController
 
             require_once APP_PATH . '/Models/Client.php';
             $clientModel = new Client();
-            $clientDetails = $clientModel->getDetailsById((int) $input['client_id'], $userId, $role);
+            $clientDetails = $clientModel->getDetailsById((int)$request->input('client_id'), $userId, $role);
 
             if (!$clientDetails) {
                 http_response_code(404);
@@ -354,14 +337,14 @@ class ProjectController
             $generatedReference = $projectModel->generateNextReference();
 
             $dataToInsert = [
-                'client_id'     => (int) $input['client_id'],
-                'name'          => $cleanName,
+                'client_id'     => (int)$request->input('client_id'),
+                'name'          => $request->sanitizeName($request->input('name')),
                 'reference'     => $generatedReference,
-                'status'        => $cleanStatus,
-                'budget_amount' => (float) $budgetAmount,
-                'description'   => $cleanDesc,
-                'surface'       => $cleanSurface,
-                'project_type'  => $cleanProjectType,
+                'status'        => htmlspecialchars(trim($request->input('status', 'propuesta')), ENT_QUOTES, 'UTF-8'),
+                'budget_amount' => (float)$request->input('budget_amount'),
+                'description'   => htmlspecialchars(trim($request->input('description', '')), ENT_QUOTES, 'UTF-8') ?: null,
+                'surface'       => htmlspecialchars(trim($request->input('surface', '')), ENT_QUOTES, 'UTF-8') ?: null,
+                'project_type'  => htmlspecialchars(trim($request->input('project_type')), ENT_QUOTES, 'UTF-8'),
                 'created_by'    => $userId
             ];
 
@@ -420,49 +403,32 @@ class ProjectController
                 return;
             }
 
-            $input = json_decode(file_get_contents('php://input'), true);
-            $errors = [];
-
-            $cleanName        = isset($input['name']) ? $this->sanitizeName($input['name']) : '';
-            $cleanDesc        = isset($input['description']) ? htmlspecialchars(trim($input['description']), ENT_QUOTES, 'UTF-8') : null;
-            $cleanSurface     = isset($input['surface']) ? htmlspecialchars(trim($input['surface']), ENT_QUOTES, 'UTF-8') : null;
-            $cleanProjectType = isset($input['project_type']) ? htmlspecialchars(trim($input['project_type']), ENT_QUOTES, 'UTF-8') : '';
-            $budgetAmount     = isset($input['budget_amount']) ? trim($input['budget_amount']) : '';
-
-            if (empty($cleanName)) {
-                $errors['name'] = 'El nombre es obligatorio.';
-            }
-            if ($cleanProjectType === '') {
-                $errors['project_type'] = 'El tipo de proyecto es obligatorio.';
-            }
-            if ($budgetAmount === '' || !is_numeric($budgetAmount)) {
-                $errors['budget_amount'] = 'El presupuesto es obligatorio y debe ser un valor numérico.';
-            }
-            
-            if ($role === 'admin' && !empty($input['reference'])) {
-                if (!preg_match('/^PRJ-\d{4}-\d{4}$/', trim($input['reference']))) {
-                    $errors['reference'] = 'El formato debe ser PRJ-AAAA-XXXX';
-                }
-            } elseif ($role !== 'admin' && isset($input['reference'])) {
-                unset($input['reference']);
-            }
-
-            if (!empty($errors)) {
+            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
+            $request = new ProjectRequest();
+            if (!$request->validateUpdate($role)) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Faltan campos', 'data' => null, 'errors' => $errors]);
+                echo json_encode(['success' => false, 'message' => 'Faltan campos', 'data' => null, 'errors' => $request->errors()]);
                 return;
             }
 
-            $newData = [
-                'name'          => $cleanName,
-                'budget_amount' => (float) $budgetAmount,
-                'description'   => $cleanDesc,
-                'surface'       => $cleanSurface,
-                'project_type'  => $cleanProjectType
-            ];
-
-            if ($role === 'admin' && !empty($input['reference'])) {
-                $newData['reference'] = htmlspecialchars(trim($input['reference']), ENT_QUOTES, 'UTF-8');
+            $newData = [];
+            if ($request->input('name') !== null) {
+                $newData['name'] = $request->sanitizeName($request->input('name'));
+            }
+            if ($request->input('budget_amount') !== null) {
+                $newData['budget_amount'] = (float)$request->input('budget_amount');
+            }
+            if ($request->input('description') !== null) {
+                $newData['description'] = htmlspecialchars(trim($request->input('description')), ENT_QUOTES, 'UTF-8') ?: null;
+            }
+            if ($request->input('surface') !== null) {
+                $newData['surface'] = htmlspecialchars(trim($request->input('surface')), ENT_QUOTES, 'UTF-8') ?: null;
+            }
+            if ($request->input('project_type') !== null) {
+                $newData['project_type'] = htmlspecialchars(trim($request->input('project_type')), ENT_QUOTES, 'UTF-8');
+            }
+            if ($role === 'admin' && !empty($request->input('reference'))) {
+                $newData['reference'] = htmlspecialchars(trim($request->input('reference')), ENT_QUOTES, 'UTF-8');
             }
 
             $changes = [];
@@ -477,7 +443,9 @@ class ProjectController
             }
 
             try {
-                $projectModel->update($id, $newData);
+                if (!empty($newData)) {
+                    $projectModel->update($id, $newData);
+                }
             } catch (Exception $e) {
                 if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
                     http_response_code(409); 
@@ -579,65 +547,22 @@ class ProjectController
                 return;
             }
 
-            $input = json_decode(file_get_contents('php://input'), true);
-            $newStatus = isset($input['status']) ? htmlspecialchars(trim($input['status']), ENT_QUOTES, 'UTF-8') : null;
-            $reason = isset($input['reason']) ? htmlspecialchars(trim($input['reason']), ENT_QUOTES, 'UTF-8') : null;
-
-            $validStatuses = ['propuesta', 'aprobado', 'ejecucion', 'cerrado'];
-            if (!in_array($newStatus, $validStatuses)) {
-                http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Estado inválido', 'data' => null, 'errors' => ['status' => 'Estado no reconocido']]);
-                return;
-            }
-
             $oldStatus = $projectDetails['status'] ?? 'desconocido';
 
-            if ($oldStatus === $newStatus) {
-                http_response_code(422); 
-                echo json_encode(['success' => false, 'message' => 'El proyecto ya tiene ese estado.', 'data' => null, 'errors' => ['status' => 'Igual al actual.']]);
+            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
+            $request = new ProjectRequest();
+            if (!$request->validateStatusChange($oldStatus)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $request->errors()]);
                 return;
             }
 
-            // --- REGLA DE NEGOCIO ESTRICTA MEDIANTE POLICY ---
+            $newStatus = trim($request->input('status'));
+            $reason = trim($request->input('reason'));
+
             if ($newStatus === 'aprobado' && !ProjectPolicy::canApprove($role, $oldStatus)) {
                 http_response_code(403);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Acceso denegado', 
-                    'data'    => null, 
-                    'errors'  => ['policy' => 'No tienes permisos para aprobar propuestas de forma directa.']
-                ]);
-                return;
-            }
-
-            if ($oldStatus === 'cerrado' && empty($reason)) {
-                http_response_code(422);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Motivo requerido', 
-                    'data'    => null, 
-                    'errors'  => ['reason' => 'Por normativa, es estrictamente obligatorio registrar un motivo para reabrir un proyecto cerrado.']
-                ]);
-                return;
-            }
-
-            $allowedTransitions = [
-                'propuesta' => ['aprobado'],         
-                'aprobado'  => ['ejecucion'],        
-                'ejecucion' => ['cerrado'],          
-                'cerrado'   => ['ejecucion', 'propuesta'] 
-            ];
-
-            if (!isset($allowedTransitions[$oldStatus]) || !in_array($newStatus, $allowedTransitions[$oldStatus])) {
-                http_response_code(422);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Transición no permitida', 
-                    'data'    => null, 
-                    'errors'  => [
-                        'status' => "Normativa de flujo: No se puede pasar directamente de '" . ucfirst($oldStatus) . "' a '" . ucfirst($newStatus) . "'."
-                    ]
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'No tienes permisos para aprobar propuestas de forma directa.']]);
                 return;
             }
 
@@ -767,12 +692,11 @@ class ProjectController
             return;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        $tokenInput = isset($input['token']) ? trim($input['token']) : null;
-
-        if (empty($tokenInput)) {
+        // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
+        $request = new ProjectRequest();
+        if (!$request->validateApprovalConfirm()) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Código requerido', 'data' => null, 'errors' => ['token' => 'El código de seguridad es obligatorio.']]);
+            echo json_encode(['success' => false, 'message' => 'Código requerido', 'data' => null, 'errors' => $request->errors()]);
             return;
         }
 
@@ -796,6 +720,8 @@ class ProjectController
                 echo json_encode(['success' => false, 'message' => 'Proyecto no en fase de propuesta.', 'data' => null, 'errors' => ['policy' => 'Ya ha sido aprobado o no está en propuesta.']]);
                 return;
             }
+
+            $tokenInput = trim($request->input('token'));
 
             if (empty($projectDetails['approval_token']) || $projectDetails['approval_token'] !== $tokenInput) {
                 http_response_code(422);
@@ -835,13 +761,5 @@ class ProjectController
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error de servidor']]);
         }
-    }
-
-    private function sanitizeName($name) {
-        if (empty($name)) return '';
-        $name = trim($name);
-        $name = preg_replace('/\s+/', ' ', $name);
-        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
-        return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }

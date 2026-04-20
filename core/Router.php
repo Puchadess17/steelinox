@@ -113,12 +113,21 @@ class Router {
         }
 
         /**
-         * RESPUESTA 404 (FALLBACK)
-         * Si el bucle finaliza sin encontrar ninguna coincidencia, interrumpe 
-         * la petición y devuelve un error estándar en formato JSON.
+         * RESPUESTA 404 (FALLBACK INTELIGENTE)
+         * Si el bucle finaliza sin encontrar ninguna coincidencia, interrumpe la petición.
+         * Discrimina si se debe responder con JSON (para la API) o renderizar la vista de error (HTML).
          */
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Ruta no encontrada']);
+
+        if (strpos($url, '/api/') === 0) {
+            // Petición dirigida a la API
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Endpoint de la API no encontrado']);
+        } else {
+            // Petición de navegación del navegador (Carga la vista dedicada)
+            require_once APP_PATH . '/Views/error.php';
+        }
+        
         return;
     }
 }
