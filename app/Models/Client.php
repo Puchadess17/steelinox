@@ -382,25 +382,26 @@ class Client
     }
 
     /**
-     * GENERADOR SECUENCIAL DE REFERENCIAS
-     * Calcula automáticamente el identificador único del cliente
-     * (Ej: CLI-0001). Previene colisiones consultando el último registro.
+     * GENERADOR SECUENCIAL DE REFERENCIAS (BLINDADO)
+     * Calcula automáticamente el identificador único del cliente (Ej: CLI-0001). 
+     * Extrae numéricamente el valor más alto real para prevenir colisiones 
+     * incluso si se realizan borrados lógicos o físicos desordenados.
      */
     public function generateNextReference()
     {
         $prefix = "CLI-";
 
-        $sql = "SELECT reference FROM clients WHERE reference LIKE :prefix ORDER BY id DESC LIMIT 1";
+        // Extrae todo lo que hay después del último guión y saca el valor numérico máximo
+        $sql = "SELECT MAX(CAST(SUBSTRING_INDEX(reference, '-', -1) AS UNSIGNED)) 
+                FROM clients 
+                WHERE reference LIKE :prefix";
+        
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['prefix' => $prefix . '%']);
-        $lastReference = $stmt->fetchColumn();
+        $maxNumber = $stmt->fetchColumn();
 
-        if ($lastReference) {
-            $lastNumber = (int) substr($lastReference, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
+        // Si existe un máximo, le suma 1. Si no, empieza en 1.
+        $nextNumber = $maxNumber ? (int)$maxNumber + 1 : 1;
 
         return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }

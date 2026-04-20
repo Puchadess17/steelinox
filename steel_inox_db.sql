@@ -152,7 +152,6 @@ CREATE TABLE `notifications_queue` (
 --
 -- Estructura de tabla para la tabla `projects`
 --
-
 CREATE TABLE `projects` (
   `id` bigint(20) NOT NULL,
   `client_id` bigint(20) NOT NULL,
@@ -166,7 +165,7 @@ CREATE TABLE `projects` (
   `created_by` bigint(20) NOT NULL,
   `approved_at` datetime DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
-  `approval_token` varchar(10) DEFAULT NULL,
+  `approval_token` varchar(64) DEFAULT NULL,
   `approval_token_expires_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -304,7 +303,8 @@ ALTER TABLE `document_versions`
 --
 ALTER TABLE `notifications_queue`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `notifications_queue_ibfk_1` (`recipient_user_id`);
+  ADD KEY `notifications_queue_ibfk_1` (`recipient_user_id`),
+  ADD KEY `idx_notifications_status_attempts_created` (`status`,`attempts`,`created_at`);
 
 --
 -- Indices de la tabla `projects`
@@ -323,7 +323,8 @@ ALTER TABLE `projects`
 ALTER TABLE `project_status_logs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `project_status_logs_ibfk_1` (`project_id`),
-  ADD KEY `project_status_logs_ibfk_2` (`changed_by_user_id`);
+  ADD KEY `project_status_logs_ibfk_2` (`changed_by_user_id`),
+  ADD KEY `idx_project_status_history` (`project_id`,`created_at`);
 
 --
 -- Indices de la tabla `project_user`

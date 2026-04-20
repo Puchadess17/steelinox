@@ -645,7 +645,8 @@ class ProjectController
                 return;
             }
 
-            $token = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            // GENERACIÓN DE TOKEN CRIPTOGRÁFICO DE ALTA SEGURIDAD (48 Caracteres)
+            $token = bin2hex(random_bytes(24)); 
             
             $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE id = ?");
             $stmt->execute([$token, $id]);
@@ -655,18 +656,20 @@ class ProjectController
             $userData = $uModel->findByIdWithInactive($userId);
             $userEmail = $userData['email'];
 
-            $subject = "Código de seguridad - Aprobación de Proyecto";
+            $subject = "Token de seguridad - Aprobación de Proyecto";
+            
+            // EMAIL ADAPTADO PARA CADENAS LARGAS (Añadido font-family monospace y word-break)
             $body = "<div style='font-family: Arial, sans-serif; color: #333;'>";
-            $body .= "<h2 style='color: #0056b3;'>Código de verificación</h2>";
+            $body .= "<h2 style='color: #0056b3;'>Autorización Requerida</h2>";
             $body .= "<p>Has solicitado aprobar el proyecto <strong>" . $projectDetails['reference'] . "</strong>.</p>";
-            $body .= "<p>Introduce el siguiente código de seguridad de 6 dígitos en la plataforma:</p>";
-            $body .= "<div style='font-size: 24px; font-weight: bold; background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; display: inline-block; border: 1px solid #ddd;'>" . $token . "</div>";
-            $body .= "<p><em>Este código caducará en 10 minutos.</em></p></div>";
+            $body .= "<p>Copia y pega el siguiente token criptográfico de seguridad en la plataforma:</p>";
+            $body .= "<div style='font-size: 16px; font-family: monospace; word-break: break-all; font-weight: bold; background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; display: block; border: 1px solid #ddd; text-align: center; letter-spacing: 1px;'>" . $token . "</div>";
+            $body .= "<p><em>Por motivos de seguridad, este token caducará en exactamente 10 minutos.</em></p></div>";
 
             $stmtQ = $db->prepare("INSERT INTO notifications_queue (recipient_user_id, event_type, recipient_email, subject, body, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
             $stmtQ->execute([$userId, 'codigo_aprobacion', $userEmail, $subject, $body]);
 
-            echo json_encode(['success' => true, 'message' => 'Código de verificación enviado al email.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => true, 'message' => 'Token criptográfico enviado al email.', 'data' => null, 'errors' => null]);
 
         } catch (Exception $e) {
             ErrorLogger::log($e->getMessage(), 'ProjectController::requestApproval');
