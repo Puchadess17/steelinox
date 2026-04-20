@@ -4,7 +4,8 @@
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Services/MailService.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
-require_once APP_PATH . '/Services/ErrorLogger.php'; // <-- INYECTADO
+require_once APP_PATH . '/Services/ErrorLogger.php';
+require_once APP_PATH . '/Requests/PasswordResetRequest.php'; // <-- INYECTAMOS EL REQUEST
 
 class PasswordResetController
 {
@@ -114,12 +115,11 @@ class PasswordResetController
         header('Content-Type: application/json');
         
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
+            $request = new PasswordResetRequest();
+            $token = $request->input('token');
 
-            $token = $input['token'] ?? null;
-            $password = $input['password'] ?? null;
-
-            if (!$token || !$password) {
+            if (!$token || !$request->input('password')) {
                 echo json_encode(['success' => false, 'message' => 'Datos incompletos.', 'data' => null, 'errors' => ['request' => 'Faltan parámetros']]);
                 return;
             }
@@ -132,19 +132,18 @@ class PasswordResetController
                 return;
             }
 
-            $pwdCheck = $this->validatePasswordPolicy($password, $user['email']);
-            if ($pwdCheck !== true) {
+            if (!$request->validateReset($user['email'])) {
                 http_response_code(422);
                 echo json_encode([
                     'success' => false, 
                     'message' => 'Error de validación', 
                     'data'    => null,
-                    'errors'  => ['password' => $pwdCheck]
+                    'errors'  => $request->errors()
                 ]);
                 return;
             }
 
-            $hashed = password_hash($password, PASSWORD_DEFAULT);
+            $hashed = password_hash($request->input('password'), PASSWORD_DEFAULT);
             $updated = $userModel->update($user['id'], ['password_hash' => $hashed]);
 
             if ($updated) {
@@ -162,21 +161,5 @@ class PasswordResetController
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }
-    }
-
-    /** Helper privado para validar la política de contraseñas */
-    private function validatePasswordPolicy($password, $email) {
-        if (strlen($password) < 8) return 'La contraseña debe tener al menos 8 caracteres.';
-        if (!preg_match('/[A-Z]/', $password)) return 'La contraseña debe incluir al menos una letra mayúscula.';
-        if (!preg_match('/[a-z]/', $password)) return 'La contraseña debe incluir al menos una letra minúscula.';
-        if (!preg_match('/[0-9]/', $password)) return 'La contraseña debe incluir al menos un número.';
-        
-        if (!empty($email)) {
-            $emailPrefix = explode('@', $email)[0];
-            if (strcasecmp($password, $emailPrefix) === 0) {
-                return 'La contraseña no puede ser igual a la primera parte de tu correo electrónico.';
-            }
-        }
-        return true;
     }
 }

@@ -30,38 +30,16 @@ class AuthController {
      * (ej: al cerrar y reabrir pestaña).
      */
     public function me() {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        // Delegamos toda la capa de seguridad (sesión, timeout, inactividad) al middleware central.
+        // Si la sesión es inválida o ha caducado, el middleware abortará y enviará el 401 automáticamente.
+        AuthMiddleware::check();
 
         header('Content-Type: application/json; charset=utf-8');
 
-        // Verificar timeout por inactividad (misma lógica que AuthMiddleware)
-        if (isset($_SESSION['last_activity'])) {
-            $secondsInactive = time() - $_SESSION['last_activity'];
-            if ($secondsInactive >= 1800) {
-                // AUDITORÍA: Timeout de sesión (Lo hacemos ANTES de destruir la sesión)
-                if (isset($_SESSION['user_id'])) {
-                    AuditLogger::log('sesion_expirada', 'user', $_SESSION['user_id'], null, ['segundos_inactivo' => $secondsInactive]);
-                }
-
-                session_unset();
-                session_destroy();
-                $this->sendResponse(401, false, 'Su sesión ha expirado por inactividad.', null, ['auth' => 'Sesión expirada']);
-                return;
-            }
-        }
-
-        if (!isset($_SESSION['user_id'])) {
-            $this->sendResponse(401, false, 'No autorizado. Por favor, inicie sesión.', null, ['auth' => 'No autorizado']);
-            return;
-        }
-
-        // Actualizar timestamp de actividad
-        $_SESSION['last_activity'] = time();
-
-        // Devolver datos del usuario desde la sesión
+        // Llegados a este punto, la sesión es 100% válida.
         $userModel = new User();
         
-        // Realizamos un JOIN manual o extendemos la consulta para obtener el nombre de la empresa
+        // Realizamos un JOIN para obtener el nombre de la empresa
         $db = Database::getInstance()->getConnection();
         $sql = "SELECT u.id, u.name, u.role, u.created_at, c.name as client_name 
                 FROM users u 

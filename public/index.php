@@ -53,6 +53,34 @@ require_once CORE_PATH . '/DotEnvLoader.php';
 DotEnvLoader::load(ROOT_PATH . '/.env');
 
 /**
+ * ===================================
+ * CONFIGURACIÓN SEGURA DE SESIONES
+ * ===================================
+ * Parámetros dinámicos para proteger las cookies contra XSS y robo de sesión.
+ * Detecta inteligentemente si estamos en HTTPS (Producción) o HTTP (Local).
+ */
+$isSecure = false;
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    $isSecure = true;
+} elseif (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+    $isSecure = true;
+}
+
+session_set_cookie_params([
+    'lifetime' => 0,              // La sesión expira al cerrar el navegador
+    'path'     => '/',
+    'domain'   => '',             // Aplica al dominio actual
+    'secure'   => $isSecure,      // true solo si detecta HTTPS válido
+    'httponly' => true,           // Evita que JavaScript lea la cookie (anti-XSS)
+    'samesite' => 'Strict'        // Evita el envío de cookies en peticiones cruzadas (anti-CSRF)
+]);
+
+// Iniciamos la sesión centralizada y segura antes de cargar nada más
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+/**
  * CARGA DEL MOTOR DE ENRUTAMIENTO
  * Se encarga de procesar la URL
  */
