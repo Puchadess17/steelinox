@@ -129,7 +129,7 @@ SIModules.clientUsersAdmin = {
             const statusBadge = SIApp.activeBadge(u.is_active);
             const avatarHtml = SIApp.avatarInitials(u.name);
             const lastAccessText = u.last_login_at
-                ? `<span class="text-sm font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>'
+                ? `<span class="text-sm font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>`
                 : '<span class="text-sm font-medium text-gray-400">Sin acceso</span>';
 
             return `
