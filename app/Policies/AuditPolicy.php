@@ -1,21 +1,18 @@
 <?php
 // app/Policies/AuditPolicy.php
+require_once APP_PATH . '/Policies/AccessMatrix.php';
 
-class AuditPolicy
-{
+class AuditPolicy {
     public static function canViewProjectAudit($role) {
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('audit', 'view_project', $role);
     }
-
     public static function canViewClientAudit($role) {
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('audit', 'view_client', $role);
     }
-
     public static function canViewGlobalLogs($role) {
-        return $role === 'admin';
+        return AccessMatrix::check('audit', 'view_global', $role);
     }
-
     public static function canViewFiltersData($role) {
-        return $role === 'admin';
+        return AccessMatrix::check('audit', 'view_filters', $role);
     }
 }

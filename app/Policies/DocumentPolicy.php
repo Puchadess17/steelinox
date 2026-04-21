@@ -1,34 +1,23 @@
 <?php
 // app/Policies/DocumentPolicy.php
+require_once APP_PATH . '/Policies/AccessMatrix.php';
 
 class DocumentPolicy
 {
-    // ¿Se pueden subir archivos o nuevas versiones al proyecto?
     public static function canUploadToProject($projectStatus) {
-        if ($projectStatus === 'cerrado') return false;
-        return true;
+        // Asumimos que quien sube es el rol actual en sesión, y la matriz evalúa el estado
+        return AccessMatrix::check('document', 'upload_to_project', $_SESSION['role'] ?? 'admin', $projectStatus);
     }
-
-    // ¿Quién puede editar los metadatos (nombre, visibilidad) de un documento?
     public static function canEditMetadata($role) {
-        return $role !== 'cliente';
+        return AccessMatrix::check('document', 'edit_metadata', $role);
     }
-
-    // ¿Puede el usuario acceder a este documento específico?
     public static function canAccessDocument($role, $isVisibleToClient) {
-        if ($role === 'cliente' && (int)$isVisibleToClient === 0) return false;
-        return true;
+        return AccessMatrix::check('document', 'access', $role, $isVisibleToClient);
     }
-
-    // ¿Puede el usuario descargar físicamente el archivo?
     public static function canDownload($role, $accessMode) {
-        if ($role === 'cliente' && $accessMode === 'view') return false;
-        return true;
+        return AccessMatrix::check('document', 'download', $role, $accessMode);
     }
-
-    // ¿Puede el usuario visualizar el archivo directamente en el navegador?
     public static function canViewInline($role, $accessMode) {
-        if ($role === 'cliente' && $accessMode === 'download') return false;
-        return true;
+        return AccessMatrix::check('document', 'view_inline', $role, $accessMode);
     }
 }

@@ -232,7 +232,13 @@ class CommentController {
                 return;
             }
 
-            if (!CommentPolicy::canCreateOnProject($projectDetails['status'])) {
+            if (!CommentPolicy::canDelete($role)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos', 'data' => null, 'errors' => ['policy' => 'No tienes autorización para eliminar comentarios.']]);
+                return;
+            }
+
+            if ($projectDetails['status'] === 'cerrado') {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['policy' => 'El proyecto está cerrado y no se pueden eliminar comentarios.']]);
                 return;
@@ -240,6 +246,7 @@ class CommentController {
 
             $commentModel = new Comment();
             
+            // La ejecución del borrado lógico (deleted_at = NOW()) sucede dentro de este método delete()
             if ($commentModel->delete($commentId, $projectId)) {
                 AuditLogger::log('comentario_eliminado', 'comment', $commentId, $projectId, [
                     'documento_id' => $documentId

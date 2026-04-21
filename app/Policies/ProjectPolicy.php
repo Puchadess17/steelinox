@@ -1,47 +1,31 @@
 <?php
 // app/Policies/ProjectPolicy.php
+require_once APP_PATH . '/Policies/AccessMatrix.php';
 
 class ProjectPolicy
 {
     public static function canCreate($role) {
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('project', 'create', $role);
     }
-
     public static function canEdit($role, $projectStatus) {
-        if ($role === 'cliente') return false;
-        if ($projectStatus === 'cerrado') return false; // Un proyecto cerrado es de solo lectura
-        return true;
+        return AccessMatrix::check('project', 'edit', $role, $projectStatus);
     }
-
     public static function canChangeStatus($role) {
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('project', 'change_status', $role);
     }
-
     public static function canApprove($role, $projectStatus) {
-        if ($role === 'comercial') return false; // Comerciales bloqueados para aprobar
-        if ($projectStatus !== 'propuesta') return false; // Solo se aprueban propuestas
-        return true;
+        return AccessMatrix::check('project', 'approve', $role, $projectStatus);
     }
-
     public static function canManageUsers($role, $projectStatus) {
-        if ($role === 'cliente') return false;
-        if ($projectStatus === 'cerrado') return false;
-        return true;
+        return AccessMatrix::check('project', 'manage_users', $role, $projectStatus);
     }
-
     public static function canRemoveUsers($role, $projectStatus) {
-        if ($role !== 'admin') return false; // Solo el admin quita comerciales asignados
-        if ($projectStatus === 'cerrado') return false;
-        return true;
+        return AccessMatrix::check('project', 'remove_users', $role, $projectStatus);
     }
-
     public static function canViewAvailableUsers($role) {
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('project', 'view_available_users', $role);
     }
-
     public static function canDelete($role, $projectStatus) {
-        if ($role !== 'admin') return false; // Solo el admin puede eliminar proyectos
-        if ($projectStatus !== 'cerrado') return false; // Solo se eliminan proyectos cerrados para evitar pérdida de datos en proyectos activos
-        return true;
+        return AccessMatrix::check('project', 'delete', $role, $projectStatus);
     }
 }

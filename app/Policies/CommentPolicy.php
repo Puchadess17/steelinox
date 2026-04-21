@@ -1,20 +1,24 @@
 <?php
 // app/Policies/CommentPolicy.php
+require_once APP_PATH . '/Policies/AccessMatrix.php';
 
-class CommentPolicy
-{
+class CommentPolicy {
     public static function canView($role, $isVisibleToClient) {
-        if ($role === 'cliente' && (int)$isVisibleToClient === 0) return false;
-        return true;
+        return AccessMatrix::check('comment', 'view', $role, $isVisibleToClient);
     }
-
+    
     public static function canCreateOnProject($projectStatus) {
-        if ($projectStatus === 'cerrado') return false;
-        return true;
+        return AccessMatrix::check('comment', 'create_on_project', $_SESSION['role'] ?? 'admin', $projectStatus);
+    }
+    
+    public static function canCreateOnDocument($role, $projectStatus, $isVisibleToClient) {
+        return AccessMatrix::check('comment', 'create_on_document', $role, [
+            'status' => $projectStatus, 
+            'is_visible' => $isVisibleToClient
+        ]);
     }
 
-    public static function canCreateOnDocument($role, $isVisibleToClient) {
-        if ($role === 'cliente' && (int)$isVisibleToClient === 0) return false;
-        return true;
+    public static function canDelete($role) {
+        return AccessMatrix::check('comment', 'delete', $role);
     }
 }

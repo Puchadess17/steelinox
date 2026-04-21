@@ -1,14 +1,12 @@
 <?php
 // app/Policies/ClientPolicy.php
+require_once APP_PATH . '/Policies/AccessMatrix.php';
 
-class ClientPolicy
-{
+class ClientPolicy {
     public static function canManage($role) {
-        // Solo administradores y comerciales pueden hacer CRUD de clientes y usuarios
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('client', 'manage', $role);
     }
-    
     public static function canDelete($role) {
-        return in_array($role, ['admin', 'comercial']);
+        return AccessMatrix::check('client', 'delete', $role);
     }
 }
