@@ -104,7 +104,7 @@ const SIApp = {
         const btnLogout = document.getElementById('btn-logout');
 
         if (userName) userName.textContent = this.user.name || 'Usuario';
-        
+
         if (userRole) {
             let roleText = this._roleLabel(this.user.role);
             if (this.user.role === 'cliente' && this.user.client_name) {
@@ -114,7 +114,7 @@ const SIApp = {
         }
 
         if (userAvatar) {
-            userAvatar.textContent = this._getInitials(this.user.name);
+            userAvatar.innerHTML = this.avatarInitials(this.user.name, 'w-8 h-8', 'text-[10px]');
         }
 
         if (btnLogout) {
@@ -129,7 +129,7 @@ const SIApp = {
     toggleTheme() {
         const isDark = document.documentElement.classList.toggle('dark');
         localStorage.setItem('si-theme', isDark ? 'dark' : 'light');
-        
+
         // Sincronizar switches si existen en la página
         const settingsSwitch = document.getElementById('theme-toggle');
         if (settingsSwitch) settingsSwitch.checked = isDark;
@@ -153,22 +153,22 @@ const SIApp = {
                 { icon: 'shield', label: 'Auditoría', href: '/steelinox/audit-log', route: 'audit-log' },
             ],
             comercial: [
-                { icon: 'grid', label: 'Mis Proyectos', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'grid', label: 'Proyectos', href: '/steelinox/panel', route: 'dashboard' },
                 { icon: 'building', label: 'Clientes', href: '/steelinox/clients', route: 'clients' },
                 { icon: 'users', label: 'Usuarios', href: '/steelinox/users', route: 'users' },
             ],
             cliente: [
-                { icon: 'grid', label: 'Mis Proyectos', href: '/steelinox/panel', route: 'dashboard' },
+                { icon: 'grid', label: 'Proyectos', href: '/steelinox/panel', route: 'dashboard' },
             ],
         };
 
         const icons = {
-            grid: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>',
+            grid: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>',
             users: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>',
-            building: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>',
-            briefcase: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
+            building: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>',
+            briefcase: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>',
             shield: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>',
-            settings: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+            settings: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
         };
 
         const items = menus[this.user.role] || [];
@@ -204,6 +204,19 @@ const SIApp = {
     // ──────────────────────────────────────
     // UTILIDADES
     // ──────────────────────────────────────
+
+    /**
+     * Actualiza el título de la pestaña del navegador
+     * @param {string} pageName - El nombre de la sección actual
+     */
+    setTitle(pageName) {
+        const baseTitle = 'Steel Inox Extranet';
+        if (pageName) {
+            document.title = `${pageName} — ${baseTitle}`;
+        } else {
+            document.title = baseTitle;
+        }
+    },
 
     /**
      * Valida un campo en tiempo real y muestra feedback visual.
@@ -274,13 +287,24 @@ const SIApp = {
      * @param {HTMLElement} inputEl 
      */
     validatePasswordRequirements(inputEl) {
-        if (!inputEl) return;
+        if (!inputEl) return true;
 
         const pwd = inputEl.value;
         const form = inputEl.closest('form') || document;
         const emailInput = form.querySelector('[name="email"], #user-email');
         const emailVal = emailInput ? emailInput.value.trim() : '';
         const emailPrefix = emailVal.split('@')[0].toLowerCase();
+
+        let wrapper = inputEl.parentNode;
+        if (wrapper.classList.contains('relative')) wrapper = wrapper.parentNode;
+        let container = wrapper.querySelector('.si-pwd-requirements');
+
+        // Si está vacío, ocultar contenedor y limpiar bordes
+        if (pwd.length === 0) {
+            if (container) container.classList.add('hidden');
+            inputEl.classList.remove('border-red-500', 'focus:ring-red-500/10', 'border-emerald-500', 'focus:ring-emerald-500/10');
+            return true;
+        }
 
         const requirements = [
             { id: 'req-len', label: 'Mínimo 8 caracteres', check: pwd.length >= 8 },
@@ -294,20 +318,17 @@ const SIApp = {
             requirements.push({
                 id: 'req-eml',
                 label: 'No empezar por tu email',
-                check: pwd.length > 0 && !pwd.toLowerCase().startsWith(emailPrefix)
+                check: !pwd.toLowerCase().startsWith(emailPrefix)
             });
         }
 
-        let wrapper = inputEl.parentNode;
-        if (wrapper.classList.contains('relative')) wrapper = wrapper.parentNode;
-
-        // Crear/Obtener contenedor de requisitos
-        let container = wrapper.querySelector('.si-pwd-requirements');
+        // Crear/Obtener contenedor de requisitos si no existía
         if (!container) {
             container = document.createElement('div');
             container.className = 'si-pwd-requirements mt-2 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200';
             wrapper.appendChild(container);
         }
+        container.classList.remove('hidden');
 
         // Renderizar/Actualizar requisitos
         container.innerHTML = requirements.map(req => `
@@ -324,16 +345,12 @@ const SIApp = {
 
         // Actualizar borde del input basado en si todo se cumple
         const allValid = requirements.every(r => r.check);
-        if (pwd.length > 0) {
-            if (allValid) {
-                inputEl.classList.remove('border-red-500', 'focus:ring-red-500/10');
-                inputEl.classList.add('border-emerald-500', 'focus:ring-emerald-500/10');
-            } else {
-                inputEl.classList.remove('border-emerald-500', 'focus:ring-emerald-500/10');
-                inputEl.classList.add('border-red-500', 'focus:ring-red-500/10');
-            }
+        if (allValid) {
+            inputEl.classList.remove('border-red-500', 'focus:ring-red-500/10');
+            inputEl.classList.add('border-emerald-500', 'focus:ring-emerald-500/10');
         } else {
-            inputEl.classList.remove('border-red-500', 'focus:ring-red-500/10', 'border-emerald-500', 'focus:ring-emerald-500/10');
+            inputEl.classList.remove('border-emerald-500', 'focus:ring-emerald-500/10');
+            inputEl.classList.add('border-red-500', 'focus:ring-red-500/10');
         }
 
         return allValid;
@@ -425,10 +442,42 @@ const SIApp = {
             .trim();
     },
 
-    /** Avatar con iniciales */
-    avatarInitials(name) {
+    /**
+     * Genera un avatar con iniciales y color determinista basado en el nombre.
+     * @param {string} name - Nombre completo
+     * @param {string} sizeClass - Clase de Tailwind para tamaño (ej: 'w-10 h-10')
+     * @param {string} fontSizeClass - Clase de Tailwind para fuente (ej: 'text-xs')
+     * @returns {string} HTML del avatar
+     */
+    avatarInitials(name, sizeClass = 'w-9 h-9', fontSizeClass = 'text-[11px]') {
+        if (!name) return '';
         const initials = this._getInitials(name);
-        return `<div class="avatar-initials">${initials}</div>`;
+        const palette = [
+            'bg-blue-100 text-blue-700',
+            'bg-emerald-100 text-emerald-700',
+            'bg-purple-100 text-purple-700',
+            'bg-amber-100 text-amber-700',
+            'bg-rose-100 text-rose-700',
+            'bg-indigo-100 text-indigo-700',
+            'bg-cyan-100 text-cyan-700',
+            'bg-teal-100 text-teal-700',
+            'bg-fuchsia-100 text-fuchsia-700',
+            'bg-violet-100 text-violet-700',
+            'bg-orange-100 text-orange-700'
+        ];
+
+        // Determinar color basado en el nombre (hash determinista simple)
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const colorClass = palette[Math.abs(hash) % palette.length];
+
+        return `
+            <div class="${sizeClass} rounded-full ${colorClass} flex items-center justify-center ${fontSizeClass} font-black border border-white shadow-sm overflow-hidden shrink-0 select-none" title="${this.escapeHtml(name)}">
+                ${initials}
+            </div>
+        `;
     },
 
     /** Obtener iniciales */
@@ -551,7 +600,7 @@ const SIApp = {
         if (!btn) return;
 
         btn.disabled = loading;
-        
+
         // Si el botón ya tiene su propio spinner interno (como en project modals)
         const nativeSpinner = btn.querySelector('.si-spinner');
         if (nativeSpinner && btn.dataset.mode !== 'legacy') {

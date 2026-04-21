@@ -235,7 +235,7 @@ window.SIModules.audit = {
 
                 <!-- Main Context: Actor & Entity -->
                 <div class="flex items-start gap-4 mb-5">
-                    <div class="avatar-initials w-11 h-11 text-xs shadow-sm ring-2 ring-white bg-gray-50 flex-shrink-0">${SIApp._getInitials(actorName)}</div>
+                    ${SIApp.avatarInitials(actorName, 'w-11 h-11', 'text-xs')}
                     <div class="flex flex-col gap-1 min-w-0">
                         <div class="flex flex-col">
                             <span class="text-sm font-black text-gray-900 truncate">${actorName}</span>
@@ -381,7 +381,7 @@ window.SIModules.audit = {
             <tr class="hover:bg-gray-50/50 transition-all group">
                 <td class="px-6 py-5">
                     <div class="flex items-center gap-4">
-                        <div class="avatar-initials w-10 h-10 text-xs shadow-sm ring-2 ring-white ${log.actor_role === 'cliente' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${SIApp._getInitials(actorName)}</div>
+                        ${SIApp.avatarInitials(actorName, 'w-10 h-10', 'text-xs')}
                         <div>
                             ${log.actor_id ? `
                                 <a href="/steelinox/${log.actor_role === 'cliente' ? 'user/edit' : 'commercial'}/${log.actor_id}" 

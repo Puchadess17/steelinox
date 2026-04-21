@@ -106,7 +106,7 @@ const SIRouter = {
     /** Mapa de rutas: nombre de la vista → { module, method, roles, title } */
     defineRoutes() {
         this.routes = {
-            'dashboard': { module: 'dashboard', method: 'loadDashboardAuto', roles: ['admin', 'comercial', 'cliente'], title: 'Panel General' },
+            'dashboard': { module: 'dashboard', method: 'loadDashboardAuto', roles: ['admin', 'comercial', 'cliente'], title: 'Proyectos' },
             'clients': { module: 'dashboard', method: 'loadClientsList', roles: ['admin', 'comercial'], title: 'Clientes' },
             'projects': { module: 'dashboard', method: 'loadProjectsList', roles: ['admin', 'comercial', 'cliente'], title: 'Proyectos' },
             'project-detail': { module: 'projectDetailAdmin', method: 'loadProjectDetailSPA', roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
@@ -158,6 +158,10 @@ const SIRouter = {
 
         // Actualizar breadcrumb
         this.updateBreadcrumb(route.title);
+
+        if (window.SIApp && typeof window.SIApp.setTitle === 'function') {
+            window.SIApp.setTitle(route.title);
+        }
 
         // Ejecutar módulo
         this.currentView = view;

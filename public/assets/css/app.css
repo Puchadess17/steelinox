@@ -38,9 +38,9 @@
 
 /* --- Variables Modo Oscuro --- */
 .dark {
-    --si-bg-page: #0F172A;
-    --si-bg-card: #1E293B;
-    --si-border-card: #334155;
+    --si-bg-page: #0F172A; /* Slate 900 */
+    --si-bg-card: #1E293B; /* Slate 800 */
+    --si-border-card: #334155; /* Slate 700 */
     --si-text-title: #F8FAFC;
     --si-text-body: #CBD5E1;
     --si-text-muted: #64748B;
@@ -55,9 +55,27 @@ body {
     color: var(--si-text-body);
 }
 
-.dark header, .dark aside, .dark footer {
+/* --- Premium Effects --- */
+.dark header {
+    background-color: rgba(30, 41, 59, 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.dark aside, .dark footer {
     background-color: var(--si-bg-card) !important;
     border-color: var(--si-border-card) !important;
+}
+
+.dark .sidebar-item.active {
+    background-color: rgba(249, 115, 22, 0.1);
+    color: var(--si-primary);
+}
+
+.dark .si-table-wrapper {
+    background-color: var(--si-bg-card);
+    border: 1px solid var(--si-border-card);
 }
 
 /* --- Layout Responsive Global --- */

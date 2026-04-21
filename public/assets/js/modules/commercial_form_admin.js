@@ -43,7 +43,6 @@ SIModules.commercialFormAdmin = {
     /** 3. CORE: RENDERIZADO DEL FORMULARIO */
     _renderForm(title, subtitle, data = null) {
         const isEdit = !!data;
-        const initials = isEdit ? SIApp._getInitials(data.name) : '?';
         const badgeStatus = (window.SIApp && data) ? SIApp.activeBadge(data.is_active) : '';
 
         this.container.innerHTML = `
@@ -102,6 +101,20 @@ SIModules.commercialFormAdmin = {
 
                         <!-- RIGHT COLUMN: Sidebar Settings -->
                         <div class="lg:col-span-4 space-y-6">
+                            <!-- Avatar Preview -->
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center text-center gap-4">
+                                ${isEdit 
+                                    ? SIApp.avatarInitials(data.name, 'w-20 h-20 rounded-2xl', 'text-2xl')
+                                    : `<div class="w-20 h-20 rounded-2xl bg-gray-50 flex items-center justify-center text-2xl font-black text-gray-300 border-4 border-white shadow-sm">
+                                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                       </div>`
+                                }
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cuenta Comercial</p>
+                                    ${isEdit ? `<p class="text-sm font-bold text-gray-700 mt-1">Gestor de Proyectos</p>` : '<p class="text-sm text-gray-400 mt-1">Nuevo gestor del sistema</p>'}
+                                </div>
+                            </div>
+
                             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                                 <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-5">Estado de la cuenta</h3>
                                 <div class="space-y-4">

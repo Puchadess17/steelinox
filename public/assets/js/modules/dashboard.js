@@ -18,6 +18,12 @@ SIModules.dashboard = {
         const user = Auth.getUser();
         if (!user) return;
 
+        if (user.role === 'admin') {
+            SIApp.setTitle('Proyectos');
+        } else {
+            SIApp.setTitle('Mis Proyectos');
+        }
+
         switch (user.role) {
             case 'admin': return this.loadAdminDashboard();
             case 'comercial': return this.loadCommercialDashboard();
@@ -26,9 +32,11 @@ SIModules.dashboard = {
         }
     },
 
-    // ═══════════════════════════════════════
-    // ADMIN DASHBOARD
-    // ═══════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    //  [ADMIN] DASHBOARD — Panel Administrador
+    //  Carga: loadAdminDashboard() → _reloadAdminTable() → _renderAdminTable()
+    //  Filtros: _filterAdmin(), _searchAdmin(), _sortAdminProjects()
+    // ═══════════════════════════════════════════════════════════
 
     async loadAdminDashboard() {
         this.currentAdminFilter = this.currentAdminFilter || 'all';
@@ -71,7 +79,7 @@ SIModules.dashboard = {
                 </div>
 
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div id="admin-table-container" class="select-none bg-gray-50/20 min-h-[200px]">
+                    <div id="admin-table-container" class="select-none bg-gray-50/20">
                         <!-- La tabla se inyectará aquí -->
                     </div>
                 </div>
@@ -83,7 +91,7 @@ SIModules.dashboard = {
         await this._reloadAdminTable();
     },
 
-    /** Recarga solo los datos de la tabla admin sin destruir el input */
+    /** [ADMIN] Recarga solo los datos de la tabla admin sin destruir el input */
     async _reloadAdminTable() {
         let url = `/projects/search?page=${this.currentAdminPage}&limit=${this.adminItemsPerPage}`;
         if (this.currentAdminFilter !== 'all') url += `&status=${this.currentAdminFilter}`;
@@ -130,7 +138,7 @@ SIModules.dashboard = {
     // ADMIN LOGIC (Filtros, Search, Render)
     // ═══════════════════════════════════════
 
-    /** Renderiza la tabla limpia de proyectos administador basándose en data filtrada **/
+    /** [ADMIN] Renderiza la tabla de proyectos del administrador */
     _renderAdminTable(data, pagination) {
         const container = document.getElementById('admin-table-container');
         const paginationContainer = document.getElementById('admin-table-pagination');
@@ -154,14 +162,14 @@ SIModules.dashboard = {
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
                     ${p.client_id ? `
                         <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                             ${SIApp.escapeHtml(p.client_name)}
                         </a>
                     ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
-                        <svg class="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                         ${SIApp.escapeHtml(p.name)}
                     </a>
                 </td>
@@ -176,7 +184,7 @@ SIModules.dashboard = {
                 </td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
                     <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-indigo-500 transition-all hover:scale-110 rounded-lg hover:bg-indigo-50" title="Ver Proyecto">
+                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-orange-500 transition-all hover:scale-110 rounded-lg hover:bg-orange-50" title="Ver Proyecto">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </a>
                         ${user && user.role !== 'cliente' ? `
@@ -250,7 +258,7 @@ SIModules.dashboard = {
         }
     },
 
-    /** Filtro de tabs en panel administrador */
+    /** [ADMIN] Filtro de tabs en panel administrador */
     _filterAdmin(status, btn) {
         document.querySelectorAll('.tab-admin').forEach(t => t.classList.remove('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'));
         btn.classList.add('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
@@ -264,7 +272,7 @@ SIModules.dashboard = {
         await this._reloadAdminTable();
     },
 
-    /** Filtro de buscador en tiempo real administrador */
+    /** [ADMIN] Filtro de buscador en tiempo real */
     _searchAdmin(query = null) {
         if (query !== null) {
             query = query.trim();
@@ -278,7 +286,7 @@ SIModules.dashboard = {
         }, 400);
     },
 
-    /** Lógica de ordenación para administrador */
+    /** [ADMIN] Ordenación de columnas */
     _sortAdminProjects(field) {
         if (this.currentAdminSort.field === field) {
             this.currentAdminSort.dir = this.currentAdminSort.dir === 'asc' ? 'desc' : 'asc';
@@ -288,9 +296,12 @@ SIModules.dashboard = {
         this._reloadAdminTable();
     },
 
-    // ═══════════════════════════════════════
-    // COMMERCIAL DASHBOARD
-    // ═══════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    //  [COMMERCIAL] DASHBOARD — Panel Comercial
+    //  Carga: loadCommercialDashboard() → _reloadCommercialTable() → _renderCommercialTable()
+    //  Filtros: _filterCommercial(), _filterCommercialByClient(), _searchCommercial(), _sortCommercialProjects()
+    //  Dropdown empresa: _toggleClientDropdown(), _loadCommercialClientOptions(), _buildDropdownItem()
+    // ═══════════════════════════════════════════════════════════
 
     async loadCommercialDashboard() {
         this.currentCommercialFilter = this.currentCommercialFilter || 'all';
@@ -298,6 +309,7 @@ SIModules.dashboard = {
         this.currentCommercialPage = this.currentCommercialPage || 1;
         this.commercialItemsPerPage = this.commercialItemsPerPage || 10;
         this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
+        this.currentCommercialClientId = this.currentCommercialClientId || '';
 
         this.container.innerHTML = `
             <div class="fade-in">
@@ -305,8 +317,7 @@ SIModules.dashboard = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Panel de Proyectos</h1>
-                            <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-orange-100 text-orange-600 uppercase tracking-wider">MIS PROYECTOS</span>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Mis Proyectos</h1>
                         </div>
                     </div>
                 </div>
@@ -316,7 +327,7 @@ SIModules.dashboard = {
                     <!-- KPIs dinámicos -->
                 </div>
 
-                <!-- Tabs y Búsqueda Interactiva -->
+                <!-- Tabs, Filtro empresa y Búsqueda -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
                     <!-- Fila de Tabs -->
                     <div class="w-full xl:w-auto">
@@ -329,27 +340,56 @@ SIModules.dashboard = {
                         </div>
                     </div>
 
-                    <!-- Buscador -->
-                    <div class="relative w-full xl:w-80 flex-shrink-0 group">
-                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" value="${this.currentCommercialSearch}" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                    <!-- Filtro empresa + Buscador -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0 w-full xl:w-auto">
+                        <!-- Selector de empresa (custom dropdown) -->
+                        <div id="comm-client-dropdown" class="relative flex-shrink-0 w-full sm:w-auto">
+                            <!-- Trigger -->
+                            <button type="button"
+                                id="comm-client-dropdown-btn"
+                                onclick="SIModules.dashboard._toggleClientDropdown()"
+                                class="flex items-center gap-2 pl-3.5 pr-3 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm font-semibold text-gray-600 shadow-sm transition-all hover:border-orange-400 hover:shadow-md focus:outline-none select-none w-full sm:min-w-[180px] sm:max-w-[240px]">
+                                <svg class="w-4 h-4 text-gray-400 flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span id="comm-client-dropdown-label" class="flex-1 truncate text-left">Todas las empresas</span>
+                                <svg id="comm-client-dropdown-arrow" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <!-- Panel -->
+                            <div id="comm-client-dropdown-panel"
+                                class="absolute left-0 top-[calc(100%+6px)] z-50 hidden w-full sm:min-w-[220px] bg-white border border-gray-100 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] overflow-hidden"
+                                style="opacity:0;transform:translateY(-6px);transition:opacity 0.15s ease,transform 0.15s ease">
+                                <!-- Buscador interno -->
+                                <div class="px-3 pt-3 pb-2">
+                                    <div class="relative">
+                                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        <input type="text" id="comm-client-dropdown-search" placeholder="Buscar empresa..." oninput="SIModules.dashboard._filterDropdownOptions(this.value)"
+                                            class="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all">
+                                    </div>
+                                </div>
+                                <!-- Lista de opciones -->
+                                <ul id="comm-client-dropdown-list" class="max-h-52 overflow-y-auto py-1 px-1.5 divide-y divide-gray-50/50">
+                                    <!-- Se rellena dinámicamente -->
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- Buscador -->
+                        <div class="relative w-full xl:w-72 group">
+                            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" value="${this.currentCommercialSearch}" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Content Grid (Tabla Principal) -->
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-center sm:text-left">
-                        <h2 class="text-base font-bold text-[#1a1b25]">Listado de Mis Proyectos</h2>
-                    </div>
-                    <!-- Contenedor adaptativo -->
-                    <div id="commercial-table-container" class="select-none bg-gray-50/20 min-h-[200px]">
+                    <div id="commercial-table-container" class="select-none bg-gray-50/20">
                         <!-- Renderizado dinámico -->
                     </div>
-                    <div id="commercial-table-pagination" class="mt-6 px-4 pb-4"></div>
                 </div>
+                <div id="commercial-table-pagination" class="mt-6 px-4 pb-4"></div>
             </div>
         `;
 
+        // Cargar empresas para el selector en paralelo con los datos de la tabla
+        this._loadCommercialClientOptions();
         await this._reloadCommercialTable();
     },
 
@@ -357,6 +397,7 @@ SIModules.dashboard = {
         let url = `/projects/search?page=${this.currentCommercialPage}&limit=${this.commercialItemsPerPage}`;
         if (this.currentCommercialFilter !== 'all') url += `&status=${this.currentCommercialFilter}`;
         if (this.currentCommercialSearch) url += `&search=${encodeURIComponent(this.currentCommercialSearch)}`;
+        if (this.currentCommercialClientId) url += `&client_id=${encodeURIComponent(this.currentCommercialClientId)}`;
         if (this.currentCommercialSort.field) url += `&sort_by=${this.currentCommercialSort.field}&sort_dir=${this.currentCommercialSort.dir}`;
 
         const result = await API.get(url);
@@ -387,16 +428,17 @@ SIModules.dashboard = {
         this._renderCommercialTable(projects, pagination);
     },
 
-    // ═══════════════════════════════════════
-    // COMMERCIAL LOGIC (Filtros, Search, Render)
-    // ═══════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    //  [COMMERCIAL] LOGIC — Filtros, Search, Render
+    // ═══════════════════════════════════════════════════════════
 
-    /** Renderiza la tabla de proyectos para el comercial */
+    /** [COMMERCIAL] Renderiza la tabla de proyectos del comercial (idéntica en estilo a _renderAdminTable) */
     _renderCommercialTable(data, pagination) {
         const container = document.getElementById('commercial-table-container');
         const paginationContainer = document.getElementById('commercial-table-pagination');
         if (!container) return;
 
+        // Estado vacío
         if (data.length === 0) {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -408,30 +450,47 @@ SIModules.dashboard = {
             return;
         }
 
+        // Filas de la tabla — igual que admin: sin onclick en el tr, links dentro de las celdas
         const tbody = data.map(p => `
-            <tr class="hover:bg-orange-50/30 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
+            <tr class="transition-colors group border-b border-gray-50/80 last:border-0">
+                <!-- Columna Cliente: enlace al detalle de la empresa -->
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    ${SIApp.escapeHtml(p.client_name || '-')}
+                    ${p.client_id ? `
+                        <a href="/steelinox/client/${p.client_id}" onclick="event.stopPropagation()" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            ${SIApp.escapeHtml(p.client_name)}
+                        </a>
+                    ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
                 </td>
+                <!-- Columna Proyecto: enlace al detalle del proyecto -->
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors block">${SIApp.escapeHtml(p.name)}</span>
+                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
+                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        ${SIApp.escapeHtml(p.name)}
+                    </a>
                 </td>
+                <!-- Columna Referencia -->
                 <td class="px-5 py-4 whitespace-nowrap">
                     <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
                 </td>
+                <!-- Columna Estado -->
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
                 </td>
+                <!-- Columna Fecha -->
                 <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
                     ${SIApp.formatDate(p.created_at)}
                 </td>
-                <td class="px-5 py-4 text-right whitespace-nowrap flex items-center justify-end gap-2">
-                    <svg class="w-4 h-4 text-gray-300 inline-block opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    ${Auth.getUser() && Auth.getUser().role !== 'cliente' ? `
-                    <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1 text-gray-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100" title="Eliminar">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                    ` : ''}
+                <!-- Columna Acciones: ojo naranja, papelera roja (solo admin, comercial no puede eliminar) -->
+                <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-orange-500 transition-all hover:scale-110 rounded-lg hover:bg-orange-50" title="Ver Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -439,17 +498,17 @@ SIModules.dashboard = {
         this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
 
         const sortIcon = (field) => {
-            if (this.currentCommercialSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
+            if (this.currentCommercialSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">⇕</span>';
             return this.currentCommercialSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
         };
 
         container.innerHTML = `
-            <!-- VISTA MÓVIL: Grid de Cards -->
+            <!-- VISTA MÓVIL [COMMERCIAL]: Grid de Cards (lg:hidden) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
                 ${this._renderClientCards(data)}
             </div>
 
-            <!-- VISTA DESKTOP: Tabla Extensa Premium -->
+            <!-- VISTA DESKTOP [COMMERCIAL]: Tabla (hidden lg:block) -->
             <div class="hidden lg:block si-table-wrapper">
                 <table class="w-full si-table text-center">
                     <thead>
@@ -467,9 +526,11 @@ SIModules.dashboard = {
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
                             <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('created_at')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Creado ${sortIcon('created_at')}</span>
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center font-bold">Creado ${sortIcon('created_at')}</span>
                             </th>
-                            <th class="px-5 py-3.5 text-right w-12 border-l border-gray-100/50"></th>
+                            <th class="px-5 py-3.5 text-right w-28 border-l border-gray-100/50">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block text-right">Acciones</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50/80">
@@ -483,19 +544,14 @@ SIModules.dashboard = {
             SIApp.renderPaginationControls(
                 paginationContainer,
                 pagination,
-                (newPage) => {
-                    this._goToCommercialPage(newPage);
-                },
-                (newLimit) => {
-                    this.commercialItemsPerPage = newLimit;
-                    this.currentCommercialPage = 1;
-                    this._reloadCommercialTable();
-                }
+                (newPage) => { this._goToCommercialPage(newPage); },
+                (newLimit) => { this.commercialItemsPerPage = newLimit; this.currentCommercialPage = 1; this._reloadCommercialTable(); }
             );
         }
     },
 
-    /** Filtro comercial */
+
+    /** [COMMERCIAL] Filtro de tabs por estado */
     _filterCommercial(status, btn) {
         document.querySelectorAll('.tab-commercial').forEach(t => t.classList.remove('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'));
         btn.classList.add('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
@@ -504,12 +560,167 @@ SIModules.dashboard = {
         this._reloadCommercialTable();
     },
 
+    /** Filtro por empresa (comercial) */
+    /** Abre/cierra el dropdown custom de empresa */
+    _toggleClientDropdown() {
+        const panel = document.getElementById('comm-client-dropdown-panel');
+        const arrow = document.getElementById('comm-client-dropdown-arrow');
+        const btn = document.getElementById('comm-client-dropdown-btn');
+        if (!panel) return;
+
+        const isOpen = !panel.classList.contains('hidden');
+
+        if (isOpen) {
+            // Cerrar
+            panel.style.opacity = '0';
+            panel.style.transform = 'translateY(-6px)';
+            setTimeout(() => panel.classList.add('hidden'), 150);
+            arrow?.classList.remove('rotate-180');
+            btn?.classList.remove('border-orange-400', 'ring-2', 'ring-orange-500/20');
+        } else {
+            // Abrir
+            panel.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                panel.style.opacity = '1';
+                panel.style.transform = 'translateY(0)';
+            });
+            arrow?.classList.add('rotate-180');
+            btn?.classList.add('border-orange-400', 'ring-2', 'ring-orange-500/20');
+            // Enfocar buscador interno
+            setTimeout(() => document.getElementById('comm-client-dropdown-search')?.focus(), 50);
+
+            // Cierre al hacer click fuera
+            const outsideClick = (e) => {
+                const wrapper = document.getElementById('comm-client-dropdown');
+                if (wrapper && !wrapper.contains(e.target)) {
+                    panel.style.opacity = '0';
+                    panel.style.transform = 'translateY(-6px)';
+                    setTimeout(() => panel.classList.add('hidden'), 150);
+                    arrow?.classList.remove('rotate-180');
+                    btn?.classList.remove('border-orange-400', 'ring-2', 'ring-orange-500/20');
+                    document.removeEventListener('click', outsideClick, true);
+                }
+            };
+            document.addEventListener('click', outsideClick, true);
+        }
+    },
+
+    /** Filtra las opciones visibles del dropdown por texto */
+    _filterDropdownOptions(query) {
+        const list = document.getElementById('comm-client-dropdown-list');
+        if (!list) return;
+        const q = query.trim().toLowerCase();
+        list.querySelectorAll('li[data-label]').forEach(li => {
+            const match = !q || li.dataset.label.toLowerCase().includes(q);
+            li.style.display = match ? '' : 'none';
+        });
+    },
+
+    /** Selecciona una empresa desde el dropdown custom */
+    _filterCommercialByClient(clientId, label) {
+        this.currentCommercialClientId = clientId;
+        this.currentCommercialPage = 1;
+
+        // Actualizar label e ícono del trigger
+        const labelEl = document.getElementById('comm-client-dropdown-label');
+        const btn = document.getElementById('comm-client-dropdown-btn');
+        if (labelEl) labelEl.textContent = label || 'Todas las empresas';
+        if (btn) {
+            if (clientId) {
+                btn.classList.add('border-orange-500', 'text-orange-600', 'bg-orange-50/60');
+                btn.classList.remove('border-gray-200', 'text-gray-600', 'bg-white');
+            } else {
+                btn.classList.remove('border-orange-500', 'text-orange-600', 'bg-orange-50/60');
+                btn.classList.add('border-gray-200', 'text-gray-600', 'bg-white');
+            }
+        }
+
+        // Marcar opción activa en la lista
+        const list = document.getElementById('comm-client-dropdown-list');
+        if (list) {
+            list.querySelectorAll('li[data-value]').forEach(li => {
+                const isActive = li.dataset.value == clientId;
+                li.classList.toggle('bg-orange-50', isActive);
+                li.querySelector('.check-icon')?.classList.toggle('hidden', !isActive);
+                li.querySelector('span')?.classList.toggle('text-orange-600', isActive);
+                li.querySelector('span')?.classList.toggle('font-bold', isActive);
+            });
+        }
+
+        // Cerrar el dropdown
+        const panel = document.getElementById('comm-client-dropdown-panel');
+        const arrow = document.getElementById('comm-client-dropdown-arrow');
+        if (panel && !panel.classList.contains('hidden')) {
+            panel.style.opacity = '0';
+            panel.style.transform = 'translateY(-6px)';
+            setTimeout(() => panel.classList.add('hidden'), 150);
+            arrow?.classList.remove('rotate-180');
+            btn?.classList.remove('ring-2', 'ring-orange-500/20');
+        }
+
+        this._reloadCommercialTable();
+    },
+
+    /** Carga y rellena las opciones del dropdown custom de empresa */
+    async _loadCommercialClientOptions() {
+        const list = document.getElementById('comm-client-dropdown-list');
+        if (!list) return;
+
+        try {
+            const res = await API.get('/clients?limit=200&status=activo');
+            if (!res.success) return;
+
+            const clients = res.data?.list || res.data || [];
+            if (clients.length === 0) {
+                // Ocultar el dropdown completo si no hay empresas
+                document.getElementById('comm-client-dropdown')?.classList.add('hidden');
+                return;
+            }
+
+            // Opción "Todas las empresas"
+            const allItem = this._buildDropdownItem('', 'Todas las empresas', this.currentCommercialClientId === '');
+
+            const items = clients.map(c =>
+                this._buildDropdownItem(String(c.id), c.name, String(c.id) === String(this.currentCommercialClientId))
+            );
+
+            list.innerHTML = [allItem, ...items].join('');
+
+            // Restaurar label si había filtro activo
+            if (this.currentCommercialClientId) {
+                const active = clients.find(c => String(c.id) === String(this.currentCommercialClientId));
+                const labelEl = document.getElementById('comm-client-dropdown-label');
+                const btn = document.getElementById('comm-client-dropdown-btn');
+                if (active && labelEl) labelEl.textContent = active.name;
+                if (btn) {
+                    btn.classList.add('border-orange-500', 'text-orange-600', 'bg-orange-50/60');
+                    btn.classList.remove('border-gray-200', 'text-gray-600', 'bg-white');
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudieron cargar las empresas para el filtro:', e);
+        }
+    },
+
+    /** Crea el HTML de un item del dropdown de empresa */
+    _buildDropdownItem(value, label, isActive) {
+        return `<li data-value="${value}" data-label="${SIApp.escapeHtml(label)}"
+            onclick="SIModules.dashboard._filterCommercialByClient('${value}', '${SIApp.escapeHtml(label)}')"
+            class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-orange-50 group ${isActive ? 'bg-orange-50' : ''}"
+        >
+            <svg class="check-icon w-3.5 h-3.5 text-orange-500 flex-shrink-0 ${isActive ? '' : 'hidden'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            <div class="w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'hidden' : ''}"></div>
+            <span class="text-sm truncate ${isActive ? 'text-orange-600 font-bold' : 'text-gray-700 font-medium group-hover:text-orange-600'}">${SIApp.escapeHtml(label)}</span>
+        </li>`;
+    },
+
+    /** [COMMERCIAL] Avanzar página */
     async _goToCommercialPage(page) {
         this.currentCommercialPage = page;
         await this._reloadCommercialTable();
     },
 
-    /** Buscador comercial */
+    /** [COMMERCIAL] Buscador en tiempo real */
     _searchCommercial(query) {
         this.currentCommercialSearch = query.trim().toLowerCase();
 
@@ -520,7 +731,7 @@ SIModules.dashboard = {
         }, 400);
     },
 
-    /** Lógica de ordenación para comercial */
+    /** [COMMERCIAL] Ordenación de columnas */
     _sortCommercialProjects(field) {
         if (this.currentCommercialSort.field === field) {
             this.currentCommercialSort.dir = this.currentCommercialSort.dir === 'asc' ? 'desc' : 'asc';
@@ -535,37 +746,16 @@ SIModules.dashboard = {
     // ═══════════════════════════════════════
 
     async loadClientDashboard() {
-        const result = await API.get('/projects/search');
+        // Inicializar estado del dashboard de cliente
+        this.currentClientDashFilter = this.currentClientDashFilter || 'all';
+        this.currentClientDashSearch = this.currentClientDashSearch || '';
+        this.currentClientDashPage = this.currentClientDashPage || 1;
+        this.clientDashItemsPerPage = this.clientDashItemsPerPage || 12;
 
-        if (!result.success) {
-            this.container.innerHTML = this._errorState('No se pudieron cargar tus proyectos.');
-            return;
-        }
+        // Resolver el nombre de empresa (se obtiene con la primera carga)
+        const companyName = this._clientCompanyName || '';
 
-        const projects = Array.isArray(result.data) ? result.data : [];
-        const kpis = {
-            total: projects.length,
-            pending: projects.filter(p => ['propuesta', 'aprobado'].includes(p.status)).length,
-            completed: projects.filter(p => p.status === 'cerrado').length,
-        };
-
-        // Encontrar la fecha más reciente
-        let latestDate = null;
-        if (projects.length > 0) {
-            const sorted = [...projects].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            latestDate = sorted[0].created_at;
-        }
-
-        // Estado de los filtros
-        this._clientFilter = 'all';
-        this._clientSearch = '';
-        this._clientProjects = projects;
-
-        // Nombre de la empresa (si hay proyectos, asumimos que todos son del mismo cliente)
-        const companyName = projects.length > 0 && projects[0].client_name
-            ? projects[0].client_name
-            : 'tu Empresa';
-
+        // Pintar la estructura base SOLO UNA VEZ (igual que admin/comercial)
         this.container.innerHTML = `
             <div class="fade-in">
                 <!-- Header -->
@@ -573,78 +763,137 @@ SIModules.dashboard = {
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Mis Proyectos</h1>
-                            <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">${SIApp.escapeHtml(companyName)}</span>
+                            ${companyName ? `<span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">${SIApp.escapeHtml(companyName)}</span>` : ''}
                         </div>
                     </div>
                 </div>
 
-                <!-- KPI Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
-                    ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
-                    ${this._kpiCardClient('PENDIENTES', kpis.pending, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>', 'amber')}
-                    ${this._kpiCardClient('COMPLETADOS', kpis.completed, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
-                    ${this._kpiCardClient('ACTUALIZADO', latestDate ? SIApp.timeAgo(latestDate) : '-', '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>', 'blue')}
+                <!-- KPIs (se rellenan dinámicamente) -->
+                <div id="client-dash-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
+                    <!-- cargando... -->
                 </div>
 
                 <!-- Tabs y Búsqueda -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
-                    <!-- Fila de Tabs con scroll horizontal nativo -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
-                            <button class="tab-client active whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterClient('all', this)">Todos</button>
-                            <button class="tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="ejecucion" onclick="SIModules.dashboard._filterClient('ejecucion', this)">En Proceso</button>
-                            <button class="tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="propuesta" onclick="SIModules.dashboard._filterClient('propuesta', this)">Pendientes</button>
-                            <button class="tab-client whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="cerrado" onclick="SIModules.dashboard._filterClient('cerrado', this)">Finalizados</button>
+                            <button class="tab-client-dash ${this.currentClientDashFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" onclick="SIModules.dashboard._filterClientDash('all', this)">Todos</button>
+                            <button class="tab-client-dash ${this.currentClientDashFilter === 'ejecucion' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" onclick="SIModules.dashboard._filterClientDash('ejecucion', this)">En Proceso</button>
+                            <button class="tab-client-dash ${this.currentClientDashFilter === 'propuesta' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" onclick="SIModules.dashboard._filterClientDash('propuesta', this)">Pendientes</button>
+                            <button class="tab-client-dash ${this.currentClientDashFilter === 'aprobado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" onclick="SIModules.dashboard._filterClientDash('aprobado', this)">Aprobados</button>
+                            <button class="tab-client-dash ${this.currentClientDashFilter === 'cerrado' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" onclick="SIModules.dashboard._filterClientDash('cerrado', this)">Finalizados</button>
                         </div>
                     </div>
 
-                    <!-- Buscador que ocupa el 100% en móvil y se ajusta en desktop -->
                     <div class="relative w-full xl:w-80 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClient(this.value)" placeholder="Buscar..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClientDash(this.value)" value="${this.currentClientDashSearch}" placeholder="Buscar proyecto o referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
-                <!-- Grid de proyectos -->
-                <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    ${this._renderClientCards(projects)}
+                <!-- Grid de proyectos (se rellena dinámicamente) -->
+                <div id="client-dash-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- cargando... -->
                 </div>
+
+                <!-- Paginación -->
+                <div id="client-dash-pagination" class="mt-8"></div>
             </div>
         `;
+
+        await this._reloadClientDashTable();
     },
 
-    /** Cambiar pestaña de estado */
-    _filterClient(status, btn) {
-        document.querySelectorAll('.tab-client').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        this._clientFilter = status;
-        this._applyClientFilters();
+    /** Recarga solo el grid del cliente (partial DOM update) */
+    async _reloadClientDashTable() {
+        let url = `/projects/search?page=${this.currentClientDashPage}&limit=${this.clientDashItemsPerPage}`;
+        if (this.currentClientDashFilter !== 'all') url += `&status=${this.currentClientDashFilter}`;
+        if (this.currentClientDashSearch) url += `&search=${encodeURIComponent(this.currentClientDashSearch)}`;
+
+        const result = await API.get(url);
+
+        const grid = document.getElementById('client-dash-grid');
+        const kpisContainer = document.getElementById('client-dash-kpis');
+        const pagContainer = document.getElementById('client-dash-pagination');
+
+        if (!result.success) {
+            if (grid) grid.innerHTML = `<div class="col-span-full si-empty border border-gray-100 rounded-2xl bg-white"><p class="text-sm">No se pudieron cargar tus proyectos.</p></div>`;
+            return;
+        }
+
+        const rawData = result.data;
+        const projects = Array.isArray(rawData) ? rawData : (rawData?.list || []);
+        const pagination = result.pagination;
+
+        // Guardar nombre de empresa para cuando se recargue la vista completa
+        if (projects.length > 0 && projects[0].client_name && !this._clientCompanyName) {
+            this._clientCompanyName = projects[0].client_name;
+            // Actualizar el badge del header si ya está en el DOM
+            const h1 = this.container.querySelector('h1');
+            if (h1 && !h1.nextElementSibling) {
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider';
+                badge.textContent = this._clientCompanyName;
+                h1.insertAdjacentElement('afterend', badge);
+            }
+        }
+
+        // KPIs — se calculan siempre desde paginación y datos de la página
+        const kpisAll = rawData?.kpis || null;
+        if (kpisContainer) {
+            const total = kpisAll?.total ?? (pagination?.total_results ?? projects.length);
+            const pending = kpisAll?.pending ?? projects.filter(p => ['propuesta', 'aprobado'].includes(p.status)).length;
+            const inProgress = kpisAll?.ejecucion ?? projects.filter(p => p.status === 'ejecucion').length;
+            const completed = kpisAll?.cerrado ?? projects.filter(p => p.status === 'cerrado').length;
+
+            kpisContainer.innerHTML = `
+                ${this._kpiCardClient('TOTAL', total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                ${this._kpiCardClient('PENDIENTES', pending, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>', 'amber')}
+                ${this._kpiCardClient('EN PROCESO', inProgress, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'blue')}
+                ${this._kpiCardClient('COMPLETADOS', completed, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+            `;
+        }
+
+        // Grid de proyectos
+        if (grid) {
+            grid.innerHTML = projects.length > 0
+                ? this._renderClientCards(projects)
+                : `<div class="col-span-full si-empty border border-gray-100 rounded-2xl bg-white"><p class="text-sm">No se encontraron proyectos que coincidan con la búsqueda.</p></div>`;
+        }
+
+        // Paginación
+        if (pagContainer && pagination) {
+            SIApp.renderPaginationControls(
+                pagContainer,
+                pagination,
+                (page) => { this.currentClientDashPage = page; this._reloadClientDashTable(); },
+                (limit) => { this.clientDashItemsPerPage = limit; this.currentClientDashPage = 1; this._reloadClientDashTable(); }
+            );
+        } else if (pagContainer) {
+            pagContainer.innerHTML = '';
+        }
     },
 
-    /** Buscar por texto libre */
-    _searchClient(query) {
-        query = query.trim();
-        if (query.length > 0 && query.length < 3) return;
-        this._clientSearch = query.toLowerCase();
-
-        if (this.searchTimeoutClientVal) clearTimeout(this.searchTimeoutClientVal);
-        this.searchTimeoutClientVal = setTimeout(() => {
-            this._applyClientFilters();
-        }, 300);
+    /** Filtro de estado para el dashboard del cliente */
+    _filterClientDash(status, btn) {
+        document.querySelectorAll('.tab-client-dash').forEach(t =>
+            t.classList.remove('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20')
+        );
+        btn.classList.add('active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20');
+        this.currentClientDashFilter = status;
+        this.currentClientDashPage = 1;
+        this._reloadClientDashTable();
     },
 
-    /** Aplicar ambos filtros y renderizar */
-    _applyClientFilters() {
-        const filtered = this._clientProjects.filter(p => {
-            const matchStatus = this._clientFilter === 'all' || p.status === this._clientFilter;
-            const matchSearch = !this._clientSearch ||
-                p.name.toLowerCase().includes(this._clientSearch) ||
-                p.reference.toLowerCase().includes(this._clientSearch);
-            return matchStatus && matchSearch;
-        });
+    /** Buscador para el dashboard del cliente */
+    _searchClientDash(query) {
+        this.currentClientDashSearch = query.trim();
 
-        const grid = document.getElementById('projects-grid');
-        if (grid) grid.innerHTML = this._renderClientCards(filtered);
+        if (this.searchTimeoutClientDash) clearTimeout(this.searchTimeoutClientDash);
+        this.searchTimeoutClientDash = setTimeout(() => {
+            this.currentClientDashPage = 1;
+            this._reloadClientDashTable();
+        }, 400);
     },
 
     /** Renderizar cards de proyectos (vista cliente) */
@@ -678,43 +927,36 @@ SIModules.dashboard = {
         return projects.map(p => `
             <a href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-all hover:shadow-lg block group">
                 
-                <!-- Cabecera Oscura / Imagen Placeholder -->
-                <div class="h-36 sm:h-40 bg-[#1e1e24] relative flex items-center justify-center overflow-hidden">
-                    <!-- Status Badge absolute top-right -->
-                    <div class="absolute top-4 right-4 z-10 flex space-x-2">
+                <div class="p-5 sm:p-6 flex-1 flex flex-col">
+                    <!-- Top Row: Ref + Status -->
+                    <div class="flex items-start justify-between mb-4">
+                        <span class="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">REF: ${SIApp.escapeHtml(p.reference)}</span>
                         ${getCustomBadge(p.status)}
                     </div>
-                    ${user && user.role !== 'cliente' ? `
-                    <div class="absolute top-4 left-4 z-20">
-                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-md transition-colors" title="Eliminar Proyecto">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                    </div>
-                    ` : ''}
-                    
-                    <!-- Decoración / Placeholder Logo -->
-                    <div class="absolute inset-0 bg-gradient-to-br from-[#26262e] to-[#121216] opacity-80"></div>
-                    <div class="relative z-10 flex items-center gap-3 opacity-20 group-hover:opacity-40 transition-opacity">
-                        <img src="/steelinox/public/logo-header.svg" class="w-16 h-16 object-contain brightness-0 invert" alt="">
-                    </div>
-                </div>
 
-                <!-- Contenido Info -->
-                <div class="p-5 sm:p-6 flex-1 flex flex-col bg-white">
-                    <span class="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 leading-none block">REF: ${SIApp.escapeHtml(p.reference)}</span>
-                    <h3 class="text-base sm:text-lg font-black text-[#1a1b25] leading-snug mb-4 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
+                    <h3 class="text-base sm:text-lg font-black text-[#1a1b25] leading-snug mb-3 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
                     
                     <div class="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-gray-400 mb-6">
                         <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         Actualizado ${SIApp.timeAgo(p.created_at) || SIApp.formatDate(p.created_at)}
                     </div>
 
-                    <!-- Botón Acción (Separator Line) -->
-                    <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center transition-opacity">
-                        <span class="text-xs sm:text-sm font-black text-[#a9753c] group-hover:text-orange-600 transition-colors tracking-wide">
-                            Ver detalles del proyecto
-                        </span>
-                        <svg class="w-4 h-4 text-[#a9753c] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    <!-- Footer Row: Detalles + Borrar (admin) -->
+                    <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs sm:text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors tracking-wide">
+                                Ver detalles
+                            </span>
+                            <svg class="w-4 h-4 text-[#1a1b25] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </div>
+                        
+                        ${user && user.role !== 'cliente' ? `
+                        <button onclick="event.stopPropagation(); event.preventDefault(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" 
+                                class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" 
+                                title="Eliminar Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                        ` : ''}
                     </div>
                 </div>
             </a>
@@ -915,9 +1157,9 @@ SIModules.dashboard = {
         const kpisContainer = document.getElementById('clients-kpis-container');
         if (kpisContainer) {
             kpisContainer.innerHTML = `
-                ${this._kpiStatFlat('Clientes Totales', pagination.total_results, `+${kpis.newThisMonth} registrados este mes`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>')}
-                ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, `Vinculados a tu cartera`, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>')}
-                ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>')}
+                ${this._kpiStatFlat('Clientes Totales', pagination.total_results, ``, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
+                ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, ``, '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>')}
+                ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4" stroke-width="1.5"></circle><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M22 21v-2a4 4 0 00-3-3.87"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 3.13a4 4 0 010 7.75"></path></svg>')}
             `;
         }
 
@@ -948,14 +1190,13 @@ SIModules.dashboard = {
         const tbody = pagedData.map(c => {
             const initials = SIApp._getInitials(c.name);
             return `
-                <tr class="hover:bg-orange-50/20 transition-colors group">
+                <tr class="transition-colors group border-b border-gray-50/80 last:border-0 hover:bg-gray-50/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-gray-50 text-[#1a1b25] flex items-center justify-center text-[11px] font-black border border-gray-100 shadow-sm overflow-hidden">
-                                ${initials}
-                            </div>
-                            <div class="min-w-0">
-                                <a href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-orange-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
+                            ${SIApp.avatarInitials(c.name, 'w-9 h-9', 'text-[11px]')}
+                            <div class="min-w-0 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <a href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-emerald-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
                             </div>
                         </div>
                     </td>
@@ -963,24 +1204,30 @@ SIModules.dashboard = {
                         <span class="inline-flex items-center text-[10px] font-black text-gray-500 bg-gray-100 px-2.5 py-1 rounded-[6px] tracking-widest">${SIApp.escapeHtml(c.reference || 'CLI-TEMP')}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-orange-500 text-[13px] font-black">${c.projects_count || '0'}</span>
+                        <div class="flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-orange-500 text-[13px] font-black">${c.projects_count || '0'}</span>
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-gray-100 bg-gray-50 text-gray-500 text-[13px] font-black">${c.users_count || '0'}</span>
+                        <div class="flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-gray-100 bg-gray-50 text-gray-500 text-[13px] font-black">${c.users_count || '0'}</span>
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
                         ${SIApp.formatDate(c.created_at) || '-'}
                     </td>
                     <td class="px-6 py-4 text-right whitespace-nowrap">
-                        <div class="flex items-center justify-end gap-1.5">
-                            <a href="/steelinox/client/${c.id}" class="p-2 text-gray-400 hover:text-orange-500 transition-all hover:scale-110" title="Ver Detalles">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <a href="/steelinox/client/${c.id}" class="p-1.5 text-gray-400 hover:text-orange-500 transition-all hover:scale-110 rounded-lg hover:bg-orange-50" title="Ver Detalles">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </a>
-                            <a href="/steelinox/client/edit/${c.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
+                            <a href="/steelinox/client/edit/${c.id}" class="p-1.5 text-gray-400 hover:text-blue-500 transition-all hover:scale-110 rounded-lg hover:bg-blue-50" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </a>
                             ${user && user.role !== 'cliente' ? `
-                            <button onclick="SIModules.dashboard._confirmDeleteClient(${c.id}, '${SIApp.escapeHtml(c.name)}')" class="p-2 text-gray-400 hover:text-red-500 transition-all hover:scale-110" title="Eliminar">
+                            <button onclick="SIModules.dashboard._confirmDeleteClient(${c.id}, '${SIApp.escapeHtml(c.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                             ` : ''}
@@ -1040,8 +1287,8 @@ SIModules.dashboard = {
             SIApp.renderPaginationControls(
                 pagContainer,
                 pagination,
-                (page) => { this.currentClientPage = page; this.loadClientsList(); },
-                (limit) => { this.clientsPerPage = limit; this.currentClientPage = 1; this.loadClientsList(); }
+                (page) => { this.currentClientPage = page; this._reloadClientsTable(); },
+                (limit) => { this.clientsPerPage = limit; this.currentClientPage = 1; this._reloadClientsTable(); }
             );
         }
     },
@@ -1074,9 +1321,7 @@ SIModules.dashboard = {
                     <!-- Top Info: Avatar, Name, Badge -->
                     <div class="flex items-start justify-between mb-4 gap-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-black tracking-widest shrink-0 border border-orange-100">
-                                ${initials}
-                            </div>
+                            ${SIApp.avatarInitials(c.name, 'w-12 h-12', 'text-sm')}
                             <div>
                                 <a href="/steelinox/client/${c.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(c.name)}</a>
                                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1">${SIApp.escapeHtml(c.reference || 'Sin Referencia')}</span>
@@ -1126,7 +1371,7 @@ SIModules.dashboard = {
 
         this.currentClientFilter = status;
         this.currentClientPage = 1;
-        this.loadClientsList();
+        this._reloadClientsTable();
     },
 
     /** Al buscar, reiniciamos a la página 1 y recargamos */
@@ -1137,7 +1382,6 @@ SIModules.dashboard = {
         this.searchTimeoutClients = setTimeout(() => {
             this.currentClientPage = 1;
             this._reloadClientsTable();
-            this.loadClientsList();
         }, 400); // Pequeño debounce para no saturar la API
     },
 
@@ -1165,7 +1409,7 @@ SIModules.dashboard = {
         }
 
         this.currentClientPage = 1;
-        this.loadClientsList();
+        this._reloadClientsTable();
     },
 
     // ═══════════════════════════════════════
@@ -1249,13 +1493,21 @@ SIModules.dashboard = {
         }
 
         const tbody = data.map(p => `
-            <tr class="hover:bg-orange-50/20 transition-colors group cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
+            <tr class="transition-colors group border-b border-gray-50/50 last:border-0 hover:bg-gray-50/50 cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</div>
-                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">${SIApp.escapeHtml(p.reference)}</div>
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 text-orange-500 opacity-70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        <div class="min-w-0">
+                            <div class="text-sm font-black text-[#1a1b25] group-hover:text-indigo-600 transition-colors truncate">${SIApp.escapeHtml(p.name)}</div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">${SIApp.escapeHtml(p.reference)}</div>
+                        </div>
+                    </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    ${SIApp.escapeHtml(p.client_name || 'Sin cliente')}
+                    <div class="flex items-center gap-1.5 group/link">
+                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <span class="group-hover/link:text-emerald-600 transition-colors">${SIApp.escapeHtml(p.client_name || 'Sin cliente')}</span>
+                    </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
@@ -1264,7 +1516,7 @@ SIModules.dashboard = {
                     ${SIApp.formatDate(p.created_at)}
                 </td>
                 <td class="px-6 py-4 text-right">
-                    <svg class="w-4 h-4 text-gray-300 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    <svg class="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                 </td>
             </tr>
         `).join('');
@@ -1293,8 +1545,8 @@ SIModules.dashboard = {
             SIApp.renderPaginationControls(
                 pagContainer,
                 pagination,
-                (page) => { this.currentProjListPage = page; this.loadProjectsList(); },
-                (limit) => { this.projListPerPage = limit; this.currentProjListPage = 1; this.loadProjectsList(); }
+                (page) => { this.currentProjListPage = page; this._reloadProjectsListTable(); },
+                (limit) => { this.projListPerPage = limit; this.currentProjListPage = 1; this._reloadProjectsListTable(); }
             );
         }
     },

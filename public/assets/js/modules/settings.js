@@ -10,6 +10,8 @@ SIModules.settings = {
         const user = SIApp.user;
         if (!user) return;
 
+        SIApp.setTitle('Ajustes de Perfil');
+
         const container = document.getElementById('main-content');
         if (!container) return;
 
@@ -37,9 +39,7 @@ SIModules.settings = {
                 <!-- HEADER DE IDENTIDAD (Muy despejado) -->
                 <div class="flex flex-col items-center text-center space-y-6 py-8">
                     <div class="relative group">
-                        <div class="w-24 h-24 bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-[2rem] flex items-center justify-center text-4xl font-black shadow-2xl shadow-orange-500/20 transform group-hover:rotate-6 transition-transform duration-500">
-                            ${SIApp._getInitials(user.name)}
-                        </div>
+                        ${SIApp.avatarInitials(user.name, 'w-24 h-24 rounded-[2rem]', 'text-4xl')}
                         <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg border-2 border-orange-500">
                             <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                         </div>
@@ -155,9 +155,9 @@ SIModules.settings = {
                         </div>
                         
                         <div class="space-y-2">
-                            ${this._notificationItem('notify-doc', 'Nuevos Documentos', 'Planos, fotos o PDFs.', true)}
-                            ${this._notificationItem('notify-phase', 'Cambios de Fase', 'Hitos del proyecto.', true)}
-                            ${this._notificationItem('notify-comm', 'Comentarios', 'Tablón de anuncios.', false)}
+                            ${this._notificationItem('notify-doc', 'Nuevos Documentos', 'Planos, fotos o PDFs.')}
+                            ${this._notificationItem('notify-phase', 'Cambios de Fase', 'Hitos del proyecto.')}
+                            ${this._notificationItem('notify-comm', 'Comentarios', 'Tablón de anuncios.')}
                         </div>
                     </section>
                 </div>
@@ -165,7 +165,11 @@ SIModules.settings = {
         `;
     },
 
-    _notificationItem(id, title, desc, checked) {
+    _notificationItem(id, title, desc) {
+        // Cargar estado de localStorage (por defecto true)
+        const saved = localStorage.getItem(`si-pref-${id}`);
+        const isChecked = saved !== null ? (saved === '1') : true;
+
         return `
             <div class="flex items-center justify-between p-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
                 <div>
@@ -173,7 +177,7 @@ SIModules.settings = {
                     <p class="text-[11px] text-gray-400 font-medium mt-1">${desc}</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="${id}" class="sr-only peer" ${checked ? 'checked' : ''}>
+                    <input type="checkbox" id="${id}" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="SIModules.settings.togglePreference('${id}', this.checked)">
                     <div class="w-9 h-5 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                 </label>
             </div>
@@ -265,24 +269,57 @@ SIModules.settings = {
         SIApp.modal.close('modal-change-password');
     },
 
-    /** Guardar Perfil */
-    saveProfile() {
-        const name = document.getElementById('set-name').value.trim();
+    /** Guardar Perfil REAL */
+    async saveProfile() {
+        const nameInput = document.getElementById('set-name');
+        const name = nameInput.value.trim();
+        const btn = document.querySelector('button[onclick="SIModules.settings.saveProfile()"]');
+
         if (!name) {
             SIApp.showToast('Error', 'Introduce tu nombre.', 'error');
             return;
         }
 
-        SIApp.user.name = name;
-        SIApp.showToast('Perfil', 'Tus datos se han guardado correctamente.', 'success');
-        
-        // Actualizar header
-        const userName = document.getElementById('header-user-name');
-        if (userName) userName.textContent = name;
-        const userAvatar = document.getElementById('header-user-avatar');
-        if (userAvatar) userAvatar.textContent = SIApp._getInitials(name);
-        
-        // Refrescar vista
-        this.init();
+        try {
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="si-spinner-xs"></span> Guardando...`;
+            }
+
+            const result = await API.put('/api/me', { name });
+
+            if (result.success) {
+                // Actualizar objeto global y sesión
+                SIApp.user.name = name;
+                sessionStorage.setItem('si_user', JSON.stringify(SIApp.user));
+                
+                SIApp.showToast('Perfil', 'Tus datos se han guardado correctamente.', 'success');
+                
+                // Actualizar UI del header sin recargar
+                const headerName = document.getElementById('header-user-name');
+                if (headerName) headerName.textContent = name;
+                const headerAvatar = document.getElementById('header-user-avatar');
+                if (headerAvatar) headerAvatar.innerHTML = SIApp.avatarInitials(name, 'w-8 h-8 rounded-lg', 'text-[10px]');
+                
+                // Refrescar vista actual para actualizar iniciales grandes
+                this.init();
+            } else {
+                SIApp.showToast('Error', result.message || 'No se pudo actualizar el perfil', 'error');
+            }
+        } catch (error) {
+            console.error('Error al guardar perfil:', error);
+            SIApp.showToast('Error', 'Error de conexión con el servidor', 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `Guardar Perfil`;
+            }
+        }
+    },
+
+    /** Guardar preferencia en localStorage */
+    togglePreference(key, value) {
+        localStorage.setItem(`si-pref-${key}`, value ? '1' : '0');
+        SIApp.showToast('Ajustes', 'Preferencia actualizada.', 'info');
     }
 };

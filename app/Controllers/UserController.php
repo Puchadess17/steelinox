@@ -414,4 +414,60 @@ class UserController {
             echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al cambiar contraseña']]);
         }
     }
+
+    public function updateProfile() {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido', 'data' => null, 'errors' => ['method' => 'Se esperaba PUT']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $userModel = new User();
+            $user = $userModel->findByIdWithInactive($userId);
+
+            if (!$user) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Usuario no encontrado', 'data' => null, 'errors' => ['user' => 'Sesión inválida']]);
+                return;
+            }
+
+            $request = new UserRequest();
+            if (!$request->validateUpdate($user['email'])) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $request->errors()]);
+                return;
+            }
+
+            $updateData = [];
+            if ($request->input('name') !== null) {
+                $newName = $request->sanitizeName($request->input('name'));
+                $updateData['name'] = $newName;
+            }
+
+            if (!empty($updateData)) {
+                $updated = $userModel->update($userId, $updateData);
+                if ($updated) {
+                    AuditLogger::log('usuario_actualizado', 'user', $userId, null, [
+                        'antes' => ['name' => $user['name']],
+                        'despues' => $updateData
+                    ]);
+                    echo json_encode(['success' => true, 'message' => 'Perfil actualizado correctamente', 'data' => ['name' => $updateData['name']]]);
+                } else {
+                    throw new Exception("Error al actualizar en DB.");
+                }
+            } else {
+                echo json_encode(['success' => true, 'message' => 'No hay cambios']);
+            }
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'UserController::updateProfile');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+        }
+    }
 }

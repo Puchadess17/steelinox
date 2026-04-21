@@ -228,9 +228,9 @@ SIModules.projectDetailAdmin = {
                     </div>
 
                     <!-- Footer -->
-                    <div class="p-8 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-4">
-                        <button onclick="SIModules.projectDetailAdmin.closeUploadModal()" class="px-6 py-3 text-sm font-black text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">Cancelar</button>
-                        <button onclick="SIModules.projectDetailAdmin.submitUploadForm()" id="btn-submit-upload" class="px-8 py-3 bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-xl text-sm font-black shadow-lg shadow-orange-500/20 transition-all uppercase tracking-widest flex items-center gap-3">
+                    <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-center gap-4">
+                        <button onclick="SIModules.projectDetailAdmin.closeUploadModal()" class="px-6 py-2.5 text-sm font-black text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest">Cancelar</button>
+                        <button onclick="SIModules.projectDetailAdmin.submitUploadForm()" id="btn-submit-upload" class="px-7 py-2.5 bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-xl text-sm font-black shadow-lg shadow-orange-500/20 transition-all uppercase tracking-widest flex items-center gap-3">
                             <div id="submit-upload-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
                             <span>Subir Documento</span>
                         </button>
@@ -508,6 +508,11 @@ SIModules.projectDetailAdmin = {
             }
 
             this.project = response.data;
+            if (this.project && this.project.reference) {
+                SIApp.setTitle(`${this.project.reference}`);
+            } else if (this.project && this.project.name) {
+                SIApp.setTitle(`${this.project.name}`);
+            }
             this.documents = (docsRes.success && Array.isArray(docsRes.data)) ? docsRes.data : [];
             this.auditLogs = (auditRes.success && auditRes.data) ? auditRes.data : [];
 
@@ -1063,9 +1068,9 @@ SIModules.projectDetailAdmin = {
                                                     <h5 class="text-sm font-black ${isPast ? 'line-through text-gray-400' : (isCurrent ? 'text-gray-900' : (isNext ? 'text-gray-700' : 'text-gray-300'))} transition-colors">${step.label}</h5>
                                                     
                                                     ${isNext ? (() => {
-                                        // Bloqueo: el comercial no puede aprobar propuestas
-                                        if (step.id === 'aprobado' && user && user.role === 'comercial') {
-                                            return `
+                            // Bloqueo: el comercial no puede aprobar propuestas
+                            if (step.id === 'aprobado' && user && user.role === 'comercial') {
+                                return `
                                                         <div class="mt-4 p-5 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-2">
                                                             <div class="flex items-start gap-3">
                                                                 <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
@@ -1078,8 +1083,8 @@ SIModules.projectDetailAdmin = {
                                                             </div>
                                                         </div>
                                                     `;
-                                        }
-                                        return `
+                            }
+                            return `
                                                         <div class="mt-4 p-5 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-2">
                                                             <form id="stepper-status-form-${step.id}" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus('stepper-status-form-${step.id}');" class="space-y-4">
                                                                 <input type="hidden" name="status" value="${step.id}">
@@ -1095,7 +1100,7 @@ SIModules.projectDetailAdmin = {
                                                             </form>
                                                         </div>
                                                     `;
-                                    })() : ''}
+                        })() : ''}
                                                 </div>
                                             </div>
                                         `;
@@ -1265,7 +1270,7 @@ SIModules.projectDetailAdmin = {
 
         const findInCycle = (status) => {
             return currentCycleLogs.find(l =>
-                ((l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod' || l.action_key === 'proyecto_reabierto') &&
+            ((l.action_key === 'proyecto_cambio_estado' || l.action_key === 'proyecto_cambio_estadod' || l.action_key === 'proyecto_reabierto') &&
                 (l.metadata?.estado_nuevo === status || l.metadata?.new_status === status))
             );
         };
@@ -1275,7 +1280,7 @@ SIModules.projectDetailAdmin = {
             // 1. Cambio de estado estándar a 'aprobado' (o reapertura a aprobado, aunque no es común)
             const byStatus = findInCycle('aprobado');
             if (byStatus) return byStatus;
-            
+
             // 2. Log de aprobación directa via botón de propuesta
             return currentCycleLogs.find(l =>
                 l.action_key === 'proyecto_aprobado' ||
@@ -1298,7 +1303,7 @@ SIModules.projectDetailAdmin = {
         // El proyecto se considera aprobado si: hay log de aprobación en este ciclo,
         // o el status actual ya superó la fase de propuesta
         const isApproved = !!approvalLog || ['aprobado', 'ejecucion', 'cerrado'].includes(p.status);
-        
+
         nodes.push(entry(
             dot('bg-blue-400', isApproved),
             'Propuesta Aprobada',
@@ -1310,7 +1315,7 @@ SIModules.projectDetailAdmin = {
         // 3. Ejecución (Solo si ocurrió en el ciclo actual)
         const ejecucionLog = findInCycle('ejecucion');
         const isInExecution = !!ejecucionLog || (['ejecucion', 'cerrado'].includes(p.status));
-        
+
         nodes.push(entry(
             dot('bg-orange-400', isInExecution),
             'Inicio de Ejecución',
@@ -1748,7 +1753,6 @@ SIModules.projectDetailAdmin = {
             const icon = SIApp.getFileIcon(doc.mime_type);
             const size = SIApp.formatFileSize(doc.file_size);
             const date = SIApp.formatDate(doc.uploaded_at);
-            const initials = SIApp._getInitials(doc.uploaded_by_name || '??');
 
             const canViewMime = doc.mime_type === 'application/pdf' ||
                 doc.mime_type.startsWith('image/') ||
@@ -2624,7 +2628,6 @@ SIModules.projectDetailAdmin = {
                 (me.email && c.author_email && me.email === c.author_email)
             );
             const time = SIApp.formatDateTime(c.created_at);
-            const initials = SIApp._getInitials(c.author_name || '??');
             const role = c.author_role || 'cliente';
 
             // ── Colores corporativos por rol ──────────────────────────────
@@ -2632,9 +2635,9 @@ SIModules.projectDetailAdmin = {
             // comercial → azul índigo
             // cliente   → esmeralda
             const roleConfig = {
-                admin: { label: 'Admin', nameCss: 'text-orange-600', badgeCss: 'bg-orange-100 text-orange-700 border-orange-200', avatarCss: 'bg-orange-50 text-orange-600 border-orange-200' },
-                comercial: { label: 'Comercial', nameCss: 'text-indigo-600', badgeCss: 'bg-indigo-100 text-indigo-700 border-indigo-200', avatarCss: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
-                cliente: { label: 'Cliente', nameCss: 'text-emerald-600', badgeCss: 'bg-emerald-100 text-emerald-700 border-emerald-200', avatarCss: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+                admin: { label: 'Admin', nameCss: 'text-orange-600', badgeCss: 'bg-orange-100 text-orange-700 border-orange-200' },
+                comercial: { label: 'Comercial', nameCss: 'text-indigo-600', badgeCss: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+                cliente: { label: 'Cliente', nameCss: 'text-emerald-600', badgeCss: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
             };
             const rc = roleConfig[role] || roleConfig.cliente;
 
@@ -3088,7 +3091,7 @@ SIModules.projectDetailAdmin = {
         document.getElementById('edit-doc-id').value = doc.id;
         document.getElementById('edit-doc-title').value = doc.title || '';
         document.getElementById('edit-doc-visible').checked = (doc.is_visible_to_client == 1);
-        
+
         // Inicializar cards de Tipo
         const typeValue = doc.type || 'otros';
         const typeCard = document.querySelector(`.edit-doc-type-card[data-value="${typeValue}"]`);
@@ -3098,7 +3101,7 @@ SIModules.projectDetailAdmin = {
         const accessValue = doc.access_mode || 'both';
         const accessCard = document.querySelector(`.edit-doc-access-card[data-value="${accessValue}"]`);
         this._selectEditDocAccess(accessValue, accessCard);
-        
+
         SIApp.modal.open('edit-document-modal');
     },
 
@@ -3106,7 +3109,7 @@ SIModules.projectDetailAdmin = {
         const formId = 'edit-document-form';
         const docId = document.getElementById('edit-doc-id').value;
         const btnId = 'btn-save-edit-doc';
-        
+
         const data = SIApp.getValidatedFormData(formId);
         if (!data) return;
 
@@ -3122,7 +3125,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.modal.close('edit-document-modal');
                 await this.loadProjectDocuments();
                 // Por si afecta a documentos destacados como la Propuesta
-                if(this.project.status === 'propuesta' || this.project.status === 'ejecucion') this.loadProjectData(); 
+                if (this.project.status === 'propuesta' || this.project.status === 'ejecucion') this.loadProjectData();
             } else {
                 SIApp.showToast('Error', res?.message || 'Revisa los campos', 'error');
             }
@@ -3147,7 +3150,7 @@ SIModules.projectDetailAdmin = {
     selectCustomStatus(val, label, colorClass, liElement) {
         const input = document.getElementById('change-status-select');
         if (input) input.value = val;
-        
+
         const display = document.getElementById('change-status-display');
         if (display) display.textContent = label;
 
@@ -3163,11 +3166,11 @@ SIModules.projectDetailAdmin = {
                     if (!li.classList.contains('pointer-events-none')) {
                         li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600';
                     } else if (li.classList.contains('cursor-default') && li.innerText.trim().toLowerCase() !== label.toLowerCase()) {
-                         // remove selected state classes from the previously selected disabled item (so it doesn't look fully selected)
-                         if (liElement !== li) {
-                             // retain disabled but not active
-                             li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-400 cursor-default pointer-events-none';
-                         }
+                        // remove selected state classes from the previously selected disabled item (so it doesn't look fully selected)
+                        if (liElement !== li) {
+                            // retain disabled but not active
+                            li.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-400 cursor-default pointer-events-none';
+                        }
                     }
                     const check = li.querySelector('.status-check');
                     if (check) check.remove();
@@ -3270,7 +3273,7 @@ SIModules.projectDetailAdmin = {
 
             if (res.success) {
                 SIApp.showToast('Código enviado', 'Revisa tu bandeja de entrada o spam', 'info');
-                
+
                 // Mostrar el modal de confirmación 2FA (bloqueado para cierre accidental)
                 const input = document.getElementById('approve-2fa-token');
                 if (input) input.value = '';

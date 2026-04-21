@@ -90,9 +90,9 @@ SIModules.clientUsersAdmin = {
 
             if (kpisContainer) {
                 kpisContainer.innerHTML = `
-                    ${this._renderKpiCard('Usuarios Totales', kpis.total, 'Accesos creados en el sistema', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>')}
-                    ${this._renderKpiCard('Usuarios Activos', kpis.activos, 'Con acceso habilitado', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>')}
-                    ${this._renderKpiCard('Empresas Cubiertas', kpis.empresas_cubiertas || 0, 'Clientes con al menos 1 usuario', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
+                    ${this._renderKpiCard('Usuarios Totales', kpis.total, 'Accesos creados en el sistema', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4" stroke-width="1.5"></circle><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M22 21v-2a4 4 0 00-3-3.87"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 3.13a4 4 0 010 7.75"></path></svg>')}
+                    ${this._renderKpiCard('Usuarios Activos', kpis.activos, 'Con acceso habilitado', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4" stroke-width="1.5"></circle><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11l2 2 4-4"></path></svg>')}
+                    ${this._renderKpiCard('Empresas Cubiertas', kpis.empresas_cubiertas || 0, 'Clientes con al menos 1 usuario', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
                 `;
             }
 
@@ -125,37 +125,30 @@ SIModules.clientUsersAdmin = {
         }
 
         const user = Auth.getUser();
-        const colors = [
-            'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700',
-            'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700',
-            'bg-rose-100 text-rose-700', 'bg-indigo-100 text-indigo-700',
-            'bg-cyan-100 text-cyan-700'
-        ];
-
         const desktopRows = data.map(u => {
-            const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
-            const colorClass = colors[(u.id || u.name.length) % colors.length];
+            const avatarHtml = SIApp.avatarInitials(u.name);
             const lastAccessText = u.last_login_at
                 ? `<span class="text-sm font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>`
                 : '<span class="text-sm font-medium text-gray-400">Sin acceso</span>';
 
             return `
-                <tr class="hover:bg-orange-50/20 transition-colors group">
+                <tr class="transition-colors group border-b border-gray-50/80 last:border-0 hover:bg-gray-50/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full ${colorClass} flex items-center justify-center text-[11px] font-black border border-white shadow-sm overflow-hidden">
-                                ${initials}
-                            </div>
+                            ${avatarHtml}
                             <div class="min-w-0">
-                                <p class="text-sm font-black text-[#1a1b25] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
-                                <p class="text-xs text-gray-400">${SIApp.escapeHtml(u.email)}</p>
+                                <div class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    <p class="text-sm font-black text-[#1a1b25] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-0.5">${SIApp.escapeHtml(u.email)}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <a href="/steelinox/client/${u.client_id}" class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-orange-600 transition-colors">
-                            <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <a href="/steelinox/client/${u.client_id}" class="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors">
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                             ${SIApp.escapeHtml(u.company_name || '—')}
                         </a>
                     </td>
@@ -166,12 +159,12 @@ SIModules.clientUsersAdmin = {
                         ${lastAccessText}
                     </td>
                     <td class="px-6 py-4 text-right whitespace-nowrap">
-                        <div class="flex items-center justify-end gap-1.5">
+                        <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             ${user && user.role !== 'cliente' ? `
-                            <a href="/steelinox/user/edit/${u.id}" class="p-2 text-gray-400 hover:text-blue-500 transition-all hover:scale-110" title="Editar">
+                            <a href="/steelinox/user/edit/${u.id}" class="p-1.5 text-gray-400 hover:text-blue-500 transition-all hover:scale-110 rounded-lg hover:bg-blue-50" title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </a>
-                            <button onclick="SIModules.clientUsersAdmin._confirmDelete(${u.id}, '${SIApp.escapeHtml(u.name)}')" class="p-2 text-gray-400 hover:text-red-500 transition-all hover:scale-110" title="Eliminar">
+                            <button onclick="SIModules.clientUsersAdmin._confirmDelete(${u.id}, '${SIApp.escapeHtml(u.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                             ` : ''}
@@ -182,19 +175,16 @@ SIModules.clientUsersAdmin = {
         }).join('');
 
         const mobileCards = data.map(u => {
-            const initials = SIApp._getInitials(u.name);
             const statusBadge = SIApp.activeBadge(u.is_active);
             const lastAccessText = u.last_login_at ? SIApp.timeAgo(u.last_login_at) : 'Nunca';
-            const colorClass = colors[(u.id || u.name.length) % colors.length];
+            const avatarHtml = SIApp.avatarInitials(u.name, 'w-11 h-11', 'text-sm');
 
             return `
             <div class="bg-white border-l-[3.5px] border-l-orange-500 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg">
                 <div class="px-5 py-4">
                     <div class="flex items-start justify-between mb-3 gap-3">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-11 h-11 rounded-full ${colorClass} flex items-center justify-center text-sm font-black tracking-widest shrink-0">
-                                ${initials}
-                            </div>
+                            ${avatarHtml}
                             <div class="min-w-0">
                                 <p class="text-[15px] font-extrabold text-[#1a1b25] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5 truncate">${SIApp.escapeHtml(u.email)}</p>
@@ -213,18 +203,22 @@ SIModules.clientUsersAdmin = {
                         Último acceso: ${lastAccessText}
                     </div>
                 </div>
-                ${user && user.role !== 'cliente' ? `
-                <div class="mt-auto px-5 pb-4 pt-1 flex justify-center gap-2 border-t border-gray-50">
-                    <a href="/steelinox/user/edit/${u.id}" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        Editar
+                <div class="mt-auto px-5 pb-4 pt-4 flex justify-between items-center border-t border-gray-50">
+                    <a href="/steelinox/user/edit/${u.id}" class="flex items-center gap-2 group/btn no-underline">
+                        <span class="text-[11px] font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors tracking-wide">
+                            Ver detalles
+                        </span>
+                        <svg class="w-3.5 h-3.5 text-[#1a1b25] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </a>
-                    <button onclick="SIModules.clientUsersAdmin._confirmDelete(${u.id}, '${SIApp.escapeHtml(u.name)}')" class="flex-1 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        Eliminar
+                    
+                    ${user && user.role !== 'cliente' ? `
+                    <button onclick="SIModules.clientUsersAdmin._confirmDelete(${u.id}, '${SIApp.escapeHtml(u.name)}')" 
+                            class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" 
+                            title="Eliminar Usuario">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
+                    ` : ''}
                 </div>
-                ` : ''}
             </div>
             `;
         }).join('');
@@ -237,8 +231,8 @@ SIModules.clientUsersAdmin = {
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Usuario ${this._getSortIcon('name')}</span>
                             </th>
-                            <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('company_name')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Empresa ${this._getSortIcon('company_name')}</span>
+                            <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('company_name')">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Empresa ${this._getSortIcon('company_name')}</span>
                             </th>
                             <th class="px-6 py-4 text-center select-none">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>

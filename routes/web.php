@@ -33,6 +33,7 @@ $router->get('/api/audit/filters', 'AuditController@getFiltersData');
  * hasta la recuperación de credenciales mediante tokens.
  */
 $router->get('/api/me', 'AuthController@me');
+$router->put('/api/me', 'UserController@updateProfile');
 $router->put('/api/me/password', 'UserController@updatePassword');
 $router->post('/api/login', 'AuthController@login');
 $router->post('/api/logout', 'AuthController@logout');

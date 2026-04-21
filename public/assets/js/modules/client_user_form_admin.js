@@ -123,9 +123,12 @@ SIModules.clientUserFormAdmin = {
 
                             <!-- Avatar / Initials Card -->
                             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center text-center gap-4">
-                                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-2xl font-black text-blue-600 border-4 border-white shadow-lg">
-                                    ${isEdit ? initials : `<svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`}
-                                </div>
+                                ${isEdit 
+                                    ? SIApp.avatarInitials(data.name, 'w-20 h-20 rounded-2xl', 'text-2xl')
+                                    : `<div class="w-20 h-20 rounded-2xl bg-gray-50 flex items-center justify-center text-2xl font-black text-gray-300 border-4 border-white shadow-sm">
+                                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                       </div>`
+                                }
                                 <div>
                                     <p class="text-xs font-black text-gray-400 uppercase tracking-widest">Usuario Cliente</p>
                                     ${isEdit ? `<p class="text-sm font-bold text-gray-700 mt-1">Miembro desde ${SIApp.formatDate(data.created_at)}</p>` : '<p class="text-sm text-gray-400 mt-1">Nuevo acceso a la extranet</p>'}

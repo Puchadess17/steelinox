@@ -121,6 +121,9 @@ SIModules.clientDetailAdmin = {
             console.log("[ClientDetailAdmin] Mapping data:", d);
 
             this.client = d.info || {};
+            if (this.client && this.client.name) {
+                SIApp.setTitle(`${this.client.name}`);
+            }
             this.users = d.users || [];
             this.projects = d.projects || [];
             this.stats = d.kpis || {};
@@ -215,7 +218,7 @@ SIModules.clientDetailAdmin = {
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
                              <div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                              </div>
                              <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Usuarios Cliente Asociados</h2>
                         </div>
@@ -255,7 +258,7 @@ SIModules.clientDetailAdmin = {
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
                              <div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                              </div>
                              <h2 class="text-lg sm:text-xl font-extrabold text-gray-900">Proyectos Vinculados</h2>
                         </div>
@@ -466,13 +469,13 @@ SIModules.clientDetailAdmin = {
                 }
                 break;
             case 'proyecto_comercial_asignado':
-                type = 'user';
+                type = 'commercial';
                 actionTitle = 'COMERCIAL ASIGNADO';
                 title = log.metadata?.user_name || 'Comercial Asignado al Proyecto';
                 content = `Comercial asignado para gestionar el proyecto.`;
                 break;
             case 'proyecto_comercial_removido':
-                type = 'edit';
+                type = 'commercial';
                 actionTitle = 'COMERCIAL REMOVIDO';
                 title = log.metadata?.user_name || 'Comercial Removido del Proyecto';
                 content = `El comercial fue desasignado del proyecto.`;
@@ -540,8 +543,9 @@ SIModules.clientDetailAdmin = {
         const icons = {
             status: { color: 'bg-[#E57B23]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
             document: { color: 'bg-[#0284c7]', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>' },
-            project: { color: 'bg-amber-500', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>' },
-            user: { color: 'bg-violet-500', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' },
+            project: { color: 'bg-amber-500', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>' },
+            user: { color: 'bg-violet-500', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' },
+            commercial: { color: 'bg-orange-600', icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>' },
             chat: { color: 'bg-gray-100', icon: '<svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clip-rule="evenodd"/></svg>' },
             edit: { color: 'bg-amber-100', icon: '<svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' },
         };
@@ -700,7 +704,7 @@ SIModules.clientDetailAdmin = {
 
             <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-5">
                 <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Usuarios con Acceso</span>
@@ -731,27 +735,14 @@ SIModules.clientDetailAdmin = {
     },
 
     _renderUserRow(u) {
-        const initials = (window.SIApp && SIApp._getInitials) ? SIApp._getInitials(u.name) : '??';
         const lastAccess = u.last_login_at ? (SIApp.formatDate ? SIApp.formatDate(u.last_login_at) : u.last_login_at) : 'Sin acceso';
-
-        // Paleta de colores para avatares
-        const colors = [
-            'bg-blue-100 text-blue-700',
-            'bg-emerald-100 text-emerald-700',
-            'bg-purple-100 text-purple-700',
-            'bg-amber-100 text-amber-700',
-            'bg-rose-100 text-rose-700',
-            'bg-indigo-100 text-indigo-700',
-            'bg-cyan-100 text-cyan-700'
-        ];
-        // Seleccionar color basado en el ID o nombre para que sea consistente
-        const colorClass = colors[(u.id || u.name.length) % colors.length];
+        const avatarHtml = SIApp.avatarInitials(u.name);
 
         return `
             <tr class="hover:bg-gray-50/80 transition-colors">
                 <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 ${colorClass} rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-sm">${initials}</div>
+                        ${avatarHtml}
                         <div>
                             <p class="text-sm font-bold text-gray-900 leading-tight">${u.name}</p>
                             <p class="text-xs text-gray-400">${u.email}</p>
@@ -824,16 +815,14 @@ SIModules.clientDetailAdmin = {
 
     /** Mobile card for a user */
     _renderUserCard(u) {
-        const initials = (window.SIApp && SIApp._getInitials) ? SIApp._getInitials(u.name) : '??';
         const lastAccess = u.last_login_at ? (SIApp.formatDate ? SIApp.formatDate(u.last_login_at) : u.last_login_at) : 'Sin acceso';
-        const colors = ['bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700'];
-        const colorClass = colors[(u.id || u.name.length) % colors.length];
+        const avatarHtml = SIApp.avatarInitials(u.name, 'w-10 h-10', 'text-[10px]');
 
         return `
             <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-10 h-10 ${colorClass} rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-sm shrink-0">${initials}</div>
+                        ${avatarHtml}
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-gray-900 leading-tight truncate">${u.name}</p>
                             <p class="text-xs text-gray-400 truncate">${u.email}</p>
@@ -842,13 +831,14 @@ SIModules.clientDetailAdmin = {
                     ${window.SIApp ? SIApp.activeBadge(u.is_active) : ''}
                 </div>
                 <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                    <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        ${lastAccess}
-                    </div>
+                    <button onclick='ClientDetailAdmin.openUserModal(${JSON.stringify(u)})' class="flex items-center gap-2 group/btn no-underline">
+                        <span class="text-[11px] font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors tracking-wide">
+                            Ver detalles
+                        </span>
+                        <svg class="w-3.5 h-3.5 text-[#1a1b25] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
                     <div class="flex items-center gap-1">
-                        <button onclick='ClientDetailAdmin.openUserModal(${JSON.stringify(u)})' class="p-2 text-gray-300 hover:text-indigo-500 hover:bg-gray-50 rounded-lg transition-all transform hover:scale-110 active:scale-95" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
-                        <button onclick="ClientDetailAdmin.deleteUser(${u.id})" class="p-2 text-gray-300 hover:text-red-500 hover:bg-gray-50 rounded-lg transition-all transform hover:scale-110 active:scale-95" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                        <button onclick="ClientDetailAdmin.deleteUser(${u.id})" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all transform hover:scale-110 active:scale-95" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                     </div>
                 </div>
             </div>

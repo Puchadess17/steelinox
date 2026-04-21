@@ -80,6 +80,7 @@ SIModules.clientFormAdmin = {
 
         const isEdit = this.mode === 'edit';
         const title = isEdit ? 'Gestión de Cliente' : 'Nuevo Cliente';
+        SIApp.setTitle(title);
         const subtitle = isEdit
             ? 'Complete los campos a continuación para actualizar la información del cliente en el sistema.'
             : 'Ingrese los datos necesarios para registrar un nuevo cliente en el sistema.';
