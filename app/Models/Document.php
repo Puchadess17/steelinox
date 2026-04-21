@@ -318,4 +318,43 @@ class Document {
             throw $e;
         }
     }
+
+    /**
+     * WHITELIST CENTRAL DE TIPOS MIME
+     * Única fuente de la verdad para validar archivos subidos al sistema.
+     * Combina formatos estándar, ofimática, CAD, 3D, multimedia y binarios.
+     */
+    public static function getAllowedMimeTypes() {
+        return [
+            // Documentos Estándar
+            'application/pdf', 'text/plain', 'text/csv', 'text/markdown', 
+            'application/json', 'application/x-yaml', 'text/yaml',
+
+            // Imágenes (Web y Alta resolución)
+            'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 
+            'image/heic', 'image/heif', 'image/vnd.adobe.photoshop', 'application/postscript',
+
+            // Video (Revisión de obra/Drones)
+            'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska',
+
+            // Office (Word, Excel, Powerpoint)
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+
+            // CAD e Ingeniería (AutoCAD y variantes)
+            'image/vnd.dwg', 'image/x-dwg', 'application/acad', 'application/x-acad', 
+            'application/autocad_dwg', 'image/vnd.dxf', 'application/dxf', 'application/x-dxf',
+
+            // Modelado 3D (Impresión/Estructuras)
+            'model/obj', 'model/stl', 'application/sla',
+
+            // Archivos comprimidos (Paquetes de proyectos)
+            'application/zip', 'application/x-zip-compressed', 
+            'application/x-7z-compressed', 'application/x-rar-compressed',
+
+            // Fallback genérico para archivos binarios propietarios
+            'application/octet-stream'
+        ];
+    }
 }

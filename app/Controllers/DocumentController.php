@@ -138,61 +138,8 @@ class DocumentController {
             }
             // ----------------------------------------------
 
-            $allowedMimes = [
-                // Documentos Estándar
-                'application/pdf',
-                'text/plain',
-                'text/csv',
-                'text/markdown',
-                'application/json',
-                'application/x-yaml',
-                'text/yaml',
-
-                // Imágenes (Web y Alta resolución)
-                'image/jpeg',
-                'image/png',
-                'image/webp',
-                'image/svg+xml',
-                'image/heic',
-                'image/heif',
-                'image/vnd.adobe.photoshop',
-                'application/postscript', // .ai / .eps
-
-                // Video (Revisión de obra/Drones)
-                'video/mp4',
-                'video/quicktime',
-                'video/webm',
-                'video/x-matroska',
-
-                // Office (Word, Excel, Powerpoint)
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.ms-powerpoint',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-
-                // CAD e Ingeniería (AutoCAD y variantes)
-                'image/vnd.dwg',
-                'image/x-dwg',
-                'application/acad',
-                'application/x-acad',
-                'application/autocad_dwg',
-                'image/vnd.dxf',
-                'application/dxf',
-                'application/x-dxf',
-
-                // Modelado 3D (Impresión/Estructuras)
-                'model/obj',
-                'model/stl',
-                'application/sla',
-
-                // Archivos comprimidos (Paquetes de proyectos)
-                'application/zip',
-                'application/x-zip-compressed',
-                'application/x-7z-compressed',
-                'application/x-rar-compressed'
-            ];
+            // Centralizado desde el modelo
+            $allowedMimes = Document::getAllowedMimeTypes();
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $realMime = finfo_file($finfo, $file['tmp_name']);
@@ -350,18 +297,8 @@ class DocumentController {
             
             $safeFileName = htmlspecialchars(basename($file['name']), ENT_QUOTES, 'UTF-8');
 
-            $allowedMimes = [
-                'application/pdf', 
-                'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/heic', 'image/heif',
-                'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska',
-                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'text/markdown', 'text/csv', 'text/plain', 'application/json', 'application/x-yaml', 'text/yaml',
-                'image/vnd.adobe.photoshop', 'application/postscript',
-                'image/vnd.dwg', 'image/vnd.dxf', 'application/acad', 'application/dxf',
-                'model/obj', 'model/stl', 'application/octet-stream'
-            ];
+            // Centralizado desde el modelo
+            $allowedMimes = Document::getAllowedMimeTypes();
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $realMime = finfo_file($finfo, $file['tmp_name']);

@@ -334,12 +334,10 @@ class ProjectController
             }
 
             $projectModel = new Project();
-            $generatedReference = $projectModel->generateNextReference();
 
             $dataToInsert = [
                 'client_id'     => (int)$request->input('client_id'),
                 'name'          => $request->sanitizeName($request->input('name')),
-                'reference'     => $generatedReference,
                 'status'        => htmlspecialchars(trim($request->input('status', 'propuesta')), ENT_QUOTES, 'UTF-8'),
                 'budget_amount' => (float)$request->input('budget_amount'),
                 'description'   => htmlspecialchars(trim($request->input('description', '')), ENT_QUOTES, 'UTF-8') ?: null,
@@ -348,23 +346,18 @@ class ProjectController
                 'created_by'    => $userId
             ];
 
-            $newProjectId = $projectModel->createWithAutoAssign($dataToInsert, $userId, $role);
+            $result = $projectModel->createWithAutoAssign($dataToInsert, $userId, $role);
 
-            AuditLogger::log('proyecto_creado', 'project', $newProjectId, $newProjectId, [
+            AuditLogger::log('proyecto_creado', 'project', $result['id'], $result['id'], [
                 'nombre'     => $dataToInsert['name'],
-                'referencia' => $dataToInsert['reference'],
+                'referencia' => $result['reference'],
                 'cliente'    => $clientDetails['info']['name'],
                 'estado'     => $dataToInsert['status']
             ]);
 
-            echo json_encode(['success' => true, 'message' => 'Proyecto creado', 'data' => ['id' => $newProjectId, 'reference' => $generatedReference], 'errors' => null]);
+            echo json_encode(['success' => true, 'message' => 'Proyecto creado', 'data' => ['id' => $result['id'], 'reference' => $result['reference']], 'errors' => null]);
 
         } catch (Exception $e) {
-            if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'reference') !== false) {
-                http_response_code(409); 
-                echo json_encode(['success' => false, 'message' => 'Colisión al generar código.', 'data' => null, 'errors' => ['reference' => 'Código duplicado']]);
-                return;
-            }
             ErrorLogger::log($e->getMessage(), 'ProjectController::store');
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al crear']]);

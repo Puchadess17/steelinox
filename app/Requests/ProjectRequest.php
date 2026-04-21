@@ -18,8 +18,8 @@ class ProjectRequest extends BaseRequest {
         if ($cleanProjectType === '') {
             $this->addError('project_type', 'El tipo de proyecto es obligatorio.');
         }
-        if ($budgetAmount === '' || !is_numeric($budgetAmount)) {
-            $this->addError('budget_amount', 'El presupuesto es obligatorio y debe ser un valor numérico.');
+        if ($budgetAmount !== '' && !is_numeric($budgetAmount)) {
+            $this->addError('budget_amount', 'El presupuesto debe ser un valor numérico.');
         }
 
         return !$this->fails();
@@ -41,8 +41,8 @@ class ProjectRequest extends BaseRequest {
 
         if ($this->input('budget_amount') !== null) {
             $budgetAmount = trim($this->input('budget_amount'));
-            if ($budgetAmount === '' || !is_numeric($budgetAmount)) {
-                $this->addError('budget_amount', 'El presupuesto es obligatorio y debe ser un valor numérico.');
+            if ($budgetAmount !== '' && !is_numeric($budgetAmount)) {
+                $this->addError('budget_amount', 'El presupuesto debe ser un valor numérico.');
             }
         }
         
@@ -76,9 +76,9 @@ class ProjectRequest extends BaseRequest {
         }
 
         $allowedTransitions = [
-            'propuesta' => ['aprobado'],         
-            'aprobado'  => ['ejecucion'],        
-            'ejecucion' => ['cerrado'],          
+            'propuesta' => ['aprobado', 'cerrado'],   
+            'aprobado'  => ['ejecucion', 'cerrado'],  
+            'ejecucion' => ['cerrado'],               
             'cerrado'   => ['ejecucion', 'propuesta'] 
         ];
 

@@ -189,48 +189,71 @@ class Project {
     }
 
     /**
-     * CREACIÓN TRANSACCIONAL DE PROYECTO
-     * Genera un nuevo registro y, si el creador es un usuario de perfil
-     * comercial, lo auto-asigna de inmediato al proyecto. Asegura la 
-     * consistencia de los datos mediante el uso de transacciones.
+     * CREACIÓN TRANSACCIONAL DE PROYECTO CON ANTI-COLISIÓN (Race Condition Safe)
+     * Genera la referencia en el instante de la inserción y aplica un bucle
+     * de reintento automático si detecta alta concurrencia.
      */
     public function createWithAutoAssign($data, $userId, $role) {
-        try {
-            $this->db->beginTransaction();
+        $maxRetries = 3;
+        $attempt = 0;
 
-            $sql = "INSERT INTO projects (client_id, name, reference, status, budget_amount, description, surface, project_type, created_by, created_at) 
-                    VALUES (:client_id, :name, :reference, :status, :budget_amount, :description, :surface, :project_type, :created_by, NOW())";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                'client_id'     => $data['client_id'],
-                'name'          => $data['name'],
-                'reference'     => $data['reference'],
-                'status'        => $data['status'] ?? 'propuesta',
-                'budget_amount' => !empty($data['budget_amount']) ? (float)$data['budget_amount'] : null,
-                'description'   => $data['description'] ?? null,
-                'surface'       => $data['surface'] ?? null,
-                'project_type'  => $data['project_type'] ?? null,
-                'created_by'    => $data['created_by']
-            ]);
+        while ($attempt < $maxRetries) {
+            try {
+                $this->db->beginTransaction();
 
-            $newProjectId = $this->db->lastInsertId();
+                $reference = $this->generateNextReference();
 
-            if ($role === 'comercial') {
-                $sqlAssign = "INSERT INTO project_user (project_id, user_id) VALUES (:project_id, :user_id)";
-                $stmtAssign = $this->db->prepare($sqlAssign);
-                $stmtAssign->execute([
-                    'project_id' => $newProjectId,
-                    'user_id'    => $userId
+                $sql = "INSERT INTO projects (client_id, name, reference, status, budget_amount, description, surface, project_type, created_by, created_at) 
+                        VALUES (:client_id, :name, :reference, :status, :budget_amount, :description, :surface, :project_type, :created_by, NOW())";
+                
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    'client_id'     => $data['client_id'],
+                    'name'          => $data['name'],
+                    'reference'     => $reference,
+                    'status'        => $data['status'] ?? 'propuesta',
+                    'budget_amount' => !empty($data['budget_amount']) ? (float)$data['budget_amount'] : null,
+                    'description'   => $data['description'] ?? null,
+                    'surface'       => $data['surface'] ?? null,
+                    'project_type'  => $data['project_type'] ?? null,
+                    'created_by'    => $data['created_by']
                 ]);
+
+                $newProjectId = $this->db->lastInsertId();
+
+                if ($role === 'comercial') {
+                    $sqlAssign = "INSERT INTO project_user (project_id, user_id) VALUES (:project_id, :user_id)";
+                    $stmtAssign = $this->db->prepare($sqlAssign);
+                    $stmtAssign->execute([
+                        'project_id' => $newProjectId,
+                        'user_id'    => $userId
+                    ]);
+                }
+
+                $this->db->commit();
+                
+                // Retornamos tanto el ID generado como la referencia definitiva
+                return [
+                    'id' => $newProjectId, 
+                    'reference' => $reference
+                ];
+
+            } catch (PDOException $e) {
+                $this->db->rollBack();
+                
+                // 1062 = Duplicate entry for key 'reference'
+                if ($e->errorInfo[1] == 1062 && strpos($e->getMessage(), 'reference') !== false) {
+                    $attempt++;
+                    if ($attempt >= $maxRetries) {
+                        throw new Exception("Alta concurrencia en la red. No se pudo generar la referencia del proyecto.");
+                    }
+                    // Espera aleatoria entre 50 y 150 milisegundos para desincronizar peticiones
+                    usleep(rand(50000, 150000));
+                    continue;
+                }
+                
+                throw $e;
             }
-
-            $this->db->commit();
-            return $newProjectId;
-
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            throw $e;
         }
     }
 
