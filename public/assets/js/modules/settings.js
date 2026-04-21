@@ -40,13 +40,13 @@ SIModules.settings = {
                 <div class="flex flex-col items-center text-center space-y-6 py-8">
                     <div class="relative group">
                         ${SIApp.avatarInitials(user.name, 'w-24 h-24 rounded-[2rem]', 'text-4xl')}
-                        <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg border-2 border-orange-500">
+                        <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-lg border-2 border-orange-500">
                             <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                         </div>
                     </div>
                     <div>
                         <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">${SIApp.escapeHtml(user.name)}</h1>
-                        <p class="text-gray-500 dark:text-slate-400 font-medium text-lg mt-2">${identityLabel}</p>
+                        <p class="text-gray-500 dark:text-zinc-400 font-medium text-lg mt-2">${identityLabel}</p>
                     </div>
                 </div>
 
@@ -67,13 +67,13 @@ SIModules.settings = {
                                 <div>
                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nombre Completo</label>
                                     <input type="text" id="set-name" value="${SIApp.escapeHtml(user.name || '')}" 
-                                           class="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
+                                           class="w-full px-5 py-3.5 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
                                            placeholder="Ej: Juan Pérez">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Correo Electrónico</label>
                                     <input type="email" value="${SIApp.escapeHtml(user.email || '')}" readonly
-                                           class="w-full px-5 py-3.5 bg-gray-100 dark:bg-slate-800/30 border border-transparent rounded-2xl text-gray-400 font-medium text-sm cursor-not-allowed">
+                                           class="w-full px-5 py-3.5 bg-gray-100 dark:bg-zinc-800/30 border border-transparent rounded-2xl text-gray-400 font-medium text-sm cursor-not-allowed">
                                 </div>
                             </div>
                         </div>
@@ -95,7 +95,7 @@ SIModules.settings = {
                                 <h3 class="text-xl font-extrabold text-gray-900 dark:text-white">Seguridad</h3>
                             </div>
                             
-                            <p class="text-gray-500 dark:text-slate-400 text-sm font-medium leading-relaxed mb-6">
+                            <p class="text-gray-500 dark:text-zinc-400 text-sm font-medium leading-relaxed mb-6">
                                 Mantén tu cuenta protegida. Te recomendamos cambiar tu contraseña cada 90 días para garantizar la confidencialidad de tus proyectos.
                             </p>
                             
@@ -108,7 +108,7 @@ SIModules.settings = {
                         </div>
 
                         <div class="pt-8">
-                            <button onclick="SIModules.settings.openPasswordModal()" class="w-full py-4 bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 text-gray-900 dark:text-white rounded-2xl text-sm font-black shadow-sm hover:border-orange-500 hover:text-orange-600 transition-all active:scale-95 flex items-center justify-center gap-3">
+                            <button onclick="SIModules.settings.openPasswordModal()" class="w-full py-4 bg-white dark:bg-zinc-800 border-2 border-gray-100 dark:border-zinc-700 text-gray-900 dark:text-white rounded-2xl text-sm font-black shadow-sm hover:border-orange-500 hover:text-orange-600 transition-all active:scale-95 flex items-center justify-center gap-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                                 Cambiar Contraseña
                             </button>
@@ -125,9 +125,9 @@ SIModules.settings = {
                         </div>
 
                         <div class="space-y-6">
-                            <div class="flex items-center justify-between p-5 bg-gray-50 dark:bg-slate-800/40 rounded-[2rem] border border-gray-100 dark:border-slate-700 group">
+                            <div class="flex items-center justify-between p-5 bg-gray-50 dark:bg-zinc-800/40 rounded-[2rem] border border-gray-100 dark:border-zinc-700 group">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-orange-500 transition-colors shadow-sm">
+                                    <div class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-orange-500 transition-colors shadow-sm">
                                         <svg class="sun w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
                                         <svg class="moon w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                                     </div>
@@ -171,14 +171,14 @@ SIModules.settings = {
         const isChecked = saved !== null ? (saved === '1') : true;
 
         return `
-            <div class="flex items-center justify-between p-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
+            <div class="flex items-center justify-between p-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
                 <div>
-                    <span class="block text-sm font-black text-gray-700 dark:text-slate-200 uppercase tracking-wide leading-none">${title}</span>
+                    <span class="block text-sm font-black text-gray-700 dark:text-zinc-200 uppercase tracking-wide leading-none">${title}</span>
                     <p class="text-[11px] text-gray-400 font-medium mt-1">${desc}</p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="${id}" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="SIModules.settings.togglePreference('${id}', this.checked)">
-                    <div class="w-9 h-5 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    <div class="w-9 h-5 bg-gray-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                 </label>
             </div>
         `;
@@ -197,7 +197,7 @@ SIModules.settings = {
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Contraseña Actual</label>
                     <div class="relative">
                         <input type="password" id="modal-current-pwd" required
-                               class="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
+                               class="w-full px-5 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
                                placeholder="••••••••">
                         <button type="button" onclick="SIApp.togglePasswordVisibility(this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors">
                             <span class="eye-open"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></span>
@@ -211,7 +211,7 @@ SIModules.settings = {
                     <div class="relative">
                         <input type="password" id="modal-new-pwd" required
                                oninput="SIApp.validatePasswordRequirements(this)"
-                               class="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
+                               class="w-full px-5 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
                                placeholder="••••••••">
                     </div>
                 </div>
@@ -219,7 +219,7 @@ SIModules.settings = {
                 <div>
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Repetir Nueva Contraseña</label>
                     <input type="password" id="modal-repeat-pwd" required
-                           class="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
+                           class="w-full px-5 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-bold text-sm" 
                            placeholder="••••••••">
                 </div>
             </div>

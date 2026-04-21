@@ -102,7 +102,7 @@ SIModules.clientFormAdmin = {
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
                     <div>
-                        <h1 class="text-3xl font-extrabold text-[#1a1b25] tracking-tight mb-2">${title}</h1>
+                        <h1 class="text-3xl font-extrabold text-[#000000] tracking-tight mb-2">${title}</h1>
                         <p class="text-gray-500 text-sm max-w-xl">${subtitle}</p>
                     </div>
                     ${isEdit ? `

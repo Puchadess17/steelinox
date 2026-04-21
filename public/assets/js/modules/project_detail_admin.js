@@ -79,7 +79,7 @@ SIModules.projectDetailAdmin = {
             <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-2 flex-wrap">
-                        <h1 id="admin-prj-title" class="text-2xl md:text-3xl font-extrabold text-[#1a1b25] tracking-tight">Cargando...</h1>
+                        <h1 id="admin-prj-title" class="text-2xl md:text-3xl font-extrabold text-[#000000] tracking-tight">Cargando...</h1>
                         <div class="flex items-center gap-2">
                             <span id="admin-prj-ref" class="px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-lg uppercase tracking-wider">REF</span>
                             <span id="admin-prj-status-badge"></span>
@@ -396,7 +396,7 @@ SIModules.projectDetailAdmin = {
                                                  class="w-full pl-3 pr-2 py-2.5 bg-transparent border-none text-gray-900 text-sm resize-none outline-none focus:ring-0 max-h-32 min-h-[44px]"
                                                  oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px';"
                                                  onkeydown="if(event.key==='Enter' && !event.ctrlKey && !event.shiftKey){ event.preventDefault(); SIModules.projectDetailAdmin.submitDocComment(); }"></textarea>
-                                             <button type="submit" id="preview-chat-submit" class="shrink-0 w-10 h-10 mb-0.5 bg-[#1a1b25] text-white rounded-xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-md group">
+                                             <button type="submit" id="preview-chat-submit" class="shrink-0 w-10 h-10 mb-0.5 bg-[#000000] text-white rounded-xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 shadow-md group">
                                                  <svg id="preview-chat-send-icon" class="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                                  <div id="preview-chat-send-spinner" class="si-spinner w-4 h-4 border-white/30 border-t-white hidden"></div>
                                              </button>
@@ -611,20 +611,20 @@ SIModules.projectDetailAdmin = {
         })}
 
             <div id="change-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                        <h3 class="text-lg font-extrabold text-gray-900">Cambiar Estado</h3>
-                        <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <div class="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col border border-gray-100 dark:border-zinc-800">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
+                        <h3 class="text-lg font-extrabold text-gray-900 dark:text-zinc-100">Cambiar Estado</h3>
+                        <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                     <div class="p-6">
                         <form id="change-status-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.saveProjectStatus();" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nuevo Estado <span class="text-red-500">*</span></label>
+                                <label class="block text-xs font-bold text-gray-700 dark:text-zinc-400 uppercase tracking-wide mb-1">Nuevo Estado <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <input type="hidden" id="change-status-select" name="status" value="${p.status}">
-                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleDropdown('status-dropdown-menu')" class="w-full px-4 py-3 bg-white border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
+                                    <button type="button" onclick="SIModules.projectDetailAdmin.toggleDropdown('status-dropdown-menu')" class="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm flex justify-between items-center shadow-sm">
                                         <div class="flex items-center gap-2">
                                            <span id="change-status-circle" class="w-2 h-2 rounded-full ${p.status === 'propuesta' ? 'bg-amber-400' : (p.status === 'aprobado' ? 'bg-blue-400' : (p.status === 'ejecucion' ? 'bg-orange-400' : 'bg-emerald-400'))}"></span>
                                            <span id="change-status-display" class="capitalize">${p.status}</span>
@@ -632,12 +632,12 @@ SIModules.projectDetailAdmin = {
                                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
                                     </button>
                                     
-                                    <ul id="status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'propuesta' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                    <ul id="status-dropdown-menu" class="si-custom-dropdown absolute z-50 w-full mt-1 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-xl shadow-xl shadow-orange-500/10 hidden max-h-60 overflow-y-auto py-1.5 text-sm font-medium">
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('propuesta', 'Propuesta', 'bg-amber-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'propuesta' ? 'bg-gray-50 dark:bg-zinc-700 text-gray-900 dark:text-zinc-100 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 dark:hover:bg-orange-500/10 hover:pl-5 cursor-pointer text-gray-600 dark:text-zinc-400'}">
                                             <span class="w-2 h-2 rounded-full bg-amber-400"></span> Propuesta
                                             ${p.status === 'propuesta' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : (p.status === 'cerrado' || (this.user && this.user.role === 'comercial') ? 'text-gray-300 bg-gray-50/50 cursor-not-allowed pointer-events-none' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600')}">
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('aprobado', 'Aprobado', 'bg-blue-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'aprobado' ? 'bg-gray-50 dark:bg-zinc-700 text-gray-900 dark:text-zinc-100 cursor-default pointer-events-none shadow-inner' : (p.status === 'cerrado' || (this.user && this.user.role === 'comercial') ? 'text-gray-300 dark:text-zinc-600 bg-gray-50/50 dark:bg-zinc-800/50 cursor-not-allowed pointer-events-none' : 'hover:bg-orange-50/50 dark:hover:bg-orange-500/10 hover:pl-5 cursor-pointer text-gray-600 dark:text-zinc-400')}">
                                             <span class="w-2 h-2 rounded-full ${p.status === 'cerrado' || (this.user && this.user.role === 'comercial') && p.status !== 'aprobado' ? 'bg-gray-300' : 'bg-blue-400'}"></span> Aprobado
                                             ${p.status === 'aprobado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : (p.status === 'cerrado' || (this.user && this.user.role === 'comercial') ? '<svg class="w-4 h-4 ml-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>' : '')}
                                         </li>
@@ -658,8 +658,8 @@ SIModules.projectDetailAdmin = {
                             </div>
                         </form>
                     </div>
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
-                         <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
+                    <div class="p-6 border-t border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 rounded-b-2xl sm:rounded-b-[2rem] flex justify-end gap-3 shrink-0">
+                         <button onclick="SIModules.projectDetailAdmin.closeChangeStatusModal()" type="button" class="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200">Cancelar</button>
                          <button onclick="SIModules.projectDetailAdmin.saveProjectStatus()" id="btn-save-status" type="button" class="px-5 py-2.5 text-sm font-bold text-white bg-orange-500 border border-transparent rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center gap-2">
                              Actualizar
                          </button>
@@ -668,23 +668,23 @@ SIModules.projectDetailAdmin = {
             </div>
 
             <div id="approve-2fa-modal" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity flex items-center justify-center p-4 backdrop-blur-sm">
-                <div class="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden border border-gray-100">
+                <div class="bg-white dark:bg-zinc-900 rounded-[2.5rem] w-full max-w-sm shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden border border-gray-100 dark:border-zinc-800">
                     <div class="p-10 text-center relative">
                         <!-- Botón Atrás (Flechita) -->
-                        <button type="button" onclick="SIApp.modal.close('approve-2fa-modal')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-[#1a1b25] transition-all group">
+                        <button type="button" onclick="SIApp.modal.close('approve-2fa-modal')" class="absolute top-6 left-6 w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-[#000000] dark:hover:text-zinc-100 transition-all group">
                             <svg class="w-6 h-6 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
                         </button>
                         
-                        <div class="w-20 h-20 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-8 ring-8 ring-orange-50/50 shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
+                        <div class="w-20 h-20 bg-orange-50 dark:bg-orange-500/10 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-8 ring-8 ring-orange-50/50 dark:ring-orange-500/5 shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
-                        <h3 class="text-2xl font-black text-[#1a1b25] mb-3 tracking-tight uppercase">Seguridad 2FA</h3>
-                        <p class="text-[13px] text-gray-500 mb-8 font-medium leading-relaxed">Se ha enviado un código de verificación a tu email. Por seguridad, introduce los 6 dígitos para confirmar.</p>
+                        <h3 class="text-2xl font-black text-[#000000] dark:text-zinc-100 mb-3 tracking-tight uppercase">Seguridad 2FA</h3>
+                        <p class="text-[13px] text-gray-500 dark:text-zinc-400 mb-8 font-medium leading-relaxed">Se ha enviado un código de verificación a tu email. Por seguridad, introduce los 6 dígitos para confirmar.</p>
                         
                         <form id="approve-2fa-form" onsubmit="event.preventDefault(); SIModules.projectDetailAdmin.confirmApproveProjectProposal();" class="space-y-8">
                             <div>
                                 <input type="text" id="approve-2fa-token" name="token" maxlength="6" 
-                                    class="w-full text-center text-4xl tracking-[0.4em] font-black text-[#1a1b25] bg-gray-50 border-2 border-gray-100 rounded-2xl py-5 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white transition-all outline-none uppercase placeholder:text-gray-200" 
+                                    class="w-full text-center text-4xl tracking-[0.4em] font-black text-[#000000] dark:text-zinc-100 bg-gray-50 dark:bg-zinc-800 border-2 border-gray-100 dark:border-zinc-700 rounded-2xl py-5 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white dark:focus:bg-zinc-900 transition-all outline-none uppercase placeholder:text-gray-200 dark:placeholder:text-zinc-700" 
                                     placeholder="000000" required autocomplete="off">
                             </div>
                             
@@ -703,7 +703,7 @@ SIModules.projectDetailAdmin = {
                 <div class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl transform scale-95 transition-transform flex flex-col max-h-[90vh] overflow-hidden">
                     <div class="p-6 sm:p-8 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
                         <div>
-                            <h3 class="text-xl sm:text-2xl font-extrabold text-[#1a1b25] tracking-tight">Editar Documento</h3>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-[#000000] tracking-tight">Editar Documento</h3>
                             <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Metadatos y Visibilidad</p>
                         </div>
                         <button type="button" onclick="SIApp.modal.close('edit-document-modal')" class="w-10 h-10 flex items-center justify-center rounded-2xl text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-all focus:outline-none click-burst">
@@ -821,7 +821,7 @@ SIModules.projectDetailAdmin = {
                                 </div>
                                 <div>
                                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Presupuesto Total</span>
-                                    <p class="text-lg font-extrabold text-[#1a1b25]">${SIApp.formatCurrency(p.budget_amount)}</p>
+                                    <p class="text-lg font-extrabold text-[#000000]">${SIApp.formatCurrency(p.budget_amount)}</p>
                                 </div>
                             </div>
                         </div>
@@ -832,7 +832,7 @@ SIModules.projectDetailAdmin = {
                                 </div>
                                 <div>
                                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Superficie Obra</span>
-                                    <p class="text-lg font-extrabold text-[#1a1b25]">${p.surface || '—'} m²</p>
+                                    <p class="text-lg font-extrabold text-[#000000]">${p.surface || '—'} m²</p>
                                 </div>
                             </div>
                         </div>
@@ -847,7 +847,7 @@ SIModules.projectDetailAdmin = {
                                     <div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center border border-orange-100/50">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                     </div>
-                                    <p class="font-bold text-[#1a1b25]">${p.project_type || 'General'}</p>
+                                    <p class="font-bold text-[#000000]">${p.project_type || 'General'}</p>
                                 </div>
                             </div>
                         </div>
@@ -924,7 +924,7 @@ SIModules.projectDetailAdmin = {
                         ` : ''}
 
                         ${user && user.role !== 'cliente' ? `
-                        <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#1a1b25] hover:bg-gray-800 text-white rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-md flex items-center justify-between group">
+                        <button onclick="SIModules.projectDetailAdmin.triggerFileUpload()" class="w-full bg-[#000000] hover:bg-gray-800 text-white rounded-2xl py-3.5 px-4 text-sm font-bold transition-all shadow-md flex items-center justify-between group">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <svg id="sidebar-upload-icon" class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1153,7 +1153,7 @@ SIModules.projectDetailAdmin = {
 
                 <!-- Header de Lista -->
                 <div class="flex flex-col pt-2 pb-2 gap-2">
-                    <h3 class="text-lg font-black text-[#1a1b25] uppercase tracking-wide text-center sm:text-left">Expediente del Proyecto</h3>
+                    <h3 class="text-lg font-black text-[#000000] uppercase tracking-wide text-center sm:text-left">Expediente del Proyecto</h3>
                 </div>
 
                 <!-- Lista de Archivos Dynamic -->
@@ -1192,7 +1192,7 @@ SIModules.projectDetailAdmin = {
                         </div>
                         <div class="min-w-0 flex-1">
                             <span class="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-0.5">${label}</span>
-                            <h5 class="text-sm font-extrabold text-[#1a1b25] truncate group-hover:text-blue-600 transition-colors">${SIApp.escapeHtml(doc.title)}</h5>
+                            <h5 class="text-sm font-extrabold text-[#000000] truncate group-hover:text-blue-600 transition-colors">${SIApp.escapeHtml(doc.title)}</h5>
                             <p class="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">${date} · v${doc.version_number}</p>
                         </div>
                         
@@ -1359,7 +1359,7 @@ SIModules.projectDetailAdmin = {
             <div class="space-y-6 pb-6 w-full max-w-full">
                 <div class="pt-2 px-1">
                      <h3 class="text-[11px] font-black text-[#E57B23] uppercase tracking-[0.2em] mb-2">${SIApp.escapeHtml(this.project.client_name || 'STEELINOX')}</h3>
-                     <h1 class="text-3xl font-black text-[#1a1b25] tracking-tight">Historial de Actividad</h1>
+                     <h1 class="text-3xl font-black text-[#000000] tracking-tight">Historial de Actividad</h1>
                      <p class="text-sm text-gray-400 mt-2 font-medium">Cronología completa de eventos en el Proyecto ${SIApp.escapeHtml(this.project.name || '')}</p>
                 </div>
 
@@ -1628,7 +1628,7 @@ SIModules.projectDetailAdmin = {
         return `
             <div ${onClickAction} class="relative z-10 flex items-start gap-4 sm:gap-5 group fade-in w-full ${onClickAction ? 'cursor-pointer hover:bg-gray-50/50 rounded-2xl transition-colors p-2 -ml-2 group/doc' : ''}">
                 <div class="hidden sm:flex w-24 lg:w-32 flex-col items-end pt-1 shrink-0">
-                    <span class="text-[10px] lg:text-[11px] font-black text-[#1a1b25] uppercase tracking-tight text-right leading-tight pr-1" title="${actor}">${actor}</span>
+                    <span class="text-[10px] lg:text-[11px] font-black text-[#000000] uppercase tracking-tight text-right leading-tight pr-1" title="${actor}">${actor}</span>
                 </div>
                 
                 <div class="relative flex flex-col items-center shrink-0 self-stretch mt-1 sm:mt-0">
@@ -1774,7 +1774,7 @@ SIModules.projectDetailAdmin = {
                                 ${icon.svg}
                             </div>
                             <div class="min-w-0 flex-1 w-full">
-                                <p class="text-[15.5px] font-extrabold text-[#1a1b25] leading-tight mb-2 w-full truncate group-hover:text-blue-500 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
+                                <p class="text-[15.5px] font-extrabold text-[#000000] leading-tight mb-2 w-full truncate group-hover:text-blue-500 transition-colors">${SIApp.escapeHtml(doc.title)}</p>
                                 <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                                     <div class="flex items-center gap-2 shrink-0">
                                         <button onclick="SIModules.projectDetailAdmin.toggleVersionHistory(${doc.id}, this)" 
@@ -2651,10 +2651,10 @@ SIModules.projectDetailAdmin = {
                                  ${this.project && this.project.status !== 'cerrado' ? `<button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
                                  <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${myRc.badgeCss}">${myRc.label}</span>
                                  <span class="text-[11px] font-black ${myRc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
-                                 <span class="text-[9px] font-black uppercase tracking-widest bg-[#1a1b25]/10 text-[#1a1b25] px-1.5 py-0.5 rounded border border-[#1a1b25]/10">v${c.version_number}</span>
+                                 <span class="text-[9px] font-black uppercase tracking-widest bg-[#000000]/10 text-[#000000] px-1.5 py-0.5 rounded border border-[#000000]/10">v${c.version_number}</span>
                              </div>
                              <!-- Burbuja -->
-                             <div class="bg-gradient-to-br from-[#1e1f2e] to-[#1a1b25] text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-lg text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
+                             <div class="bg-gradient-to-br from-[#1e1f2e] to-[#000000] text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-lg text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
                              <!-- Timestamp (abajo a la derecha) -->
                              <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium">${time}</div>
                          </div>
@@ -2677,7 +2677,7 @@ SIModules.projectDetailAdmin = {
                                  ${me && me.role === 'admin' && this.project && this.project.status !== 'cerrado' ? `<button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario de Otro"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
                              </div>
                              <!-- Burbuja -->
-                             <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-[#1a1b25] text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
+                             <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-[#000000] text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
                              <!-- Timestamp (abajo a la izquierda) -->
                              <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium">${time}</div>
                          </div>

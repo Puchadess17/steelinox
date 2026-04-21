@@ -67,7 +67,8 @@
                 </button>
                 <!-- Logo -->
                 <a href="javascript:void(0)" onclick="SIRouter.navigate('dashboard')" class="flex items-center gap-2">
-                    <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-9 w-auto">
+                    <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-9 w-auto dark:hidden">
+                    <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-9 w-auto hidden dark:block">
                 </a>
             </div>
 
@@ -124,7 +125,8 @@
             <!-- Mobile sidebar header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-100">
                 <div class="flex items-center gap-2">
-                    <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-8 w-auto">
+                    <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-8 w-auto dark:hidden">
+                    <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-8 w-auto hidden dark:block">
                 </div>
                 <button onclick="SIPanelUI.closeMobileSidebar()" class="p-2 rounded-lg text-gray-400 hover:bg-gray-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,11 +175,11 @@
     <script
         src="/steelinox/public/assets/js/api.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/api.js'); ?>"></script>
     <script
+        src="/steelinox/public/assets/js/app.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/app.js'); ?>"></script>
+    <script
         src="/steelinox/public/assets/js/auth.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/auth.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/router.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/router.js'); ?>"></script>
-    <script
-        src="/steelinox/public/assets/js/app.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/app.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/modules/templates.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/templates.js'); ?>"></script>
     <script

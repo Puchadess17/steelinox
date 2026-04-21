@@ -58,7 +58,7 @@ SIModules.commercialFormAdmin = {
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
                     <div>
-                        <h1 class="text-3xl font-extrabold text-[#1a1b25] tracking-tight mb-2">${title}</h1>
+                        <h1 class="text-3xl font-extrabold text-[#000000] tracking-tight mb-2">${title}</h1>
                         <p class="text-gray-500 text-sm max-w-xl">${subtitle}</p>
                     </div>
                     ${isEdit ? `
@@ -131,7 +131,7 @@ SIModules.commercialFormAdmin = {
                                 </div>
                             </div>
 
-                            <button type="submit" id="btn-submit-commercial" class="w-full bg-[#1a1b25] hover:bg-gray-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-gray-900/10 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                            <button type="submit" id="btn-submit-commercial" class="w-full bg-[#000000] hover:bg-gray-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-gray-900/10 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
                                 ${isEdit ? 'Guardar Cambios' : 'Dar de Alta'}
                             </button>
                         </div>

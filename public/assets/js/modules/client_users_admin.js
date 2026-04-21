@@ -26,12 +26,12 @@ SIModules.clientUsersAdmin = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Usuarios Cliente</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Usuarios Cliente</h1>
                         </div>
                     </div>
                     ${user && user.role !== 'cliente' ? `
                     <div class="flex items-center gap-2">
-                        <button onclick="SIRouter.navigate('user-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <button onclick="SIRouter.navigate('user-new')" class="flex items-center gap-2 bg-[#000000] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                             Nuevo Usuario
                         </button>
@@ -140,7 +140,7 @@ SIModules.clientUsersAdmin = {
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    <p class="text-sm font-black text-[#1a1b25] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
+                                    <p class="text-sm font-black text-[#000000] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
                                 </div>
                                 <p class="text-xs text-gray-400 mt-0.5">${SIApp.escapeHtml(u.email)}</p>
                             </div>
@@ -186,7 +186,7 @@ SIModules.clientUsersAdmin = {
                         <div class="flex items-center gap-3 min-w-0">
                             ${avatarHtml}
                             <div class="min-w-0">
-                                <p class="text-[15px] font-extrabold text-[#1a1b25] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
+                                <p class="text-[15px] font-extrabold text-[#000000] leading-tight truncate">${SIApp.escapeHtml(u.name)}</p>
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5 truncate">${SIApp.escapeHtml(u.email)}</p>
                             </div>
                         </div>
@@ -205,10 +205,10 @@ SIModules.clientUsersAdmin = {
                 </div>
                 <div class="mt-auto px-5 pb-4 pt-4 flex justify-between items-center border-t border-gray-50">
                     <a href="/steelinox/user/edit/${u.id}" class="flex items-center gap-2 group/btn no-underline">
-                        <span class="text-[11px] font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors tracking-wide">
+                        <span class="text-[11px] font-black text-[#000000] group-hover:text-orange-600 transition-colors tracking-wide">
                             Ver detalles
                         </span>
-                        <svg class="w-3.5 h-3.5 text-[#1a1b25] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        <svg class="w-3.5 h-3.5 text-[#000000] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </a>
                     
                     ${user && user.role !== 'cliente' ? `
@@ -285,7 +285,7 @@ SIModules.clientUsersAdmin = {
                 <div class="flex items-start justify-between relative z-10">
                     <div>
                         <span class="block text-sm font-semibold text-gray-400 mb-2 truncate">${title}</span>
-                        <p class="text-4xl font-black text-[#1a1b25] tracking-tight mb-2">${value}</p>
+                        <p class="text-4xl font-black text-[#000000] tracking-tight mb-2">${value}</p>
                         <p class="text-xs font-bold text-gray-500 opacity-60">${subtitle}</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 shadow-sm border border-orange-100 group-hover:scale-110 transition-transform duration-500">

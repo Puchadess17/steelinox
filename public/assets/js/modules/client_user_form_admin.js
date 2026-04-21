@@ -85,7 +85,7 @@ SIModules.clientUserFormAdmin = {
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
                     <div>
-                        <h1 class="text-3xl font-extrabold text-[#1a1b25] tracking-tight mb-2">${title}</h1>
+                        <h1 class="text-3xl font-extrabold text-[#000000] tracking-tight mb-2">${title}</h1>
                         <p class="text-gray-500 text-sm max-w-xl">${subtitle}</p>
                     </div>
                     ${isEdit ? `
@@ -105,7 +105,7 @@ SIModules.clientUserFormAdmin = {
                             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col w-full">
                                 <!-- Card Header -->
                                 <div class="px-7 py-5 border-b border-gray-50 bg-gray-50/30">
-                                    <h2 class="text-sm font-bold text-[#1a1b25]">Información de la Cuenta</h2>
+                                    <h2 class="text-sm font-bold text-[#000000]">Información de la Cuenta</h2>
                                     <p class="text-xs text-gray-400 mt-0.5">Datos de identificación y acceso del usuario.</p>
                                 </div>
                                 <div class="p-7 space-y-6 flex-1">
@@ -138,7 +138,7 @@ SIModules.clientUserFormAdmin = {
                             <!-- Estado Card -->
                             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                                 <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/30">
-                                    <h3 class="text-sm font-bold text-[#1a1b25]">Estado de la Cuenta</h3>
+                                    <h3 class="text-sm font-bold text-[#000000]">Estado de la Cuenta</h3>
                                 </div>
                                 <div class="p-6">
                                     <label class="flex items-center justify-between gap-3 cursor-pointer group">
@@ -160,7 +160,7 @@ SIModules.clientUserFormAdmin = {
 
                             <!-- Guardar Button -->
                             <button type="button" id="btn-save-user" onclick="SIModules.clientUserFormAdmin.save()"
-                                class="w-full flex items-center justify-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                                class="w-full flex items-center justify-center gap-2 bg-[#000000] hover:bg-gray-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
                                 ${isEdit ? 'Guardar Cambios' : 'Crear Usuario'}
                             </button>
                         </div>

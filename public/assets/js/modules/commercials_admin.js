@@ -26,11 +26,11 @@ SIModules.commercialsAdmin = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Directorio de Comerciales</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Directorio de Comerciales</h1>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="SIRouter.navigate('commercial-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <button onclick="SIRouter.navigate('commercial-new')" class="flex items-center gap-2 bg-[#000000] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                             Nuevo Comercial
                         </button>
@@ -146,7 +146,7 @@ SIModules.commercialsAdmin = {
                             ${avatarHtml}
                             <div class="min-w-0 flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                <a href="/steelinox/commercial/${u.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-orange-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(u.name)}</a>
+                                <a href="/steelinox/commercial/${u.id}" class="text-[14px] font-black text-[#000000] hover:text-orange-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(u.name)}</a>
                             </div>
                         </div>
                     </td>
@@ -196,7 +196,7 @@ SIModules.commercialsAdmin = {
                         <div class="flex items-center gap-3 min-w-0">
                             ${avatarHtml}
                             <div class="min-w-0">
-                                <a href="/steelinox/commercial/${u.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors no-underline block truncate">${SIApp.escapeHtml(u.name)}</a>
+                                <a href="/steelinox/commercial/${u.id}" class="text-[17px] font-extrabold text-[#000000] leading-tight group-hover:text-orange-600 transition-colors no-underline block truncate">${SIApp.escapeHtml(u.name)}</a>
                                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1 truncate">${SIApp.escapeHtml(u.email)}</span>
                             </div>
                         </div>
@@ -321,7 +321,7 @@ SIModules.commercialsAdmin = {
                             ${SIApp.avatarInitials(info.name, 'w-16 h-16 md:w-20 md:h-20', 'text-xl md:text-2xl')}
                             <div>
                                 <div class="flex items-center gap-3 mb-1">
-                                    <h1 class="text-2xl md:text-3xl font-extrabold text-[#1a1b25] tracking-tight">${SIApp.escapeHtml(info.name)}</h1>
+                                    <h1 class="text-2xl md:text-3xl font-extrabold text-[#000000] tracking-tight">${SIApp.escapeHtml(info.name)}</h1>
                                     ${SIApp.activeBadge(info.is_active)}
                                 </div>
                                 <p class="text-sm text-gray-500 font-medium">${SIApp.escapeHtml(info.email)} · Miembro desde ${SIApp.formatDate(info.created_at)}</p>
@@ -346,7 +346,7 @@ SIModules.commercialsAdmin = {
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-bold text-gray-500">Proyectos Totales</span>
-                                        <span class="text-base font-black text-[#1a1b25]">${projects.length}</span>
+                                        <span class="text-base font-black text-[#000000]">${projects.length}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-bold text-gray-500">Proyectos Activos</span>
@@ -354,7 +354,7 @@ SIModules.commercialsAdmin = {
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-bold text-gray-500">Última actividad</span>
-                                        <span class="text-sm font-black text-[#1a1b25]">${info.last_login_at ? SIApp.timeAgo(info.last_login_at) : 'Sin datos'}</span>
+                                        <span class="text-sm font-black text-[#000000]">${info.last_login_at ? SIApp.timeAgo(info.last_login_at) : 'Sin datos'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -364,7 +364,7 @@ SIModules.commercialsAdmin = {
                         <div class="lg:col-span-2">
                             <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
                                 <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/30">
-                                    <h2 class="text-sm font-bold text-[#1a1b25]">Cartera de Proyectos</h2>
+                                    <h2 class="text-sm font-bold text-[#000000]">Cartera de Proyectos</h2>
                                 </div>
                                 <div id="commercial-projects-list">
                                     ${this._renderProjectRows(projects)}
@@ -390,11 +390,11 @@ SIModules.commercialsAdmin = {
         const rows = projects.map(p => `
             <div class="flex items-center justify-between p-4 hover:bg-gray-50 transition-all border-b border-gray-50 last:border-0 group">
                 <div class="flex-1 min-w-0 pr-4">
-                    <a href="/steelinox/project/${p.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-orange-500 transition-colors block truncate">${SIApp.escapeHtml(p.name)}</a>
+                    <a href="/steelinox/project/${p.id}" class="text-[14px] font-black text-[#000000] hover:text-orange-500 transition-colors block truncate">${SIApp.escapeHtml(p.name)}</a>
                     <p class="text-[11px] font-bold text-gray-400 mt-0.5">${SIApp.escapeHtml(p.client_name)} · Ref: ${SIApp.escapeHtml(p.reference)}</p>
                 </div>
                 <div class="flex items-center gap-6 shrink-0">
-                    <span class="text-xs font-black text-[#1a1b25]">${SIApp.formatCurrency(p.budget_amount)}</span>
+                    <span class="text-xs font-black text-[#000000]">${SIApp.formatCurrency(p.budget_amount)}</span>
                     ${SIApp.statusBadge(p.status)}
                     <svg class="w-4 h-4 text-gray-200 transform group-hover:translate-x-1 group-hover:text-orange-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                 </div>
@@ -411,7 +411,7 @@ SIModules.commercialsAdmin = {
                 <div class="flex items-start justify-between relative z-10">
                     <div>
                         <span class="block text-sm font-semibold text-gray-400 mb-2 truncate">${title}</span>
-                        <p class="text-4xl font-black text-[#1a1b25] tracking-tight mb-2">${value}</p>
+                        <p class="text-4xl font-black text-[#000000] tracking-tight mb-2">${value}</p>
                         <p class="text-xs font-bold text-gray-500 opacity-60">${subtitle}</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 shadow-sm border border-orange-100 group-hover:scale-110 transition-transform duration-500">

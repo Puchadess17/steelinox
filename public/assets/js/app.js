@@ -662,41 +662,41 @@ const SIApp = {
             if (b.type === 'ellipsis') return `<span class="px-2 text-gray-400 font-bold">...</span>`;
             const activeClass = b.active
                 ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300';
+                : 'bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700';
 
             return `<button class="si-page-btn w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${activeClass}" data-page="${b.page}">${b.page}</button>`;
         }).join('');
 
         container.innerHTML = `
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-6 pt-6 border-t border-gray-100">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6 pt-6 border-t border-gray-100 dark:border-zinc-800">
                 <div class="order-3 lg:order-1 flex-1 flex items-center gap-4">
                     <p class="text-[11px] sm:text-[13px] font-medium text-gray-400">
                         <span class="hidden sm:inline">Mostrando página</span>
                         <span class="sm:hidden">Pág.</span>
-                        <span class="text-gray-900 font-bold">${cp}</span> de <span class="text-gray-900 font-bold">${tp}</span>
-                        <span class="hidden md:inline text-gray-300 ml-1">(${pagination.total_results || 0} resultados)</span>
+                        <span class="text-gray-900 dark:text-zinc-100 font-bold">${cp}</span> de <span class="text-gray-900 dark:text-zinc-100 font-bold">${tp}</span>
+                        <span class="hidden md:inline text-gray-300 dark:text-zinc-700 ml-1">(${pagination.total_results || 0} resultados)</span>
                     </p>
-                    <div class="flex items-center gap-1.5 pl-4 border-l border-gray-100">
-                        <input type="number" id="si-input-goto" class="w-11 h-8 text-center text-[11px] font-bold border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" min="1" max="${tp}" placeholder="${cp}">
-                        <button id="si-btn-goto" class="h-8 px-3 bg-gray-50 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg text-[10px] font-black uppercase transition-all border border-transparent hover:border-orange-100">Ir</button>
+                    <div class="flex items-center gap-1.5 pl-4 border-l border-gray-100 dark:border-zinc-800">
+                        <input type="number" id="si-input-goto" class="w-11 h-8 text-center text-[11px] font-bold bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-zinc-100 rounded-lg focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" min="1" max="${tp}" placeholder="${cp}">
+                        <button id="si-btn-goto" class="h-8 px-3 bg-gray-50 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 hover:text-orange-600 dark:hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg text-[10px] font-black uppercase transition-all border border-transparent hover:border-orange-100 dark:hover:border-orange-500/20">Ir</button>
                     </div>
                 </div>
 
                 <div class="order-1 lg:order-2 flex items-center gap-1.5 justify-center">
-                    <button id="si-btn-prev" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all ${!pagination.has_previous_page ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
+                    <button id="si-btn-prev" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all ${!pagination.has_previous_page ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
                     </button>
                     ${buttonsHtml}
-                    <button id="si-btn-next" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all ${!pagination.has_next_page ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
+                    <button id="si-btn-next" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all ${!pagination.has_next_page ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </div>
 
                 <div class="order-2 lg:order-3 flex-1 flex justify-end">
-                    <div class="flex items-center bg-gray-50/80 p-1.5 rounded-2xl border border-gray-100/50">
-                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 15 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="15">15</button>
-                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 30 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="30">30</button>
-                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 50 ? 'bg-white shadow-sm text-orange-600 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}" data-limit="50">50</button>
+                    <div class="flex items-center bg-gray-50/80 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-gray-100/50 dark:border-zinc-700/50">
+                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 15 ? 'bg-white dark:bg-zinc-700 shadow-sm text-orange-600 dark:text-orange-500 border border-gray-100 dark:border-zinc-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300'}" data-limit="15">15</button>
+                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 30 ? 'bg-white dark:bg-zinc-700 shadow-sm text-orange-600 dark:text-orange-500 border border-gray-100 dark:border-zinc-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300'}" data-limit="30">30</button>
+                        <button class="si-limit-btn px-4 py-1.5 text-[11px] font-black uppercase rounded-xl transition-all ${pagination.per_page == 50 ? 'bg-white dark:bg-zinc-700 shadow-sm text-orange-600 dark:text-orange-500 border border-gray-100 dark:border-zinc-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300'}" data-limit="50">50</button>
                     </div>
                 </div>
             </div>

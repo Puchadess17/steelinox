@@ -40,7 +40,8 @@
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
         <!-- Logo -->
         <div class="flex items-center gap-2.5 mb-8">
-            <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-12 w-auto">
+            <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-12 w-auto dark:hidden">
+            <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-12 w-auto hidden dark:block">
         </div>
 
         <!-- Card de login -->
@@ -168,6 +169,8 @@
         <!-- Scripts -->
         <script
             src="/steelinox/public/assets/js/api.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/api.js'); ?>"></script>
+        <script
+            src="/steelinox/public/assets/js/app.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/app.js'); ?>"></script>
         <script
             src="/steelinox/public/assets/js/auth.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/auth.js'); ?>"></script>
         <script>

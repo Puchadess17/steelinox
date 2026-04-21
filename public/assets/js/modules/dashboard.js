@@ -51,7 +51,7 @@ SIModules.dashboard = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Panel Administrador</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Panel Administrador</h1>
                             <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">SUPER-ADMIN</span>
                         </div>
                     </div>
@@ -77,8 +77,8 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div id="admin-table-container" class="select-none bg-gray-50/20">
+                <div class="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+                    <div id="admin-table-container" class="select-none bg-gray-50/20 dark:bg-zinc-900/50">
                         </div>
                 </div>
                 <div id="admin-table-pagination" class="mt-6 px-4 pb-4"></div>
@@ -263,7 +263,7 @@ SIModules.dashboard = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Mis Proyectos</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Mis Proyectos</h1>
                         </div>
                     </div>
                 </div>
@@ -293,9 +293,9 @@ SIModules.dashboard = {
                                 <svg id="comm-client-dropdown-arrow" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                             <div id="comm-client-dropdown-panel"
-                                class="absolute left-0 top-[calc(100%+6px)] z-50 hidden w-full sm:min-w-[220px] bg-white border border-gray-100 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] overflow-hidden"
+                                class="absolute left-0 top-[calc(100%+6px)] z-50 hidden w-full sm:min-w-[220px] bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] overflow-hidden"
                                 style="opacity:0;transform:translateY(-6px);transition:opacity 0.15s ease,transform 0.15s ease">
-                                <div class="px-3 pt-3 pb-2">
+                                <div class="px-3 pt-3 pb-2 dark:bg-zinc-800/50">
                                     <div class="relative">
                                         <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                         <input type="text" id="comm-client-dropdown-search" placeholder="Buscar empresa..." oninput="SIModules.dashboard._filterDropdownOptions(this.value)"
@@ -308,13 +308,13 @@ SIModules.dashboard = {
                         </div>
                         <div class="relative w-full xl:w-72 group">
                             <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" value="${this.currentCommercialSearch}" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                            <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" value="${this.currentCommercialSearch}" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-zinc-100 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div id="commercial-table-container" class="select-none bg-gray-50/20">
+                <div class="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+                    <div id="commercial-table-container" class="select-none bg-gray-50/20 dark:bg-zinc-900/50">
                         </div>
                 </div>
                 <div id="commercial-table-pagination" class="mt-6 px-4 pb-4"></div>
@@ -641,7 +641,7 @@ SIModules.dashboard = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Mis Proyectos</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Mis Proyectos</h1>
                             ${companyName ? `<span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">${SIApp.escapeHtml(companyName)}</span>` : ''}
                         </div>
                     </div>
@@ -786,7 +786,7 @@ SIModules.dashboard = {
                         ${SIApp.statusBadge(p.status)}
                     </div>
 
-                    <h3 class="text-base sm:text-lg font-black text-[#1a1b25] leading-snug mb-3 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
+                    <h3 class="text-base sm:text-lg font-black text-[#000000] leading-snug mb-3 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
                     
                     <div class="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-gray-400 mb-6">
                         <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -795,10 +795,10 @@ SIModules.dashboard = {
 
                     <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
                         <div class="flex items-center gap-3">
-                            <span class="text-xs sm:text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors tracking-wide">
+                            <span class="text-xs sm:text-sm font-black text-[#000000] group-hover:text-orange-600 transition-colors tracking-wide">
                                 Ver detalles
                             </span>
-                            <svg class="w-4 h-4 text-[#1a1b25] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            <svg class="w-4 h-4 text-[#000000] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </div>
                         
                         ${user && user.role !== 'cliente' ? `
@@ -854,13 +854,13 @@ SIModules.dashboard = {
                     ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
+                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#000000] hover:text-indigo-600 transition-colors no-underline">
                         <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                         ${SIApp.escapeHtml(p.name)}
                     </a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 dark:text-zinc-400 bg-gray-100/80 dark:bg-zinc-800 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
@@ -902,7 +902,7 @@ SIModules.dashboard = {
                 </div>
                 <div class="min-w-0 flex-1">
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">${label}</span>
-                    <p class="text-base sm:text-2xl font-bold text-[#1a1b25] leading-tight truncate">${value}</p>
+                    <p class="text-base sm:text-2xl font-bold text-[#000000] leading-tight truncate">${value}</p>
                 </div>
             </div>
         `;
@@ -926,7 +926,7 @@ SIModules.dashboard = {
                 <div class="flex items-start justify-between relative z-10">
                     <div>
                         <span class="block text-sm font-semibold text-gray-400 mb-2 truncate">${label}</span>
-                        <p class="text-4xl font-black text-[#1a1b25] tracking-tight mb-2">${value}</p>
+                        <p class="text-4xl font-black text-[#000000] tracking-tight mb-2">${value}</p>
                         <p class="text-xs font-bold text-gray-500 opacity-60">${subtext}</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 shadow-sm border border-orange-100 group-hover:scale-110 transition-transform duration-500">
@@ -960,11 +960,11 @@ SIModules.dashboard = {
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Directorio de Clientes</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Directorio de Clientes</h1>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="SIRouter.navigate('client-new')" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <button onclick="SIRouter.navigate('client-new')" class="flex items-center gap-2 bg-[#000000] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Nuevo Cliente
                         </button>
@@ -1053,12 +1053,12 @@ SIModules.dashboard = {
                             ${SIApp.avatarInitials(c.name, 'w-9 h-9', 'text-[11px]')}
                             <div class="min-w-0 flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                <a href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#1a1b25] hover:text-emerald-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
+                                <a href="/steelinox/client/${c.id}" class="text-[14px] font-black text-[#000000] hover:text-emerald-600 transition-colors block leading-tight truncate">${SIApp.escapeHtml(c.name)}</a>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center text-[10px] font-black text-gray-500 bg-gray-100 px-2.5 py-1 rounded-[6px] tracking-widest">${SIApp.escapeHtml(c.reference || 'CLI-TEMP')}</span>
+                        <span class="inline-flex items-center text-[10px] font-black text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 px-2.5 py-1 rounded-[6px] tracking-widest">${SIApp.escapeHtml(c.reference || 'CLI-TEMP')}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         <div class="flex items-center justify-center gap-1.5">
@@ -1177,7 +1177,7 @@ SIModules.dashboard = {
                         <div class="flex items-center gap-3">
                             ${SIApp.avatarInitials(c.name, 'w-12 h-12', 'text-sm')}
                             <div>
-                                <a href="/steelinox/client/${c.id}" class="text-[17px] font-extrabold text-[#1a1b25] leading-tight group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(c.name)}</a>
+                                <a href="/steelinox/client/${c.id}" class="text-[17px] font-extrabold text-[#000000] leading-tight group-hover:text-orange-600 transition-colors no-underline block">${SIApp.escapeHtml(c.name)}</a>
                                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mt-1">${SIApp.escapeHtml(c.reference || 'Sin Referencia')}</span>
                             </div>
                         </div>
@@ -1280,9 +1280,9 @@ SIModules.dashboard = {
         this.container.innerHTML = `
             <div class="fade-in">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-[#1a1b25] tracking-tight">Proyectos</h1>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Proyectos</h1>
                     ${user.role !== 'cliente' ? `
-                        <button onclick="SIRouter.navigate('clients'); toastr.info('Selecciona un cliente para crear un nuevo proyecto.');" class="flex items-center gap-2 bg-[#1a1b25] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <button onclick="SIRouter.navigate('clients'); toastr.info('Selecciona un cliente para crear un nuevo proyecto.');" class="flex items-center gap-2 bg-[#000000] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Nuevo Proyecto
                         </button>
@@ -1349,7 +1349,7 @@ SIModules.dashboard = {
                     <div class="flex items-center gap-2.5">
                         <svg class="w-4 h-4 text-orange-500 opacity-70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                         <div class="min-w-0">
-                            <div class="text-sm font-black text-[#1a1b25] group-hover:text-indigo-600 transition-colors truncate">${SIApp.escapeHtml(p.name)}</div>
+                            <div class="text-sm font-black text-[#000000] group-hover:text-indigo-600 transition-colors truncate">${SIApp.escapeHtml(p.name)}</div>
                             <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">${SIApp.escapeHtml(p.reference)}</div>
                         </div>
                     </div>

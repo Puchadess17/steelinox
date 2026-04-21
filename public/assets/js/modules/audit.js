@@ -153,11 +153,11 @@ window.SIModules.audit = {
         if (logs.length === 0) {
             listContainer.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-24 text-center">
-                    <div class="w-20 h-20 bg-gray-50 rounded-[2.5rem] flex items-center justify-center mb-6 text-gray-200 border border-gray-100">
+                    <div class="w-20 h-20 bg-gray-50 dark:bg-zinc-800 rounded-[2.5rem] flex items-center justify-center mb-6 text-gray-200 dark:text-zinc-700 border border-gray-100 dark:border-zinc-800">
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     </div>
-                    <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">Sin actividad registrada</h3>
-                    <p class="text-sm text-gray-400 max-w-xs mx-auto">No hay eventos que coincidan con los filtros seleccionados.</p>
+                    <h3 class="text-lg font-black text-gray-900 dark:text-zinc-100 uppercase tracking-tight mb-2">Sin actividad registrada</h3>
+                    <p class="text-sm text-gray-400 dark:text-zinc-500 max-w-xs mx-auto">No hay eventos que coincidan con los filtros seleccionados.</p>
                 </div>
             `;
             return;
@@ -221,7 +221,7 @@ window.SIModules.audit = {
         const timeAgo = SIApp.timeAgo(log.created_at);
 
         return `
-            <div class="px-5 py-6 flex flex-col bg-white border-b border-gray-50 active:bg-gray-50 transition-colors">
+            <div class="px-5 py-6 flex flex-col bg-white dark:bg-zinc-900/50 border-b border-gray-50 dark:border-zinc-800 active:bg-gray-50 dark:active:bg-zinc-800 transition-colors">
                 <!-- Status & Time Header -->
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${actionStyles.bg} ${actionStyles.text} border ${actionStyles.border}">
@@ -250,7 +250,7 @@ window.SIModules.audit = {
 
                 <!-- Logic Hierarchy Box: Client & Project -->
                 ${(log.client_name || log.project_name) ? `
-                    <div class="bg-gray-50/80 rounded-2xl p-4 border border-gray-100/50 flex flex-col gap-3 mb-5">
+                    <div class="bg-gray-50/80 dark:bg-zinc-800/50 rounded-2xl p-4 border border-gray-100/50 dark:border-zinc-700/50 flex flex-col gap-3 mb-5">
                         ${log.client_name ? `
                             <div class="flex items-center justify-between gap-4">
                                 <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest flex-shrink-0">Empresa</span>
@@ -261,7 +261,7 @@ window.SIModules.audit = {
                             </div>
                         ` : ''}
                         ${log.project_name ? `
-                            <div class="flex items-center justify-between gap-4 py-3 border-t border-gray-100/50">
+                            <div class="flex items-center justify-between gap-4 py-3 border-t border-gray-100/50 dark:border-zinc-700/30">
                                 <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest flex-shrink-0">Proyecto</span>
                                 <div class="text-right min-w-0">
                                     <a href="/steelinox/project/${log.project_id}/logs" class="block text-[13px] font-bold text-gray-800 hover:text-orange-600 transition-colors truncate">${log.project_name}</a>
@@ -280,7 +280,7 @@ window.SIModules.audit = {
                         <span class="text-[8px] font-black text-gray-300 uppercase tracking-widest">System Origin</span>
                     </div>
                     ${log.metadata ? `
-                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-5 py-2.5 bg-white hover:bg-orange-50 text-[10px] font-black text-gray-500 hover:text-orange-600 rounded-xl transition-all border border-gray-100 shadow-sm flex items-center gap-2 active:scale-95 group">
+                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-5 py-2.5 bg-white dark:bg-zinc-900 hover:bg-orange-50 dark:hover:bg-orange-500/10 text-[10px] font-black text-gray-500 hover:text-orange-600 rounded-xl transition-all border border-gray-100 dark:border-zinc-800 shadow-sm flex items-center gap-2 active:scale-95 group">
                             DETALLES
                             <svg class="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -366,13 +366,13 @@ window.SIModules.audit = {
                 `;
             } else {
                 actionHtml = `
-                    <span class="text-[13px] font-black text-[#1a1b25] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
+                    <span class="text-[13px] font-black text-[#000000] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
                     <span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${SIApp.escapeHtml(docName)}</span>
                 `;
             }
         } else {
             actionHtml = `
-                <span class="text-[13px] font-black text-[#1a1b25] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
+                <span class="text-[13px] font-black text-[#000000] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
                 ${log.metadata ? `<span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${this._formatMetadata(log.metadata)}</span>` : ''}
             `;
         }
@@ -430,7 +430,7 @@ window.SIModules.audit = {
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
                             </button>
                             
-                            <div class="absolute right-0 bottom-full mb-2 hidden group-hover/tooltip:block w-64 bg-[#1a1b25] text-left rounded-xl shadow-2xl z-50 p-4 transform transition-all opacity-0 group-hover/tooltip:opacity-100 pointer-events-none">
+                            <div class="absolute right-0 bottom-full mb-2 hidden group-hover/tooltip:block w-64 bg-[#000000] text-left rounded-xl shadow-2xl z-50 p-4 transform transition-all opacity-0 group-hover/tooltip:opacity-100 pointer-events-none">
                                 <div class="mb-3">
                                     <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Dirección IP</span>
                                     <span class="font-mono text-[11px] text-orange-400 font-bold">${SIApp.escapeHtml(log.ip || 'Desconocida')}</span>
@@ -439,7 +439,7 @@ window.SIModules.audit = {
                                     <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Origen / Navegador</span>
                                     <span class="text-[10px] text-gray-300 leading-tight whitespace-normal break-words font-medium">${SIApp.escapeHtml(log.user_agent || 'Desconocido')}</span>
                                 </div>
-                                <div class="absolute -bottom-1.5 right-3.5 w-3 h-3 bg-[#1a1b25] transform rotate-45"></div>
+                                <div class="absolute -bottom-1.5 right-3.5 w-3 h-3 bg-[#000000] transform rotate-45"></div>
                             </div>
                         </div>
                         ${log.metadata ? `
