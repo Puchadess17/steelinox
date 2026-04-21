@@ -48,10 +48,10 @@ SIModules.dashboard = {
         // Renderizar estructura base si no existe o si es necesario refrescar todo
         this.container.innerHTML = `
             <div class="fade-in">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Panel Administrador</h1>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Proyectos</h1>
                             <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#fdf2d0] text-[#a17a22] uppercase tracking-wider">SUPER-ADMIN</span>
                         </div>
                     </div>
@@ -131,27 +131,36 @@ SIModules.dashboard = {
 
     /** [ADMIN] Renderiza la tabla de proyectos del administrador */
     _renderAdminTable(data, pagination) {
-        const container = document.getElementById('admin-table-container');
-        const paginationContainer = document.getElementById('admin-table-pagination');
+        this._renderProjectsCommon(data, pagination, 'admin');
+    },
+
+    /** Motor compartido de renderizado de tablas (Admin/Comercial) */
+    _renderProjectsCommon(data, pagination, type) {
+        const isAdm = type === 'admin';
+        const containerId = isAdm ? 'admin-table-container' : 'commercial-table-container';
+        const paginationId = isAdm ? 'admin-table-pagination' : 'commercial-table-pagination';
+        
+        const container = document.getElementById(containerId);
+        const paginationContainer = document.getElementById(paginationId);
         if (!container) return;
 
         const user = Auth.getUser();
 
         if (data.length === 0) {
             container.innerHTML = this._tableEmptyState(
-                "No se encontraron resultados",
+                isAdm ? "No se encontraron resultados" : "No se encontraron proyectos asignados",
                 "Prueba a cambiar el filtro o el término de búsqueda."
             );
             return;
         }
 
         const tbody = data.map(p => this._renderProjectRow(p, user)).join('');
-
-        this.currentAdminSort = this.currentAdminSort || { field: 'created_at', dir: 'desc' };
+        const currentSort = isAdm ? this.currentAdminSort : this.currentCommercialSort;
+        const sortFunc = isAdm ? '_sortAdminProjects' : '_sortCommercialProjects';
 
         const sortIcon = (field) => {
-            if (this.currentAdminSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
-            return this.currentAdminSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
+            if (!currentSort || currentSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">↕</span>';
+            return currentSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
         };
 
         container.innerHTML = `
@@ -163,19 +172,19 @@ SIModules.dashboard = {
                 <table class="w-full si-table text-center">
                     <thead>
                         <tr class="bg-gray-50/50">
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('client_name')">
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard.${sortFunc}('client_name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
                             </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('name')">
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard.${sortFunc}('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyecto ${sortIcon('name')}</span>
                             </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('reference')">
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard.${sortFunc}('reference')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Referencia ${sortIcon('reference')}</span>
                             </th>
                             <th class="px-5 py-3.5">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortAdminProjects('created_at')">
+                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard.${sortFunc}('created_at')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center font-bold">Creado ${sortIcon('created_at')}</span>
                             </th>
                             <th class="px-5 py-3.5 text-right w-28 border-l border-gray-100/50">
@@ -183,7 +192,7 @@ SIModules.dashboard = {
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50/80">
+                    <tbody class="">
                         ${tbody}
                     </tbody>
                 </table>
@@ -195,12 +204,19 @@ SIModules.dashboard = {
                 paginationContainer,
                 pagination,
                 (newPage) => {
-                    this._goToAdminPage(newPage);
+                    if (isAdm) this._goToAdminPage(newPage);
+                    else this._goToCommercialPage(newPage);
                 },
                 (newLimit) => {
-                    this.adminItemsPerPage = newLimit;
-                    this.currentAdminPage = 1;
-                    this._reloadAdminTable();
+                    if (isAdm) {
+                        this.adminItemsPerPage = newLimit;
+                        this.currentAdminPage = 1;
+                        this._reloadAdminTable();
+                    } else {
+                        this.commercialItemsPerPage = newLimit;
+                        this.currentCommercialPage = 1;
+                        this._reloadCommercialTable();
+                    }
                 }
             );
         }
@@ -235,12 +251,24 @@ SIModules.dashboard = {
 
     /** [ADMIN] Ordenación de columnas */
     _sortAdminProjects(field) {
-        if (this.currentAdminSort.field === field) {
-            this.currentAdminSort.dir = this.currentAdminSort.dir === 'asc' ? 'desc' : 'asc';
+        this._sortProjectsCommon(field, 'admin');
+    },
+
+    /** Lógica compartida para el ciclo de ordenación (asc -> desc -> null) */
+    _sortProjectsCommon(field, type) {
+        const isAdm = type === 'admin';
+        const sortState = isAdm ? this.currentAdminSort : this.currentCommercialSort;
+
+        if (sortState.field === field) {
+            if (sortState.dir === 'asc') sortState.dir = 'desc';
+            else { sortState.field = null; sortState.dir = null; }
         } else {
-            this.currentAdminSort = { field: field, dir: 'asc' };
+            sortState.field = field;
+            sortState.dir = 'asc';
         }
-        this._reloadAdminTable();
+
+        if (isAdm) this._reloadAdminTable();
+        else this._reloadCommercialTable();
     },
 
     // ═══════════════════════════════════════════════════════════
@@ -260,7 +288,7 @@ SIModules.dashboard = {
 
         this.container.innerHTML = `
             <div class="fade-in">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Mis Proyectos</h1>
@@ -358,76 +386,9 @@ SIModules.dashboard = {
     //  [COMMERCIAL] LOGIC — Filtros, Search, Render
     // ═══════════════════════════════════════════════════════════
 
-    /** [COMMERCIAL] Renderiza la tabla de proyectos del comercial (idéntica en estilo a _renderAdminTable) */
+    /** [COMMERCIAL] Renderiza la tabla de proyectos del comercial */
     _renderCommercialTable(data, pagination) {
-        const container = document.getElementById('commercial-table-container');
-        const paginationContainer = document.getElementById('commercial-table-pagination');
-        if (!container) return;
-
-        // Estado vacío
-        if (data.length === 0) {
-            container.innerHTML = this._tableEmptyState(
-                "No se encontraron proyectos asignados",
-                "Prueba a cambiar el filtro o el término de búsqueda."
-            );
-            return;
-        }
-
-        // Filas de la tabla — igual que admin: sin onclick en el tr, links dentro de las celdas
-        const user = Auth.getUser();
-        const tbody = data.map(p => this._renderProjectRow(p, user)).join('');
-
-        this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
-
-        const sortIcon = (field) => {
-            if (this.currentCommercialSort.field !== field) return '<span class="ml-1 opacity-20 group-hover:opacity-100 transition-opacity">⇕</span>';
-            return this.currentCommercialSort.dir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
-        };
-
-        container.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
-                ${this._renderClientCards(data)}
-            </div>
-
-            <div class="hidden lg:block si-table-wrapper">
-                <table class="w-full si-table text-center">
-                    <thead>
-                        <tr class="bg-gray-50/50">
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('client_name')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Cliente ${sortIcon('client_name')}</span>
-                            </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('name')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyecto ${sortIcon('name')}</span>
-                            </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('reference')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Referencia ${sortIcon('reference')}</span>
-                            </th>
-                            <th class="px-5 py-3.5">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
-                            </th>
-                            <th class="px-5 py-3.5 group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortCommercialProjects('created_at')">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center font-bold">Creado ${sortIcon('created_at')}</span>
-                            </th>
-                            <th class="px-5 py-3.5 text-right w-28 border-l border-gray-100/50">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block text-right">Acciones</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50/80">
-                        ${tbody}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        if (pagination && paginationContainer) {
-            SIApp.renderPaginationControls(
-                paginationContainer,
-                pagination,
-                (newPage) => { this._goToCommercialPage(newPage); },
-                (newLimit) => { this.commercialItemsPerPage = newLimit; this.currentCommercialPage = 1; this._reloadCommercialTable(); }
-            );
-        }
+        this._renderProjectsCommon(data, pagination, 'commercial');
     },
 
 
@@ -613,12 +574,7 @@ SIModules.dashboard = {
 
     /** [COMMERCIAL] Ordenación de columnas */
     _sortCommercialProjects(field) {
-        if (this.currentCommercialSort.field === field) {
-            this.currentCommercialSort.dir = this.currentCommercialSort.dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.currentCommercialSort = { field: field, dir: 'asc' };
-        }
-        this._reloadCommercialTable();
+        this._sortProjectsCommon(field, 'commercial');
     },
 
     // ═══════════════════════════════════════
@@ -638,7 +594,7 @@ SIModules.dashboard = {
         // Pintar la estructura base SOLO UNA VEZ (igual que admin/comercial)
         this.container.innerHTML = `
             <div class="fade-in">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Mis Proyectos</h1>
@@ -844,7 +800,7 @@ SIModules.dashboard = {
     /** Helper para renderizar fila de proyecto (Admin/Comercial) */
     _renderProjectRow(p, user) {
         return `
-            <tr class="transition-colors group border-b border-gray-50/80 last:border-0">
+            <tr class="transition-colors group hover:bg-gray-50/30">
                 <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
                     ${p.client_id ? `
                         <a href="/steelinox/client/${p.client_id}" onclick="event.stopPropagation()" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
@@ -860,7 +816,7 @@ SIModules.dashboard = {
                     </a>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 dark:text-zinc-400 bg-gray-100/80 dark:bg-zinc-800 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
+                    ${SIApp.refBadge(p.reference)}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
                     ${SIApp.statusBadge(p.status)}
@@ -957,7 +913,7 @@ SIModules.dashboard = {
 
         this.container.innerHTML = `
             <div class="fade-in">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Directorio de Clientes</h1>
@@ -985,7 +941,7 @@ SIModules.dashboard = {
 
                     <div class="relative w-full xl:w-96 flex-shrink-0 group">
                         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" value="${this.currentClientSearch}" placeholder="Buscar por nombre o Referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
+                        <input type="text" oninput="SIModules.dashboard._searchClients(this.value)" value="${this.currentClientSearch}" placeholder="Buscar por nombre o referencia..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
                     </div>
                 </div>
 
@@ -1047,7 +1003,7 @@ SIModules.dashboard = {
         const tbody = pagedData.map(c => {
             const initials = SIApp._getInitials(c.name);
             return `
-                <tr class="transition-colors group border-b border-gray-50/80 last:border-0 hover:bg-gray-50/50">
+                <tr class="transition-colors group hover:bg-gray-50/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
                             ${SIApp.avatarInitials(c.name, 'w-9 h-9', 'text-[11px]')}
@@ -1104,7 +1060,7 @@ SIModules.dashboard = {
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
+                        <tr class="bg-gray-50">
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Nombre de Empresa ${sortIcon('name')}</span>
                             </th>
@@ -1125,7 +1081,7 @@ SIModules.dashboard = {
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50/50">
+                    <tbody class="">
                         ${tbody}
                     </tbody>
                 </table>
@@ -1279,7 +1235,7 @@ SIModules.dashboard = {
 
         this.container.innerHTML = `
             <div class="fade-in">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Proyectos</h1>
                     ${user.role !== 'cliente' ? `
                         <button onclick="SIRouter.navigate('clients'); toastr.info('Selecciona un cliente para crear un nuevo proyecto.');" class="flex items-center gap-2 bg-[#000000] hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-[1rem] transition-all hover:shadow-lg hover:-translate-y-0.5">
@@ -1344,7 +1300,7 @@ SIModules.dashboard = {
         }
 
         const tbody = data.map(p => `
-            <tr class="transition-colors group border-b border-gray-50/50 last:border-0 hover:bg-gray-50/50 cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
+            <tr class="transition-colors group hover:bg-gray-50/50 cursor-pointer" onclick="SIRouter.navigate('/steelinox/project/${p.id}')">
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center gap-2.5">
                         <svg class="w-4 h-4 text-orange-500 opacity-70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -1376,7 +1332,7 @@ SIModules.dashboard = {
             <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
+                        <tr class="bg-gray-50">
                             <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Proyecto</th>
                             <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
                             <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
@@ -1384,7 +1340,7 @@ SIModules.dashboard = {
                             <th class="px-6 py-4 text-right"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50/50">
+                    <tbody class="">
                         ${tbody}
                     </tbody>
                 </table>

@@ -36,7 +36,7 @@ SIModules.clientDetailAdmin = {
 
         container.innerHTML = `
             <!-- Breadcrumb y Acciones -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4 fade-in">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4 fade-in">
                 <nav class="flex text-sm text-gray-500 gap-2" aria-label="Breadcrumb">
                     <a data-route="clients" href="/steelinox/clients" class="hover:text-orange-500 transition-colors font-medium">Clientes</a>
                     <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -238,7 +238,7 @@ SIModules.clientDetailAdmin = {
                                     <th class="px-6 py-4 text-[10px] uppercase font-black text-gray-400 tracking-widest text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-50">
+                            <tbody class="">
                                 ${this.users && this.users.length > 0
                 ? this.users.map(u => this._renderUserRow(u)).join('')
                 : '<tr><td colspan="4" class="py-10 text-center text-gray-400 italic">No hay usuarios vinculados</td></tr>'}
@@ -656,7 +656,7 @@ SIModules.clientDetailAdmin = {
                         <th class="px-5 py-3.5 w-12"></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-50/80">
+                <tbody class="">
                     ${visibleProjects.length > 0
                 ? visibleProjects.map(p => this._renderProjectRow(p)).join('')
                 : '<tr><td colspan="6" class="py-10 text-center text-gray-400 italic">No hay proyectos para este cliente</td></tr>'}
@@ -781,9 +781,7 @@ SIModules.clientDetailAdmin = {
             
             <td class="px-5 py-4 whitespace-nowrap">
                 <div class="flex justify-center">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">
-                        ${p.reference}
-                    </span>
+                    ${SIApp.refBadge(p.reference)}
                 </div>
             </td>
             

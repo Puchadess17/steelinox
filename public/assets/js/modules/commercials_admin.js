@@ -23,7 +23,7 @@ SIModules.commercialsAdmin = {
         this.container.innerHTML = `
             <div class="fade-in">
                 <!-- Header -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Directorio de Comerciales</h1>
@@ -140,7 +140,7 @@ SIModules.commercialsAdmin = {
                 : '<span class="text-sm font-medium text-gray-400">Sin acceso</span>';
 
             return `
-                <tr class="transition-colors group border-b border-gray-50/80 last:border-0 hover:bg-gray-50/50">
+                <tr class="transition-colors group hover:bg-gray-50/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
                             ${avatarHtml}
@@ -239,7 +239,7 @@ SIModules.commercialsAdmin = {
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
+                        <tr class="bg-gray-50">
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.commercialsAdmin._sort('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Comercial ${this._getSortIcon('name')}</span>
                             </th>
@@ -260,7 +260,7 @@ SIModules.commercialsAdmin = {
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50/50">
+                    <tbody class="">
                         ${desktopRows}
                     </tbody>
                 </table>
@@ -315,6 +315,15 @@ SIModules.commercialsAdmin = {
 
             this.container.innerHTML = `
                 <div class="fade-in max-w-6xl mx-auto">
+                    <!-- Breadcrumb -->
+                    <div class="flex items-center gap-2 mb-4">
+                        <nav class="flex text-sm text-gray-500 gap-2" aria-label="Breadcrumb">
+                            <a data-route="commercials" href="/steelinox/commercials" class="hover:text-orange-500 transition-colors font-medium">Comerciales</a>
+                            <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <span class="text-gray-900 font-bold">${SIApp.escapeHtml(info.name)}</span>
+                        </nav>
+                    </div>
+
                     <!-- Header Detalle -->
                     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                         <div class="flex items-center gap-5">
@@ -384,19 +393,32 @@ SIModules.commercialsAdmin = {
     /** Helper para renderizar los proyectos en la ficha */
     _renderProjectRows(projects) {
         if (projects.length === 0) {
-            return `<div class="p-10 text-center text-gray-400 text-sm">No tiene proyectos asignados actualmente.</div>`;
+            return `<div class="p-10 text-center text-gray-400 text-sm italic">No tiene proyectos asignados actualmente.</div>`;
         }
 
         const rows = projects.map(p => `
-            <div class="flex items-center justify-between p-4 hover:bg-gray-50 transition-all border-b border-gray-50 last:border-0 group">
+            <div class="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-all border-b border-gray-50 last:border-0 group">
                 <div class="flex-1 min-w-0 pr-4">
-                    <a href="/steelinox/project/${p.id}" class="text-[14px] font-black text-[#000000] hover:text-orange-500 transition-colors block truncate">${SIApp.escapeHtml(p.name)}</a>
-                    <p class="text-[11px] font-bold text-gray-400 mt-0.5">${SIApp.escapeHtml(p.client_name)} · Ref: ${SIApp.escapeHtml(p.reference)}</p>
+                    <!-- Proyecto -->
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        <a href="/steelinox/project/${p.id}" class="text-[14px] font-black text-[#000000] hover:text-indigo-600 transition-colors block truncate no-underline">${SIApp.escapeHtml(p.name)}</a>
+                    </div>
+                    
+                    <!-- Info Badge y Cliente -->
+                    <div class="flex items-center flex-wrap gap-2">
+                        ${SIApp.refBadge(p.reference)}
+                        <div class="w-1 h-1 bg-gray-300 rounded-full"></div>
+                        <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-[12px] font-bold text-gray-400 hover:text-emerald-600 transition-colors no-underline">
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            ${SIApp.escapeHtml(p.client_name)}
+                        </a>
+                    </div>
                 </div>
                 <div class="flex items-center gap-6 shrink-0">
-                    <span class="text-xs font-black text-[#000000]">${SIApp.formatCurrency(p.budget_amount)}</span>
+                    <span class="text-sm font-black text-[#000000]">${SIApp.formatCurrency(p.budget_amount)}</span>
                     ${SIApp.statusBadge(p.status)}
-                    <svg class="w-4 h-4 text-gray-200 transform group-hover:translate-x-1 group-hover:text-orange-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    <svg class="w-4 h-4 text-gray-200 transform group-hover:translate-x-1 group-hover:text-indigo-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                 </div>
             </div>
         `).join('');

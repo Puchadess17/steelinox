@@ -168,7 +168,7 @@ window.SIModules.audit = {
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] border-b border-gray-100 bg-gray-50/50">
+                        <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50">
                             <th class="px-6 py-4">Usuario</th>
                             <th class="px-6 py-4">Acción</th>
                             <th class="px-6 py-4">Empresa / Cliente</th>
@@ -178,14 +178,14 @@ window.SIModules.audit = {
                             <th class="px-6 py-4 w-24"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody class="">
                         ${logs.map(log => this._logRowTemplate(log)).join('')}
                     </tbody>
                 </table>
             </div>
 
             <!-- VISTA MOBILE: Tarjetas -->
-            <div class="md:hidden divide-y divide-gray-100">
+            <div class="md:hidden">
                 ${logs.map(log => this._logCardTemplate(log)).join('')}
             </div>
             <div id="audit-pagination" class="px-6 pb-6"></div>
@@ -280,7 +280,7 @@ window.SIModules.audit = {
                         <span class="text-[8px] font-black text-gray-300 uppercase tracking-widest">System Origin</span>
                     </div>
                     ${log.metadata ? `
-                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-5 py-2.5 bg-white dark:bg-zinc-900 hover:bg-orange-50 dark:hover:bg-orange-500/10 text-[10px] font-black text-gray-500 hover:text-orange-600 rounded-xl transition-all border border-gray-100 dark:border-zinc-800 shadow-sm flex items-center gap-2 active:scale-95 group">
+                        <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="px-5 py-2.5 bg-white dark:bg-zinc-900 hover:bg-orange-50 dark:hover:bg-orange-500/10 text-[10px] font-black text-gray-500 dark:text-gray-100 hover:text-orange-600 rounded-xl transition-all border border-gray-100 dark:border-zinc-800 shadow-sm flex items-center gap-2 active:scale-95 group">
                             DETALLES
                             <svg class="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -290,18 +290,18 @@ window.SIModules.audit = {
                 <!-- Metadata Mobile -->
                 ${log.metadata ? `
                     <div id="meta-mobile-${log.id}" class="hidden mt-2">
-                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                        <div class="bg-gray-50 dark:bg-zinc-950 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800">
                              <div class="flex items-center gap-2 mb-3">
                                 <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-                                <h4 class="text-[9px] font-black text-gray-900 uppercase tracking-widest">Contexto Técnico</h4>
+                                <h4 class="text-[9px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Contexto Técnico</h4>
                             </div>
                             <div class="space-y-3">
                                 ${Object.entries(log.metadata)
                     .filter(([k]) => k !== 'version_id')
                     .map(([k, v]) => `
-                                    <div class="bg-white/50 p-3 rounded-xl border border-white">
+                                    <div class="bg-white/50 dark:bg-zinc-900/50 p-3 rounded-xl border border-white dark:border-zinc-800">
                                         <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">${this._humanizeMetadataKey(k)}</span>
-                                        <span class="text-xs text-gray-900 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
+                                        <span class="text-xs text-gray-900 dark:text-gray-200 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -402,7 +402,7 @@ window.SIModules.audit = {
                     ${log.client_name ? `
                         <div class="flex flex-col">
                             <a href="/steelinox/client/${log.client_id_ctx}" class="text-sm font-bold text-gray-800 tracking-tight hover:text-emerald-500 transition-colors line-clamp-1 max-w-[180px]">${log.client_name}</a>
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${log.client_ref || 'CUENTA PRINCIPAL'}</span>
+                            ${SIApp.refBadge(log.client_ref)}
                         </div>
                     ` : '<span class="text-sm font-bold text-gray-300 italic">Sistema</span>'}
                 </td>
@@ -410,7 +410,7 @@ window.SIModules.audit = {
                     ${log.project_name ? `
                         <div class="flex flex-col">
                             <a href="/steelinox/project/${log.project_id}/logs" class="text-sm font-bold text-gray-800 tracking-tight hover:text-amber-500 transition-colors line-clamp-1 max-w-[180px]">${log.project_name}</a>
-                            <span class="text-[10px] font-mono text-gray-400 uppercase">${log.project_ref || 'Sin Ref.'}</span>
+                            ${SIApp.refBadge(log.project_ref)}
                         </div>
                     ` : '<span class="text-sm font-bold text-gray-300 italic">No aplica</span>'}
                 </td>
@@ -443,7 +443,7 @@ window.SIModules.audit = {
                             </div>
                         </div>
                         ${log.metadata ? `
-                            <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="p-2 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded-full transition-all group/btn" title="Ver detalles JSON">
+                            <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="p-2 text-gray-300 dark:text-white hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-full transition-all group/btn" title="Ver detalles JSON">
                                 <svg class="w-5 h-5 transition-transform group-hover/btn:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
                             </button>
                         ` : `
@@ -453,20 +453,20 @@ window.SIModules.audit = {
                 </td>
             </tr>
             ${log.metadata ? `
-                <tr id="meta-${log.id}" class="hidden bg-[#FAFAFA]">
+                <tr id="meta-${log.id}" class="hidden bg-[#FAFAFA] dark:bg-black/20">
                     <td colspan="7" class="px-10 py-6">
-                        <div class="bg-white border border-gray-100 rounded-[1.5rem] p-6 shadow-sm overflow-hidden">
+                        <div class="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[1.5rem] p-6 shadow-sm overflow-hidden">
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                                <h4 class="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Contexto Técnico del Evento</h4>
+                                <h4 class="text-[10px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Contexto Técnico del Evento</h4>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 ${Object.entries(log.metadata)
                     .filter(([k]) => k !== 'version_id')
                     .map(([k, v]) => `
-                                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-50">
+                                    <div class="bg-gray-50 dark:bg-zinc-950 p-4 rounded-2xl border border-gray-50 dark:border-zinc-800">
                                         <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">${this._humanizeMetadataKey(k)}</span>
-                                        <span class="text-sm text-gray-900 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
+                                        <span class="text-sm text-gray-900 dark:text-gray-100 font-bold break-all">${this._renderMetadataValue(k, v, log)}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -515,7 +515,7 @@ window.SIModules.audit = {
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
-                        <button id="btn-reset-filters" onclick="window.SIModules.audit.resetFilters()" class="hidden px-6 py-3 bg-red-50 border border-red-100 text-red-500 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-100 transition-all flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                        <button id="btn-reset-filters" onclick="window.SIModules.audit.resetFilters()" class="hidden px-6 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-500 dark:text-red-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-all flex items-center gap-2 animate-in fade-in zoom-in duration-300">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             Borrar Filtros
                         </button>
@@ -526,101 +526,96 @@ window.SIModules.audit = {
                     </div>
                 </div>
 
-                <!-- FILTROS PREMIUM -->
                 <div class="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm mb-10">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
-                        
-                        <!-- Filtro: Actor -->
-                        <div class="space-y-2 relative">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Actor (Quién)</label>
-                            <button onclick="window.SIModules.audit.toggleDropdown('drop-actor')" id="btn-drop-actor" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-700 flex items-center justify-between hover:bg-white hover:border-orange-200 transition-all group">
-                                <span id="label-actor" class="truncate">Todos los actores</span>
-                                <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="drop-actor" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
-                                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
-                                    <div class="relative">
-                                        <input type="text" 
-                                               id="search-actor" 
-                                               oninput="window.SIModules.audit.filterDropdown('actor', this.value)"
-                                               placeholder="Buscar actor..."
-                                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-orange-500 transition-all">
-                                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                    </div>
-                                </div>
-                                <ul id="list-actor" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
-                            </div>
-                        </div>
-
-                        <!-- Filtro: Acción -->
-                        <div class="space-y-2 relative">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Acción (Qué)</label>
-                            <button onclick="window.SIModules.audit.toggleDropdown('drop-action')" id="btn-drop-action" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-700 flex items-center justify-between hover:bg-white hover:border-orange-200 transition-all group">
-                                <span id="label-action" class="truncate">Todas las acciones</span>
-                                <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="drop-action" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
-                                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
-                                    <div class="relative">
-                                        <input type="text" 
-                                               id="search-action" 
-                                               oninput="window.SIModules.audit.filterDropdown('action', this.value)"
-                                               placeholder="Buscar acción..."
-                                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-orange-500 transition-all">
-                                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                    </div>
-                                </div>
-                                <ul id="list-action" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
-                            </div>
-                        </div>
-
-                        <!-- Filtro: Entidad -->
-                        <div class="space-y-2 relative">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Módulo / Entidad</label>
-                            <button onclick="window.SIModules.audit.toggleDropdown('drop-entity')" id="btn-drop-entity" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-700 flex items-center justify-between hover:bg-white hover:border-orange-200 transition-all group">
-                                <span id="label-entity" class="truncate">Todas las entidades</span>
-                                <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="drop-entity" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
-                                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
-                                    <div class="relative">
-                                        <input type="text" 
-                                               id="search-entity" 
-                                               oninput="window.SIModules.audit.filterDropdown('entity', this.value)"
-                                               placeholder="Buscar entidad..."
-                                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-orange-500 transition-all">
-                                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                    </div>
-                                </div>
-                                <ul id="list-entity" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
-                            </div>
-                        </div>
-
-                        <!-- Filtro: Fecha Inicio -->
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Desde</label>
-                            <div class="relative group">
-                                <input type="text" id="filter-start" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all placeholder:text-gray-300" placeholder="YYYY-MM-DD">
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-hover:text-orange-400 transition-colors pointer-events-none">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Filtro: Fecha Fin -->
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Hasta</label>
-                            <div class="relative group">
-                                <input type="text" id="filter-end" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all placeholder:text-gray-300" placeholder="YYYY-MM-DD">
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-hover:text-orange-400 transition-colors pointer-events-none">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                </div>
-                            </div>
-                        </div>
-
+                
+                <!-- Filtros Auditoría-->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
+        
+        <div class="space-y-2 relative">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Actor (Quién)</label>
+            <button onclick="window.SIModules.audit.toggleDropdown('drop-actor')" id="btn-drop-actor" class="w-full h-11 px-4 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl text-sm font-bold text-gray-700 dark:text-zinc-300 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-zinc-800/80 hover:border-orange-200 dark:hover:border-zinc-700 transition-all group">
+                <span id="label-actor" class="truncate">Todos los actores</span>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="drop-actor" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
+                    <div class="relative">
+                        <input type="text" 
+                               id="search-actor" 
+                               oninput="window.SIModules.audit.filterDropdown('actor', this.value)"
+                               placeholder="Buscar actor..."
+                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-orange-500 transition-all">
+                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
                 </div>
+                <ul id="list-actor" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
+            </div>
+        </div>
 
+        <div class="space-y-2 relative">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Acción (Qué)</label>
+            <button onclick="window.SIModules.audit.toggleDropdown('drop-action')" id="btn-drop-action" class="w-full h-11 px-4 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl text-sm font-bold text-gray-700 dark:text-zinc-300 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-zinc-800/80 hover:border-orange-200 dark:hover:border-zinc-700 transition-all group">
+                <span id="label-action" class="truncate">Todas las acciones</span>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="drop-action" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
+                    <div class="relative">
+                        <input type="text" 
+                               id="search-action" 
+                               oninput="window.SIModules.audit.filterDropdown('action', this.value)"
+                               placeholder="Buscar acción..."
+                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-orange-500 transition-all">
+                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+                <ul id="list-action" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
+            </div>
+        </div>
+
+        <div class="space-y-2 relative">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Módulo / Entidad</label>
+            <button onclick="window.SIModules.audit.toggleDropdown('drop-entity')" id="btn-drop-entity" class="w-full h-11 px-4 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl text-sm font-bold text-gray-700 dark:text-zinc-300 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-zinc-800/80 hover:border-orange-200 dark:hover:border-zinc-700 transition-all group">
+                <span id="label-entity" class="truncate">Todas las entidades</span>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="drop-entity" class="hidden absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-gray-50 bg-gray-50/50">
+                    <div class="relative">
+                        <input type="text" 
+                               id="search-entity" 
+                               oninput="window.SIModules.audit.filterDropdown('entity', this.value)"
+                               placeholder="Buscar entidad..."
+                               class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-orange-500 transition-all">
+                        <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+                <ul id="list-entity" class="max-h-60 overflow-y-auto custom-scrollbar py-2"></ul>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Desde</label>
+            <div class="relative group">
+                <input type="text" id="filter-start" class="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all placeholder:text-gray-300" placeholder="YYYY-MM-DD">
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-hover:text-orange-400 transition-colors pointer-events-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Hasta</label>
+            <div class="relative group">
+                <input type="text" id="filter-end" class="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-900 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all placeholder:text-gray-300" placeholder="YYYY-MM-DD">
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-hover:text-orange-400 transition-colors pointer-events-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
                 <!-- LISTADO -->
                 <div id="audit-list" class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden mb-20 animate-in fade-in zoom-in-95 duration-500">
                     <!-- Inyectado por _renderLogs() -->
@@ -728,11 +723,11 @@ window.SIModules.audit = {
             const btn = document.getElementById(btnId);
             if (!btn) return;
             if (this.filters[key]) {
-                btn.classList.add('border-orange-500', 'bg-orange-50/30', 'text-orange-600');
-                btn.classList.remove('bg-gray-50', 'border-gray-100', 'text-gray-700');
+                btn.classList.add('bg-zinc-900', 'text-white', 'border-zinc-900', 'dark:bg-zinc-100', 'dark:text-zinc-900', 'dark:border-white');
+                btn.classList.remove('bg-gray-50', 'border-gray-100', 'text-gray-700', 'dark:bg-zinc-900', 'dark:text-zinc-300', 'dark:border-zinc-800');
             } else {
-                btn.classList.remove('border-orange-500', 'bg-orange-50/30', 'text-orange-600');
-                btn.classList.add('bg-gray-50', 'border-gray-100', 'text-gray-700');
+                btn.classList.remove('bg-zinc-900', 'text-white', 'border-zinc-900', 'dark:bg-zinc-100', 'dark:text-zinc-900', 'dark:border-white');
+                btn.classList.add('bg-gray-50', 'border-gray-100', 'text-gray-700', 'dark:bg-zinc-900', 'dark:text-zinc-300', 'dark:border-zinc-800');
             }
         });
 
@@ -742,11 +737,11 @@ window.SIModules.audit = {
             if (!input) return;
             const val = id === 'filter-start' ? this.filters.date_start : this.filters.date_end;
             if (val) {
-                input.classList.add('border-orange-500', 'bg-orange-50/30');
-                input.classList.remove('bg-gray-50', 'border-gray-100');
+                input.classList.add('bg-zinc-900', 'text-white', 'border-zinc-900', 'dark:bg-zinc-100', 'dark:text-zinc-900', 'dark:border-white');
+                input.classList.remove('bg-gray-50', 'border-gray-100', 'dark:bg-zinc-900', 'dark:border-zinc-800');
             } else {
-                input.classList.remove('border-orange-500', 'bg-orange-50/30');
-                input.classList.add('bg-gray-50', 'border-gray-100');
+                input.classList.remove('bg-zinc-900', 'text-white', 'border-zinc-900', 'dark:bg-zinc-100', 'dark:text-zinc-900', 'dark:border-white');
+                input.classList.add('bg-gray-50', 'border-gray-100', 'dark:bg-zinc-900', 'dark:border-zinc-800');
             }
         });
     },

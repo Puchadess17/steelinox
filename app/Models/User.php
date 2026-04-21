@@ -345,7 +345,7 @@ class User
 
     public function getCommercialProjects($commercialId) {
         $sql = "SELECT p.id, p.name, p.reference, p.status, p.budget_amount, p.created_at, 
-                       c.name AS client_name
+                       p.client_id, c.name AS client_name
                 FROM projects p
                 INNER JOIN project_user pu ON p.id = pu.project_id
                 INNER JOIN clients c ON p.client_id = c.id

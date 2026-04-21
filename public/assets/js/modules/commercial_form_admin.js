@@ -47,12 +47,13 @@ SIModules.commercialFormAdmin = {
 
         this.container.innerHTML = `
             <div class="max-w-6xl mx-auto w-full pb-10 fade-in px-2 sm:px-0">
-                <!-- Back link -->
-                <div class="mb-8">
-                    <button onclick="SIRouter.navigate('commercials')" class="inline-flex items-center text-sm text-gray-500 hover:text-orange-500 font-medium transition-colors group">
-                        <svg class="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
-                        Volver al directorio
-                    </button>
+                <!-- Breadcrumb -->
+                <div class="flex items-center gap-2 mb-4">
+                    <nav class="flex text-sm text-gray-500 gap-2" aria-label="Breadcrumb">
+                        <a data-route="commercials" href="/steelinox/commercials" class="hover:text-orange-500 transition-colors font-medium">Comerciales</a>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <span class="text-gray-900 font-bold">${title}</span>
+                    </nav>
                 </div>
 
                 <!-- Header -->

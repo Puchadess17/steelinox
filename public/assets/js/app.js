@@ -127,12 +127,20 @@ const SIApp = {
 
     /** Cambio de tema global */
     toggleTheme() {
+        // Bloquear transiciones para evitar latencia en el repintado
+        document.documentElement.classList.add('no-transitions');
+
         const isDark = document.documentElement.classList.toggle('dark');
         localStorage.setItem('si-theme', isDark ? 'dark' : 'light');
 
         // Sincronizar switches si existen en la página
         const settingsSwitch = document.getElementById('theme-toggle');
         if (settingsSwitch) settingsSwitch.checked = isDark;
+
+        // Quitar el bloqueo tras un pequeño delay para que el cambio sea instantáneo
+        setTimeout(() => {
+            document.documentElement.classList.remove('no-transitions');
+        }, 50);
     },
 
     // ──────────────────────────────────────
@@ -426,6 +434,12 @@ const SIApp = {
             <span>${label}</span>
         </span>
     `;
+    },
+
+    /** Badge de Referencia estandarizado (PRJ, CLI, etc) */
+    refBadge(text) {
+        if (!text) return '';
+        return `<span class="inline-flex items-center text-[11px] font-bold text-gray-500 dark:text-zinc-400 bg-gray-100/80 dark:bg-zinc-800/50 px-2.5 py-1 rounded-[6px] tracking-wide border border-gray-200/20 dark:border-zinc-700/30">${this.escapeHtml(text)}</span>`;
     },
 
     /**

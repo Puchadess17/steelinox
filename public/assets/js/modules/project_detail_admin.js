@@ -76,15 +76,19 @@ SIModules.projectDetailAdmin = {
             </nav>
 
             <!-- Título, Referencia y Status en un solo bloque -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-4">
                 <div>
-                    <div class="flex items-center gap-3 mb-2 flex-wrap">
+                    <div class="flex items-center gap-3 mb-1 flex-wrap">
                         <h1 id="admin-prj-title" class="text-2xl md:text-3xl font-extrabold text-[#000000] tracking-tight">Cargando...</h1>
                         <div class="flex items-center gap-2">
-                            <span id="admin-prj-ref" class="px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-lg uppercase tracking-wider">REF</span>
+                            <div id="admin-prj-ref-container"></div>
                             <span id="admin-prj-status-badge"></span>
                         </div>
                     </div>
+                    <a id="admin-prj-client-link" href="" class="hidden items-center gap-1 text-[13px] font-semibold text-gray-500 hover:text-orange-500 transition-colors w-max mt-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <span id="admin-prj-client-name"></span>
+                    </a>
                 </div>
                 <div class="shrink-0 flex items-center">
                     ${user && user.role !== 'cliente' ? `
@@ -560,13 +564,25 @@ SIModules.projectDetailAdmin = {
     /** Renderizar la cabecera (Título, Ref, Status) */
     renderHeader() {
         const titleEl = document.getElementById('admin-prj-title');
-        const refEl = document.getElementById('admin-prj-ref');
+        const refContainer = document.getElementById('admin-prj-ref-container');
         const badgeEl = document.getElementById('admin-prj-status-badge');
         const breadcrumbEl = document.getElementById('breadcrumb-project-name');
+        const clientLinkEl = document.getElementById('admin-prj-client-link');
+        const clientNameEl = document.getElementById('admin-prj-client-name');
 
         if (titleEl) titleEl.textContent = this.project.name;
         if (breadcrumbEl) breadcrumbEl.textContent = this.project.name;
-        if (refEl) refEl.textContent = this.project.reference || 'SIN REF';
+        if (refContainer) refContainer.innerHTML = SIApp.refBadge(this.project.reference || 'SIN REF');
+
+        if (clientLinkEl && clientNameEl && this.project.client_id) {
+            clientNameEl.textContent = this.project.client_name || 'Empresa Desconocida';
+            clientLinkEl.setAttribute('href', `/steelinox/client/${this.project.client_id}`);
+            clientLinkEl.classList.remove('hidden');
+            clientLinkEl.classList.add('flex');
+        } else if (clientLinkEl) {
+            clientLinkEl.classList.add('hidden');
+            clientLinkEl.classList.remove('flex');
+        }
 
         if (badgeEl) {
             const labels = {

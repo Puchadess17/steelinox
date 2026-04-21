@@ -81,7 +81,8 @@
 .dark .bg-orange-50,
 .dark .bg-amber-50,
 .dark .bg-blue-50,
-.dark .bg-emerald-50 {
+.dark .bg-emerald-50,
+.dark .bg-\[\#FAFAFA\] {
     background-color: var(--si-bg-card) !important;
 }
 
@@ -198,6 +199,15 @@
 }
 
 /* morado claro */
+
+/* --- Utils de Rendimiento --- */
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
 
 /* Prevención de White Flashes en Hovers de Acción */
 .dark .hover\:bg-orange-50:hover {
@@ -556,7 +566,7 @@ body {
 }
 
 .si-table tbody tr {
-    border-bottom: 1px solid var(--si-gray-100);
+    border-bottom: 0;
 }
 
 .si-table tbody tr:hover {

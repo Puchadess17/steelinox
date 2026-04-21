@@ -23,7 +23,7 @@ SIModules.clientUsersAdmin = {
         const user = Auth.getUser();
         this.container.innerHTML = `
             <div class="fade-in">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">Usuarios Cliente</h1>
@@ -129,11 +129,11 @@ SIModules.clientUsersAdmin = {
             const statusBadge = SIApp.activeBadge(u.is_active);
             const avatarHtml = SIApp.avatarInitials(u.name);
             const lastAccessText = u.last_login_at
-                ? `<span class="text-sm font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>`
+                ? `<span class="text-sm font-medium text-gray-500">${SIApp.timeAgo(u.last_login_at)}</span>'
                 : '<span class="text-sm font-medium text-gray-400">Sin acceso</span>';
 
             return `
-                <tr class="transition-colors group border-b border-gray-50/80 last:border-0 hover:bg-gray-50/50">
+                <tr class="transition-colors group hover:bg-gray-50/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-3">
                             ${avatarHtml}
@@ -227,7 +227,7 @@ SIModules.clientUsersAdmin = {
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
+                        <tr class="bg-gray-50">
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.clientUsersAdmin._sort('name')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Usuario ${this._getSortIcon('name')}</span>
                             </th>
@@ -247,7 +247,7 @@ SIModules.clientUsersAdmin = {
                             ` : ''}
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50/50">
+                    <tbody class="">
                         ${desktopRows}
                     </tbody>
                 </table>
