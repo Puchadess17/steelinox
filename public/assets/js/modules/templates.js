@@ -285,16 +285,3 @@ SITemplates.modal = function(options) {
         </div>
     `;
 };
-
-/** BACKWARD COMPATIBILITY: Función antigua mapeada a la nueva estructura */
-SITemplates.getProjectModalHTML = function (modalId, title, projectData = {}, saveFunction) {
-    const fields = SITemplates.fragments.projectFields(projectData, !!projectData.id);
-    return SITemplates.modal({
-        id: modalId,
-        title: title,
-        contentHtml: fields,
-        saveBtnLabel: projectData.id ? 'Guardar Cambios' : 'Crear Proyecto',
-        saveActionLabel: `${saveFunction}()`,
-        maxWidth: 'max-w-xl'
-    });
-};

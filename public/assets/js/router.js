@@ -55,12 +55,12 @@ const SIRouter = {
             }
         });
 
-        // NUEVO: Al darle al botón de "Atrás" en el navegador, leemos la ruta limpia
+        // Al darle al botón de "Atrás" en el navegador, leemos la ruta limpia
         window.addEventListener('popstate', () => {
             this.handleRoute(this.getViewFromUrl());
         });
 
-        // NUEVO: Obtener vista inicial leyendo la URL real
+        // Obtener vista inicial leyendo la URL real
         this.handleRoute(this.getViewFromUrl());
     },
 
@@ -73,7 +73,7 @@ const SIRouter = {
             return 'dashboard';
         }
 
-        // --- LA MAGIA NUEVA ---
+
         // Si la URL empieza por "project/", le decimos al router que cargue la vista 'project-detail'
         if (cleanPath.startsWith('project/')) {
             return 'project-detail';
@@ -108,7 +108,7 @@ const SIRouter = {
         this.routes = {
             'dashboard': { module: 'dashboard', method: 'loadDashboardAuto', roles: ['admin', 'comercial', 'cliente'], title: 'Proyectos' },
             'clients': { module: 'dashboard', method: 'loadClientsList', roles: ['admin', 'comercial'], title: 'Clientes' },
-            'projects': { module: 'dashboard', method: 'loadProjectsList', roles: ['admin', 'comercial', 'cliente'], title: 'Proyectos' },
+
             'project-detail': { module: 'projectDetailAdmin', method: 'loadProjectDetailSPA', roles: ['admin', 'comercial', 'cliente'], title: 'Detalle del Proyecto' },
             'client-detail': { module: 'clientDetailAdmin', method: 'loadClientDetailSPA', roles: ['admin', 'comercial'], title: 'Detalle del Cliente' },
             'client-new': { module: 'clientFormAdmin', method: 'loadCreateSPA', roles: ['admin', 'comercial'], title: 'Nuevo Cliente' },
@@ -172,8 +172,6 @@ const SIRouter = {
                 this.showLoading();
                 await mod[route.method]();
             }
-        } else if (route.method === 'dummyMethod') {
-            this.contentContainer.innerHTML = `<div class="si-empty py-20 text-gray-500">Módulo <b>${route.title}</b> en construcción.</div>`;
         }
     },
 

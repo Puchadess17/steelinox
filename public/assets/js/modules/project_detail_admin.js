@@ -501,13 +501,11 @@ SIModules.projectDetailAdmin = {
                 auditRes = await API.get('/projects/' + this.projectId + '/audit');
             }
 
-            const response = prjRes;
-
-            if (!response.success || !response.data) {
-                throw new Error(response.message || 'Error al cargar el proyecto.');
+            if (!prjRes.success || !prjRes.data) {
+                throw new Error(prjRes.message || 'Error al cargar el proyecto.');
             }
 
-            this.project = response.data;
+            this.project = prjRes.data;
             if (this.project && this.project.reference) {
                 SIApp.setTitle(`${this.project.reference}`);
             } else if (this.project && this.project.name) {

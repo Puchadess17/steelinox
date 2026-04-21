@@ -36,11 +36,19 @@
     --si-text-muted: #9CA3AF;
 }
 
+/* --- Base Styles --- */
+* {
+    font-family: 'Inter', sans-serif;
+}
+
 /* --- Variables Modo Oscuro --- */
 .dark {
-    --si-bg-page: #0F172A; /* Slate 900 */
-    --si-bg-card: #1E293B; /* Slate 800 */
-    --si-border-card: #334155; /* Slate 700 */
+    --si-bg-page: #0F172A;
+    /* Slate 900 */
+    --si-bg-card: #1E293B;
+    /* Slate 800 */
+    --si-border-card: #334155;
+    /* Slate 700 */
     --si-text-title: #F8FAFC;
     --si-text-body: #CBD5E1;
     --si-text-muted: #64748B;
@@ -63,7 +71,8 @@ body {
     border-color: rgba(51, 65, 85, 0.5) !important;
 }
 
-.dark aside, .dark footer {
+.dark aside,
+.dark footer {
     background-color: var(--si-bg-card) !important;
     border-color: var(--si-border-card) !important;
 }
@@ -361,21 +370,6 @@ body {
     }
 }
 
-/* --- Toast notification container --- */
-.si-toast-container {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    pointer-events: none;
-}
-
-.si-toast-container>* {
-    pointer-events: auto;
-}
 
 /* --- Login page background --- */
 .login-bg {
@@ -529,6 +523,7 @@ body {
         display: none !important;
     }
 }
+
 /* --- Settings Components --- */
 .settings-card {
     background: var(--si-bg-card);
@@ -541,8 +536,8 @@ body {
     border-color: var(--si-primary);
 }
 
-.dark input:not([type="checkbox"]):not([type="radio"]), 
-.dark textarea, 
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
 .dark select {
     background-color: #1e293b !important;
     border-color: #334155 !important;

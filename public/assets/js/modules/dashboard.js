@@ -58,8 +58,7 @@ SIModules.dashboard = {
                 </div>
 
                 <div id="admin-kpis-container" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
-                    <!-- KPIs se cargarán dinámicamente -->
-                </div>
+                    </div>
 
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
                     <div class="w-full xl:w-auto">
@@ -80,8 +79,7 @@ SIModules.dashboard = {
 
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                     <div id="admin-table-container" class="select-none bg-gray-50/20">
-                        <!-- La tabla se inyectará aquí -->
-                    </div>
+                        </div>
                 </div>
                 <div id="admin-table-pagination" class="mt-6 px-4 pb-4"></div>
             </div>
@@ -120,14 +118,7 @@ SIModules.dashboard = {
             aprobado: projects.filter(p => p.status === 'aprobado').length,
         };
 
-        if (kpisContainer) {
-            kpisContainer.innerHTML = `
-                ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
-                ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
-                ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
-                ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
-            `;
-        }
+        this._renderProjectsKpis(kpis, 'admin-kpis-container');
 
 
         this.adminProjects = projects;
@@ -147,55 +138,14 @@ SIModules.dashboard = {
         const user = Auth.getUser();
 
         if (data.length === 0) {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <svg class="w-12 h-12 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    <p class="text-sm font-semibold text-gray-900">No se encontraron resultados</p>
-                    <p class="text-xs text-gray-500 mt-1">Prueba a cambiar el filtro o el término de búsqueda.</p>
-                </div>
-            `;
+            container.innerHTML = this._tableEmptyState(
+                "No se encontraron resultados",
+                "Prueba a cambiar el filtro o el término de búsqueda."
+            );
             return;
         }
 
-        const tbody = data.map(p => `
-            <tr class="transition-colors group border-b border-gray-50/80 last:border-0">
-                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    ${p.client_id ? `
-                        <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
-                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            ${SIApp.escapeHtml(p.client_name)}
-                        </a>
-                    ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
-                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        ${SIApp.escapeHtml(p.name)}
-                    </a>
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
-                </td>
-                <td class="px-5 py-4 whitespace-nowrap">
-                    ${SIApp.statusBadge(p.status)}
-                </td>
-                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
-                    ${SIApp.formatDate(p.created_at)}
-                </td>
-                <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-orange-500 transition-all hover:scale-110 rounded-lg hover:bg-orange-50" title="Ver Proyecto">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        </a>
-                        ${user && user.role !== 'cliente' ? `
-                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                        ` : ''}
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+        const tbody = data.map(p => this._renderProjectRow(p, user)).join('');
 
         this.currentAdminSort = this.currentAdminSort || { field: 'created_at', dir: 'desc' };
 
@@ -205,12 +155,10 @@ SIModules.dashboard = {
         };
 
         container.innerHTML = `
-            <!-- VISTA MÓVIL: Grid de Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
                 ${this._renderClientCards(data)}
             </div>
 
-            <!-- VISTA DESKTOP: Tabla Extensa -->
             <div class="hidden lg:block si-table-wrapper">
                 <table class="w-full si-table text-center">
                     <thead>
@@ -275,8 +223,7 @@ SIModules.dashboard = {
     /** [ADMIN] Filtro de buscador en tiempo real */
     _searchAdmin(query = null) {
         if (query !== null) {
-            query = query.trim();
-            this.currentAdminSearch = query.toLowerCase();
+            this.currentAdminSearch = query.trim();
         }
 
         if (this.searchTimeoutAdmin) clearTimeout(this.searchTimeoutAdmin);
@@ -313,7 +260,6 @@ SIModules.dashboard = {
 
         this.container.innerHTML = `
             <div class="fade-in">
-                <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
@@ -322,14 +268,10 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- KPI Grid Premium -->
                 <div id="commercial-kpis-container" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
-                    <!-- KPIs dinámicos -->
-                </div>
+                    </div>
 
-                <!-- Tabs, Filtro empresa y Búsqueda -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
-                    <!-- Fila de Tabs -->
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
                             <button class="tab-commercial tab-client ${this.currentCommercialFilter === 'all' ? 'active bg-orange-500 text-white shadow-md shadow-orange-500/20' : ''} whitespace-nowrap px-4 py-2 lg:px-6 lg:py-2.5 text-xs lg:text-sm font-bold rounded-full transition-all" data-filter="all" onclick="SIModules.dashboard._filterCommercial('all', this)">Todos</button>
@@ -340,11 +282,8 @@ SIModules.dashboard = {
                         </div>
                     </div>
 
-                    <!-- Filtro empresa + Buscador -->
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0 w-full xl:w-auto">
-                        <!-- Selector de empresa (custom dropdown) -->
                         <div id="comm-client-dropdown" class="relative flex-shrink-0 w-full sm:w-auto">
-                            <!-- Trigger -->
                             <button type="button"
                                 id="comm-client-dropdown-btn"
                                 onclick="SIModules.dashboard._toggleClientDropdown()"
@@ -353,11 +292,9 @@ SIModules.dashboard = {
                                 <span id="comm-client-dropdown-label" class="flex-1 truncate text-left">Todas las empresas</span>
                                 <svg id="comm-client-dropdown-arrow" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <!-- Panel -->
                             <div id="comm-client-dropdown-panel"
                                 class="absolute left-0 top-[calc(100%+6px)] z-50 hidden w-full sm:min-w-[220px] bg-white border border-gray-100 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] overflow-hidden"
                                 style="opacity:0;transform:translateY(-6px);transition:opacity 0.15s ease,transform 0.15s ease">
-                                <!-- Buscador interno -->
                                 <div class="px-3 pt-3 pb-2">
                                     <div class="relative">
                                         <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -365,13 +302,10 @@ SIModules.dashboard = {
                                             class="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all">
                                     </div>
                                 </div>
-                                <!-- Lista de opciones -->
                                 <ul id="comm-client-dropdown-list" class="max-h-52 overflow-y-auto py-1 px-1.5 divide-y divide-gray-50/50">
-                                    <!-- Se rellena dinámicamente -->
-                                </ul>
+                                    </ul>
                             </div>
                         </div>
-                        <!-- Buscador -->
                         <div class="relative w-full xl:w-72 group">
                             <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             <input type="text" oninput="SIModules.dashboard._searchCommercial(this.value)" value="${this.currentCommercialSearch}" placeholder="Buscar por nombre o ref..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-[1rem] text-sm focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-all shadow-sm">
@@ -381,8 +315,7 @@ SIModules.dashboard = {
 
                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                     <div id="commercial-table-container" class="select-none bg-gray-50/20">
-                        <!-- Renderizado dinámico -->
-                    </div>
+                        </div>
                 </div>
                 <div id="commercial-table-pagination" class="mt-6 px-4 pb-4"></div>
             </div>
@@ -416,14 +349,7 @@ SIModules.dashboard = {
             aprobado: projects.filter(p => p.status === 'aprobado').length,
         };
 
-        if (kpisContainer) {
-            kpisContainer.innerHTML = `
-                ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
-                ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
-                ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
-                ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
-            `;
-        }
+        this._renderProjectsKpis(kpis, 'commercial-kpis-container');
 
         this._renderCommercialTable(projects, pagination);
     },
@@ -440,60 +366,16 @@ SIModules.dashboard = {
 
         // Estado vacío
         if (data.length === 0) {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <svg class="w-12 h-12 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    <p class="text-sm font-semibold text-gray-900">No se encontraron proyectos asignados</p>
-                    <p class="text-xs text-gray-500 mt-1">Prueba a cambiar el filtro o el término de búsqueda.</p>
-                </div>
-            `;
+            container.innerHTML = this._tableEmptyState(
+                "No se encontraron proyectos asignados",
+                "Prueba a cambiar el filtro o el término de búsqueda."
+            );
             return;
         }
 
         // Filas de la tabla — igual que admin: sin onclick en el tr, links dentro de las celdas
-        const tbody = data.map(p => `
-            <tr class="transition-colors group border-b border-gray-50/80 last:border-0">
-                <!-- Columna Cliente: enlace al detalle de la empresa -->
-                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    ${p.client_id ? `
-                        <a href="/steelinox/client/${p.client_id}" onclick="event.stopPropagation()" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
-                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            ${SIApp.escapeHtml(p.client_name)}
-                        </a>
-                    ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
-                </td>
-                <!-- Columna Proyecto: enlace al detalle del proyecto -->
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
-                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        ${SIApp.escapeHtml(p.name)}
-                    </a>
-                </td>
-                <!-- Columna Referencia -->
-                <td class="px-5 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
-                </td>
-                <!-- Columna Estado -->
-                <td class="px-5 py-4 whitespace-nowrap">
-                    ${SIApp.statusBadge(p.status)}
-                </td>
-                <!-- Columna Fecha -->
-                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
-                    ${SIApp.formatDate(p.created_at)}
-                </td>
-                <!-- Columna Acciones: ojo naranja, papelera roja (solo admin, comercial no puede eliminar) -->
-                <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-orange-500 transition-all hover:scale-110 rounded-lg hover:bg-orange-50" title="Ver Proyecto">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        </a>
-                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+        const user = Auth.getUser();
+        const tbody = data.map(p => this._renderProjectRow(p, user)).join('');
 
         this.currentCommercialSort = this.currentCommercialSort || { field: 'created_at', dir: 'desc' };
 
@@ -503,12 +385,10 @@ SIModules.dashboard = {
         };
 
         container.innerHTML = `
-            <!-- VISTA MÓVIL [COMMERCIAL]: Grid de Cards (lg:hidden) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 p-4 lg:p-0">
                 ${this._renderClientCards(data)}
             </div>
 
-            <!-- VISTA DESKTOP [COMMERCIAL]: Tabla (hidden lg:block) -->
             <div class="hidden lg:block si-table-wrapper">
                 <table class="w-full si-table text-center">
                     <thead>
@@ -722,7 +602,7 @@ SIModules.dashboard = {
 
     /** [COMMERCIAL] Buscador en tiempo real */
     _searchCommercial(query) {
-        this.currentCommercialSearch = query.trim().toLowerCase();
+        this.currentCommercialSearch = query.trim();
 
         if (this.searchTimeoutComm) clearTimeout(this.searchTimeoutComm);
         this.searchTimeoutComm = setTimeout(() => {
@@ -758,7 +638,6 @@ SIModules.dashboard = {
         // Pintar la estructura base SOLO UNA VEZ (igual que admin/comercial)
         this.container.innerHTML = `
             <div class="fade-in">
-                <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
@@ -768,12 +647,9 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- KPIs (se rellenan dinámicamente) -->
                 <div id="client-dash-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
-                    <!-- cargando... -->
-                </div>
+                    </div>
 
-                <!-- Tabs y Búsqueda -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
@@ -791,12 +667,9 @@ SIModules.dashboard = {
                     </div>
                 </div>
 
-                <!-- Grid de proyectos (se rellena dinámicamente) -->
                 <div id="client-dash-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <!-- cargando... -->
-                </div>
+                    </div>
 
-                <!-- Paginación -->
                 <div id="client-dash-pagination" class="mt-8"></div>
             </div>
         `;
@@ -904,34 +777,13 @@ SIModules.dashboard = {
 
         const user = Auth.getUser();
 
-        // Diseño del status badge exacto a la imagen
-        const getCustomBadge = (status) => {
-            const labels = {
-                propuesta: 'Propuesta',
-                aprobado: 'Aprobado',
-                ejecucion: 'Ejecución',
-                cerrado: 'Cerrado',
-            };
-            const styles = {
-                propuesta: 'badge-propuesta',
-                aprobado: 'badge-aprobado',
-                ejecucion: 'badge-ejecucion',
-                cerrado: 'badge-cerrado',
-            };
-            const label = labels[status] || status;
-            const style = styles[status] || 'bg-gray-600 text-white';
-
-            return `<span class="si-badge ${style}">${label}</span>`;
-        };
-
         return projects.map(p => `
             <a href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-all hover:shadow-lg block group">
                 
                 <div class="p-5 sm:p-6 flex-1 flex flex-col">
-                    <!-- Top Row: Ref + Status -->
                     <div class="flex items-start justify-between mb-4">
                         <span class="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">REF: ${SIApp.escapeHtml(p.reference)}</span>
-                        ${getCustomBadge(p.status)}
+                        ${SIApp.statusBadge(p.status)}
                     </div>
 
                     <h3 class="text-base sm:text-lg font-black text-[#1a1b25] leading-snug mb-3 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
@@ -941,7 +793,6 @@ SIModules.dashboard = {
                         Actualizado ${SIApp.timeAgo(p.created_at) || SIApp.formatDate(p.created_at)}
                     </div>
 
-                    <!-- Footer Row: Detalles + Borrar (admin) -->
                     <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-xs sm:text-sm font-black text-[#1a1b25] group-hover:text-orange-600 transition-colors tracking-wide">
@@ -967,28 +818,69 @@ SIModules.dashboard = {
     // HELPERS COMUNES
     // ═══════════════════════════════════════
 
-    /** KPI Card con icono para Admin/Comercial (estilo colorido) */
-    _kpiCard(label, value, color, icon) {
-        const colorMap = {
-            orange: { bg: 'bg-orange-100', text: 'text-orange-500' },
-            blue: { bg: 'bg-blue-100', text: 'text-blue-500' },
-            emerald: { bg: 'bg-emerald-100', text: 'text-emerald-500' },
-            amber: { bg: 'bg-amber-100', text: 'text-amber-500' },
-            red: { bg: 'bg-red-100', text: 'text-red-500' },
-            gray: { bg: 'bg-gray-100', text: 'text-gray-500' },
-        };
-        const c = colorMap[color] || colorMap.orange;
+    /** Renderiza el bloque de 4 KPIs usado en admin y comercial */
+    _renderProjectsKpis(kpis, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = `
+            ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+            ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
+            ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
+            ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+        `;
+    },
 
+    /** Helper para estado vacío de tabla */
+    _tableEmptyState(message, subtext) {
         return `
-            <div class="kpi-card">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${label}</span>
-                    <div class="w-10 h-10 ${c.bg} rounded-xl flex items-center justify-center shadow-sm">
-                        <span class="${c.text}">${icon}</span>
-                    </div>
-                </div>
-                <p class="text-3xl font-bold text-gray-900">${value}</p>
+            <div class="flex flex-col items-center justify-center py-12 px-4 text-center bg-white border border-gray-100 rounded-2xl shadow-sm">
+                <svg class="w-12 h-12 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <p class="text-sm font-semibold text-gray-900">${message}</p>
+                <p class="text-xs text-gray-500 mt-1">${subtext}</p>
             </div>
+        `;
+    },
+
+    /** Helper para renderizar fila de proyecto (Admin/Comercial) */
+    _renderProjectRow(p, user) {
+        return `
+            <tr class="transition-colors group border-b border-gray-50/80 last:border-0">
+                <td class="px-5 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    ${p.client_id ? `
+                        <a href="/steelinox/client/${p.client_id}" onclick="event.stopPropagation()" class="inline-flex items-center gap-1.5 text-gray-500 hover:text-emerald-600 transition-colors no-underline font-bold text-[13px]">
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            ${SIApp.escapeHtml(p.client_name)}
+                        </a>
+                    ` : '<span class="text-gray-300 text-xs font-bold">Sin Asignar</span>'}
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <a href="/steelinox/project/${p.id}" class="inline-flex items-center gap-1.5 text-sm font-black text-[#1a1b25] hover:text-indigo-600 transition-colors no-underline">
+                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        ${SIApp.escapeHtml(p.name)}
+                    </a>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center text-[11px] font-bold text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-[6px] tracking-wide">${SIApp.escapeHtml(p.reference)}</span>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">
+                    ${SIApp.statusBadge(p.status)}
+                </td>
+                <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide">
+                    ${SIApp.formatDate(p.created_at)}
+                </td>
+                <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href="/steelinox/project/${p.id}" class="p-1.5 text-gray-400 hover:text-orange-500 transition-all hover:scale-110 rounded-lg hover:bg-orange-50" title="Ver Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                        ${user && user.role !== 'cliente' ? `
+                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-all hover:scale-110 rounded-lg hover:bg-red-50" title="Eliminar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
         `;
     },
 
@@ -1016,24 +908,6 @@ SIModules.dashboard = {
         `;
     },
 
-    /** Status row con barra de progreso */
-    _statusRow(label, count, total, color) {
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-        return `
-            <div class="flex items-center justify-between">
-                <div class="flex-1 mr-4">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm text-gray-600">${label}</span>
-                        <span class="text-sm font-semibold text-gray-800">${count}</span>
-                    </div>
-                    <div class="si-progress">
-                        <div class="si-progress-fill" style="width: ${pct}%; background-color: ${color};"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-
     /** Estado de error */
     _errorState(message) {
         return `
@@ -1043,19 +917,6 @@ SIModules.dashboard = {
                 <button onclick="location.reload()" class="mt-4 text-orange-500 hover:text-orange-600 text-sm font-medium">Reintentar</button>
             </div>
         `;
-    },
-
-    /** Iconos SVG reutilizables */
-    _icon(name) {
-        const map = {
-            grid: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/></svg>',
-            folder: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>',
-            play: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>',
-            check: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-            clock: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-            alert: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-        };
-        return map[name] || '';
     },
 
     /** KPI Stat Card Flat (Estilo Mockup para Clientes) */
@@ -1072,7 +933,6 @@ SIModules.dashboard = {
                         ${iconSvg}
                     </div>
                 </div>
-                <!-- Decoración sutil de fondo -->
                 <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
             </div>
         `;
@@ -1112,8 +972,7 @@ SIModules.dashboard = {
                 </div>
 
                 <div id="clients-kpis-container" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-                    <!-- KPIs dinámicos -->
-                </div>
+                    </div>
 
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 w-full max-w-full">
                     <div class="w-full xl:w-auto">
@@ -1131,8 +990,7 @@ SIModules.dashboard = {
                 </div>
 
                 <div id="clients-table-container">
-                    <!-- Renderizado dinámico aquí -->
-                </div>
+                    </div>
 
                 <div id="clients-pagination-container"></div>
             </div>
@@ -1156,9 +1014,10 @@ SIModules.dashboard = {
 
         const kpisContainer = document.getElementById('clients-kpis-container');
         if (kpisContainer) {
+            // CORRECCIÓN: Se han reemplazado los `\` problemáticos por simples comillas vacías ''
             kpisContainer.innerHTML = `
-                ${this._kpiStatFlat('Clientes Totales', pagination.total_results, ``, '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
-                ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, ``, '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>')}
+                ${this._kpiStatFlat('Clientes Totales', pagination.total_results, '', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>')}
+                ${this._kpiStatFlat('Proyectos Totales', kpis.totalProjects, '', '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>')}
                 ${this._kpiStatFlat('Usuarios Totales', kpis.totalUsers, 'Cuentas de cliente activas', '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4" stroke-width="1.5"></circle><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M22 21v-2a4 4 0 00-3-3.87"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 3.13a4 4 0 010 7.75"></path></svg>')}
             `;
         }
@@ -1172,12 +1031,10 @@ SIModules.dashboard = {
         const user = Auth.getUser();
 
         if (pagedData.length === 0) {
-            container.innerHTML = `
-                <div class="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
-                    <p class="text-sm font-semibold text-gray-900">No se encontraron clientes</p>
-                    <p class="text-xs text-gray-400 mt-1">Intenta ajustar los filtros o el término de búsqueda.</p>
-                </div>
-            `;
+            container.innerHTML = this._tableEmptyState(
+                "No se encontraron clientes",
+                "Intenta ajustar los filtros o el término de búsqueda."
+            );
             // Limpiar paginación si no hay datos
             const pagContainer = document.getElementById('clients-pagination-container');
             if (pagContainer) pagContainer.innerHTML = '';
@@ -1244,7 +1101,6 @@ SIModules.dashboard = {
         };
 
         container.innerHTML = `
-            <!-- VISTA DESKTOP: Tabla Premium -->
             <div class="hidden lg:block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-6">
                 <table class="w-full si-table">
                     <thead>
@@ -1275,7 +1131,6 @@ SIModules.dashboard = {
                 </table>
             </div>
 
-            <!-- VISTA MÓVIL: Cards (Se mantiene diseño anterior para mobile) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-6">
                 ${pagedData.map(c => this._renderClientCardAdminMobile(c)).join('')}
             </div>
@@ -1318,7 +1173,6 @@ SIModules.dashboard = {
         return `
             <div class="bg-white border-l-[3.5px] border-l-orange-500 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.2rem] overflow-hidden flex flex-col transition-all hover:shadow-lg block group relative">
                 <div class="px-6 py-5">
-                    <!-- Top Info: Avatar, Name, Badge -->
                     <div class="flex items-start justify-between mb-4 gap-3">
                         <div class="flex items-center gap-3">
                             ${SIApp.avatarInitials(c.name, 'w-12 h-12', 'text-sm')}
@@ -1334,14 +1188,12 @@ SIModules.dashboard = {
 
                     <div class="w-full h-px bg-gray-50/80 my-4"></div>
 
-                    <!-- Details List -->
                     <div class="flex items-center gap-3 text-[11px] font-semibold text-gray-500 mb-1 ml-1">
                         <svg class="w-4 h-4 text-gray-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         Creado el ${SIApp.formatDate(c.created_at) || '-'}
                     </div>
                 </div>
 
-                <!-- Footer buttons -->
                 <div class="mt-auto px-6 pb-6 pt-1 flex justify-center gap-2">
                     <a href="/steelinox/client/${c.id}" class="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 rounded-full text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -1376,13 +1228,13 @@ SIModules.dashboard = {
 
     /** Al buscar, reiniciamos a la página 1 y recargamos */
     _searchClients(query) {
-        this.currentClientSearch = query.trim().toLowerCase();
+        this.currentClientSearch = query.trim();
 
         if (this.searchTimeoutClients) clearTimeout(this.searchTimeoutClients);
         this.searchTimeoutClients = setTimeout(() => {
             this.currentClientPage = 1;
             this._reloadClientsTable();
-        }, 400); // Pequeño debounce para no saturar la API
+        }, 400);
     },
 
     /** Handler para cambio de orden en columnas */
@@ -1437,7 +1289,6 @@ SIModules.dashboard = {
                     ` : ''}
                 </div>
 
-                <!-- Filtros y Búsqueda -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8 w-full max-w-full">
                     <div class="w-full xl:w-auto">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar -mx-1 px-1">
@@ -1563,7 +1414,7 @@ SIModules.dashboard = {
     },
 
     _searchProjectsList(query) {
-        this.currentProjListSearch = query.trim().toLowerCase();
+        this.currentProjListSearch = query.trim();
 
         if (this.projSearchTimeout) clearTimeout(this.projSearchTimeout);
         this.projSearchTimeout = setTimeout(() => {

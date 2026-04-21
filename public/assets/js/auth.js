@@ -60,7 +60,7 @@ const Auth = {
             }
 
             // ── Loading state ──
-            Auth._setLoginLoading(submitBtn, true);
+            SIApp.setBtnLoading('btn-login', true, 'Iniciando sesión...');
 
             // ── Llamada a la API ──
             const result = await API.post('/login', { email, password }, { silent: true });
@@ -84,7 +84,7 @@ const Auth = {
                 }
 
                 Auth.showLoginError(errorMsg);
-                Auth._setLoginLoading(submitBtn, false);
+                SIApp.setBtnLoading('btn-login', false);
             }
         });
 
@@ -141,7 +141,7 @@ const Auth = {
                 return;
             }
 
-            this._setBtnLoading(btn, true, 'Enviando...');
+            SIApp.setBtnLoading('btn-forgot', true, 'Enviando...');
 
             try {
                 const result = await API.post('/password/forgot', { email }, { silent: true });
@@ -154,27 +154,12 @@ const Auth = {
             } catch (err) {
                 this.showLoginError('Error de conexión con el servidor.');
             } finally {
-                this._setBtnLoading(btn, false, 'Enviar enlace de recuperación');
+                SIApp.setBtnLoading('btn-forgot', false);
             }
         });
     },
 
-    /** Toggle loading state genérico */
-    _setBtnLoading(btn, loading, text) {
-        if (!btn) return;
-        btn.disabled = loading;
-        if (loading) {
-            btn.dataset.oldHtml = btn.innerHTML;
-            btn.innerHTML = `<span class="si-spinner" style="width:18px;height:18px;border-width:2px;margin-right:8px;"></span> ${text}`;
-        } else {
-            btn.innerHTML = btn.dataset.oldHtml || text;
-        }
-    },
 
-    /** Toggle loading state del botón de login */
-    _setLoginLoading(btn, loading) {
-        this._setBtnLoading(btn, loading, 'Iniciando sesión...');
-    },
 
     /** Validación simple de email */
     _isValidEmail(email) {

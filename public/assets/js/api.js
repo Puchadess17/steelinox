@@ -15,7 +15,6 @@
 window.API_BASE = '/steelinox/api';
 
 const API = {
-    baseUrl: window.API_BASE,
     csrfToken: null,
     _csrfPromise: null,
 
@@ -34,7 +33,7 @@ const API = {
 
         this._csrfPromise = (async () => {
             try {
-                const res = await fetch(`${this.baseUrl}/csrf-token`, {
+                const res = await fetch(`${window.API_BASE}/csrf-token`, {
                     method: 'GET',
                     credentials: 'same-origin',
                 });
@@ -83,7 +82,7 @@ const API = {
      * @returns {Promise<ApiResponse>}
      */
     async request(method, endpoint, data = null, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
+        const url = `${window.API_BASE}${endpoint}`;
         const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase());
 
         // Asegurar CSRF para mutaciones

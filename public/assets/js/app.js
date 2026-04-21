@@ -428,20 +428,6 @@ const SIApp = {
     `;
     },
 
-    /** Generar URLs amigables (slugs) */
-    generateSlug(texto) {
-        if (!texto) return '';
-        return texto
-            .toString()
-            .toLowerCase()
-            .normalize("NFD") // Separa las letras de las tildes (ej: 'é' -> 'e' + '´')
-            .replace(/[\u0300-\u036f]/g, "") // Borra las tildes que separamos antes
-            .replace(/[^a-z0-9 -]/g, "") // Borra cualquier carácter raro que no sea letra o número
-            .replace(/\s+/g, "-") // Cambia los espacios por guiones
-            .replace(/-+/g, "-") // Evita que haya dos guiones seguidos
-            .trim();
-    },
-
     /**
      * Genera un avatar con iniciales y color determinista basado en el nombre.
      * @param {string} name - Nombre completo
@@ -590,44 +576,41 @@ const SIApp = {
     },
 
     /**
-     * Muestra estado de carga en un botón
-     * @param {string} btnId ID del botón
-     * @param {boolean} loading true para activar, false para desactivar
-     * @param {string} text Texto temporal mientras carga
-     */
+         * Muestra estado de carga en un botón
+         * @param {string} btnId ID del botón
+         * @param {boolean} loading true para activar, false para desactivar
+         * @param {string} text Texto temporal mientras carga
+         */
     setBtnLoading(btnId, loading, text = '...') {
         const btn = document.getElementById(btnId);
         if (!btn) return;
 
         btn.disabled = loading;
 
-        // Si el botón ya tiene su propio spinner interno (como en project modals)
-        const nativeSpinner = btn.querySelector('.si-spinner');
-        if (nativeSpinner && btn.dataset.mode !== 'legacy') {
-            btn.dataset.mode = 'native';
-            if (loading) {
-                nativeSpinner.classList.remove('hidden');
-                btn.classList.add('opacity-80', 'pointer-events-none');
-            } else {
-                nativeSpinner.classList.add('hidden');
-                btn.classList.remove('opacity-80', 'pointer-events-none');
-            }
-            return;
-        }
-
-        // Modo estandar/legacy reescribiendo el innerHTML
-        btn.dataset.mode = 'legacy';
         if (loading) {
-            if (!btn.dataset.oldHtml) btn.dataset.oldHtml = btn.innerHTML;
-            btn.innerHTML = `<span class="si-spinner inline-block" style="width:16px;height:16px;border-width:2px;margin-right:8px;vertical-align:middle;border-color:currentColor;border-bottom-color:transparent;"></span> <span class="align-middle">${text}</span>`;
-            btn.classList.add('opacity-80', 'pointer-events-none');
-        } else {
-            if (btn.dataset.oldHtml) {
-                btn.innerHTML = btn.dataset.oldHtml;
-                delete btn.dataset.oldHtml;
-            } else if (text && text !== '...') {
-                btn.innerHTML = text;
+            // Guardamos el contenido original solo la primera vez que entra en estado de carga
+            if (!btn.dataset.originalHtml) {
+                btn.dataset.originalHtml = btn.innerHTML;
             }
+
+            // Inyectamos el spinner y el texto de carga de forma estandarizada
+            btn.innerHTML = `
+                <span class="si-spinner inline-block animate-spin rounded-full" 
+                      style="width:16px;height:16px;border-width:2px;margin-right:8px;vertical-align:middle;border-color:currentColor;border-bottom-color:transparent;">
+                </span> 
+                <span class="align-middle">${text}</span>
+            `;
+            btn.classList.add('opacity-80', 'pointer-events-none');
+
+        } else {
+            // Restauramos el contenido exacto que tenía el botón antes de cargar
+            if (btn.dataset.originalHtml) {
+                btn.innerHTML = btn.dataset.originalHtml;
+                delete btn.dataset.originalHtml;
+            } else if (text && text !== '...') {
+                btn.innerHTML = text; // Fallback por si acaso
+            }
+
             btn.classList.remove('opacity-80', 'pointer-events-none');
         }
     },
@@ -816,11 +799,6 @@ const SIApp = {
         }
     },
 
-    formatDate(dateStr) {
-        if (!dateStr) return '...';
-        const d = new Date(dateStr);
-        return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-    },
 };
 
 // Exportar globalmente

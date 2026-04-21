@@ -36,11 +36,7 @@
     <link rel="stylesheet"
         href="/steelinox/public/assets/css/app.css?v=<?php echo filemtime(ROOT_PATH . '/public/assets/css/app.css'); ?>">
 
-    <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
+
 
     <script>
         // Aplicar modo oscuro inmediatamente si existe en localStorage
@@ -186,8 +182,7 @@
         src="/steelinox/public/assets/js/modules/templates.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/templates.js'); ?>"></script>
     <script
         src="/steelinox/public/assets/js/modules/dashboard.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/dashboard.js'); ?>"></script>
-    <script
-        src="/steelinox/public/assets/js/modules/projects.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/projects.js'); ?>"></script>
+
     <script
         src="/steelinox/public/assets/js/modules/project_detail_admin.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/project_detail_admin.js'); ?>"></script>
     <script
