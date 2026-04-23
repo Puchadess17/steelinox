@@ -199,6 +199,14 @@ class ClientController {
                 'is_active' => $request->input('is_active') !== null ? (int)$request->input('is_active') : $oldData['is_active']
             ];
 
+            if ($oldData['is_active'] === 1 && $newData['is_active'] === 0) {
+                if ($clientModel->hasActiveProjects($id)) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'No se puede desactivar la empresa.', 'data' => null, 'errors' => ['is_active' => 'El cliente tiene proyectos activos. Ciérralos primero.']]);
+                    return;
+                }
+            }
+
             if ($role === 'admin' && !empty($request->input('reference'))) {
                 $newData['reference'] = htmlspecialchars(trim($request->input('reference')), ENT_QUOTES, 'UTF-8');
             }
@@ -264,6 +272,12 @@ class ClientController {
             if (!$clientDetails) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Cliente no encontrado o sin permisos de borrado', 'data' => null, 'errors' => ['client' => 'Recurso inaccesible']]);
+                return;
+            }
+
+            if ((int)$clientDetails['info']['is_active'] === 1) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'Operación no permitida.', 'data' => null, 'errors' => ['client' => 'El cliente está activo. Debes desactivarlo primero antes de poder eliminarlo.']]);
                 return;
             }
 

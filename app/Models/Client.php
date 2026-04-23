@@ -282,6 +282,22 @@ class Client
     }
 
     /**
+     * VERIFICACIÓN DE PROYECTOS ACTIVOS (TRIPLE CANDADO)
+     * Comprueba si el cliente tiene algún expediente que no esté en estado 'cerrado'.
+     */
+    public function hasActiveProjects($clientId)
+    {
+        $sql = "SELECT COUNT(*) FROM projects 
+                WHERE client_id = :client_id 
+                  AND status != 'cerrado' 
+                  AND deleted_at IS NULL";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['client_id' => $clientId]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
      * CREACIÓN DE REGISTRO
      */
     public function create($data)
@@ -301,23 +317,49 @@ class Client
     }
 
     /**
-     * ACTUALIZACIÓN DE DATOS MAESTROS
+     * ACTUALIZACIÓN TRANSACCIONAL SIMÉTRICA
+     * Propaga el estado de activación/desactivación en cascada a todos los usuarios.
      */
     public function update($id, $data)
     {
-        $sql = "UPDATE clients 
-                SET name = :name, 
-                    reference = :reference, 
-                    is_active = :is_active 
-                WHERE id = :id AND deleted_at IS NULL";
+        try {
+            $this->db->beginTransaction();
 
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'name'      => $data['name'],
-            'reference' => $data['reference'] ?? null,
-            'is_active' => isset($data['is_active']) ? (int) $data['is_active'] : 1,
-            'id'        => $id
-        ]);
+            $sql = "UPDATE clients 
+                    SET name = :name, 
+                        reference = :reference, 
+                        is_active = :is_active 
+                    WHERE id = :id AND deleted_at IS NULL";
+
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                'name'      => $data['name'],
+                'reference' => $data['reference'] ?? null,
+                'is_active' => isset($data['is_active']) ? (int) $data['is_active'] : 1,
+                'id'        => $id
+            ]);
+
+            // CASCADA TOTAL: Si se recibe un cambio de estado para el cliente,
+            // se aplica el mismo valor a todos sus usuarios vinculados.
+            if (isset($data['is_active'])) {
+                $newStatus = (int)$data['is_active'];
+                $sqlUsers = "UPDATE users 
+                             SET is_active = :status 
+                             WHERE client_id = :id AND deleted_at IS NULL";
+                $stmtUsers = $this->db->prepare($sqlUsers);
+                $stmtUsers->execute([
+                    'status' => $newStatus,
+                    'id'     => $id
+                ]);
+            }
+
+            $this->db->commit();
+            return $result;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     /**
