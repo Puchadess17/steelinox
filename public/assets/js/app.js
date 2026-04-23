@@ -70,11 +70,17 @@ const SIApp = {
         // 2. Obtener CSRF token para futuras mutaciones
         await API.fetchCsrfToken();
 
-        // 3. Construir UI
+        // 3. Aplicar preferencias visuales
+        const savedFont = localStorage.getItem('si-font-size');
+        if (savedFont) {
+            document.documentElement.style.fontSize = savedFont;
+        }
+
+        // 4. Construir UI
         this.buildHeader();
         this.buildSidebar();
 
-        // 4. Inicializar router
+        // 5. Inicializar router
         SIRouter.init('main-content');
 
         // 5. Validación cruzada (Email modificado -> revaluar password)
@@ -559,6 +565,75 @@ const SIApp = {
 
             btnCancel.onclick = () => close(false);
             btnOk.onclick = () => close(true);
+        });
+    },
+
+    /**
+     * Custom Prompt Modal Promisified — pide texto al usuario con una textarea.
+     * Devuelve la cadena introducida, o null si cancela.
+     * @param {string} title - Título del modal
+     * @param {string} message - Mensaje descriptivo (puede contener HTML)
+     * @param {string} placeholder - Placeholder del textarea
+     * @param {string} confirmText - Texto del botón de confirmar
+     */
+    prompt(title, message = '', placeholder = '', confirmText = 'Confirmar') {
+        return new Promise((resolve) => {
+            const existing = document.getElementById('si-prompt-modal');
+            if (existing) existing.remove();
+
+            const modalHtml = `
+                <div id="si-prompt-modal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 opacity-0 transition-opacity">
+                    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform scale-95 transition-transform flex flex-col overflow-hidden">
+                        <div class="p-6 border-b border-gray-100">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <h3 class="text-base font-extrabold text-gray-900">${this.escapeHtml(title)}</h3>
+                            </div>
+                            ${message ? `<p class="text-sm text-gray-500 font-medium leading-relaxed">${message}</p>` : ''}
+                        </div>
+                        <div class="p-6">
+                            <textarea id="si-prompt-textarea" rows="3"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm font-medium resize-none"
+                                placeholder="${this.escapeHtml(placeholder)}"></textarea>
+                        </div>
+                        <div class="px-6 pb-6 flex gap-3 justify-end">
+                            <button id="si-prompt-btn-cancel" class="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all focus:outline-none">Cancelar</button>
+                            <button id="si-prompt-btn-ok" class="px-5 py-2 text-sm font-bold text-white bg-orange-500 rounded-xl hover:bg-orange-600 shadow-md shadow-orange-500/20 transition-all focus:outline-none">${this.escapeHtml(confirmText)}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal     = document.getElementById('si-prompt-modal');
+            const textarea  = document.getElementById('si-prompt-textarea');
+            const btnCancel = document.getElementById('si-prompt-btn-cancel');
+            const btnOk     = document.getElementById('si-prompt-btn-ok');
+
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+                setTimeout(() => textarea && textarea.focus(), 250);
+            });
+
+            const close = (val) => {
+                modal.classList.add('opacity-0');
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => { modal.remove(); resolve(val); }, 200);
+            };
+
+            btnCancel.onclick = () => close(null);
+            btnOk.onclick = () => close(textarea ? textarea.value : '');
+
+            // Ctrl+Enter también confirma
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    close(textarea.value);
+                }
+            });
         });
     },
 

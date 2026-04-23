@@ -90,8 +90,12 @@ SIModules.projectDetailAdmin = {
                         <span id="admin-prj-client-name"></span>
                     </a>
                 </div>
-                <div class="shrink-0 flex items-center">
+                <div class="shrink-0 flex items-center gap-2">
                     ${user && user.role !== 'cliente' ? `
+                    <button id="btn-close-project" onclick="SIModules.projectDetailAdmin._confirmCloseProject()" class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-all flex items-center gap-2 shadow-sm group">
+                        <svg class="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Cerrar Proyecto</span>
+                    </button>
                     <button onclick="SIModules.projectDetailAdmin.openEditProjectModal()" class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:border-indigo-500 hover:text-indigo-600 transition-all flex items-center gap-2 shadow-sm group">
                         <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-500 group-hover:scale-110 group-hover:rotate-12 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         <span>Editar Proyecto</span>
@@ -602,6 +606,16 @@ SIModules.projectDetailAdmin = {
 
             badgeEl.className = `inline-flex items-center px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${style}`;
             badgeEl.textContent = label;
+        }
+
+        // Mostrar/ocultar botón "Cerrar Proyecto" según estado real del proyecto
+        const btnClose = document.getElementById('btn-close-project');
+        if (btnClose) {
+            if (this.project.status === 'cerrado') {
+                btnClose.classList.add('hidden');
+            } else {
+                btnClose.classList.remove('hidden');
+            }
         }
     },
 
@@ -3376,6 +3390,51 @@ SIModules.projectDetailAdmin = {
             } catch (e) {
                 SIApp.showToast('Error', 'Hubo un error del servidor intentando descartar este mensaje de chat.', 'error');
             }
+        }
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // CIERRE DIRECTO DE PROYECTO
+    // ────────────────────────────────────────────────────────────────────────
+
+    async _confirmCloseProject() {
+        if (!this.projectId) return;
+
+        // Pedir motivo al usuario antes de cerrar
+        const reason = await SIApp.prompt(
+            'Cerrar Proyecto',
+            `¿Seguro que deseas cerrar el proyecto <strong>${SIApp.escapeHtml(this.project?.name || '')}</strong>?<br><br>Una vez cerrado, no se podrán añadir comentarios. Puedes reabrir el proyecto en cualquier momento desde el panel de estado.`,
+            'Indica el motivo del cierre (requerido)',
+            'Cerrar Proyecto'
+        );
+
+        // SIApp.prompt devuelve null si el usuario cancela, o string vacío si no escribe
+        if (reason === null) return;
+        if (!reason.trim()) {
+            SIApp.showToast('Motivo requerido', 'Debes indicar un motivo para cerrar el proyecto.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btn-close-project');
+        if (btn) { btn.disabled = true; btn.textContent = 'Cerrando...'; }
+
+        try {
+            const res = await API.put(`/projects/${this.projectId}/status`, {
+                status: 'cerrado',
+                reason: reason.trim()
+            });
+
+            if (res && res.success) {
+                SIApp.showToast('Proyecto cerrado', 'El proyecto ha sido cerrado correctamente.', 'success');
+                await this.loadProjectData();
+            } else {
+                SIApp.showToast('Error', res?.message || 'No se pudo cerrar el proyecto.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            SIApp.showToast('Error', 'Error de conexión al cerrar el proyecto.', 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Cerrar Proyecto'; }
         }
     }
 };

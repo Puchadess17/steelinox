@@ -1397,12 +1397,15 @@ SIModules.dashboard = {
     },
 
     async _confirmDeleteProject(id, name) {
-        const ok = await SIApp.confirm('¿Eliminar proyecto?', `¿Seguro que deseas eliminar el proyecto "${name}"?`);
+        const ok = await SIApp.confirm('¿Eliminar proyecto?', `¿Seguro que deseas eliminar el proyecto "${name}"?\n\nRecuerda: solo se pueden eliminar proyectos cerrados.`);
         if (ok) {
             try {
-                const res = await API.delete(`/projects/${id}`);
+                const res = await API.delete(`/projects/${id}`, null, { silent: true });
                 if (res.success) {
                     SIApp.showToast('Eliminado', 'El proyecto ha sido eliminado correctamente.', 'success');
+                    if (document.getElementById('admin-table-container')) {
+                        await this._reloadAdminTable();
+                    }
                     if (document.getElementById('commercial-table-container')) {
                         await this._reloadCommercialTable();
                     }
@@ -1410,7 +1413,7 @@ SIModules.dashboard = {
                         await this._reloadProjectsListTable();
                     }
                 } else {
-                    SIApp.showToast('Error', res.message, 'error');
+                    SIApp.showToast('No se pudo eliminar', res.message || 'Verifica que el proyecto esté cerrado antes de eliminarlo.', 'error');
                 }
             } catch (e) {
                 SIApp.showToast('Error', 'No se pudo eliminar el proyecto.', 'error');

@@ -7,7 +7,19 @@ window.SIModules = window.SIModules || {};
 SIModules.settings = {
     /** Inicializar la vista de ajustes */
     async init() {
-        const user = SIApp.user;
+        let user = SIApp.user;
+        
+        // Si el objeto user existe pero le faltan los nuevos campos (email o created_at), 
+        // forzamos una recarga desde la API para actualizar sessionStorage.
+        if (user && (!user.email || !user.created_at)) {
+            const res = await API.get('/me');
+            if (res.success && res.data) {
+                SIApp.user = res.data;
+                sessionStorage.setItem('si_user', JSON.stringify(res.data));
+                user = res.data;
+            }
+        }
+
         if (!user) return;
 
         SIApp.setTitle('Ajustes de Perfil');
@@ -28,10 +40,18 @@ SIModules.settings = {
         let identityLabel = '';
         
         if (user.role === 'cliente') {
-            identityLabel = `Usuario de <span class="text-orange-500 font-bold">${SIApp.escapeHtml(user.client_name || 'Empresa')}</span>, desde ${joinedDate}`;
+            identityLabel = `Usuario de <span class="text-orange-500 font-bold">${SIApp.escapeHtml(user.client_name || 'Empresa')}</span>`;
         } else {
-            identityLabel = `<span class="text-orange-500 font-bold">${SIApp._roleLabel(user.role)}</span> de Steel Inox, desde ${joinedDate}`;
+            identityLabel = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 mb-2 uppercase tracking-wide">${SIApp._roleLabel(user.role)} de Steel Inox</span>`;
         }
+
+        // Recuperar tamaño de fuente
+        const currentFontSize = localStorage.getItem('si-font-size') || '16px'; // default
+        const fontOptions = [
+            { value: '16px', label: 'Normal' },
+            { value: '18px', label: 'Grande' },
+            { value: '20px', label: 'Muy Grande' }
+        ];
 
         return `
             <div class="max-w-5xl mx-auto space-y-12 fade-in pb-12">
@@ -45,8 +65,14 @@ SIModules.settings = {
                         </div>
                     </div>
                     <div>
+                        <div class="mb-2">${identityLabel}</div>
                         <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">${SIApp.escapeHtml(user.name)}</h1>
-                        <p class="text-gray-500 dark:text-zinc-400 font-medium text-lg mt-2">${identityLabel}</p>
+                        <div class="flex items-center justify-center gap-2 mt-3 text-sm text-gray-500 dark:text-zinc-400 font-medium">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Miembro desde ${joinedDate}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -72,8 +98,13 @@ SIModules.settings = {
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Correo Electrónico</label>
-                                    <input type="email" value="${SIApp.escapeHtml(user.email || '')}" readonly
-                                           class="w-full px-5 py-3.5 bg-gray-100 dark:bg-zinc-800/30 border border-transparent rounded-2xl text-gray-400 font-medium text-sm cursor-not-allowed">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        </div>
+                                        <input type="email" value="${SIApp.escapeHtml(user.email || 'No especificado')}" readonly
+                                            class="w-full pl-11 pr-5 py-3.5 bg-gray-100 dark:bg-zinc-800/80 border border-transparent rounded-2xl text-gray-500 dark:text-gray-400 font-medium text-sm cursor-not-allowed select-none">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -125,9 +156,9 @@ SIModules.settings = {
                         </div>
 
                         <div class="space-y-6">
-                            <div class="flex items-center justify-between p-5 bg-gray-50 dark:bg-zinc-800/40 rounded-[2rem] border border-gray-100 dark:border-zinc-700 group">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-orange-500 transition-colors shadow-sm">
+                            <div class="flex flex-col md:flex-row items-center justify-between p-5 bg-gray-50 dark:bg-zinc-800/40 rounded-[2rem] border border-gray-100 dark:border-zinc-700 group gap-4">
+                                <div class="flex items-center gap-4 w-full md:w-auto">
+                                    <div class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-orange-500 transition-colors shadow-sm shrink-0">
                                         <svg class="sun w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
                                         <svg class="moon w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                                     </div>
@@ -142,6 +173,41 @@ SIModules.settings = {
                                     <svg class="moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                                 </button>
                             </div>
+
+                            <div class="flex flex-col md:flex-row items-center justify-between p-5 bg-gray-50 dark:bg-zinc-800/40 rounded-[2rem] border border-gray-100 dark:border-zinc-700 group gap-4 relative">
+                                <div class="flex items-center gap-4 w-full md:w-auto">
+                                    <div class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-purple-500 transition-colors shadow-sm shrink-0">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Tamaño de Letra</span>
+                                        <span class="text-xs text-gray-400 font-medium italic">Mejora la legibilidad</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Custom Dropdown -->
+                                <div class="relative w-full md:w-48" id="font-size-dropdown-container">
+                                    <button onclick="SIModules.settings.toggleFontSizeDropdown(event)" 
+                                            class="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-5 py-3 rounded-2xl flex items-center justify-between shadow-sm hover:border-purple-500 transition-all group/btn">
+                                        <span id="current-font-label" class="text-sm font-bold text-gray-900 dark:text-white">
+                                            ${fontOptions.find(opt => opt.value === currentFontSize)?.label || 'Normal'}
+                                        </span>
+                                        <svg id="font-dropdown-icon" class="w-4 h-4 text-gray-400 group-hover/btn:text-purple-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    <div id="font-size-options" class="hidden absolute z-50 bottom-full md:bottom-auto md:top-full left-0 w-full mt-2 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl shadow-2xl overflow-hidden py-1 fade-in-up">
+                                        ${fontOptions.map(opt => `
+                                            <div onclick="SIModules.settings.changeFontSize('${opt.value}', '${opt.label}')" 
+                                                 class="px-5 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer transition-colors flex items-center justify-between group/item">
+                                                <span>${opt.label}</span>
+                                                ${currentFontSize === opt.value ? '<svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -155,9 +221,9 @@ SIModules.settings = {
                         </div>
                         
                         <div class="space-y-2">
-                            ${this._notificationItem('notify-doc', 'Nuevos Documentos', 'Planos, fotos o PDFs.')}
-                            ${this._notificationItem('notify-phase', 'Cambios de Fase', 'Hitos del proyecto.')}
-                            ${this._notificationItem('notify-comm', 'Comentarios', 'Tablón de anuncios.')}
+                            ${this._notificationItem('notify-doc', 'Nuevos Documentos / Versiones', 'Planos, fotos o PDFs.')}
+                            ${this._notificationItem('notify-phase', 'Cambios de Estado', 'Avances en el proyecto.')}
+                            ${this._notificationItem('notify-comm', 'Nuevos Comentarios', 'Anotaciones en el muro del proyecto.')}
                         </div>
                     </section>
                 </div>
@@ -286,7 +352,7 @@ SIModules.settings = {
                 btn.innerHTML = `<span class="si-spinner-xs"></span> Guardando...`;
             }
 
-            const result = await API.put('/api/me', { name });
+            const result = await API.put('/me', { name });
 
             if (result.success) {
                 // Actualizar objeto global y sesión
@@ -320,6 +386,60 @@ SIModules.settings = {
     /** Guardar preferencia en localStorage */
     togglePreference(key, value) {
         localStorage.setItem(`si-pref-${key}`, value ? '1' : '0');
-        SIApp.showToast('Ajustes', 'Preferencia actualizada.', 'info');
+        SIApp.showToast('Ajustes', 'Preferencia actualizada en este dispositivo.', 'info');
+    },
+
+    /** Manejo del dropdown personalizado de tamaño de fuente */
+    toggleFontSizeDropdown(e) {
+        if (e) e.stopPropagation();
+        const drop = document.getElementById('font-size-options');
+        const icon = document.getElementById('font-dropdown-icon');
+        if (!drop) return;
+
+        const isHidden = drop.classList.contains('hidden');
+        
+        // Cerrar otros dropdowns si los hubiera (buena práctica)
+        document.querySelectorAll('[id$="-options"]').forEach(d => {
+            if (d !== drop) d.classList.add('hidden');
+        });
+
+        if (isHidden) {
+            drop.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+            
+            // Listener para cerrar al hacer clic fuera
+            const closeHandler = (ev) => {
+                if (!drop.contains(ev.target)) {
+                    drop.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        } else {
+            drop.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    },
+
+    /** Cambiar tamaño de letra y persistirlo en localStorage */
+    changeFontSize(value, label) {
+        localStorage.setItem('si-font-size', value);
+        document.documentElement.style.fontSize = value;
+        
+        // Actualizar UI del dropdown
+        const labelEl = document.getElementById('current-font-label');
+        if (labelEl) labelEl.textContent = label;
+        
+        // Cerrar dropdown
+        const drop = document.getElementById('font-size-options');
+        const icon = document.getElementById('font-dropdown-icon');
+        if (drop) drop.classList.add('hidden');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+
+        SIApp.showToast('Interfaz', `Tamaño de letra: ${label}`, 'success');
+        
+        // Re-renderizar para actualizar el checkmark (opcional, pero limpio)
+        setTimeout(() => this.init(), 100);
     }
 };

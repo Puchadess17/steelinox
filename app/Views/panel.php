@@ -39,13 +39,13 @@
 
 
     <script>
-        // Aplicar modo oscuro inmediatamente si existe en localStorage
-        (function() {
-            const savedTheme = localStorage.getItem('si-theme');
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
+            // Aplicar modo oscuro inmediatamente si existe en localStorage
+            (function () {
+                const savedTheme = localStorage.getItem('si-theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
     </script>
 </head>
 
@@ -68,7 +68,8 @@
                 <!-- Logo -->
                 <a href="javascript:void(0)" onclick="SIRouter.navigate('dashboard')" class="flex items-center gap-2">
                     <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-9 w-auto dark:hidden">
-                    <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-9 w-auto hidden dark:block">
+                    <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox"
+                        class="h-9 w-auto hidden dark:block">
                 </a>
             </div>
 
@@ -77,12 +78,6 @@
 
             <!-- Right: Notifications + Avatar + Logout -->
             <div class="flex items-center gap-3">
-
-                <!-- Theme Switcher Header -->
-                <button onclick="SIApp.toggleTheme()" class="theme-switcher-btn mr-2" title="Cambiar tema">
-                    <svg class="sun w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
-                    <svg class="moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                </button>
 
                 <!-- User info -->
                 <div class="flex items-center gap-3">
@@ -126,7 +121,8 @@
             <div class="flex items-center justify-between p-4 border-b border-gray-100">
                 <div class="flex items-center gap-2">
                     <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-8 w-auto dark:hidden">
-                    <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox" class="h-8 w-auto hidden dark:block">
+                    <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox"
+                        class="h-8 w-auto hidden dark:block">
                 </div>
                 <button onclick="SIPanelUI.closeMobileSidebar()" class="p-2 rounded-lg text-gray-400 hover:bg-gray-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

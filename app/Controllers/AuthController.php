@@ -4,6 +4,7 @@
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Models/Audit.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
+require_once APP_PATH . '/Policies/AuthMiddleware.php';
 
 class AuthController {
 
@@ -41,7 +42,7 @@ class AuthController {
         
         // Realizamos un JOIN para obtener el nombre de la empresa
         $db = Database::getInstance()->getConnection();
-        $sql = "SELECT u.id, u.name, u.role, u.created_at, c.name as client_name 
+        $sql = "SELECT u.id, u.name, u.email, u.role, u.created_at, c.name as client_name 
                 FROM users u 
                 LEFT JOIN clients c ON u.client_id = c.id 
                 WHERE u.id = :id AND u.deleted_at IS NULL";
@@ -60,6 +61,7 @@ class AuthController {
         $this->sendResponse(200, true, 'Sesión activa', [
             'id'          => $user['id'],
             'name'        => $user['name'],
+            'email'       => $user['email'],
             'role'        => $user['role'],
             'client_name' => $user['client_name'],
             'created_at'  => $user['created_at']
