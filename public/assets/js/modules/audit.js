@@ -444,7 +444,7 @@ window.SIModules.audit = {
                         </div>
                         ${log.metadata ? `
                             <button onclick="window.SIModules.audit.toggleMetadata(${log.id}, this)" class="p-2 text-gray-300 dark:text-white hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-full transition-all group/btn" title="Ver detalles JSON">
-                                <svg class="w-5 h-5 transition-transform group-hover/btn:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                <svg class="w-5 h-5 transition-transform group-hover/btn:scale-110 text-black audit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
                             </button>
                         ` : `
                             <div class="w-9 h-9"></div>

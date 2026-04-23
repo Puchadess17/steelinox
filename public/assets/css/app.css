@@ -283,6 +283,10 @@
 }
 
 
+.dark svg.audit-icon {
+    color: #ffffff !important;
+}
+
 body {
     background-color: var(--si-bg-page) !important;
     color: var(--si-text-body);
