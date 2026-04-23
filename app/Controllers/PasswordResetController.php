@@ -69,29 +69,16 @@ class PasswordResetController
             }
 
             $token = bin2hex(random_bytes(32));
-            $userModel->setResetToken($email, $token);
+            $userModel->setResetToken($email, $token, '1 HOUR');
 
             $resetLink = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox/password/reset?token=" . $token;
 
-            $html = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eef2f6; border-radius: 12px;'>
-                    <div style='text-align: center; margin-bottom: 24px;'>
-                        <h2 style='color: #f97316; margin: 0;'>Recuperar Contraseña</h2>
-                        <p style='color: #64748b; font-size: 14px;'>Steel Inox Extranet</p>
-                    </div>
-                    <p style='color: #1e293b; font-size: 16px; line-height: 1.6;'>Hola,</p>
-                    <p style='color: #1e293b; font-size: 16px; line-height: 1.6;'>Has solicitado restablecer tu contraseña. Haz clic en el botón de abajo para continuar:</p>
-                    <div style='text-align: center; margin: 32px 0;'>
-                        <a href='{$resetLink}' style='background-color: #f97316; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;'>Restablecer Contraseña</a>
-                    </div>
-                    <p style='color: #64748b; font-size: 12px; line-height: 1.6;'>Este enlace caducará en 60 minutos. Si no has solicitado este cambio, puedes ignorar este correo con seguridad.</p>
-                    <hr style='border: 0; border-top: 1px solid #eef2f6; margin: 24px 0;'>
-                    <p style='color: #94a3b8; font-size: 11px; text-align: center;'>© 2026 Steel Inox. Todos los derechos reservados.</p>
-                </div>";
+            require_once APP_PATH . '/Services/NotificationService.php';
+            $queued = NotificationService::queueUserEvent($user['id'], 'recuperar_password', $email, [
+                'reset_url' => $resetLink
+            ]);
 
-            $mailResult = MailService::send($email, "Recuperar Contraseña — Steel Inox", $html);
-
-            if ($mailResult['success']) {
+            if ($queued) {
                 AuditLogger::log('recuperacion_clave_solicitada', 'user', $user['id'], null, [
                     'email' => $email
                 ]);
@@ -99,7 +86,7 @@ class PasswordResetController
                 echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.', 'data' => null, 'errors' => null]);
             } else {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Error al enviar el correo. Por favor, contacte con soporte.', 'data' => null, 'errors' => ['server' => 'Fallo envío email']]);
+                echo json_encode(['success' => false, 'message' => 'Error al encolar el correo. Por favor, contacte con soporte.', 'data' => null, 'errors' => ['server' => 'Fallo encolado email']]);
             }
 
         } catch (Exception $e) {

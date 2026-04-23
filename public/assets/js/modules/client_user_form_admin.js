@@ -273,11 +273,7 @@ SIModules.clientUserFormAdmin = {
 
         const isEdit = !!data.id;
 
-        // Extra validation for password on create
-        if (!isEdit && !data.password) {
-            SIApp.showToast('Contraseña requerida', 'La contraseña es obligatoria para nuevos usuarios.', 'error');
-            return;
-        }
+
 
         SIApp.setBtnLoading('btn-save-user', true, isEdit ? 'Guardando...' : 'Creando...');
 
@@ -293,7 +289,7 @@ SIModules.clientUserFormAdmin = {
                 SIApp.showToast('Éxito', res.message || (isEdit ? 'Usuario actualizado.' : 'Usuario creado.'), 'success');
                 setTimeout(() => SIRouter.navigate('users'), 1000);
             } else {
-                SIApp.showToast('Error', res.message || 'Error en la operación', 'error');
+                SIApp.handleApiError(res, 'Error en la operación');
             }
         } catch (e) {
             console.error(e);

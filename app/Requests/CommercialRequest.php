@@ -14,16 +14,7 @@ class CommercialRequest extends BaseRequest {
             $this->addError('email', 'El email es obligatorio y debe tener un formato válido.');
         }
         
-        $password = $this->input('password');
-        if (empty($password)) {
-            $this->addError('password', 'La contraseña es obligatoria.');
-        } else {
-            $pwdCheck = $this->validatePasswordPolicy($password, $cleanEmail);
-            if ($pwdCheck !== true) {
-                $this->addError('password', $pwdCheck);
-            }
-        }
-        
+
         return !$this->fails();
     }
 

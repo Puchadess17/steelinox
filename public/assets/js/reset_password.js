@@ -43,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await API.post('/password/reset', { token, password }, { silent: true });
 
             if (res.success) {
+                // Asegurar limpieza de cualquier sesión previa antes de mostrar el éxito
+                if (window.Auth && typeof Auth.clearLocalData === 'function') {
+                    Auth.clearLocalData();
+                }
+
                 const header = document.getElementById('reset-header');
                 if (header) header.classList.add('hidden');
                 

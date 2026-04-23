@@ -133,11 +133,14 @@ class AuthController {
 
         if ($user && password_verify($password, $user['password_hash'])) {
             
+            // Limpieza total antes de iniciar la nueva sesión
+            session_unset();
             session_regenerate_id(true);
 
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['client_id'] = $user['client_id'];
+            $_SESSION['last_activity'] = time(); // Inicializar marca de tiempo
             
             // last_login_at
             $userModel->updateLastLogin($user['id']);
@@ -163,12 +166,21 @@ class AuthController {
         
         // AUDITORÍA
         if (isset($_SESSION['user_id'])) {
-            AuditLogger::log('logout', 'user', $_SESSION['user_id']);
+            AuditLogger::log('logout_exitoso', 'user', $_SESSION['user_id']);
         }
 
+        // Limpieza profunda de la sesión
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
         session_unset();
         session_destroy();
-        
+
         $this->sendResponse(200, true, 'Sesión cerrada', null, null);
     }
 

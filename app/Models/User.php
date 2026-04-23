@@ -187,9 +187,9 @@ class User
      * Genera, valida y destruye tokens criptográficos temporales con un 
      * límite de tiempo predefinido (1 hora) para el reseteo de contraseñas.
      */
-    public function setResetToken($email, $token)
+    public function setResetToken($email, $token, $interval = '1 HOUR')
     {
-        $sql = "UPDATE users SET reset_token = :token, reset_token_expires_at = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = :email AND deleted_at IS NULL";
+        $sql = "UPDATE users SET reset_token = :token, reset_token_expires_at = DATE_ADD(NOW(), INTERVAL $interval) WHERE email = :email AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['token' => $token, 'email' => $email]);
     }

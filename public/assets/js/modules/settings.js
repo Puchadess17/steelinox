@@ -8,7 +8,7 @@ SIModules.settings = {
     /** Inicializar la vista de ajustes */
     async init() {
         let user = SIApp.user;
-        
+
         // Si el objeto user existe pero le faltan los nuevos campos (email o created_at), 
         // forzamos una recarga desde la API para actualizar sessionStorage.
         if (user && (!user.email || !user.created_at)) {
@@ -28,7 +28,7 @@ SIModules.settings = {
         if (!container) return;
 
         container.innerHTML = this._template(user);
-        
+
         // Inicializar eventos
         this._initEvents();
     },
@@ -38,7 +38,7 @@ SIModules.settings = {
         // Formatear la fecha "Desde..."
         const joinedDate = SIApp.formatDate(user.created_at);
         let identityLabel = '';
-        
+
         if (user.role === 'cliente') {
             identityLabel = `Usuario de <span class="text-orange-500 font-bold">${SIApp.escapeHtml(user.client_name || 'Empresa')}</span>`;
         } else {
@@ -80,7 +80,7 @@ SIModules.settings = {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     
                     <!-- 1. DATOS PERSONALES -->
-                    <section class="settings-card flex flex-col justify-between">
+                    <section class="settings-card md:col-span-2 flex flex-col justify-between">
                         <div>
                             <div class="settings-section-header">
                                 <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center">
@@ -116,37 +116,7 @@ SIModules.settings = {
                         </div>
                     </section>
 
-                    <!-- 2. SEGURIDAD (Acceso a Modal) -->
-                    <section class="settings-card flex flex-col justify-between border-2 border-transparent hover:border-orange-500/20 transition-all">
-                        <div>
-                            <div class="settings-section-header">
-                                <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                </div>
-                                <h3 class="text-xl font-extrabold text-gray-900 dark:text-white">Seguridad</h3>
-                            </div>
-                            
-                            <p class="text-gray-500 dark:text-zinc-400 text-sm font-medium leading-relaxed mb-6">
-                                Mantén tu cuenta protegida. Te recomendamos cambiar tu contraseña cada 90 días para garantizar la confidencialidad de tus proyectos.
-                            </p>
-                            
-                            <div class="p-4 bg-orange-50 dark:bg-orange-500/5 rounded-2xl border border-orange-100 dark:border-orange-500/10">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span class="text-xs font-bold text-orange-700 dark:text-orange-400">Último cambio: Hace 3 meses</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="pt-8">
-                            <button onclick="SIModules.settings.openPasswordModal()" class="w-full py-4 bg-white dark:bg-zinc-800 border-2 border-gray-100 dark:border-zinc-700 text-gray-900 dark:text-white rounded-2xl text-sm font-black shadow-sm hover:border-orange-500 hover:text-orange-600 transition-all active:scale-95 flex items-center justify-center gap-3">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                                Cambiar Contraseña
-                            </button>
-                        </div>
-                    </section>
-
-                    <!-- 3. PREFERENCIAS VISUALES -->
+                    <!-- 2. PREFERENCIAS VISUALES -->
                     <section class="settings-card">
                         <div class="settings-section-header">
                             <div class="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 text-purple-500 rounded-xl flex items-center justify-center">
@@ -358,15 +328,15 @@ SIModules.settings = {
                 // Actualizar objeto global y sesión
                 SIApp.user.name = name;
                 sessionStorage.setItem('si_user', JSON.stringify(SIApp.user));
-                
+
                 SIApp.showToast('Perfil', 'Tus datos se han guardado correctamente.', 'success');
-                
+
                 // Actualizar UI del header sin recargar
                 const headerName = document.getElementById('header-user-name');
                 if (headerName) headerName.textContent = name;
                 const headerAvatar = document.getElementById('header-user-avatar');
                 if (headerAvatar) headerAvatar.innerHTML = SIApp.avatarInitials(name, 'w-8 h-8 rounded-lg', 'text-[10px]');
-                
+
                 // Refrescar vista actual para actualizar iniciales grandes
                 this.init();
             } else {
@@ -397,7 +367,7 @@ SIModules.settings = {
         if (!drop) return;
 
         const isHidden = drop.classList.contains('hidden');
-        
+
         // Cerrar otros dropdowns si los hubiera (buena práctica)
         document.querySelectorAll('[id$="-options"]').forEach(d => {
             if (d !== drop) d.classList.add('hidden');
@@ -406,7 +376,7 @@ SIModules.settings = {
         if (isHidden) {
             drop.classList.remove('hidden');
             icon.style.transform = 'rotate(180deg)';
-            
+
             // Listener para cerrar al hacer clic fuera
             const closeHandler = (ev) => {
                 if (!drop.contains(ev.target)) {
@@ -426,11 +396,11 @@ SIModules.settings = {
     changeFontSize(value, label) {
         localStorage.setItem('si-font-size', value);
         document.documentElement.style.fontSize = value;
-        
+
         // Actualizar UI del dropdown
         const labelEl = document.getElementById('current-font-label');
         if (labelEl) labelEl.textContent = label;
-        
+
         // Cerrar dropdown
         const drop = document.getElementById('font-size-options');
         const icon = document.getElementById('font-dropdown-icon');
@@ -438,8 +408,5 @@ SIModules.settings = {
         if (icon) icon.style.transform = 'rotate(0deg)';
 
         SIApp.showToast('Interfaz', `Tamaño de letra: ${label}`, 'success');
-        
-        // Re-renderizar para actualizar el checkmark (opcional, pero limpio)
-        setTimeout(() => this.init(), 100);
     }
 };

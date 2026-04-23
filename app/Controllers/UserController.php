@@ -139,7 +139,7 @@ class UserController {
             $cleanName = $request->sanitizeName($request->input('name'));
             $cleanEmail = strtolower(trim($request->input('email')));
             $clientId = (int)$request->input('client_id');
-            $passwordRaw = $request->input('password');
+            $clientId = (int)$request->input('client_id');
 
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($clientId, $actorUserId, $actorRole)) {
@@ -156,7 +156,8 @@ class UserController {
                 return;
             }
 
-            $hashedPassword = password_hash($passwordRaw, PASSWORD_DEFAULT);
+            $randomPassword = bin2hex(random_bytes(8));
+            $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
 
             $newUserId = $userModel->create([
                 'client_id'     => $clientId,
@@ -174,11 +175,16 @@ class UserController {
                 'email'     => $cleanEmail
             ]);
 
+            // Generar token para reset password inicial
+            $token = bin2hex(random_bytes(32));
+            $userModel->setResetToken($cleanEmail, $token, '24 HOUR');
+            $resetUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox/password/reset?token=" . $token;
+
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueUserEvent($newUserId, 'alta_usuario', $cleanEmail, [
-                'nombre'         => $cleanName,
-                'email'          => $cleanEmail,
-                'password_plana' => $passwordRaw
+                'nombre'    => $cleanName,
+                'email'     => $cleanEmail,
+                'reset_url' => $resetUrl
             ]);
 
             echo json_encode(['success' => true, 'message' => 'Usuario creado correctamente y credenciales enviadas.', 'data' => ['id' => $newUserId], 'errors' => null]);
@@ -446,6 +452,11 @@ class UserController {
             $updateData = [];
             if ($request->input('name') !== null) {
                 $newName = $request->sanitizeName($request->input('name'));
+                if ($newName === $user['name']) {
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'El nuevo nombre no puede ser igual al actual.', 'data' => null, 'errors' => ['name' => 'El nombre es igual al actual.']]);
+                    return;
+                }
                 $updateData['name'] = $newName;
             }
 

@@ -1017,6 +1017,9 @@ SIModules.dashboard = {
                         <span class="inline-flex items-center text-[10px] font-black text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 px-2.5 py-1 rounded-[6px] tracking-widest">${SIApp.escapeHtml(c.reference || 'CLI-TEMP')}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
+                        ${SIApp.activeBadge(c.is_active)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
                         <div class="flex items-center justify-center gap-1.5">
                             <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                             <span class="inline-flex items-center justify-center min-w-[24px] px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-orange-500 text-[13px] font-black">${c.projects_count || '0'}</span>
@@ -1066,6 +1069,9 @@ SIModules.dashboard = {
                             </th>
                             <th class="px-6 py-4 text-left group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('reference')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">Referencia ${sortIcon('reference')}</span>
+                            </th>
+                            <th class="px-6 py-4 text-center">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Estado</span>
                             </th>
                             <th class="px-6 py-4 text-center group cursor-pointer select-none transition-colors hover:bg-gray-100/50" onclick="SIModules.dashboard._sortClients('projects_count')">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">Proyectos ${sortIcon('projects_count')}</span>

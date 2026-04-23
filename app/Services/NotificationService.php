@@ -256,24 +256,32 @@ class NotificationService
                 $subject = "Bienvenido a Steelinox";
                 $nombre = htmlspecialchars($data['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
                 $email = htmlspecialchars($data['email'] ?? '', ENT_QUOTES, 'UTF-8');
-                $pass = htmlspecialchars($data['password_plana'] ?? '', ENT_QUOTES, 'UTF-8');
+                $resetUrl = htmlspecialchars($data['reset_url'] ?? '', ENT_QUOTES, 'UTF-8');
 
                 $content .= "<h2 style='margin:0 0 10px 0; color:#1a1b25;'>Hola, $nombre</h2>";
-                $content .= "<p style='margin:0 0 25px 0; color:#64748b;'>Tu cuenta para acceder a nuestra plataforma privada ha sido activada correctamente.</p>";
+                $content .= "<p style='margin:0 0 25px 0; color:#64748b;'>Tu cuenta para acceder a nuestra plataforma privada ha sido creada correctamente.</p>";
                 $content .= "<div style='background:#f1f5f9; border-radius:16px; padding:25px; margin-bottom:30px;'>
                                 <div style='margin-bottom:15px;'>
-                                    <span style='display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Correo Electrónico</span>
+                                    <span style='display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Correo Electrónico (Usuario)</span>
                                     <span style='font-size:15px; font-weight:700; color:#1a1b25;'>$email</span>
                                 </div>
-                                <div style='margin-bottom:0;'>
-                                    <span style='display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Contraseña Temporal</span>
-                                    <span style='font-size:15px; font-weight:700; color:#E57B23; font-family:monospace;'>$pass</span>
-                                </div>
                              </div>";
-                $content .= "<p style='margin:0 0 20px 0; font-size:13px; color:#94a3b8;'>Por seguridad, se recomienda cambiar esta contraseña desde los ajustes de tu perfil tras el primer inicio de sesión.</p>";
+                $content .= "<p style='margin:0 0 20px 0; font-size:13px; color:#94a3b8;'>Para completar tu registro y establecer tu contraseña, haz clic en el siguiente enlace. Este enlace caduca en 24 horas.</p>";
                 $content .= "<div style='text-align:center;'>
-                                <a href='{$baseUrl}/' style='display:inline-block; background:#1a1b25; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Iniciar Sesión Ahora</a>
+                                <a href='{$resetUrl}' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Establecer Contraseña</a>
                              </div>";
+                break;
+
+            case 'recuperar_password':
+                $subject = "Recuperar Contraseña — Steelinox";
+                $resetUrl = htmlspecialchars($data['reset_url'] ?? '', ENT_QUOTES, 'UTF-8');
+
+                $content .= "<h2 style='margin:0 0 10px 0; color:#1a1b25;'>Recuperación de Acceso</h2>";
+                $content .= "<p style='margin:0 0 25px 0; color:#64748b;'>Has solicitado restablecer tu contraseña para acceder a la plataforma de Steelinox. Haz clic en el botón de abajo para continuar:</p>";
+                $content .= "<div style='text-align:center; margin-bottom:30px;'>
+                                <a href='{$resetUrl}' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Restablecer Contraseña</a>
+                             </div>";
+                $content .= "<p style='margin:0; font-size:13px; color:#94a3b8;'>Este enlace caducará en 60 minutos. Si no has solicitado este cambio, puedes ignorar este correo con seguridad.</p>";
                 break;
         }
 
@@ -289,6 +297,9 @@ class NotificationService
      */
     private static function getHtmlWrapper($content, $preheader = "")
     {
+        $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://steelinox.es', '/');
+        $logoUrl = $baseUrl . "/logo-header-blanco.svg";
+
         return "
         <!DOCTYPE html>
         <html>
@@ -305,8 +316,7 @@ class NotificationService
                         <table width='100%' max-width='600' border='0' cellspacing='0' cellpadding='0' style='max-width:600px; background-color:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);'>
                             <tr>
                                 <td style='background-color:#1a1b25; padding:40px; text-align:center; border-bottom:5px solid #E57B23;'>
-                                    <h1 style='margin:0; color:#ffffff; font-size:22px; font-weight:900; letter-spacing:3px; text-transform:uppercase;'>STEELINOX</h1>
-                                    <span style='display:block; color:#E57B23; font-size:10px; font-weight:800; letter-spacing:1.5px; margin-top:5px;'>INGENIERÍA & INNOVACIÓN</span>
+                                    <img src='{$logoUrl}' alt='STEELINOX' style='max-height:40px; width:auto; display:inline-block;'>
                                 </td>
                             </tr>
                             <tr>

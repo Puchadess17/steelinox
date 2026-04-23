@@ -247,7 +247,7 @@ SIModules.clientFormAdmin = {
                 const targetId = response.data?.id || this.clientId;
                 SIRouter.navigate('/steelinox/client/' + targetId);
             } else {
-                SIApp.showToast('Error', response.message || 'Error al guardar', 'error');
+                SIApp.handleApiError(response, 'Error al guardar');
             }
         } catch (error) {
             console.error('Error guardando cliente:', error);

@@ -16,16 +16,7 @@ class UserRequest extends BaseRequest {
             $this->addError('email', 'El formato del email no es válido.');
         }
         
-        $password = $this->input('password');
-        if (empty($password)) {
-            $this->addError('password', 'La contraseña es obligatoria.');
-        } else {
-            $pwdCheck = $this->validatePasswordPolicy($password, $cleanEmail);
-            if ($pwdCheck !== true) {
-                $this->addError('password', $pwdCheck);
-            }
-        }
-        
+
         if (empty($this->input('client_id'))) {
             $this->addError('client_id', 'ID de cliente obligatorio.');
         }

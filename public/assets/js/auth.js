@@ -66,6 +66,9 @@ const Auth = {
             const result = await API.post('/login', { email, password }, { silent: true });
 
             if (result.success && result.data) {
+                // Limpiar cualquier rastro de sesión anterior antes de guardar la nueva
+                this.clearLocalData();
+                
                 // Guardar datos del usuario en sessionStorage
                 sessionStorage.setItem('si_user', JSON.stringify(result.data));
 
@@ -192,11 +195,26 @@ const Auth = {
         try {
             await API.post('/logout', null, { silent: true });
         } catch (e) {
-            // Si falla la petición, igualmente limpiamos el frontend
             console.warn('Auth: Error en logout API, limpiando sesión local:', e);
         }
-        sessionStorage.removeItem('si_user');
-        API.csrfToken = null;
+        this.clearLocalData();
         window.location.href = '/steelinox/';
     },
+
+    /** Limpia todos los datos de sesión local y preferencias específicas */
+    clearLocalData() {
+        // 1. Limpiar sessionStorage (datos de navegación temporal)
+        sessionStorage.clear();
+
+        // 2. Limpiar localStorage de forma selectiva (solo lo que empiece por si-)
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.startsWith('si-') || key === 'si_user') {
+                localStorage.removeItem(key);
+            }
+        });
+
+        // 3. Resetear token en memoria de la API
+        if (window.API) API.csrfToken = null;
+    }
 };

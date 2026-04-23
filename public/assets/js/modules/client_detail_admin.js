@@ -60,11 +60,15 @@ SIModules.clientDetailAdmin = {
                     </div>
                 </div>
 
-                <div class="relative sm:absolute sm:top-6 sm:right-6 z-20 w-full sm:w-auto">
-                    <a href="/steelinox/client/edit/${clientId}" class="flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-indigo-500 hover:border-indigo-500 shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 w-full sm:w-auto group">
+                <div class="relative sm:absolute sm:top-6 sm:right-6 z-20 w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2">
+                    <a href="/steelinox/client/edit/${clientId}" class="flex-1 sm:flex-none flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-indigo-500 hover:border-indigo-500 shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 group w-full sm:w-auto">
                         <svg class="w-4 h-4 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        Editar Cliente
+                        Editar
                     </a>
+                    <button onclick="SIModules.clientDetailAdmin.deleteClient(${clientId})" class="flex-1 sm:flex-none flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:text-red-500 hover:border-red-500 hover:bg-red-50 shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 group w-full sm:w-auto">
+                        <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Eliminar
+                    </button>
                 </div>
             </div>
 
@@ -766,10 +770,6 @@ SIModules.clientDetailAdmin = {
     },
 
     _renderProjectRow(p) {
-        const format = (val) => (window.SIApp && SIApp.formatCurrency) ? SIApp.formatCurrency(val) : val;
-        const formatDate = (val) => (window.SIApp && SIApp.formatDate) ? SIApp.formatDate(val) : val;
-        const badge = (val) => (window.SIApp && SIApp.statusBadge) ? SIApp.statusBadge(val) : val;
-
         return `
         <tr class="hover:bg-orange-50/30 transition-colors group">
             <td class="px-5 py-4 whitespace-nowrap text-center">
@@ -786,17 +786,17 @@ SIModules.clientDetailAdmin = {
             </td>
             
             <td class="px-5 py-4 text-sm font-black text-gray-600 whitespace-nowrap text-center">
-                ${format(p.budget_amount || 0)}
+                ${SIApp.formatCurrency(p.budget_amount || 0)}
             </td>
             
             <td class="px-5 py-4 whitespace-nowrap">
                 <div class="flex justify-center">
-                    ${badge(p.status)}
+                    ${SIApp.statusBadge(p.status)}
                 </div>
             </td>
             
             <td class="px-5 py-4 text-xs font-semibold text-gray-400 whitespace-nowrap tracking-wide uppercase text-center">
-                ${formatDate(p.created_at)}
+                ${SIApp.formatDate(p.created_at)}
             </td>
             
             <td class="px-5 py-4 text-center whitespace-nowrap w-12">
@@ -843,12 +843,7 @@ SIModules.clientDetailAdmin = {
         `;
     },
 
-    /** Mobile card for a project */
     _renderProjectCard(p) {
-        const format = (val) => (window.SIApp && SIApp.formatCurrency) ? SIApp.formatCurrency(val) : val;
-        const formatDate = (val) => (window.SIApp && SIApp.formatDate) ? SIApp.formatDate(val) : val;
-        const badge = (val) => (window.SIApp && SIApp.statusBadge) ? SIApp.statusBadge(val) : val;
-
         return `
             <a href="/steelinox/project/${p.id}" class="block bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group">
                 <div class="flex items-start justify-between mb-3 gap-2">
@@ -856,13 +851,13 @@ SIModules.clientDetailAdmin = {
                         <p class="text-sm font-black text-[#000000] group-hover:text-orange-600 transition-colors leading-tight truncate">${p.name}</p>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${p.reference}</span>
                     </div>
-                    ${badge(p.status)}
+                    ${SIApp.statusBadge(p.status)}
                 </div>
                 <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                    <p class="text-sm font-black text-gray-700">${format(p.budget_amount || 0)}</p>
+                    <p class="text-sm font-black text-gray-700">${SIApp.formatCurrency(p.budget_amount || 0)}</p>
                     <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        ${formatDate(p.created_at)}
+                        ${SIApp.formatDate(p.created_at)}
                     </div>
                 </div>
             </a>
@@ -974,11 +969,30 @@ SIModules.clientDetailAdmin = {
                 if (window.SIApp && SIApp.showToast) SIApp.showToast('Éxito', res.message, 'success');
                 await this.loadClientData();
             } else {
-                if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', res.message, 'error');
+                SIApp.handleApiError(res, 'No se pudo eliminar el usuario');
             }
         } catch (e) {
             console.error(e);
-            if (window.SIApp && SIApp.showToast) SIApp.showToast('Error', 'No se pudo eliminar el usuario', 'error');
+            SIApp.handleApiError(e, 'No se pudo eliminar el usuario');
+        }
+    },
+
+    async deleteClient(id) {
+        if (!window.SIApp) return;
+        const confirmed = await SIApp.confirm('¿Eliminar cliente?', 'Vas a eliminar definitivamente a este cliente y todos sus proyectos/usuarios. ¿Continuar?');
+        if (!confirmed) return;
+
+        try {
+            const res = await API.delete('/clients/' + id);
+            if (res.success) {
+                SIApp.showToast('Éxito', res.message || 'Cliente eliminado.', 'success');
+                SIRouter.navigate('clients');
+            } else {
+                SIApp.handleApiError(res, 'No se pudo eliminar el cliente.');
+            }
+        } catch (e) {
+            console.error(e);
+            SIApp.showToast('Error', 'Error al eliminar cliente', 'error');
         }
     },
 

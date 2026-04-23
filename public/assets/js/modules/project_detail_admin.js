@@ -85,7 +85,7 @@ SIModules.projectDetailAdmin = {
                             <span id="admin-prj-status-badge"></span>
                         </div>
                     </div>
-                    <a id="admin-prj-client-link" href="" class="hidden items-center gap-1 text-[13px] font-semibold text-gray-500 hover:text-orange-500 transition-colors w-max mt-1">
+                    <a id="admin-prj-client-link" href="" class="hidden items-center gap-1 text-[13px] font-semibold text-gray-500 hover:text-emerald-600 transition-colors w-max mt-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                         <span id="admin-prj-client-name"></span>
                     </a>
@@ -580,7 +580,18 @@ SIModules.projectDetailAdmin = {
 
         if (clientLinkEl && clientNameEl && this.project.client_id) {
             clientNameEl.textContent = this.project.client_name || 'Empresa Desconocida';
-            clientLinkEl.setAttribute('href', `/steelinox/client/${this.project.client_id}`);
+            
+            if (SIApp.user && SIApp.user.role === 'cliente') {
+                // El cliente no puede ver detalles de otros clientes (o el suyo propio en esta vista admin)
+                clientLinkEl.removeAttribute('href');
+                clientLinkEl.classList.remove('hover:text-emerald-600', 'transition-colors');
+                clientLinkEl.classList.add('cursor-default');
+            } else {
+                clientLinkEl.setAttribute('href', `/steelinox/client/${this.project.client_id}`);
+                clientLinkEl.classList.add('hover:text-emerald-600', 'transition-colors');
+                clientLinkEl.classList.remove('cursor-default');
+            }
+
             clientLinkEl.classList.remove('hidden');
             clientLinkEl.classList.add('flex');
         } else if (clientLinkEl) {
@@ -3205,6 +3216,21 @@ SIModules.projectDetailAdmin = {
                 });
                 liElement.className = 'px-4 py-2.5 transition-all flex items-center gap-2 bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner';
                 liElement.insertAdjacentHTML('beforeend', '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>');
+            }
+        }
+
+
+
+        const reasonTextarea = document.getElementById('change-status-reason');
+        if (reasonTextarea) {
+            reasonTextarea.required = (val === 'cerrado');
+            const label = reasonTextarea.previousElementSibling;
+            if (label && val === 'cerrado') {
+                if (!label.innerHTML.includes('<span class="text-red-500">*</span>')) {
+                    label.innerHTML += ' <span class="text-red-500">*</span>';
+                }
+            } else if (label) {
+                label.innerHTML = label.innerHTML.replace(' <span class="text-red-500">*</span>', '');
             }
         }
 

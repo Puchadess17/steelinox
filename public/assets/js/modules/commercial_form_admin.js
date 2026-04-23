@@ -173,7 +173,7 @@ SIModules.commercialFormAdmin = {
                 SIApp.showToast('¡Éxito!', isEdit ? 'Comercial actualizado correctamente.' : 'Nuevo comercial registrado.', 'success');
                 setTimeout(() => SIRouter.navigate('commercials'), 500);
             } else {
-                SIApp.showToast('Error', result.message || 'No se pudo completar la acción.', 'error');
+                SIApp.handleApiError(result, 'No se pudo completar la acción.');
             }
         } catch (error) {
             console.error('Submit error:', error);

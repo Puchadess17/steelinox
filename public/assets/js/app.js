@@ -21,48 +21,71 @@ const SIApp = {
         // 1. Verificar sesión local
         this.user = Auth.getUser();
 
-        // Detectar si estamos actualmente en la página pública del login
-        const isLoginPage = window.location.pathname === '/steelinox/' || window.location.pathname === '/steelinox/index.php';
+        // 1. Identificar si estamos en una página de autenticación (pública)
+        const authPaths = ['/steelinox', '/steelinox/', '/steelinox/index.php', '/steelinox/password/reset'];
+        const currentPath = window.location.pathname;
+        const isAuthPage = authPaths.some(p => {
+            // Comparación flexible (con o sin barra final)
+            const pClean = p.replace(/\/$/, '');
+            const cClean = currentPath.replace(/\/$/, '');
+            return pClean === cClean;
+        });
 
-        // Si no hay datos en sessionStorage, intentar recuperar la sesión del servidor.
-        if (!this.user) {
-            try {
-                const res = await fetch(`${window.API_BASE}/me`, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                });
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.success && json.data) {
-                        // Sesión PHP sigue viva → recuperar datos
-                        sessionStorage.setItem('si_user', JSON.stringify(json.data));
-                        this.user = json.data;
-                    } else {
-                        // Sesión expirada
-                        sessionStorage.removeItem('si_user');
-                        if (!isLoginPage) window.location.href = '/steelinox/';
+        // Caso especial: si hay un error de token pero ya tenemos sesión local "aparente", 
+        // dejamos que el Session Guard verifique si realmente la sesión es válida.
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasTokenError = urlParams.get('error') === 'token_invalid';
+
+        // 2. Verificar sesión contra el servidor (Session Sync Guard)
+        // Incluso si tenemos datos locales, debemos validar que la sesión PHP coincida.
+        // Esto evita errores si el usuario cambia de cuenta en otra pestaña.
+        try {
+            const res = await fetch(`${window.API_BASE}/me`, {
+                method: 'GET',
+                credentials: 'same-origin',
+            });
+            
+            if (res.ok) {
+                const json = await res.json();
+                if (json.success && json.data) {
+                    // Si ya teníamos un usuario local, comparamos IDs
+                    if (this.user && this.user.id !== json.data.id) {
+                        console.warn('SIApp: Desincronización de sesión detectada. Forzando logout.');
+                        Auth.logout();
                         return;
                     }
+                    // Sincronizar datos (por si hubo cambios en el rol o nombre)
+                    sessionStorage.setItem('si_user', JSON.stringify(json.data));
+                    this.user = json.data;
                 } else {
-                    // Error 401 o similar
-                    sessionStorage.removeItem('si_user');
-                    if (!isLoginPage) window.location.href = '/steelinox/';
+                    // El servidor dice que no hay sesión
+                    Auth.clearLocalData();
+                    if (!isAuthPage) window.location.href = '/steelinox/';
                     return;
                 }
-            } catch (e) {
-                console.error('SIApp: Error verificando sesión:', e);
-                sessionStorage.removeItem('si_user');
-                if (!isLoginPage) window.location.href = '/steelinox/';
+            } else {
+                // Error de autorización (401)
+                Auth.clearLocalData();
+                if (!isAuthPage) window.location.href = '/steelinox/';
+                return;
+            }
+        } catch (e) {
+            console.error('SIApp: Error verificando sesión:', e);
+            // Si es un error de red, permitimos seguir con el local si existe, 
+            // pero si no hay nada, mandamos al login.
+            if (!this.user) {
+                Auth.clearLocalData();
+                if (!isAuthPage) window.location.href = '/steelinox/';
                 return;
             }
         }
 
-        // Si a estas alturas seguimos sin usuario y estamos en el login, cortamos la ejecución 
-        // (así permitimos que el usuario escriba su email/contraseña sin pintar la SPA)
+        // Si a estas alturas seguimos sin usuario y estamos en una página pública, cortamos ejecución
         if (!this.user) return;
 
-        // Si el usuario SÍ tiene sesión, pero por algún motivo está en la URL del login, lo metemos al panel
-        if (this.user && isLoginPage) {
+        // Si el usuario SÍ tiene sesión, pero está en una página de Auth (Login/Reset) 
+        // o hay un error de token (que suele venir de un reset fallido), lo mandamos al panel
+        if (this.user && (isAuthPage || hasTokenError)) {
             window.location.href = '/steelinox/panel';
             return;
         }
@@ -684,8 +707,7 @@ const SIApp = {
 
             // Inyectamos el spinner y el texto de carga de forma estandarizada
             btn.innerHTML = `
-                <span class="si-spinner inline-block animate-spin rounded-full" 
-                      style="width:16px;height:16px;border-width:2px;margin-right:8px;vertical-align:middle;border-color:currentColor;border-bottom-color:transparent;">
+                <span class="si-spinner inline-block w-4 h-4 border-2 border-current border-b-transparent rounded-full animate-spin mr-2 align-middle">
                 </span> 
                 <span class="align-middle">${text}</span>
             `;
@@ -711,6 +733,21 @@ const SIApp = {
         } else {
             console.error('showToast: SIToast no está definido');
         }
+    },
+
+    /** Maneja de forma unificada los errores de API */
+    handleApiError(res, fallbackMessage = 'Error en la operación') {
+        const title = res && res.message ? res.message : 'Error';
+        let messageStr = fallbackMessage;
+        
+        if (res && res.errors && typeof res.errors === 'object') {
+            const errValues = Object.values(res.errors).filter(v => typeof v === 'string');
+            if (errValues.length > 0) {
+                messageStr = errValues.join('<br>');
+            }
+        }
+        
+        this.showToast(title, messageStr, 'error');
     },
 
     /** Validar y obtener datos de un formulario */

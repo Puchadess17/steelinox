@@ -84,7 +84,7 @@ class CommercialController {
         try {
             $cleanName = $request->sanitizeName($request->input('name'));
             $cleanEmail = strtolower(trim($request->input('email')));
-            $passwordRaw = $request->input('password');
+
 
             $userModel = new User();
             if ($userModel->emailExists($cleanEmail)) {
@@ -93,7 +93,8 @@ class CommercialController {
                 return;
             }
 
-            $hashedPassword = password_hash($passwordRaw, PASSWORD_DEFAULT);
+            $randomPassword = bin2hex(random_bytes(8));
+            $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
             $isActive = $request->input('is_active') !== null ? (int)$request->input('is_active') : 1;
 
             $newUserId = $userModel->createInternalUser([
@@ -109,6 +110,18 @@ class CommercialController {
                 'nombre'    => $cleanName,
                 'email'     => $cleanEmail,
                 'es_activo' => $isActive
+            ]);
+
+            // Generar token para reset password inicial
+            $token = bin2hex(random_bytes(32));
+            $userModel->setResetToken($cleanEmail, $token, '24 HOUR');
+            $resetUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox/password/reset?token=" . $token;
+
+            require_once APP_PATH . '/Services/NotificationService.php';
+            NotificationService::queueUserEvent($newUserId, 'alta_usuario', $cleanEmail, [
+                'nombre'    => $cleanName,
+                'email'     => $cleanEmail,
+                'reset_url' => $resetUrl
             ]);
 
             http_response_code(201);

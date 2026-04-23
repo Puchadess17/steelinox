@@ -19,8 +19,8 @@ SITemplates.fragments = {
         const showReference = isEdit && isAdmin;
 
         return `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="${!showReference ? 'md:col-span-2' : ''}">
+            <div class="space-y-4">
+                <div class="w-full">
                     <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2 transition-colors">
                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                         Nombre del Proyecto <span class="text-red-500 ml-0.5">*</span>
@@ -30,7 +30,7 @@ SITemplates.fragments = {
                            placeholder="Ej: Reforma Planta 3 - Oficinas Centrales">
                 </div>
                 ${showReference ? `
-                <div>
+                <div class="w-full">
                     <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                         Referencia <span class="text-red-500 ml-0.5">*</span>
@@ -40,10 +40,8 @@ SITemplates.fragments = {
                            placeholder="PRJ-2024-001">
                 </div>
                 ` : ''}
-            </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div class="w-full">
                     <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Presupuesto (€) <span class="text-red-500 ml-0.5">*</span>
@@ -52,7 +50,7 @@ SITemplates.fragments = {
                            class="w-full px-4 py-3 bg-transparent border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-sm"
                            placeholder="0.00">
                 </div>
-                <div>
+                <div class="w-full">
                     <label class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                         Superficie Obra (m²)
@@ -89,8 +87,8 @@ SITemplates.fragments = {
     clientFields(data = {}, isEdit = false) {
         const c = data;
         return `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="${!isEdit ? 'md:col-span-2' : ''}">
+            <div class="space-y-6">
+                <div class="w-full">
                     <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
                         Nombre de la Empresa <span class="text-red-500">*</span>
@@ -103,7 +101,7 @@ SITemplates.fragments = {
 
                 ${isEdit ? `
                 <!-- Ref Interna (Solo en Edición) -->
-                <div>
+                <div class="w-full">
                     <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                         <span class="text-gray-400 font-black">#</span> Referencia Interna <span class="text-red-500">*</span>
                     </label>
@@ -181,8 +179,8 @@ SITemplates.fragments = {
                 </div>
                 ` : ''}
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="${!isCommercial ? 'md:col-span-2' : ''}">
+                <div class="space-y-6">
+                    <div class="w-full">
                         <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             Nombre Completo <span class="text-red-500">*</span>
@@ -192,7 +190,7 @@ SITemplates.fragments = {
                             placeholder="Ej: Juan Pérez">
                     </div>
 
-                    <div>
+                    <div class="w-full">
                         <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                             Email <span class="text-red-500">*</span>
@@ -203,13 +201,14 @@ SITemplates.fragments = {
                             placeholder="correo@steelinox.es">
                     </div>
 
-                    <div class="md:col-span-2">
+                    ${isEdit ? `
+                    <div class="w-full">
                         <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            Contraseña ${isEdit ? '(Opcional)' : '<span class="text-red-500">*</span>'}
+                            Contraseña (Opcional)
                         </label>
                         <div class="relative">
-                            <input type="password" name="password" ${isEdit ? '' : 'required'}
+                            <input type="password" name="password"
                                 oninput="SIApp.validatePasswordRequirements(this)"
                                 class="w-full bg-transparent border border-gray-200 rounded-xl px-4 py-2.5 pr-12 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all" 
                                 placeholder="••••••••">
@@ -222,8 +221,9 @@ SITemplates.fragments = {
                                 </span>
                             </button>
                         </div>
-                        ${isEdit ? '<p class="text-[10px] text-gray-400 mt-2 font-medium italic">Dejar vacío para no cambiar.</p>' : ''}
+                        <p class="text-[10px] text-gray-400 mt-2 font-medium italic">Dejar vacío para no cambiar.</p>
                     </div>
+                    ` : ''}
 
                     ${includeStatusToggle !== false && !includeClientSelector ? `
                     <div class="flex items-center gap-3 pt-2">
