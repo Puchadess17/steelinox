@@ -167,6 +167,7 @@ CREATE TABLE `projects` (
   `closed_at` datetime DEFAULT NULL,
   `approval_token` varchar(64) DEFAULT NULL,
   `approval_token_expires_at` datetime DEFAULT NULL,
+  `approval_failed_attempts` int(11) DEFAULT 0,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `deleted_at` datetime DEFAULT NULL

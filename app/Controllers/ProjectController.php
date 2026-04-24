@@ -641,7 +641,7 @@ class ProjectController
             // GENERACIÓN DE CÓDIGO DE SEGURIDAD (6 Dígitos)
             $token = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT); 
             
-            $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE id = ?");
+            $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE), approval_failed_attempts = 0 WHERE id = ?");
             $stmt->execute([$token, $id]);
 
             require_once APP_PATH . '/Models/User.php';
@@ -717,24 +717,42 @@ class ProjectController
                 return;
             }
 
-            $tokenInput = trim($request->input('token'));
+            // --- INICIO RATE LIMITING Y VALIDACIÓN ---
+            $failedAttempts = (int)($projectDetails['approval_failed_attempts'] ?? 0);
 
-            if (empty($projectDetails['approval_token']) || $projectDetails['approval_token'] !== $tokenInput) {
+            if ($failedAttempts >= 3) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Código incorrecto', 'data' => null, 'errors' => ['token' => 'El código de seguridad no es válido.']]);
+                echo json_encode(['success' => false, 'message' => 'Token bloqueado', 'data' => null, 'errors' => ['token' => 'Demasiados intentos fallidos. Solicita un nuevo código.']]);
                 return;
             }
 
-            if (strtotime($projectDetails['approval_token_expires_at']) < time()) {
+            if (empty($projectDetails['approval_token_expires_at']) || strtotime($projectDetails['approval_token_expires_at']) < time()) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Código expirado', 'data' => null, 'errors' => ['token' => 'El código ha caducado. Solicita uno nuevo.']]);
                 return;
             }
 
+            $tokenInput = trim($request->input('token'));
+            $db = Database::getInstance()->getConnection();
+
+            if (empty($projectDetails['approval_token']) || $projectDetails['approval_token'] !== $tokenInput) {
+                $failedAttempts++;
+                if ($failedAttempts >= 3) {
+                    $db->prepare("UPDATE projects SET approval_token = NULL, approval_token_expires_at = NULL, approval_failed_attempts = 0 WHERE id = ?")->execute([$id]);
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Token bloqueado', 'data' => null, 'errors' => ['token' => 'Has fallado 3 veces. El token anulado. Solicita uno nuevo.']]);
+                } else {
+                    $db->prepare("UPDATE projects SET approval_failed_attempts = ? WHERE id = ?")->execute([$failedAttempts, $id]);
+                    $intentosRestantes = 3 - $failedAttempts;
+                    http_response_code(422);
+                    echo json_encode(['success' => false, 'message' => 'Código incorrecto', 'data' => null, 'errors' => ['token' => "Código no válido. Te quedan $intentosRestantes intentos."]]);
+                }
+                return;
+            }
+
             $projectModel->updateStatus($id, 'aprobado', $userId, 'Aprobación formal por doble confirmación con código de seguridad (2FA).');
 
-            $db = Database::getInstance()->getConnection();
-            $db->prepare("UPDATE projects SET approval_token = NULL, approval_token_expires_at = NULL WHERE id = ?")->execute([$id]);
+            $db->prepare("UPDATE projects SET approval_token = NULL, approval_token_expires_at = NULL, approval_failed_attempts = 0 WHERE id = ?")->execute([$id]);
 
             AuditLogger::log('propuesta_aprobada', 'project', $id, $id, [
                 'actor_user_id'     => $userId,
