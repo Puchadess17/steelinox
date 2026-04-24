@@ -638,11 +638,19 @@ class ProjectController
                 return;
             }
 
-            // GENERACIÓN DE CÓDIGO DE SEGURIDAD (6 Dígitos)
-            $token = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT); 
+            // Generamos el código legible (6 dígitos)
+            $plainToken = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT); 
             
+            // Creamos el HASH para la base de datos
+            $hashedToken = password_hash($plainToken, PASSWORD_DEFAULT);
+            
+            // Guardamos el HASH y reseteamos intentos fallidos
             $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE), approval_failed_attempts = 0 WHERE id = ?");
-            $stmt->execute([$token, $id]);
+            $stmt->execute([$hashedToken, $id]);
+
+            // Enviamos el código en PLANO al cliente (vía email/notificación)
+            require_once APP_PATH . '/Services/NotificationService.php';
+            NotificationService::queueProjectEvent($id, 'solicitud_aprobacion', $userId, ['token' => $plainToken]);
 
             require_once APP_PATH . '/Models/User.php';
             $uModel = new User();
@@ -717,38 +725,44 @@ class ProjectController
                 return;
             }
 
-            // --- INICIO RATE LIMITING Y VALIDACIÓN ---
+            // --- VALIDACIÓN CON HASH Y RATE LIMITING ---
             $failedAttempts = (int)($projectDetails['approval_failed_attempts'] ?? 0);
+            $storedHash = $projectDetails['approval_token'] ?? '';
+            $tokenInput = trim($request->input('token'));
 
+            // Bloqueo por fuerza bruta
             if ($failedAttempts >= 3) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Token bloqueado', 'data' => null, 'errors' => ['token' => 'Demasiados intentos fallidos. Solicita un nuevo código.']]);
+                echo json_encode(['success' => false, 'message' => 'Token bloqueado', 'data' => null, 'errors' => ['token' => 'Demasiados intentos. Solicita un nuevo código.']]);
                 return;
             }
 
+            // Verificación de caducidad
             if (empty($projectDetails['approval_token_expires_at']) || strtotime($projectDetails['approval_token_expires_at']) < time()) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'Código expirado', 'data' => null, 'errors' => ['token' => 'El código ha caducado. Solicita uno nuevo.']]);
+                echo json_encode(['success' => false, 'message' => 'Código expirado', 'data' => null, 'errors' => ['token' => 'El código ha caducado.']]);
                 return;
             }
 
-            $tokenInput = trim($request->input('token'));
             $db = Database::getInstance()->getConnection();
 
-            if (empty($projectDetails['approval_token']) || $projectDetails['approval_token'] !== $tokenInput) {
+            // VERIFICACIÓN DEL HASH 
+            if (empty($storedHash) || !password_verify($tokenInput, $storedHash)) {
                 $failedAttempts++;
+                
                 if ($failedAttempts >= 3) {
                     $db->prepare("UPDATE projects SET approval_token = NULL, approval_token_expires_at = NULL, approval_failed_attempts = 0 WHERE id = ?")->execute([$id]);
                     http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Token bloqueado', 'data' => null, 'errors' => ['token' => 'Has fallado 3 veces. El token anulado. Solicita uno nuevo.']]);
+                    echo json_encode(['success' => false, 'message' => 'Token bloqueado', 'errors' => ['token' => 'Has fallado 3 veces. El token ha sido anulado.']]);
                 } else {
                     $db->prepare("UPDATE projects SET approval_failed_attempts = ? WHERE id = ?")->execute([$failedAttempts, $id]);
                     $intentosRestantes = 3 - $failedAttempts;
                     http_response_code(422);
-                    echo json_encode(['success' => false, 'message' => 'Código incorrecto', 'data' => null, 'errors' => ['token' => "Código no válido. Te quedan $intentosRestantes intentos."]]);
+                    echo json_encode(['success' => false, 'message' => 'Código incorrecto', 'errors' => ['token' => "Código no válido. Te quedan $intentosRestantes intentos."]]);
                 }
                 return;
             }
+            // --- FIN VALIDACIÓN ---
 
             $projectModel->updateStatus($id, 'aprobado', $userId, 'Aprobación formal por doble confirmación con código de seguridad (2FA).');
 

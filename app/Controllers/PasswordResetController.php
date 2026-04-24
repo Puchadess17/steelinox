@@ -2,10 +2,9 @@
 // app/Controllers/PasswordResetController.php
 
 require_once APP_PATH . '/Models/User.php';
-require_once APP_PATH . '/Services/MailService.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Services/ErrorLogger.php';
-require_once APP_PATH . '/Requests/PasswordResetRequest.php'; // <-- INYECTAMOS EL REQUEST
+require_once APP_PATH . '/Requests/PasswordResetRequest.php';
 
 class PasswordResetController
 {
@@ -13,9 +12,12 @@ class PasswordResetController
     public function showResetForm()
     {
         try {
+            // Capturamos la URL base dinámica y le quitamos la barra final si la tiene
+            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? '/steelinox', '/');
+            
             $token = $_GET['token'] ?? null;
             if (!$token) {
-                header('Location: /steelinox/');
+                header("Location: {$baseUrl}/");
                 exit;
             }
 
@@ -23,7 +25,7 @@ class PasswordResetController
             $user = $userModel->findByResetToken($token);
 
             if (!$user) {
-                header('Location: /steelinox/?error=token_invalid');
+                header("Location: {$baseUrl}/?error=token_invalid");
                 exit;
             }
 
@@ -31,7 +33,8 @@ class PasswordResetController
 
         } catch (Exception $e) {
             ErrorLogger::log($e->getMessage(), 'PasswordResetController::showResetForm');
-            header('Location: /steelinox/?error=server_error');
+            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? '/steelinox', '/');
+            header("Location: {$baseUrl}/?error=server_error");
             exit;
         }
     }
@@ -71,7 +74,8 @@ class PasswordResetController
             $token = bin2hex(random_bytes(32));
             $userModel->setResetToken($email, $token, '1 HOUR');
 
-            $resetLink = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox/password/reset?token=" . $token;
+            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? ((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox"), '/');
+            $resetLink = $baseUrl . "/password/reset?token=" . $token;
 
             require_once APP_PATH . '/Services/NotificationService.php';
             $queued = NotificationService::queueUserEvent($user['id'], 'recuperar_password', $email, [

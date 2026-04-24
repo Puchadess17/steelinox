@@ -7,81 +7,53 @@ require_once CORE_PATH . '/Database.php';
  * NOTIFICATION SERVICE (GESTOR DE COLAS)
  * ====================
  * Servicio encargado de encolar correos electrónicos transaccionales.
- * Traduce eventos de negocio (ej. "proyecto_aprobado") a destinatarios reales,
- * extrayendo de la base de datos a los comerciales, administradores o clientes
- * implicados en un proyecto, y registrando el envío en notifications_queue
- * para que un proceso asíncrono los envíe en segundo plano.
  */
 class NotificationService
 {
-    /**
-     * Encola una notificación relacionada con un proyecto.
-     * * @param int $projectId ID del proyecto afectado
-     * @param string $eventName Tipo de evento (ej: 'nuevo_comentario', 'aprobado', 'cambio_estado')
-     * @param int|null $actorUserId ID del usuario que realiza la acción (para NO notificarle a sí mismo)
-     * @param array $data Metadatos extra para construir el cuerpo del correo
-     */
     public static function queueProjectEvent($projectId, $eventName, $actorUserId = null, $data = [])
     {
         $db = Database::getInstance()->getConnection();
 
-        // 1. Extraer información básica del proyecto
-        $stmtProj = $db->prepare("SELECT name, reference FROM projects WHERE id = :id");
+        $stmtProj = $db->prepare("SELECT id, name, reference FROM projects WHERE id = :id");
         $stmtProj->execute(['id' => $projectId]);
         $project = $stmtProj->fetch(PDO::FETCH_ASSOC);
 
-        if (!$project)
-            return false;
+        if (!$project) return false;
 
-        // 2. Determinar a quién debemos avisar según las reglas del DDS
         $recipients = [];
-
-        // Los administradores siempre reciben copia de lo importante
         $admins = self::getAdmins($db);
-
-        // Comerciales asignados a este proyecto
         $commercials = self::getAssignedCommercials($db, $projectId);
-
-        // Usuarios cliente asociados al cliente dueño del proyecto
         $clients = self::getClientUsers($db, $projectId);
 
         switch ($eventName) {
             case 'nueva_propuesta':
             case 'nueva_version':
             case 'propuesta_aprobada':
-                // Según DDS: Avisa a comerciales y administradores.
                 $recipients = array_merge($admins, $commercials);
                 break;
 
             case 'cambio_estado':
             case 'nuevo_comentario':
-                // Según DDS: Avisa a todos los implicados (incluyendo al cliente)
                 $recipients = array_merge($admins, $commercials, $clients);
                 break;
 
             default:
-                return false; // Evento no reconocido
+                return false; 
         }
 
-        // 3. Limpiar duplicados (por si un admin es también comercial, etc.) y auto-notificaciones
         $finalRecipients = [];
         $seenEmails = [];
 
         foreach ($recipients as $user) {
-            // No enviar correo al que acaba de pulsar el botón
-            if ($actorUserId !== null && (int) $user['id'] === (int) $actorUserId) {
-                continue;
-            }
-            // Evitar duplicados por email
+            if ($actorUserId !== null && (int) $user['id'] === (int) $actorUserId) continue;
+            
             if (!in_array($user['email'], $seenEmails)) {
                 $finalRecipients[] = $user;
                 $seenEmails[] = $user['email'];
             }
         }
 
-        // 4. Construir y encolar los correos
-        if (empty($finalRecipients))
-            return true;
+        if (empty($finalRecipients)) return true;
 
         list($subject, $body) = self::buildEmailTemplate($eventName, $project, $data);
 
@@ -104,19 +76,12 @@ class NotificationService
         return true;
     }
 
-    /**
-     * ====================
-     * HELPERS DE EXTRACCIÓN DE ROLES
-     * ====================
-     */
-    private static function getAdmins($db)
-    {
+    private static function getAdmins($db) {
         $stmt = $db->query("SELECT id, email, name FROM users WHERE role = 'admin' AND is_active = 1 AND deleted_at IS NULL");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    private static function getAssignedCommercials($db, $projectId)
-    {
+    private static function getAssignedCommercials($db, $projectId) {
         $sql = "SELECT u.id, u.email, u.name 
                 FROM users u 
                 INNER JOIN project_user pu ON u.id = pu.user_id 
@@ -126,8 +91,7 @@ class NotificationService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    private static function getClientUsers($db, $projectId)
-    {
+    private static function getClientUsers($db, $projectId) {
         $sql = "SELECT u.id, u.email, u.name 
                 FROM users u 
                 INNER JOIN projects p ON u.client_id = p.client_id 
@@ -137,21 +101,13 @@ class NotificationService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * ====================
-     * MOTOR DE PLANTILLAS PREMIUM
-     * ====================
-     */
-    private static function buildEmailTemplate($eventName, $project, $data)
-    {
+    private static function buildEmailTemplate($eventName, $project, $data) {
         $projRef = $project['reference'];
         $projName = htmlspecialchars($project['name'], ENT_QUOTES, 'UTF-8');
-        
-        // Cargar URL base desde el entorno, con fallback de seguridad
         $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://steelinox.es', '/');
 
         $subject = "Steelinox: Notificación de Proyecto $projRef";
-        $content = ""; // Aquí construiremos el cuerpo específico
+        $content = "";
 
         switch ($eventName) {
             case 'nueva_propuesta':
@@ -173,21 +129,56 @@ class NotificationService
                 break;
 
             case 'propuesta_aprobada':
-                $subject = "¡Proyecto Aprobado! - $projRef";
+                $subject = "✅ Proyecto Aprobado: {$projName}";
                 $content .= "<div style='text-align:center; padding:10px 0;'>
                                 <div style='display:inline-block; background:#ecfdf5; color:#059669; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:800; text-transform:uppercase; margin-bottom:15px;'>HITO ALCANZADO</div>
-                                <h1 style='margin:0 0 10px 0; color:#1a1b25; font-size:24px;'>¡Propuesta Aprobada!</h1>
-                                <p style='margin:0 0 25px 0; color:#64748b;'>El proyecto <strong>$projRef</strong> ha sido aceptado formalmente por el cliente.</p>
+                                <h1 style='margin:0 0 10px 0; color:#1e293b; font-size:24px;'>Proyecto Aprobado</h1>
+                                <p style='color:#475569; font-size:16px; line-height:1.6;'>
+                                    Excelentes noticias. El proyecto <strong>{$projRef} - {$projName}</strong> ha sido aceptado formalmente mediante confirmación de seguridad en la plataforma.
+                                </p>
+                                <p style='color:#475569; font-size:16px; line-height:1.6;'>
+                                    El expediente pasa a estado de ejecución. El equipo técnico y comercial ya puede proceder con las siguientes fases de la obra.
+                                </p>
                              </div>";
                 break;
 
             case 'cambio_estado':
-                $estado = htmlspecialchars($data['nuevo_estado'] ?? '', ENT_QUOTES, 'UTF-8');
+                $estado = $data['nuevo_estado'] ?? '';
                 $subject = "Actualización de estado - $projRef";
-                $content .= "<h2 style='margin:0 0 10px 0; color:#1a1b25;'>Cambio de fase</h2>";
-                $content .= "<p style='margin:0 0 25px 0; color:#64748b;'>El proyecto <strong>$projRef</strong> ha avanzado en su ciclo de vida.</p>";
-                $content .= "<div style='background:#1a1b25; color:white; border-radius:12px; padding:20px; text-align:center;'>
-                                <span style='display:block; font-size:11px; opacity:0.7; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;'>Nuevo Estado</span>
+                
+                // DDS §10: Definición de contenidos y estilos diferenciados por hito
+                $statusConfig = match($estado) {
+                    'presupuesto' => [
+                        'titulo' => 'Elaboración de Presupuesto',
+                        'desc'   => 'Nuestro equipo comercial está preparando la valoración económica detallada. Te notificaremos cuando el documento esté listo para tu revisión.',
+                        'color'  => '#3b82f6'
+                    ],
+                    'ejecucion' => [
+                        'titulo' => 'Proyecto en Ejecución',
+                        'desc'   => '¡Hito alcanzado! El proyecto ha pasado a manos del equipo técnico y de fabricación para comenzar con las obras/pedidos.',
+                        'color'  => '#8b5cf6'
+                    ],
+                    'pausado' => [
+                        'titulo' => 'Actividad Pausada',
+                        'desc'   => 'Se ha detenido temporalmente el avance del proyecto. Ponte en contacto con tu comercial para conocer los detalles de la pausa.',
+                        'color'  => '#f59e0b'
+                    ],
+                    'cerrado' => [
+                        'titulo' => 'Expediente Finalizado',
+                        'desc'   => 'El proyecto se ha dado por concluido satisfactoriamente. Todos los documentos seguirán disponibles para tu consulta.',
+                        'color'  => '#64748b'
+                    ],
+                    default => [
+                        'titulo' => 'Cambio de Fase',
+                        'desc'   => "El proyecto ha realizado una transición de estado a: " . strtoupper($estado),
+                        'color'  => '#1a1b25'
+                    ]
+                };
+
+                $content .= "<h2 style='margin:0 0 10px 0; color:{$statusConfig['color']};'>{$statusConfig['titulo']}</h2>";
+                $content .= "<p style='margin:0 0 25px 0; color:#64748b; line-height:1.5;'>{$statusConfig['desc']}</p>";
+                $content .= "<div style='background:{$statusConfig['color']}; color:white; border-radius:12px; padding:20px; text-align:center;'>
+                                <span style='display:block; font-size:11px; opacity:0.7; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;'>Estado del Proyecto</span>
                                 <span style='font-size:18px; font-weight:800; letter-spacing:0.5px; border-left:3px solid #E57B23; padding-left:12px;'>" . strtoupper($estado) . "</span>
                              </div>";
                 break;
@@ -203,9 +194,8 @@ class NotificationService
                 break;
         }
 
-        // Botón de acción con URL dinámica basada en el entorno
         $content .= "<div style='margin-top:40px; text-align:center;'>
-                        <a href='{$baseUrl}/proyectos' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px; box-shadow: 0 4px 12px rgba(229, 123, 35, 0.3); transition: transform 0.2s;'>Ver Detalles del Proyecto</a>
+                        <a href='{$baseUrl}/project/{$project['id']}' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px; box-shadow: 0 4px 12px rgba(229, 123, 35, 0.3); transition: transform 0.2s;'>Ver Detalles del Proyecto</a>
                      </div>";
 
         $body = self::getHtmlWrapper($content, "Notificación importante sobre el proyecto $projRef");
@@ -213,17 +203,8 @@ class NotificationService
         return [$subject, $body];
     }
 
-    /**
-     * EVENTOS DE USUARIO (SIN PROYECTO)
-     * ====================
-     * Encola una notificación directa a un usuario, independiente de cualquier proyecto.
-     * Ideal para emails de bienvenida, recuperación de contraseñas o avisos de seguridad.
-     */
-    public static function queueUserEvent($recipientUserId, $eventName, $recipientEmail, $data = [])
-    {
+    public static function queueUserEvent($recipientUserId, $eventName, $recipientEmail, $data = []) {
         $db = Database::getInstance()->getConnection();
-
-        // Construimos el correo con una plantilla adaptada a usuarios
         list($subject, $body) = self::buildUserEmailTemplate($eventName, $data);
 
         $sqlQueue = "INSERT INTO notifications_queue 
@@ -240,14 +221,8 @@ class NotificationService
         ]);
     }
 
-    /**
-     * Plantilla de correos genéricos para usuarios.
-     */
-    private static function buildUserEmailTemplate($eventName, $data)
-    {
-        // Cargar URL base desde el entorno, con fallback de seguridad
+    private static function buildUserEmailTemplate($eventName, $data) {
         $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://steelinox.es', '/');
-        
         $subject = "Notificación de Steelinox";
         $content = "";
 
@@ -283,20 +258,25 @@ class NotificationService
                              </div>";
                 $content .= "<p style='margin:0; font-size:13px; color:#94a3b8;'>Este enlace caducará en 60 minutos. Si no has solicitado este cambio, puedes ignorar este correo con seguridad.</p>";
                 break;
+                
+            case 'cambio_password_seguridad':
+                $subject = "Alerta de Seguridad: Cambio de contraseña";
+                $content .= "<h2 style='margin:0 0 10px 0; color:#1a1b25;'>Contraseña actualizada</h2>";
+                $content .= "<p style='margin:0 0 20px 0; color:#64748b;'>Te informamos que la contraseña de acceso a tu cuenta en la plataforma de Steelinox ha sido modificada exitosamente.</p>";
+                $content .= "<div style='background:#fef2f2; border-left:4px solid #ef4444; padding:20px; border-radius:0 12px 12px 0; color:#991b1b; line-height:1.5; font-size:14px;'>
+                                <strong>Importante:</strong> Si tú no has solicitado o realizado este cambio, por favor contacta inmediatamente con tu comercial asignado o con el soporte técnico, ya que tu cuenta podría estar comprometida.
+                             </div>";
+                $content .= "<div style='margin-top:30px; text-align:center;'>
+                                <a href='{$baseUrl}/login' style='display:inline-block; background:#1a1b25; color:white; padding:14px 28px; border-radius:12px; font-weight:700; text-decoration:none; font-size:14px;'>Ir al Login</a>
+                             </div>";
+                break;
         }
 
         $body = self::getHtmlWrapper($content, "Bienvenido a la plataforma oficial de Steelinox");
-
         return [$subject, $body];
     }
 
-    /**
-     * ENVOLTORIO HTML CORPORATIVO
-     * ==========================
-     * Encapsula el contenido en una estructura visual premium.
-     */
-    private static function getHtmlWrapper($content, $preheader = "")
-    {
+    private static function getHtmlWrapper($content, $preheader = "") {
         $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://steelinox.es', '/');
         $logoUrl = $baseUrl . "/logo-header-blanco.svg";
 

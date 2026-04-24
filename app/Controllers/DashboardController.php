@@ -10,7 +10,7 @@ class DashboardController
         }
 
         if (!isset($_SESSION['user_id'])) {
-            $baseUrl = $_ENV['APP_BASE_URL'] ?? '/steelinox';
+            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? '/steelinox', '/');
             header('Location: ' . $baseUrl . '/');
             exit;
         }

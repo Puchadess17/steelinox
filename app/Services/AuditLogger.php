@@ -33,7 +33,10 @@ class AuditLogger {
             $actorUserId = $_SESSION['user_id'] ?? null;
             $actorRole = $_SESSION['role'] ?? null;
             $ip = $_SERVER['REMOTE_ADDR'] ?? null;
-            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            
+            // Sanitización y truncamiento preventivo del User-Agent
+            $rawUserAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            $userAgent = $rawUserAgent ? mb_substr(strip_tags($rawUserAgent), 0, 255, 'UTF-8') : null;
             
             // Conversión segura de metadatos a JSON soportando caracteres unicode
             $metadataJson = $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null;

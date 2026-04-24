@@ -178,7 +178,8 @@ class UserController {
             // Generar token para reset password inicial
             $token = bin2hex(random_bytes(32));
             $userModel->setResetToken($cleanEmail, $token, '24 HOUR');
-            $resetUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox/password/reset?token=" . $token;
+            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? ((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox"), '/');
+            $resetUrl = $baseUrl . "/password/reset?token=" . $token;
 
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueUserEvent($newUserId, 'alta_usuario', $cleanEmail, [
