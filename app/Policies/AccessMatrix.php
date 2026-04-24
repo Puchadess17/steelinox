@@ -145,8 +145,8 @@ class AccessMatrix {
                 ],
                 'create_on_document' => [
                     // DDS §4.4: Se evalúa que el documento sea visible Y que el proyecto NO esté cerrado
-                    'admin'     => fn($status) => $status !== 'cerrado',
-                    'comercial' => fn($status) => $status !== 'cerrado',
+                    'admin'     => fn($context) => $context['status'] !== 'cerrado',
+                    'comercial' => fn($context) => $context['status'] !== 'cerrado',
                     'cliente'   => fn($context) => $context['status'] !== 'cerrado' && (bool)$context['is_visible'],
                 ],
                 'delete' => [

@@ -540,7 +540,7 @@ SIModules.clientDetailAdmin = {
                         }
                     }
                 }
-                content = defaultContent.length > 0 ? defaultContent.join('') : `<span class="text-[11px] text-gray-400 italic">Sin metadata adicional (${log.action_key}).</span>`;
+                content = defaultContent.length > 0 ? defaultContent.join('') : '';
                 break;
         }
 
@@ -580,7 +580,7 @@ SIModules.clientDetailAdmin = {
             contentHtml = `
                 <div class="mt-2 text-sm w-full lg:w-3/4">
                     <h5 class="text-[14px] font-black text-gray-900 leading-tight">${title}</h5>
-                    <p class="text-[12px] text-gray-500 mt-1 font-medium leading-relaxed">${content}</p>
+                    ${content ? `<p class="text-[12px] text-gray-500 mt-1 font-medium leading-relaxed">${content}</p>` : ''}
                 </div>
             `;
         }

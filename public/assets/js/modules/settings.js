@@ -5,6 +5,12 @@
 window.SIModules = window.SIModules || {};
 
 SIModules.settings = {
+    fontOptions: [
+        { value: '16px', label: 'Normal' },
+        { value: '18px', label: 'Grande' },
+        { value: '20px', label: 'Muy Grande' }
+    ],
+
     /** Inicializar la vista de ajustes */
     async init() {
         let user = SIApp.user;
@@ -47,11 +53,7 @@ SIModules.settings = {
 
         // Recuperar tamaño de fuente
         const currentFontSize = localStorage.getItem('si-font-size') || '16px'; // default
-        const fontOptions = [
-            { value: '16px', label: 'Normal' },
-            { value: '18px', label: 'Grande' },
-            { value: '20px', label: 'Muy Grande' }
-        ];
+
 
         return `
             <div class="max-w-5xl mx-auto space-y-12 fade-in pb-12">
@@ -160,7 +162,7 @@ SIModules.settings = {
                                     <button onclick="SIModules.settings.toggleFontSizeDropdown(event)" 
                                             class="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-5 py-3 rounded-2xl flex items-center justify-between shadow-sm hover:border-purple-500 transition-all group/btn">
                                         <span id="current-font-label" class="text-sm font-bold text-gray-900 dark:text-white">
-                                            ${fontOptions.find(opt => opt.value === currentFontSize)?.label || 'Normal'}
+                                            ${this.fontOptions.find(opt => opt.value === currentFontSize)?.label || 'Normal'}
                                         </span>
                                         <svg id="font-dropdown-icon" class="w-4 h-4 text-gray-400 group-hover/btn:text-purple-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
@@ -168,13 +170,7 @@ SIModules.settings = {
                                     </button>
                                     
                                     <div id="font-size-options" class="hidden absolute z-50 bottom-full md:bottom-auto md:top-full left-0 w-full mt-2 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl shadow-2xl overflow-hidden py-1 fade-in-up">
-                                        ${fontOptions.map(opt => `
-                                            <div onclick="SIModules.settings.changeFontSize('${opt.value}', '${opt.label}')" 
-                                                 class="px-5 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer transition-colors flex items-center justify-between group/item">
-                                                <span>${opt.label}</span>
-                                                ${currentFontSize === opt.value ? '<svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
-                                            </div>
-                                        `).join('')}
+                                        ${this._renderFontSizeOptions(currentFontSize)}
                                     </div>
                                 </div>
                             </div>
@@ -218,6 +214,17 @@ SIModules.settings = {
                 </label>
             </div>
         `;
+    },
+
+    /** Helper para renderizar las opciones de tamaño de fuente con el tick en la seleccionada */
+    _renderFontSizeOptions(currentValue) {
+        return this.fontOptions.map(opt => `
+            <div onclick="SIModules.settings.changeFontSize('${opt.value}', '${opt.label}')" 
+                 class="px-5 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer transition-colors flex items-center justify-between group/item">
+                <span>${opt.label}</span>
+                ${currentValue === opt.value ? '<svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+            </div>
+        `).join('');
     },
 
     /** Lógica de eventos */
@@ -400,6 +407,12 @@ SIModules.settings = {
         // Actualizar UI del dropdown
         const labelEl = document.getElementById('current-font-label');
         if (labelEl) labelEl.textContent = label;
+
+        // Actualizar los ticks de las opciones
+        const optionsContainer = document.getElementById('font-size-options');
+        if (optionsContainer) {
+            optionsContainer.innerHTML = this._renderFontSizeOptions(value);
+        }
 
         // Cerrar dropdown
         const drop = document.getElementById('font-size-options');

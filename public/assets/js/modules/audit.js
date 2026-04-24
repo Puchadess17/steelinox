@@ -371,9 +371,10 @@ window.SIModules.audit = {
                 `;
             }
         } else {
+            const metaText = log.metadata ? this._formatMetadata(log.metadata) : '';
             actionHtml = `
                 <span class="text-[13px] font-black text-[#000000] block leading-tight">${SIApp.escapeHtml(actionLabel)}</span>
-                ${log.metadata ? `<span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${this._formatMetadata(log.metadata)}</span>` : ''}
+                ${metaText ? `<span class="text-[10px] text-gray-400 font-medium truncate max-w-[200px] block mt-0.5">${metaText}</span>` : ''}
             `;
         }
 

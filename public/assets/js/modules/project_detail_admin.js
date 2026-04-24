@@ -1606,7 +1606,7 @@ SIModules.projectDetailAdmin = {
                     }
                 }
 
-                content = defaultContent.length > 0 ? defaultContent.join('') : `<span class="text-[11px] text-gray-400 italic break-all">Sin metadata adicional asociada al evento ${log.action_key}.</span>`;
+                content = defaultContent.length > 0 ? defaultContent.join('') : '';
                 break;
         }
 
@@ -1661,7 +1661,7 @@ SIModules.projectDetailAdmin = {
             contentHtml = `
                 <div class="mt-2 text-sm w-full lg:w-3/4">
                     <h5 class="text-[14px] font-black text-gray-900 leading-tight">${title}</h5>
-                    <p class="text-[12px] text-gray-500 mt-1 font-medium leading-relaxed">${content}</p>
+                    ${content ? `<p class="text-[12px] text-gray-500 mt-1 font-medium leading-relaxed">${content}</p>` : ''}
                 </div>
             `;
         }
@@ -1804,6 +1804,7 @@ SIModules.projectDetailAdmin = {
             const canClientDownload = !isClient || doc.access_mode === 'download' || doc.access_mode === 'both';
 
             const canView = canViewMime && canClientView;
+            const initials = SIApp.avatarInitials(doc.uploaded_by_name || 'Sistema', 'w-8 h-8', 'text-[10px]');
 
             return `
                 <div class="doc-row-wrapper mb-3 fade-in">
@@ -2674,11 +2675,12 @@ SIModules.projectDetailAdmin = {
             // comercial → azul índigo
             // cliente   → esmeralda
             const roleConfig = {
-                admin: { label: 'Admin', nameCss: 'text-orange-600', badgeCss: 'bg-orange-100 text-orange-700 border-orange-200' },
-                comercial: { label: 'Comercial', nameCss: 'text-indigo-600', badgeCss: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-                cliente: { label: 'Cliente', nameCss: 'text-emerald-600', badgeCss: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+                admin: { label: 'Admin', nameCss: 'text-orange-600', badgeCss: 'bg-orange-100 text-orange-700 border-orange-200', avatarCss: 'bg-orange-50 text-orange-600 border-orange-200/50' },
+                comercial: { label: 'Comercial', nameCss: 'text-indigo-600', badgeCss: 'bg-indigo-100 text-indigo-700 border-indigo-200', avatarCss: 'bg-indigo-50 text-indigo-600 border-indigo-200/50' },
+                cliente: { label: 'Cliente', nameCss: 'text-emerald-600', badgeCss: 'bg-emerald-100 text-emerald-700 border-emerald-200', avatarCss: 'bg-emerald-50 text-emerald-600 border-emerald-200/50' },
             };
             const rc = roleConfig[role] || roleConfig.cliente;
+            const initials = SIApp._getInitials(c.author_name);
 
             if (isMe) {
                 // ────── MIS MENSAJES (derecha) ──────

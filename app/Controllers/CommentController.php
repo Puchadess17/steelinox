@@ -126,7 +126,7 @@ class CommentController {
             }
 
             // POLICY CHECK (Visibilidad del documento)
-            if (!CommentPolicy::canCreateOnDocument($role, $docInfo['is_visible_to_client'])) {
+            if (!CommentPolicy::canCreateOnDocument($role, $projectDetails['status'], $docInfo['is_visible_to_client'])) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'No puedes comentar en un documento interno', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
                 return;
