@@ -743,10 +743,21 @@ body {
     .sidebar-desktop {
         display: none !important;
     }
+
+    .sidebar-mobile-overlay {
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        visibility: hidden;
+        opacity: 0;
+        display: block !important; /* Sobrescribir el hidden inicial de HTML */
+    }
+
+    .sidebar-mobile-overlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
 }
 
 @media (min-width: 1024px) {
-
     .sidebar-mobile-overlay,
     .sidebar-mobile {
         display: none !important;

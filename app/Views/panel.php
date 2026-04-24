@@ -112,7 +112,7 @@
 
         <!-- Mobile Sidebar Overlay -->
         <div id="sidebar-overlay" class="sidebar-mobile-overlay fixed inset-0 bg-black/40 z-40 hidden"
-            onclick="SIPanelUI.closeMobileSidebar()"></div>
+            onclick="SIApp.sidebar.closeMobile()"></div>
 
         <!-- Mobile Sidebar -->
         <aside id="sidebar-mobile"
@@ -124,7 +124,7 @@
                     <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox"
                         class="h-8 w-auto hidden dark:block">
                 </div>
-                <button onclick="SIPanelUI.closeMobileSidebar()" class="p-2 rounded-lg text-gray-400 hover:bg-gray-100">
+                <button onclick="SIApp.sidebar.closeMobile()" class="p-2 rounded-lg text-gray-400 hover:bg-gray-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
@@ -201,24 +201,8 @@
         src="/steelinox/public/assets/js/modules/settings.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/modules/settings.js'); ?>"></script>
 
     <script>
-
-        // Panel UI helpers (mobile sidebar)
-        const SIPanelUI = {
-            openMobileSidebar() {
-                document.getElementById('sidebar-mobile')?.classList.remove('-translate-x-full');
-                document.getElementById('sidebar-overlay')?.classList.remove('hidden');
-            },
-            closeMobileSidebar() {
-                document.getElementById('sidebar-mobile')?.classList.add('-translate-x-full');
-                document.getElementById('sidebar-overlay')?.classList.add('hidden');
-            }
-        };
-
-        // Mobile menu toggle
+        // Inicialización de la App
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btn-mobile-menu')?.addEventListener('click', SIPanelUI.openMobileSidebar);
-
-            // Init app
             SIApp.init();
         });
     </script>

@@ -236,6 +236,35 @@ const SIApp = {
         if (sidebarMobile) {
             sidebarMobile.innerHTML = fullHtml;
         }
+
+        // Vincular toggle de menú móvil
+        document.getElementById('btn-mobile-menu')?.addEventListener('click', () => this.sidebar.openMobile());
+    },
+
+    /** Gestión de Sidebar Móvil (Premium UI) */
+    sidebar: {
+        openMobile() {
+            const sidebar = document.getElementById('sidebar-mobile');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar || !overlay) return;
+
+            overlay.classList.add('active');
+            requestAnimationFrame(() => {
+                sidebar.classList.remove('-translate-x-full');
+            });
+        },
+
+        closeMobile() {
+            const sidebar = document.getElementById('sidebar-mobile');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar || !overlay) return;
+
+            sidebar.classList.add('-translate-x-full');
+            // Esperar a que el sidebar empiece a moverse antes de desvanecer el overlay
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 50);
+        }
     },
 
     // ──────────────────────────────────────

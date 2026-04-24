@@ -140,6 +140,11 @@ const SIRouter = {
             return;
         }
 
+        // Cierre automático de sidebar móvil si existe el helper global
+        if (window.SIApp && SIApp.sidebar && typeof SIApp.sidebar.closeMobile === 'function') {
+            SIApp.sidebar.closeMobile();
+        }
+
         // Buscar ruta
         const route = this.routes[view];
         if (!route) {

@@ -2896,7 +2896,7 @@ SIModules.projectDetailAdmin = {
 
             if (res.success) {
                 if (window.SIApp) SIApp.showToast('¡Éxito!', 'Nueva versión subida correctamente.', 'success');
-                await this.loadProjectDocuments();
+                await this.loadProjectDocuments(true);
             } else {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al subir versión.', 'error');
             }

@@ -333,7 +333,8 @@ SIModules.commercialsAdmin = {
                                     <h1 class="text-2xl md:text-3xl font-extrabold text-[#000000] tracking-tight">${SIApp.escapeHtml(info.name)}</h1>
                                     ${SIApp.activeBadge(info.is_active)}
                                 </div>
-                                <p class="text-sm text-gray-500 font-medium">${SIApp.escapeHtml(info.email)} · Miembro desde ${SIApp.formatDate(info.created_at)}</p>
+                                <p class="text-[13px] text-gray-500 font-bold mb-0.5">${SIApp.escapeHtml(info.email)}</p>
+                                <p class="text-[12px] text-gray-400 font-medium">Miembro desde ${SIApp.formatDate(info.created_at)}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -397,29 +398,72 @@ SIModules.commercialsAdmin = {
         }
 
         const rows = projects.map(p => `
-            <div class="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-all border-b border-gray-50 last:border-0 group">
-                <div class="flex-1 min-w-0 pr-4">
-                    <!-- Proyecto -->
-                    <div class="flex items-center gap-2 mb-1">
-                        <svg class="w-3.5 h-3.5 text-orange-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        <a href="/steelinox/project/${p.id}" class="text-[14px] font-black text-[#000000] hover:text-indigo-600 transition-colors block truncate no-underline">${SIApp.escapeHtml(p.name)}</a>
+            <!-- Fila Desktop / Card Mobile -->
+            <div class="group border-b border-gray-50 last:border-0">
+                
+                <!-- Desktop: Fila horizontal (se oculta en móvil) -->
+                <div class="hidden sm:flex items-center justify-between p-5 hover:bg-gray-50/50 transition-all">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <svg class="w-3.5 h-3.5 text-orange-500 opacity-70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            <a href="/steelinox/project/${p.id}" class="text-[14px] font-black text-[#000000] hover:text-orange-600 transition-colors block truncate no-underline">${SIApp.escapeHtml(p.name)}</a>
+                        </div>
+                        <div class="flex items-center flex-wrap gap-3">
+                            ${SIApp.refBadge(p.reference)}
+                            <div class="w-1 h-1 bg-gray-300 rounded-full"></div>
+                            <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-[12px] font-bold text-gray-400 hover:text-emerald-600 transition-colors no-underline">
+                                <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                ${SIApp.escapeHtml(p.client_name)}
+                            </a>
+                        </div>
                     </div>
-                    
-                    <!-- Info Badge y Cliente -->
-                    <div class="flex items-center flex-wrap gap-2">
-                        ${SIApp.refBadge(p.reference)}
-                        <div class="w-1 h-1 bg-gray-300 rounded-full"></div>
-                        <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-[12px] font-bold text-gray-400 hover:text-emerald-600 transition-colors no-underline">
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                            ${SIApp.escapeHtml(p.client_name)}
-                        </a>
+                    <div class="flex items-center gap-6 shrink-0">
+                        <span class="text-sm font-black text-[#000000]">${SIApp.formatCurrency(p.budget_amount)}</span>
+                        ${SIApp.statusBadge(p.status)}
+                        <svg class="w-4 h-4 text-gray-200 transform group-hover:translate-x-1 group-hover:text-orange-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                     </div>
                 </div>
-                <div class="flex items-center gap-6 shrink-0">
-                    <span class="text-sm font-black text-[#000000]">${SIApp.formatCurrency(p.budget_amount)}</span>
-                    ${SIApp.statusBadge(p.status)}
-                    <svg class="w-4 h-4 text-gray-200 transform group-hover:translate-x-1 group-hover:text-indigo-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+
+                <!-- Mobile: Card (se oculta en desktop) -->
+                <div class="sm:hidden p-4">
+                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow group/card relative">
+                        <div class="flex items-start justify-between mb-3 gap-2">
+                            <div class="min-w-0">
+                                <a href="/steelinox/project/${p.id}" class="text-sm font-black text-[#000000] group-hover/card:text-orange-600 transition-colors leading-tight truncate block no-underline mb-0.5">${SIApp.escapeHtml(p.name)}</a>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${SIApp.escapeHtml(p.reference)}</span>
+                            </div>
+                            ${SIApp.statusBadge(p.status)}
+                        </div>
+
+                        <!-- Cliente en móvil -->
+                        <div class="mb-3">
+                            <a href="/steelinox/client/${p.client_id}" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600/70 hover:text-emerald-600 transition-colors no-underline bg-emerald-50/50 px-2 py-0.5 rounded-md">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                ${SIApp.escapeHtml(p.client_name)}
+                            </a>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                            <p class="text-sm font-black text-gray-700">${SIApp.formatCurrency(p.budget_amount)}</p>
+                            <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                ${SIApp.formatDate(p.created_at, true)}
+                            </div>
+                        </div>
+                        
+                        <!-- Link total a la ficha -->
+                        <a href="/steelinox/project/${p.id}" class="absolute inset-0 z-0 sm:hidden"></a>
+                        <!-- El link del cliente debe estar por encima del link total -->
+                        <script>
+                            // Pequeño hack para que el link del cliente funcione sobre el link total
+                            document.querySelectorAll('a[href*="/client/"]').forEach(a => {
+                                a.style.position = 'relative';
+                                a.style.zIndex = '10';
+                            });
+                        </script>
+                    </div>
                 </div>
+
             </div>
         `).join('');
 

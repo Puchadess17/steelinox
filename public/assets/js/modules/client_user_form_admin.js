@@ -102,9 +102,9 @@ SIModules.clientUserFormAdmin = {
 
                         <!-- LEFT: Main Form -->
                         <div class="lg:col-span-8 flex">
-                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col w-full">
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col w-full relative">
                                 <!-- Card Header -->
-                                <div class="px-7 py-5 border-b border-gray-50 bg-gray-50/30">
+                                <div class="px-7 py-5 border-b border-gray-50 bg-gray-50/30 rounded-t-2xl">
                                     <h2 class="text-sm font-bold text-[#000000]">Información de la Cuenta</h2>
                                     <p class="text-xs text-gray-400 mt-0.5">Datos de identificación y acceso del usuario.</p>
                                 </div>
