@@ -10,7 +10,7 @@ class AuthController {
 
     // Devuelvo el token CSRF para que el front lo guarde y lo use en fetch
     public function getCsrfToken() {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) @session_start();
         
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -69,7 +69,7 @@ class AuthController {
     }
 
     public function showLogin() {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) @session_start();
         if (isset($_SESSION['user_id'])) {
             $baseUrl = $_ENV['APP_BASE_URL'] ?? '/steelinox';
             header('Location: ' . $baseUrl . '/panel');
@@ -93,7 +93,7 @@ class AuthController {
             return;
         }
 
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) @session_start();
 
         $input = json_decode(file_get_contents('php://input'), true);
         
@@ -162,7 +162,7 @@ class AuthController {
     }
     
     public function logout() {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) @session_start();
         
         // AUDITORÍA
         if (isset($_SESSION['user_id'])) {

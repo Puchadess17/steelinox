@@ -14,5 +14,5 @@ require_once APP_PATH . '/Policies/UserPolicy.php';
 
 // Iniciar sesión simulada para el entorno CLI
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    @session_start();
 }

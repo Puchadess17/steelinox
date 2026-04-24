@@ -77,7 +77,7 @@ session_set_cookie_params([
 
 // Iniciamos la sesión centralizada y segura antes de cargar nada más
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    @session_start();
 }
 
 /**

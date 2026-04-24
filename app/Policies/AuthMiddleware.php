@@ -26,7 +26,7 @@ class AuthMiddleware {
         
         // Inicia o reanuda la sesión de usuario
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            @session_start();
         }
 
         // Verifica si existe un identificador de usuario activo
