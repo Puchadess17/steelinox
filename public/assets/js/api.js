@@ -159,7 +159,7 @@ const API = {
                 return result;
             }
 
-            // ── 500+ Server Error ──
+            // ── Errores de Servidor (500+) ──
             if (response.status >= 500) {
                 if (!options.silent) {
                     SIToast.error('Error interno del servidor. Inténtelo más tarde.');
@@ -167,9 +167,11 @@ const API = {
                 return result;
             }
 
-            // ── Otros errores HTTP (4xx) ──
+            // ── Errores de Cliente (4xx) ──
+            // Se vuelven silenciosos por defecto para evitar duplicidad de "toasts",
+            // ya que el patrón del proyecto es gestionarlos en el componente llamador.
             if (!response.ok && !options.silent) {
-                SIToast.error(result.message || 'Error en la operación');
+                // SIToast.error(result.message || 'Error en la operación');
             }
 
             return result;

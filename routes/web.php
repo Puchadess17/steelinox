@@ -61,6 +61,7 @@ $router->post('/api/projects/(\d+)/approve/confirm', 'ProjectController@confirmA
  */
 $router->get('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@index');
 $router->post('/api/projects/(\d+)/documents/(\d+)/comments', 'CommentController@store');
+$router->put('/api/projects/(\d+)/documents/(\d+)/comments/(\d+)', 'CommentController@update');
 $router->delete('/api/projects/(\d+)/documents/(\d+)/comments/(\d+)', 'CommentController@destroy');
 
 /**

@@ -115,11 +115,19 @@ class Comment {
      * RECUPERACIÓN INDIVIDUAL
      * Obtiene los datos de un comentario específico si no está borrado.
      */
-    public function getById($commentId, $projectId) {
+    public function getById($commentId, $projectId, $documentId = null) {
         $sql = "SELECT * FROM comments 
                 WHERE id = :id AND project_id = :project_id AND deleted_at IS NULL";
+        
+        $params = ['id' => $commentId, 'project_id' => $projectId];
+        
+        if ($documentId !== null) {
+            $sql .= " AND document_id = :document_id";
+            $params['document_id'] = $documentId;
+        }
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['id' => $commentId, 'project_id' => $projectId]);
+        $stmt->execute($params);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
@@ -143,12 +151,18 @@ class Comment {
      * BORRADO LÓGICO
      * Oculta un comentario utilizando el campo deleted_at para preservar la auditoría.
      */
-    public function delete($commentId, $projectId) {
-        $sql = "UPDATE comments SET deleted_at = NOW() WHERE id = :comment_id AND project_id = :project_id AND deleted_at IS NULL";
+    public function delete($commentId, $projectId, $documentId = null) {
+        $sql = "UPDATE comments SET deleted_at = NOW() 
+                WHERE id = :comment_id AND project_id = :project_id AND deleted_at IS NULL";
+        
+        $params = ['comment_id' => $commentId, 'project_id' => $projectId];
+
+        if ($documentId !== null) {
+            $sql .= " AND document_id = :document_id";
+            $params['document_id'] = $documentId;
+        }
+
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'comment_id' => $commentId,
-            'project_id' => $projectId
-        ]);
+        return $stmt->execute($params);
     }
 }

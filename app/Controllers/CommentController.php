@@ -233,17 +233,33 @@ class CommentController {
                 return;
             }
 
-            // 2. Obtener el comentario original
-            $commentModel = new Comment();
-            $comment = $commentModel->getById($commentId, $projectId);
-
-            if (!$comment) {
+            // 2. Validar el documento y su visibilidad
+            $documentModel = new Document();
+            $docInfo = $documentModel->getForDownload($documentId, $projectId);
+            if (!$docInfo) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Comentario no encontrado', 'data' => null, 'errors' => ['comment' => 'No existe o fue eliminado']]);
+                echo json_encode(['success' => false, 'message' => 'Documento no encontrado', 'data' => null, 'errors' => ['document' => 'Recurso inaccesible']]);
                 return;
             }
 
-            // 3. Evaluar permisos dinámicos (Rol, Estado de proyecto, Autoría)
+            // Un usuario cliente solo puede editar si el documento es visible para él
+            if ($role === 'cliente' && !$docInfo['is_visible_to_client']) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este documento', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
+                return;
+            }
+
+            // 3. Obtener el comentario original asegurando que pertenece a este documento
+            $commentModel = new Comment();
+            $comment = $commentModel->getById($commentId, $projectId, $documentId);
+
+            if (!$comment) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Comentario no encontrado en este documento', 'data' => null, 'errors' => ['comment' => 'No existe o fue movido']]);
+                return;
+            }
+
+            // 4. Evaluar permisos dinámicos de edición (Rol, Estado de proyecto, Autoría)
             if (!CommentPolicy::canEdit($role, $projectDetails['status'], (int)$comment['author_user_id'], $userId)) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos', 'data' => null, 'errors' => ['policy' => 'No puedes editar este comentario. El proyecto puede estar cerrado o no eres el autor.']]);
@@ -329,8 +345,16 @@ class CommentController {
 
             $commentModel = new Comment();
             
-            // La ejecución del borrado lógico (deleted_at = NOW()) sucede dentro de este método delete()
-            if ($commentModel->delete($commentId, $projectId)) {
+            // Verificamos que el comentario pertenezca al documento y proyecto
+            $comment = $commentModel->getById($commentId, $projectId, $documentId);
+            if (!$comment) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Comentario no encontrado', 'data' => null, 'errors' => ['comment' => 'No existe']]);
+                return;
+            }
+
+            // La ejecución del borrado lógico (deleted_at = NOW())
+            if ($commentModel->delete($commentId, $projectId, $documentId)) {
                 AuditLogger::log('comentario_eliminado', 'comment', $commentId, $projectId, [
                     'documento_id' => $documentId
                 ]);

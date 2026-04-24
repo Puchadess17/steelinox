@@ -8,6 +8,7 @@ window.SIModules = window.SIModules || {};
 SIModules.projectDetailAdmin = {
     projectId: null,
     project: null,
+    chatPollInterval: null,
     auditLogs: [],
     userContext: null,  // se inicializa en init()
     assignedUsers: [],
@@ -580,7 +581,7 @@ SIModules.projectDetailAdmin = {
 
         if (clientLinkEl && clientNameEl && this.project.client_id) {
             clientNameEl.textContent = this.project.client_name || 'Empresa Desconocida';
-            
+
             if (SIApp.user && SIApp.user.role === 'cliente') {
                 // El cliente no puede ver detalles de otros clientes (o el suyo propio en esta vista admin)
                 clientLinkEl.removeAttribute('href');
@@ -2251,6 +2252,13 @@ SIModules.projectDetailAdmin = {
         this.loadDocVersionsForChat(doc.id, versionId);
         this.loadDocComments(doc.id, versionId);
 
+        // --- ACTIVAR SHORT POLLING (AUTO-REFRESH) ---
+        if (this.chatPollInterval) clearInterval(this.chatPollInterval);
+        this.chatPollInterval = setInterval(() => {
+            const currentVid = document.getElementById('chat-version-select')?.value;
+            this.loadDocComments(doc.id, currentVid || null, true);
+        }, 10000); // Cada 10 segundos
+
         // Sync hidden field + indicator with the initial version
         // Will be re-synced precisely after loadDocVersionsForChat resolves
         this._setActiveCommentVersion(
@@ -2606,27 +2614,36 @@ SIModules.projectDetailAdmin = {
         }
     },
 
-    async loadDocComments(docId, versionId = null) {
+    async loadDocComments(docId, versionId = null, silent = false) {
         const loading = document.getElementById('chat-loading');
         const container = document.getElementById('chat-messages-container');
         if (!loading || !container) return;
 
-        loading.classList.remove('hidden');
-        container.innerHTML = '';
+        if (!silent) {
+            loading.classList.remove('hidden');
+            container.innerHTML = '';
+        }
+
         try {
             const res = await API.get(`/projects/${this.projectId}/documents/${docId}/comments`, { silent: true });
             if (res.success && res.data) {
-                this.currentComments = res.data;
-                this.renderDocComments(versionId);
+                // Optimización: Solo re-renderizar si el contenido ha cambiado (evita saltos de scroll innecesarios)
+                const newJson = JSON.stringify(res.data);
+                if (newJson !== JSON.stringify(this.currentComments)) {
+                    this.currentComments = res.data;
+                    this.renderDocComments(versionId);
+                }
             } else {
                 this.currentComments = [];
                 this.renderDocComments(versionId);
             }
         } catch (e) {
             console.error('Error comentarios:', e);
-            container.innerHTML = '<p class="text-xs text-red-500 text-center py-4 font-bold border border-red-100 bg-red-50 rounded-lg">Error al cargar historial del chat</p>';
+            if (!silent) {
+                container.innerHTML = '<p class="text-xs text-red-500 text-center py-4 font-bold border border-red-100 bg-red-50 rounded-lg">Error al cargar historial del chat</p>';
+            }
         } finally {
-            loading.classList.add('hidden');
+            if (!silent) loading.classList.add('hidden');
         }
     },
 
@@ -2691,7 +2708,10 @@ SIModules.projectDetailAdmin = {
                          <div class="flex flex-col items-end max-w-[88%]">
                              <!-- Nombre + Rol + Versión -->
                              <div class="flex items-center gap-1.5 mb-1.5 px-1 flex-wrap justify-end">
-                                 ${this.project && this.project.status !== 'cerrado' ? `<button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
+                                 ${this.project && this.project.status !== 'cerrado' ? `
+                                     <button onclick="SIModules.projectDetailAdmin._editComment(${c.id})" class="text-gray-300 hover:text-blue-500 p-0.5" title="Editar Comentario"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                                     <button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                                 ` : ''}
                                  <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${myRc.badgeCss}">${myRc.label}</span>
                                  <span class="text-[11px] font-black ${myRc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
                                  <span class="text-[9px] font-black uppercase tracking-widest bg-[#000000]/10 text-[#000000] px-1.5 py-0.5 rounded border border-[#000000]/10">v${c.version_number}</span>
@@ -2717,7 +2737,10 @@ SIModules.projectDetailAdmin = {
                                  <span class="text-[11px] font-black ${rc.nameCss} tracking-tight">${SIApp.escapeHtml(c.author_name)}</span>
                                  <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${rc.badgeCss}">${rc.label}</span>
                                  <span class="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">v${c.version_number}</span>
-                                 ${me && me.role === 'admin' && this.project && this.project.status !== 'cerrado' ? `<button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario de Otro"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : ''}
+                                 ${me && me.role === 'admin' && this.project && this.project.status !== 'cerrado' ? `
+                                     <button onclick="SIModules.projectDetailAdmin._editComment(${c.id})" class="text-gray-300 hover:text-blue-500 p-0.5" title="Editar Comentario de Otro"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                                     <button onclick="SIModules.projectDetailAdmin._confirmDeleteComment(${c.id})" class="text-gray-300 hover:text-red-500 p-0.5" title="Eliminar Comentario de Otro"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                                 ` : ''}
                              </div>
                              <!-- Burbuja -->
                              <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-[#000000] text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
@@ -2730,7 +2753,15 @@ SIModules.projectDetailAdmin = {
         }).join('');
 
         const scrollContainer = document.getElementById('preview-chat-messages');
-        if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        if (scrollContainer) {
+            // Solo auto-scroll si el usuario ya estaba cerca del final (previne saltos molestos si está leyendo mensajes antiguos)
+            const threshold = 100;
+            const isAtBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < threshold;
+
+            if (isAtBottom) {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
+        }
     },
 
     async submitDocComment() {
@@ -2789,6 +2820,12 @@ SIModules.projectDetailAdmin = {
     },
 
     closePreviewModal() {
+        // Detener short polling para no consumir recursos innecesarios
+        if (this.chatPollInterval) {
+            clearInterval(this.chatPollInterval);
+            this.chatPollInterval = null;
+        }
+
         const iframe = document.getElementById('preview-iframe');
         SIApp.modal.close('preview-doc-modal');
         // Clear iframe src after transition
@@ -3407,7 +3444,7 @@ SIModules.projectDetailAdmin = {
         const ok = await SIApp.confirm('¿Eliminar comentario?', `Esta acción no se puede deshacer.`);
         if (ok) {
             try {
-                const res = await API.delete(`/projects/${this.projectId}/documents/${this.currentDocId}/comments/${commentId}`);
+                const res = await API.delete(`/projects/${this.projectId}/documents/${this.currentDocId}/comments/${commentId}`, { silent: true });
                 if (res.success) {
                     SIApp.showToast('Eliminado', 'Se ha eliminado el comentario.', 'success');
                     // Actualizar el doc activo
@@ -3418,6 +3455,47 @@ SIModules.projectDetailAdmin = {
             } catch (e) {
                 SIApp.showToast('Error', 'Hubo un error del servidor intentando descartar este mensaje de chat.', 'error');
             }
+        }
+    },
+
+    async _editComment(commentId) {
+        if (!this.projectId || !this.currentDocId) return;
+
+        // Buscar el comentario en el cache local
+        const comment = this.currentComments.find(c => c.id == commentId);
+        if (!comment) return;
+
+        const newBody = await SIApp.prompt(
+            'Editar Comentario',
+            'Modifica tu mensaje a continuación:',
+            'Escribe aquí tu comentario...',
+            'Guardar Cambios',
+            comment.body.trim()
+        );
+
+        if (newBody === null) return; // Cancelado
+        if (!newBody.trim()) {
+            SIApp.showToast('Aviso', 'El comentario no puede estar vacío.', 'info');
+            return;
+        }
+
+        if (newBody.trim() === comment.body.trim()) return; // No hay cambios
+
+        try {
+            const res = await API.put(`/projects/${this.projectId}/documents/${this.currentDocId}/comments/${commentId}`, {
+                body: newBody.trim()
+            }, { silent: true });
+
+            if (res.success) {
+                SIApp.showToast('Actualizado', 'Se ha guardado el comentario.', 'success');
+                // Actualizar el doc activo para repintar
+                this.openPreview(this.currentDocId);
+            } else {
+                SIApp.showToast('Error', res.message || 'No se pudo actualizar.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            SIApp.showToast('Error', 'Hubo un error al intentar editar el mensaje.', 'error');
         }
     },
 
@@ -3433,7 +3511,9 @@ SIModules.projectDetailAdmin = {
             'Cerrar Proyecto',
             `¿Seguro que deseas cerrar el proyecto <strong>${SIApp.escapeHtml(this.project?.name || '')}</strong>?<br><br>Una vez cerrado, no se podrán añadir comentarios. Puedes reabrir el proyecto en cualquier momento desde el panel de estado.`,
             'Indica el motivo del cierre (requerido)',
-            'Cerrar Proyecto'
+            'Cerrar Proyecto',
+            '',
+            true
         );
 
         // SIApp.prompt devuelve null si el usuario cancela, o string vacío si no escribe

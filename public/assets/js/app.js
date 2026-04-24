@@ -599,7 +599,7 @@ const SIApp = {
      * @param {string} placeholder - Placeholder del textarea
      * @param {string} confirmText - Texto del botón de confirmar
      */
-    prompt(title, message = '', placeholder = '', confirmText = 'Confirmar') {
+    prompt(title, message = '', placeholder = '', confirmText = 'Confirmar', defaultValue = '', required = false) {
         return new Promise((resolve) => {
             const existing = document.getElementById('si-prompt-modal');
             if (existing) existing.remove();
@@ -638,7 +638,11 @@ const SIApp = {
             requestAnimationFrame(() => {
                 modal.classList.remove('opacity-0');
                 modal.querySelector('div').classList.remove('scale-95');
-                setTimeout(() => textarea && textarea.focus(), 250);
+                
+                if (textarea) {
+                    textarea.value = defaultValue;
+                    setTimeout(() => textarea.focus(), 250);
+                }
             });
 
             const close = (val) => {
@@ -647,14 +651,27 @@ const SIApp = {
                 setTimeout(() => { modal.remove(); resolve(val); }, 200);
             };
 
+            const handleConfirm = () => {
+                const val = textarea ? textarea.value.trim() : '';
+                if (required && !val) {
+                    if (textarea) {
+                        textarea.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                        textarea.classList.remove('border-gray-200');
+                        textarea.focus();
+                    }
+                    return;
+                }
+                close(textarea ? textarea.value : '');
+            };
+
             btnCancel.onclick = () => close(null);
-            btnOk.onclick = () => close(textarea ? textarea.value : '');
+            btnOk.onclick = handleConfirm;
 
             // Ctrl+Enter también confirma
             textarea.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
-                    close(textarea.value);
+                    handleConfirm();
                 }
             });
         });

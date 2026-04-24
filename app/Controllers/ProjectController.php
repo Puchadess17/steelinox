@@ -638,8 +638,8 @@ class ProjectController
                 return;
             }
 
-            // GENERACIÓN DE TOKEN CRIPTOGRÁFICO DE ALTA SEGURIDAD (48 Caracteres)
-            $token = bin2hex(random_bytes(24)); 
+            // GENERACIÓN DE CÓDIGO DE SEGURIDAD (6 Dígitos)
+            $token = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT); 
             
             $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE id = ?");
             $stmt->execute([$token, $id]);
@@ -655,9 +655,9 @@ class ProjectController
             $body = "<div style='font-family: Arial, sans-serif; color: #333;'>";
             $body .= "<h2 style='color: #0056b3;'>Autorización Requerida</h2>";
             $body .= "<p>Has solicitado aprobar el proyecto <strong>" . $projectDetails['reference'] . "</strong>.</p>";
-            $body .= "<p>Copia y pega el siguiente token criptográfico de seguridad en la plataforma:</p>";
-            $body .= "<div style='font-size: 16px; font-family: monospace; word-break: break-all; font-weight: bold; background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; display: block; border: 1px solid #ddd; text-align: center; letter-spacing: 1px;'>" . $token . "</div>";
-            $body .= "<p><em>Por motivos de seguridad, este token caducará en exactamente 10 minutos.</em></p></div>";
+            $body .= "<p>Introduce el siguiente código de verificación de 6 dígitos en la plataforma:</p>";
+            $body .= "<div style='font-size: 32px; font-family: monospace; font-weight: bold; background: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0; display: block; border: 1px solid #ddd; text-align: center; letter-spacing: 10px; color: #E57B23;'>" . $token . "</div>";
+            $body .= "<p><em>Por motivos de seguridad, este código caducará en exactamente 10 minutos.</em></p></div>";
 
             $stmtQ = $db->prepare("INSERT INTO notifications_queue (recipient_user_id, event_type, recipient_email, subject, body, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
             $stmtQ->execute([$userId, 'codigo_aprobacion', $userEmail, $subject, $body]);
