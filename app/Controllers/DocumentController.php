@@ -724,8 +724,14 @@ class DocumentController {
     private function sanitizeName($name) {
         if (empty($name)) return '';
         $name = trim($name);
+
+        // Reemplaza guiones y guiones bajos por espacios
+        $name = str_replace(['-', '_'], ' ', $name);
+
+        // Reduce múltiples espacios a uno solo
         $name = preg_replace('/\s+/', ' ', $name);
-        $name = mb_convert_case($name, MB_CASE_TITLE, "UTF-8");
+
+
         return htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
     }
 }

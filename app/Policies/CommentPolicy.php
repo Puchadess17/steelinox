@@ -18,6 +18,14 @@ class CommentPolicy {
         ]);
     }
 
+    public static function canEdit($role, $projectStatus, $authorId, $userId) {
+        return AccessMatrix::check('comment', 'edit', $role, [
+            'status'    => $projectStatus, 
+            'author_id' => $authorId, 
+            'user_id'   => $userId
+        ]);
+    }
+
     public static function canDelete($role) {
         return AccessMatrix::check('comment', 'delete', $role);
     }

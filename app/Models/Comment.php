@@ -112,6 +112,34 @@ class Comment {
     }
 
     /**
+     * RECUPERACIÓN INDIVIDUAL
+     * Obtiene los datos de un comentario específico si no está borrado.
+     */
+    public function getById($commentId, $projectId) {
+        $sql = "SELECT * FROM comments 
+                WHERE id = :id AND project_id = :project_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $commentId, 'project_id' => $projectId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * EDICIÓN LÓGICA
+     * Sobrescribe el cuerpo del comentario y actualiza el timestamp de modificación.
+     */
+    public function update($commentId, $projectId, $newBody) {
+        $sql = "UPDATE comments 
+                SET body = :body, updated_at = NOW() 
+                WHERE id = :id AND project_id = :project_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'body'       => $newBody,
+            'id'         => $commentId,
+            'project_id' => $projectId
+        ]);
+    }
+
+    /**
      * BORRADO LÓGICO
      * Oculta un comentario utilizando el campo deleted_at para preservar la auditoría.
      */

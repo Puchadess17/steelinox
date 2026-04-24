@@ -204,6 +204,89 @@ class CommentController {
         }
     }
 
+    public function update($projectId, $documentId, $commentId) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'PATCH') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba PUT o PATCH', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role'];
+            $clientId = $_SESSION['client_id'] ?? null;
+
+            $projectId = (int)$projectId;
+            $documentId = (int)$documentId;
+            $commentId = (int)$commentId;
+
+            // 1. Validar el proyecto
+            $projectModel = new Project();
+            $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
+
+            if (!$projectDetails) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                return;
+            }
+
+            // 2. Obtener el comentario original
+            $commentModel = new Comment();
+            $comment = $commentModel->getById($commentId, $projectId);
+
+            if (!$comment) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Comentario no encontrado', 'data' => null, 'errors' => ['comment' => 'No existe o fue eliminado']]);
+                return;
+            }
+
+            // 3. Evaluar permisos dinámicos (Rol, Estado de proyecto, Autoría)
+            if (!CommentPolicy::canEdit($role, $projectDetails['status'], (int)$comment['author_user_id'], $userId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos', 'data' => null, 'errors' => ['policy' => 'No puedes editar este comentario. El proyecto puede estar cerrado o no eres el autor.']]);
+                return;
+            }
+
+            // 4. Procesar y sanitizar entrada
+            $input = json_decode(file_get_contents('php://input'), true);
+            $rawBody = isset($input['body']) ? $input['body'] : '';
+            $safeBody = $this->sanitizeCommentBody($rawBody);
+
+            if (empty($safeBody)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'data' => null, 'errors' => ['body' => 'Campo requerido']]);
+                return;
+            }
+
+            // 5. Solo actualizar si hubo cambios reales
+            if ($safeBody !== $comment['body']) {
+                if ($commentModel->update($commentId, $projectId, $safeBody)) {
+                    
+                    // REQUISITO AUDITORÍA DDS §11: Registrar texto anterior
+                    AuditLogger::log('comentario_editado', 'comment', $commentId, $projectId, [
+                        'documento_id'   => $documentId,
+                        'texto_anterior' => $comment['body'],
+                        'texto_nuevo'    => $safeBody
+                    ]);
+
+                } else {
+                    throw new Exception("Fallo en la persistencia de la base de datos");
+                }
+            }
+
+            http_response_code(200);
+            echo json_encode(['success' => true, 'message' => 'Comentario editado correctamente', 'data' => null, 'errors' => null]);
+
+        } catch (Throwable $e) {
+            ErrorLogger::log($e->getMessage(), 'CommentController::update');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al actualizar comentario']]);
+        }
+    }
+
     public function destroy($projectId, $documentId, $commentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');

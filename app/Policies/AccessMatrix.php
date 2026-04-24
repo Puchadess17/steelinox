@@ -149,6 +149,11 @@ class AccessMatrix {
                     'comercial' => fn($context) => $context['status'] !== 'cerrado',
                     'cliente'   => fn($context) => $context['status'] !== 'cerrado' && (bool)$context['is_visible'],
                 ],
+                'edit' => [
+                    'admin'     => fn($context) => $context['status'] !== 'cerrado',
+                    'comercial' => fn($context) => $context['status'] !== 'cerrado' && $context['author_id'] === $context['user_id'],
+                    'cliente'   => fn($context) => $context['status'] !== 'cerrado' && $context['author_id'] === $context['user_id'],
+                ],
                 'delete' => [
                     'admin'     => true,
                     'comercial' => true, 
