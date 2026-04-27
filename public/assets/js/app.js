@@ -73,12 +73,17 @@ const SIApp = {
                     this.user = json.data;
                 } else {
                     // El servidor dice que no hay sesión
+                    // Reseteamos this.user ANTES de evaluar isAuthPage para evitar
+                    // el bucle: (this.user && isAuthPage) → redirect a /panel → sin sesión → bucle
+                    this.user = null;
                     Auth.clearLocalData();
                     if (!isAuthPage) window.location.href = '/steelinox/';
                     return;
                 }
             } else {
-                // Error de autorización (401)
+                // Error de autorización (401) u otro error HTTP
+                // Reseteamos this.user ANTES de evaluar isAuthPage (misma razón)
+                this.user = null;
                 Auth.clearLocalData();
                 if (!isAuthPage) window.location.href = '/steelinox/';
                 return;
