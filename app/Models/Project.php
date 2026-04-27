@@ -74,14 +74,22 @@ class Project {
         $orderByClause = "ORDER BY $orderBy $sortDir";
         // -------------------------------------------------
 
-        // Cálculo del total de registros para paginación
-        $countSql = "SELECT COUNT(*) FROM projects p LEFT JOIN clients c ON p.client_id = c.id " . $whereSql;
-        $stmtCount = $this->db->prepare($countSql);
+        // Cálculo del total de registros y KPIs dinámicos
+        $kpiSql = "SELECT COUNT(*) as total,
+                          SUM(CASE WHEN p.status = 'propuesta' THEN 1 ELSE 0 END) as propuesta,
+                          SUM(CASE WHEN p.status = 'aprobado' THEN 1 ELSE 0 END) as aprobado,
+                          SUM(CASE WHEN p.status = 'ejecucion' THEN 1 ELSE 0 END) as ejecucion,
+                          SUM(CASE WHEN p.status = 'cerrado' THEN 1 ELSE 0 END) as cerrado
+                   FROM projects p LEFT JOIN clients c ON p.client_id = c.id " . $whereSql;
+        
+        $stmtKpi = $this->db->prepare($kpiSql);
         foreach ($params as $key => $val) {
-            $stmtCount->bindValue(":$key", $val);
+            $stmtKpi->bindValue(":$key", $val);
         }
-        $stmtCount->execute();
-        $total = (int)$stmtCount->fetchColumn();
+        $stmtKpi->execute();
+        $kpis = $stmtKpi->fetch(PDO::FETCH_ASSOC);
+        
+        $total = (int)($kpis['total'] ?? 0);
 
         // Extracción de datos paginados con el recuento de comerciales
         $dataSql = "SELECT p.id, p.name, p.reference, p.status, p.created_at, p.client_id, c.name AS client_name,
@@ -103,7 +111,14 @@ class Project {
         
         return [
             'total' => $total,
-            'data'  => $stmtData->fetchAll()
+            'kpis'  => [
+                'total'     => $total,
+                'propuesta' => (int)($kpis['propuesta'] ?? 0),
+                'aprobado'  => (int)($kpis['aprobado'] ?? 0),
+                'ejecucion' => (int)($kpis['ejecucion'] ?? 0),
+                'cerrado'   => (int)($kpis['cerrado'] ?? 0)
+            ],
+            'data'  => $stmtData->fetchAll(PDO::FETCH_ASSOC)
         ];
     }
 

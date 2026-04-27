@@ -47,7 +47,10 @@ class ProjectController
             echo json_encode([
                 'success'    => true,
                 'message'    => 'Proyectos recuperados correctamente',
-                'data'       => $result['data'],
+                'data'       => [
+                    'list' => $result['data'],
+                    'kpis' => $result['kpis']
+                ],
                 'pagination' => PaginationHelper::format($result['total'], $limit, $page),
                 'errors'     => null
             ]);
