@@ -1,13 +1,24 @@
 /**
- * Steel Inox Extranet — SPA Router (Query Param based)
- * Maneja la navegación sin usar # ni romper el backend.
- * Depende de: auth.js (Auth)
+ * STEEL INOX EXTRANET — SPA ROUTER
+ * Gestiona la navegación de página única (SPA) usando la History API.
+ * Intercepta clicks en enlaces internos y eventos popstate, resuelve la vista
+ * correcta desde la URL y carga el módulo correspondiente sin recarga.
+ *
+ * Flujo: URL → getViewFromUrl() → handleRoute() → SIModules[module][method]()
+ *
+ * Depende de: auth.js (Auth), app.js (SIApp), y todos los módulos de SIModules
  */
 const SIRouter = {
     routes: {},
     currentView: null,
     contentContainer: null,
 
+    /**
+     * INICIALIZACIÓN DEL ROUTER
+     * Enlaza los eventos de navegación globales (click en enlaces, popstate)
+     * y carga la vista correspondiente a la URL actual.
+     * @param {string} containerId - ID del elemento donde se inyecta el contenido
+     */
     init(containerId = 'main-content') {
         this.contentContainer = document.getElementById(containerId);
 
@@ -64,6 +75,13 @@ const SIRouter = {
         this.handleRoute(this.getViewFromUrl());
     },
 
+    /**
+     * RESOLUCIÓN DE VISTA DESDE URL
+     * Traduce el pathname actual a un nombre de vista interno del router.
+     * Ej: /steelinox/project/42 → 'project-detail'
+     *     /steelinox/client/new → 'client-new'
+     * @returns {string} Nombre de la vista
+     */
     getViewFromUrl() {
         const path = window.location.pathname;
         const basePath = '/steelinox/';
@@ -316,6 +334,8 @@ const SIRouter = {
     },
 };
 
-// Registro global de módulos JS
+// REGISTRO GLOBAL DE MÓDULOS
+// Cada módulo JS se auto-registra en SIModules al cargarse.
+// El router los invoca por nombre: SIModules[module][method]()
 window.SIModules = window.SIModules || {};
 

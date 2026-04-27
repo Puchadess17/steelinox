@@ -1,6 +1,14 @@
 /**
- * Steel Inox Extranet — Audit Module
- * Visualización de logs globales del sistema con filtrado avanzado y UI Premium.
+ * STEEL INOX EXTRANET — AUDIT LOG MODULE
+ * Visualización del registro de auditoría global del sistema.
+ * Permite filtrar por actor, acción, tipo de entidad y rango de fechas (Flatpickr).
+ * El estado de filtros y página se reinicia en cada navegación SPA.
+ *
+ * @api GET /api/audit?page&limit&actor_user_id&action_key&entity_type&date_start&date_end
+ *          → { data: AuditLog[], pagination: Object }
+ * @api GET /api/audit/filters  → { actors: User[], actions: string[], entities: string[] }
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), router.js (SIRouter)
  */
 window.SIModules.audit = {
     filters: {
@@ -26,7 +34,13 @@ window.SIModules.audit = {
         entity: []
     },
 
-    /** Punto de entrada desde el router */
+    /**
+     * PUNTO DE ENTRADA DESDE EL ROUTER
+     * Resetea el estado completo del módulo para evitar persistencia SPA entre
+     * navegaciones, inyecta el esqueleto, inicializa Flatpickr y carga datos iniciales.
+     * @api GET /api/audit/filters → { actors, actions, entities }
+     * @api GET /api/audit         → { data: AuditLog[], pagination }
+     */
     async initAuditLog() {
         const container = SIRouter.contentContainer;
 

@@ -1,6 +1,15 @@
 /**
- * Steel Inox — Commercials Admin Module
- * Gestión de equipo comercial para Administradores.
+ * STEEL INOX EXTRANET — COMMERCIALS ADMIN MODULE
+ * Gestión completa del equipo comercial para el rol Administrador.
+ * Incluye listado paginado con filtros/ordenación y vista de detalle individual.
+ *
+ * @api GET    /api/commercials                    → { list, kpis, pagination }
+ * @api GET    /api/commercials?page&limit&status&search&sort_by&sort_dir
+ *                                                  → { list, kpis, pagination }
+ * @api GET    /api/commercials/:id                → { info, projects }
+ * @api DELETE /api/commercials/:id                → null
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), auth.js (Auth), router.js (SIRouter)
  */
 window.SIModules = window.SIModules || {};
 
@@ -10,7 +19,8 @@ SIModules.commercialsAdmin = {
         return document.getElementById('main-content');
     },
 
-    // Datos en memoria para configuración y filtros
+    // ESTADO INTERNO DEL LISTADO
+    // Mantiene filtros y paginación entre llamadas para que no se reseteen.
     currentFilter: 'all',
     currentSearch: '',
     currentSortCol: 'name',
@@ -18,6 +28,11 @@ SIModules.commercialsAdmin = {
     currentPage: 1,
     itemsPerPage: 15,
 
+    /**
+     * LISTADO DE COMERCIALES
+     * Construye el HTML estático de la página (KPIs, filtros, buscador, tabla)
+     * y delega la carga de datos en _reloadListTable().
+     */
     /** 1. CARGAR LISTADO GLOBAL */
     async loadList() {
         this.container.innerHTML = `
@@ -68,6 +83,13 @@ SIModules.commercialsAdmin = {
         await this._reloadListTable();
     },
 
+    /**
+     * RECARGA DE TABLA SIN DESTRUIR EL INPUT
+     * Construye la URL con todos los filtros activos y llama a la API.
+     * Actualiza solo los contenedores de KPIs, tabla y paginación.
+     * @api GET /api/commercials?page&limit&status&search&sort_by&sort_dir
+     *          → { list: Commercial[], kpis: { total, activos, inactivos }, pagination }
+     */
     /** Recarga solo los datos de la tabla sin destruir el input */
     async _reloadListTable() {
         try {
@@ -292,6 +314,12 @@ SIModules.commercialsAdmin = {
         await this._reloadListTable();
     },
 
+    /**
+     * VISTA DE DETALLE DE COMERCIAL
+     * Carga la ficha completa del comercial con sus proyectos asignados.
+     * Extrae el ID de la URL (/steelinox/commercial/{id}).
+     * @api GET /api/commercials/:id → { info: User, projects: Project[] }
+     */
     /** 3. CARGAR DETALLE COMERCIAL */
     async loadDetailSPA() {
         // Extraer ID de la URL /steelinox/commercial/{id}
@@ -391,6 +419,12 @@ SIModules.commercialsAdmin = {
         }
     },
 
+    /**
+     * RENDERIZADO DE PROYECTOS EN LA FICHA
+     * Genera las filas (desktop) y tarjetas (móvil) de los proyectos asignados.
+     * @param {Array} projects - Lista de proyectos con client_id, client_name, etc.
+     * @returns {string} HTML a inyectar
+     */
     /** Helper para renderizar los proyectos en la ficha */
     _renderProjectRows(projects) {
         if (projects.length === 0) {
@@ -470,6 +504,15 @@ SIModules.commercialsAdmin = {
         return `<div class="flex flex-col">${rows}</div>`;
     },
 
+    /**
+     * TARJETA KPI
+     * Genera el HTML de una tarjeta de métrica con icono, valor y subtítulo.
+     * @param {string} title - Título de la métrica
+     * @param {number|string} value - Valor numérico a mostrar
+     * @param {string} subtitle - Descripción adicional (e.g. 'Carga media: 2.3 proy/com')
+     * @param {string} iconHtml - SVG inline del icono
+     * @returns {string} HTML de la tarjeta
+     */
     /** KPIs Visuales */
     _renderKpiCard(title, value, subtitle, iconHtml) {
         return `
@@ -490,6 +533,13 @@ SIModules.commercialsAdmin = {
         `;
     },
 
+    /**
+     * FILTRADO POR ESTADO
+     * Cambia el filtro activo y recarga la tabla desde la página 1.
+     * Actualiza los estilos de los botones de tab.
+     * @param {string} status - 'all' | 'activo' | 'inactivo'
+     * @param {HTMLElement} btn - Botón que activó el filtro
+     */
     _filter(status, btn) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-comerciales').forEach(t => t.classList.remove(...activeClasses));
@@ -501,6 +551,12 @@ SIModules.commercialsAdmin = {
         this._reloadListTable();
     },
 
+    /**
+     * ORDENACIÓN DE COLUMNA
+     * Cicla entre los 3 estados: asc → desc → sin ordenar.
+     * Solo acepta columnas en la whitelist allowedCols.
+     * @param {string} col - Nombre de la columna a ordenar
+     */
     _sort(col) {
         // Columnas permitidas para ordenar en Comerciales
         const allowedCols = ['name', 'email', 'active_projects', 'last_login_at'];
@@ -529,6 +585,11 @@ SIModules.commercialsAdmin = {
         return this.currentSortDir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
     },
 
+    /**
+     * BÚSquEDA CON DEBOUNCE
+     * Espera 400 ms tras el último keystroke antes de relanzar la consulta.
+     * @param {string} val - Valor del input de búsqueda
+     */
     _search(val) {
         this.currentSearch = val.trim().toLowerCase();
 
@@ -539,6 +600,13 @@ SIModules.commercialsAdmin = {
         }, 400);
     },
 
+    /**
+     * CONFIRMACIÓN Y ELIMINACIÓN DE COMERCIAL
+     * Muestra un diálogo de confirmación antes de hacer la petición DELETE.
+     * Tras el éxito redirige al listado de comerciales.
+     * @api DELETE /api/commercials/:id → null
+     * @param {number} id - ID del comercial a eliminar
+     */
     async _confirmDelete(id) {
         const ok = await SIApp.confirm('¿Eliminar comercial?', 'Esta acción es irreversible. El usuario perderá el acceso a todos sus proyectos de forma permanente.');
         if (ok) {

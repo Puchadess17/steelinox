@@ -1,6 +1,14 @@
 /**
- * Archivo: templates.js
- * Librería de fragmentos HTML reutilizables para Steel Inox.
+ * STEEL INOX EXTRANET — TEMPLATES MODULE
+ * Librería de fragmentos HTML reutilizables y generadores de modales.
+ * Proporciona los bloques de UI compartidos por todos los módulos admin.
+ *
+ * Bloques disponibles:
+ *   SITemplates.fragments.projectFields(data, isEdit)  — Formulario de proyecto
+ *   SITemplates.fragments.userFields(data, opts)        — Formulario de usuario
+ *   SITemplates.modal(opts)                             — Modal genérico con overlay
+ *
+ * Depende de: app.js (SIApp) para escapeHtml() y formatCurrency()
  */
 window.SITemplates = window.SITemplates || {};
 

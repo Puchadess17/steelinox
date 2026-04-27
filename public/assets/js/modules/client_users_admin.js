@@ -1,6 +1,13 @@
 /**
- * Steel Inox — Client Users Admin Module
- * Gestión de usuarios cliente para Administradores y Comerciales.
+ * STEEL INOX EXTRANET — CLIENT USERS ADMIN MODULE
+ * Listado paginado de usuarios de tipo 'cliente' para Admin y Comercial.
+ * Incluye filtrado por estado, búsqueda full-text con debounce y ordenación.
+ *
+ * @api GET    /api/users?page&limit&status&search&sort_by&sort_dir
+ *             → { list: User[], kpis: { total, activos, empresas_cubiertas }, pagination }
+ * @api DELETE /api/users/:id  → null
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), auth.js (Auth), router.js (SIRouter)
  */
 window.SIModules = window.SIModules || {};
 
@@ -10,7 +17,9 @@ SIModules.clientUsersAdmin = {
         return document.getElementById('main-content');
     },
 
-    // Datos en memoria para configuración y filtros
+    // ESTADO INTERNO DEL LISTADO
+    // Mantiene filtros, búsqueda, ordenación y paginación entre recargas
+    // para que el estado no se pierda cuando el usuario cambia de página.
     currentFilter: 'all',
     currentSearch: '',
     currentSortCol: 'name',
@@ -18,6 +27,12 @@ SIModules.clientUsersAdmin = {
     currentPage: 1,
     itemsPerPage: 15,
 
+    /**
+     * LISTADO DE USUARIOS CLIENTE
+     * Construye el HTML estático de la página (KPIs, filtros, buscador, tabla)
+     * y delega la carga de datos en _reloadListTable().
+     * El botón "Nuevo Usuario" solo se muestra para Admin y Comercial.
+     */
     /** 1. CARGAR LISTADO GLOBAL */
     async loadList() {
         const user = Auth.getUser();
@@ -66,7 +81,13 @@ SIModules.clientUsersAdmin = {
         await this._reloadListTable();
     },
 
-    /** Recarga solo los datos de la tabla sin destruir el input */
+    /**
+     * RECARGA DE TABLA SIN DESTRUIR EL INPUT
+     * Construye la URL con todos los filtros activos y consulta la API.
+     * Actualiza solo los contenedores de KPIs, tabla y paginación.
+     * @api GET /api/users?page&limit&status&search&sort_by&sort_dir
+     *          → { list: User[], kpis: { total, activos, empresas_cubiertas }, pagination }
+     */
     async _reloadListTable() {
         try {
             let url = `/users?page=${this.currentPage}&limit=${this.itemsPerPage}`;
@@ -103,6 +124,13 @@ SIModules.clientUsersAdmin = {
         }
     },
 
+    /**
+     * RENDERIZADO DE TABLA Y TARJETAS
+     * Genera las filas de la tabla desktop y las tarjetas móvil.
+     * Los botones de acción (editar/eliminar) solo se muestran para staff.
+     * @param {User[]} data - Lista de usuarios de la página actual
+     * @param {Object} pagination - Metadatos de paginación del backend
+     */
     /** 2. RENDERIZAR TABLA */
     _renderTable(data, pagination) {
         const container = document.getElementById('users-table-container');
@@ -279,6 +307,15 @@ SIModules.clientUsersAdmin = {
         await this._reloadListTable();
     },
 
+    /**
+     * TARJETA KPI
+     * Genera el HTML de una métrica con icono, valor numérico y subtítulo.
+     * @param {string} title    - Etiqueta de la métrica
+     * @param {number} value    - Valor a mostrar en grande
+     * @param {string} subtitle - Descripción adicional
+     * @param {string} iconHtml - SVG inline del icono
+     * @returns {string} HTML de la tarjeta
+     */
     _renderKpiCard(title, value, subtitle, iconHtml) {
         return `
             <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -297,6 +334,12 @@ SIModules.clientUsersAdmin = {
         `;
     },
 
+    /**
+     * FILTRADO POR ESTADO
+     * Cambia el filtro activo y recarga la tabla desde la página 1.
+     * @param {string} status     - 'all' | 'activo' | 'inactivo'
+     * @param {HTMLElement} btn   - Botón del tab que activó el filtro
+     */
     _filter(status, btn) {
         const activeClasses = ['active', 'bg-orange-500', 'text-white', 'shadow-md', 'shadow-orange-500/20'];
         document.querySelectorAll('.tab-users').forEach(t => t.classList.remove(...activeClasses));
@@ -308,6 +351,12 @@ SIModules.clientUsersAdmin = {
         this._reloadListTable();
     },
 
+    /**
+     * ORDENACIÓN DE COLUMNA
+     * Cicla entre: asc → desc → sin ordenar (null).
+     * Solo acepta columnas en la whitelist interna.
+     * @param {string} col - Nombre de la columna ('name' | 'company_name' | 'last_login_at')
+     */
     _sort(col) {
         // Columnas permitidas para ordenar
         const allowedCols = ['name', 'company_name', 'last_login_at'];
@@ -338,6 +387,12 @@ SIModules.clientUsersAdmin = {
         return this.currentSortDir === 'asc' ? '<span class="ml-1 text-orange-500">↑</span>' : '<span class="ml-1 text-orange-500">↓</span>';
     },
 
+    /**
+     * BÚSQUEDA CON DEBOUNCE
+     * Espera 400 ms tras el último keystroke antes de relanzar la consulta.
+     * Busca por nombre, email o nombre de empresa.
+     * @param {string} val - Valor del input de búsqueda
+     */
     _search(val) {
         this.currentSearch = val.trim().toLowerCase();
 
@@ -348,6 +403,14 @@ SIModules.clientUsersAdmin = {
         }, 400);
     },
 
+    /**
+     * CONFIRMACIÓN Y ELIMINACIÓN DE USUARIO
+     * Muestra un diálogo de confirmación antes de ejecutar la petición DELETE.
+     * Tras el éxito recarga el listado completo.
+     * @api DELETE /api/users/:id → null
+     * @param {number} id   - ID del usuario a eliminar
+     * @param {string} name - Nombre del usuario (para el mensaje de confirmación)
+     */
     async _confirmDelete(id, name) {
         const ok = await SIApp.confirm('¿Eliminar usuario?', `¿Seguro que deseas eliminar a "${name}"? El usuario perderá el acceso permanentemente.`);
         if (ok) {

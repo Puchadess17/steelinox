@@ -1,19 +1,32 @@
 /**
- * Steel Inox — Dashboard Module
- * 3 dashboards: Admin, Comercial, Cliente.
- * Usa datos de GET /api/projects/search para calcular KPIs client-side.
- * Depende de: api.js, auth.js, app.js
+ * STEEL INOX EXTRANET — DASHBOARD MODULE
+ * Dashboard multirrol: Admin, Comercial y Cliente.
+ * Cada rol tiene su propio flujo de carga, filtrado y renderizado.
+ *
+ * @api GET /api/projects/search?page&limit&status&search&sort_by&sort_dir&commercial_id&client_id
+ *          → { list: Project[], kpis: Object, pagination: Object }
+ * @api GET /api/projects/search?client_id=:id  → proyectos del cliente autenticado
+ *
+ * Depende de: api.js (API, SIToast), auth.js (Auth), app.js (SIApp), templates.js (SITemplates)
  */
 window.SIModules = window.SIModules || {};
 
 SIModules.dashboard = {
 
-    /** Contenedor principal */
+    /**
+     * CONTENEDOR PRINCIPAL
+     * Acceso dinámico al div principal de la SPA para que no quede
+     * obsoleto si el DOM se reconstruye entre navegaciones.
+     */
     get container() {
         return document.getElementById('main-content');
     },
 
-    /** Resuelve qué dashboard cargar según el rol */
+    /**
+     * PUNTO DE ENTRADA DEL DASHBOARD
+     * Detecta el rol del usuario y delega en el dashboard correspondiente.
+     * El título de la página se ajusta según el rol.
+     */
     async loadDashboardAuto() {
         const user = Auth.getUser();
         if (!user) return;

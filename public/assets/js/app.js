@@ -1,7 +1,14 @@
 /**
- * Steel Inox Extranet — App Entry Point
- * Inicializa la aplicación: verifica sesión, construye header/sidebar, lanza router.
- * Depende de: api.js, auth.js, router.js
+ * STEEL INOX EXTRANET — APP ENTRY POINT
+ * Punto de entrada de la aplicación SPA.
+ * Responsabilidades:
+ *   1. Verificar y sincronizar la sesión contra el backend (/api/me)
+ *   2. Construir el layout estático (header, sidebar) con los datos del usuario
+ *   3. Inicializar el enrutador SPA
+ *   4. Exponer utilidades globales de UI: badges, avatares, modales, paginación
+ *
+ * @api GET /api/me → { id, name, email, role, client_id }
+ * Depende de: api.js (API, SIToast), auth.js (Auth), router.js (SIRouter)
  */
 const SIApp = {
     user: null,
@@ -16,7 +23,15 @@ const SIApp = {
     },
 
 
-    /** Iniciar la aplicación */
+    /**
+     * INICIALIZACIÓN DE LA APLICACIÓN
+     * 1. Verifica si hay sesión local (sessionStorage).
+     * 2. Sincroniza contra /api/me para detectar sesiones caducadas o cuentas cambiadas.
+     * 3. Aplica preferencias visuales (tema, tamaño de fuente).
+     * 4. Construye header y sidebar según el rol del usuario.
+     * 5. Arranca el router SPA.
+     * @api GET /api/me → { id, name, email, role, client_id }
+     */
     async init() {
         // 1. Verificar sesión local
         this.user = Auth.getUser();
@@ -126,6 +141,11 @@ const SIApp = {
     // HEADER
     // ──────────────────────────────────────
 
+    /**
+     * CONSTRUCCIÓN DEL HEADER
+     * Rellena el nombre, rol y avatar del usuario en el header estático del HTML.
+     * Vincula el botón de logout a Auth.logout().
+     */
     buildHeader() {
         const userName = document.getElementById('header-user-name');
         const userRole = document.getElementById('header-user-role');
@@ -176,6 +196,12 @@ const SIApp = {
     // SIDEBAR
     // ──────────────────────────────────────
 
+    /**
+     * CONSTRUCCIÓN DEL SIDEBAR
+     * Genera el menú lateral según el rol del usuario (admin/comercial/cliente).
+     * Inyecta el mismo HTML en el sidebar desktop y el sidebar móvil.
+     * El ítem de Ajustes siempre se coloca al final, separado del menú principal.
+     */
     buildSidebar() {
         const sidebar = document.getElementById('sidebar-nav');
         const sidebarMobile = document.getElementById('sidebar-nav-mobile');
@@ -268,7 +294,9 @@ const SIApp = {
     },
 
     // ──────────────────────────────────────
-    // UTILIDADES
+    // UTILIDADES GLOBALES
+    // Funciones de formato, badges, avatares, modales y validaciones
+    // reutilizadas en todos los módulos de la SPA.
     // ──────────────────────────────────────
 
     /**
@@ -796,7 +824,13 @@ const SIApp = {
         this.showToast(title, messageStr, 'error');
     },
 
-    /** Validar y obtener datos de un formulario */
+    /**
+     * OBTENCIÓN Y VALIDACIÓN DE DATOS DE FORMULARIO
+     * Usa reportValidity() del navegador para mostrar los errores nativos
+     * antes de serializar con FormData. Retorna null si el formulario no es válido.
+     * @param {string} formId - ID del formulario
+     * @returns {Object|null} Parés campo→valor o null si hay errores de validación
+     */
     getValidatedFormData(formId) {
         const form = document.getElementById(formId);
         if (!form) {
@@ -812,7 +846,13 @@ const SIApp = {
     },
 
     /**
-     * Renderiza los controles de paginación en el contenedor especificado.
+     * CONTROLES DE PAGINACIÓN REUTILIZABLES
+     * Renderiza botones de página, navegación anterior/siguiente, campo "ir a"
+     * y selector de ítems por página (15/30/50). Enlaza todos los eventos.
+     * @param {HTMLElement} container - Contenedor donde se inyectan los controles
+     * @param {Object} pagination - Objeto de paginación devuelto por el backend
+     * @param {Function} onPageChange - Callback(newPage) al cambiar página
+     * @param {Function} onLimitChange - Callback(newLimit) al cambiar el límite
      */
     renderPaginationControls(container, pagination, onPageChange, onLimitChange) {
         if (!container || !pagination) return;
@@ -907,6 +947,8 @@ const SIApp = {
 
     // ──────────────────────────────────────
     // MODAL HELPER
+    // Abre y cierra modales genéricos con animación.
+    // Soporta cierre por clic en backdrop y tecla Escape.
     // ──────────────────────────────────────
 
     modal: {

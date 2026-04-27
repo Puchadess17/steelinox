@@ -1,6 +1,14 @@
 /**
- * Steel Inox — Client User Form Admin
- * Formularios de Alta y Edición de usuarios cliente.
+ * STEEL INOX EXTRANET — CLIENT USER FORM ADMIN
+ * Formulario de alta y edición de usuarios de tipo 'cliente'.
+ * Incluye un dropdown buscable para asociar el usuario a una empresa cliente.
+ *
+ * @api GET /api/clients              → Client[]  (poblar selector de empresa)
+ * @api GET /api/users/:id            → User      (cargar datos en edición)
+ * @api POST /api/users               → null      (crear usuario cliente)
+ * @api PUT  /api/users/:id           → null      (actualizar usuario cliente)
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), templates.js (SITemplates), router.js (SIRouter)
  */
 window.SIModules = window.SIModules || {};
 
@@ -10,14 +18,26 @@ SIModules.clientUserFormAdmin = {
         return document.getElementById('main-content');
     },
 
-    clients: [], // Cache de clientes para el selector
+    clients: [], // Caché de clientes activos para poblar el dropdown del formulario
 
+    /**
+     * VISTA DE ALTA (CREAR)
+     * Carga la lista de clientes disponibles y muestra el formulario vacío.
+     * @api GET /api/clients → Client[]
+     */
     /** 1. VISTA DE ALTA (CREAR) */
     async loadCreateSPA() {
         await this._loadClients();
         this._renderForm('Alta de Nuevo Usuario Cliente', 'Crea una nueva cuenta de acceso para un usuario de un cliente.', null);
     },
 
+    /**
+     * VISTA DE EDICIÓN (EDITAR)
+     * Carga en paralelo la lista de clientes y los datos del usuario a editar.
+     * Extrae el userId del último segmento de la URL.
+     * @api GET /api/clients    → Client[]
+     * @api GET /api/users/:id  → User
+     */
     /** 2. VISTA DE EDICIÓN (EDITAR) */
     async loadEditSPA() {
         const pathParts = window.location.pathname.split('/');
@@ -47,6 +67,12 @@ SIModules.clientUserFormAdmin = {
         }
     },
 
+    /**
+     * CARGA DE CLIENTES
+     * Obtiene la lista de clientes del backend y la almacena en caché (this.clients).
+     * Soporta respuestas en formato array directo o envueltas en { list }.
+     * @api GET /api/clients → Client[] | { list: Client[] }
+     */
     async _loadClients() {
         try {
             const result = await API.get('/clients');
@@ -60,6 +86,14 @@ SIModules.clientUserFormAdmin = {
         }
     },
 
+    /**
+     * RENDERIZADO DEL FORMULARIO
+     * Genera el layout completo (dos columnas: campos + avatar/estado).
+     * Usa SITemplates.fragments.userFields() con el selector de cliente habilitado.
+     * @param {string} title    - Título de la página
+     * @param {string} subtitle - Descripción de la acción
+     * @param {Object|null} data - Datos del usuario (null en modo creación)
+     */
     /** 3. CORE: RENDERIZADO DEL FORMULARIO */
     _renderForm(title, subtitle, data = null) {
         const isEdit = !!data;
@@ -177,7 +211,17 @@ SIModules.clientUserFormAdmin = {
         this._initOutsideClick();
     },
 
+    // ──────────────────────────────────────
+    // DROPDOWN BUSCABLE DE CLIENTES
+    // Permite filtrar clientes por nombre o referencia.
+    // Cierra automáticamente al hacer clic fuera del contenedor.
+    // ──────────────────────────────────────
     /** 4. LÓGICA DEL DROPDOWN BUSCABLE */
+    /**
+     * TOGGLE DEL DROPDOWN
+     * Abre o cierra la lista de clientes y mueve el foco al input de búsqueda.
+     * @param {Event} e - Evento del click (se detiene su propagación)
+     */
     toggleClientDropdown(e) {
         if (e) e.stopPropagation();
         const drop = document.getElementById('drop-client-list');
@@ -196,6 +240,11 @@ SIModules.clientUserFormAdmin = {
         }
     },
 
+    /**
+     * FILTRADO DE CLIENTES
+     * Filtra la lista visible por nombre o referencia según el término ingresado.
+     * @param {string} val - Término de búsqueda del input
+     */
     filterClients(val) {
         const term = val.toLowerCase().trim();
         this._renderClientList(term);
@@ -229,6 +278,14 @@ SIModules.clientUserFormAdmin = {
         `).join('');
     },
 
+    /**
+     * SELECCIÓN DE CLIENTE
+     * Actualiza el campo oculto client_id y la etiqueta visible del trigger,
+     * luego cierra el dropdown y limpia el buscador.
+     * @param {number} id   - ID del cliente seleccionado
+     * @param {string} name - Nombre del cliente
+     * @param {string} ref  - Referencia interna del cliente
+     */
     selectClient(id, name, ref) {
         const input = document.getElementById('user-client-id');
         const label = document.getElementById('client-dropdown-label');
@@ -266,6 +323,13 @@ SIModules.clientUserFormAdmin = {
         document.addEventListener('click', this._outsideHandler);
     },
 
+    /**
+     * GUARDAR USUARIO
+     * Valida el formulario y ejecuta POST (crear) o PUT (editar) según el campo id.
+     * Tras el éxito redirige al listado de usuarios con un pequeño retardo.
+     * @api POST /api/users      → null  (creación)
+     * @api PUT  /api/users/:id  → null  (edición)
+     */
     /** 5. GUARDAR */
     async save() {
         const data = SIApp.getValidatedFormData('form-user');

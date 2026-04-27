@@ -1,15 +1,26 @@
 /**
- * Steel Inox Extranet — Client Form View (Create & Edit)
- * Componente UI puro diseñado para crear y editar clientes.
+ * STEEL INOX EXTRANET — CLIENT FORM ADMIN
+ * Formulario de alta y edición de clientes (empresa).
+ * Opera en dos modos: 'create' (POST) y 'edit' (PUT), detectados en el estado interno.
+ *
+ * @api POST /api/clients          → { id, name, reference }  (crear cliente)
+ * @api GET  /api/clients/:id      → { info: Client }          (cargar datos en edición)
+ * @api PUT  /api/clients/:id      → null                      (actualizar cliente)
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), templates.js (SITemplates), router.js (SIRouter)
  */
 
 window.SIModules = window.SIModules || {};
 
 SIModules.clientFormAdmin = {
-    mode: 'create', // 'create' o 'edit'
-    clientId: null,
-    clientData: null,
+    mode: 'create',   // 'create' | 'edit' — determina qué endpoint usar al guardar
+    clientId: null,    // ID del cliente en modo edición
+    clientData: null,  // Datos actuales del cliente (precarga el formulario en edición)
 
+    /**
+     * VISTA DE ALTA (CREAR)
+     * Configura el módulo en modo 'create' con un objeto vacío y lanza el render.
+     */
     /** Inicializador para la creación */
     async loadCreateSPA() {
         this.mode = 'create';
@@ -22,6 +33,12 @@ SIModules.clientFormAdmin = {
         await this.init();
     },
 
+    /**
+     * VISTA DE EDICIÓN (EDITAR)
+     * Extrae el clientId de la URL (/steelinox/client/edit/123),
+     * obtiene los datos del backend y lanza el render precargado.
+     * @api GET /api/clients/:id → { info: Client }
+     */
     /** Inicializador para la edición */
     async loadEditSPA() {
         this.mode = 'edit';
@@ -58,11 +75,19 @@ SIModules.clientFormAdmin = {
         }
     },
 
+    /**
+     * INICIALIZACIÓN
+     * Lanza el render del formulario y enlaza el evento submit.
+     */
     async init() {
         this.render();
         this.bindEvents();
     },
 
+    /**
+     * SKELETON DE CARGA
+     * Muestra un spinner mientras se obtienen los datos del cliente en modo edición.
+     */
     renderSkeleton() {
         const container = document.getElementById('main-content');
         if (!container) return;
@@ -74,6 +99,12 @@ SIModules.clientFormAdmin = {
         `;
     },
 
+    /**
+     * RENDERIZADO DEL FORMULARIO
+     * Genera el HTML completo del formulario (layout de dos columnas).
+     * Usa SITemplates.fragments.clientFields() para los campos del formulario.
+     * Adapta el título, breadcrumb y botones según el modo activo.
+     */
     render() {
         const container = document.getElementById('main-content');
         if (!container) return;
@@ -207,6 +238,11 @@ SIModules.clientFormAdmin = {
         `;
     },
 
+    /**
+     * ENLACE DE EVENTOS
+     * Adjunta el listener de submit al formulario para interceptarlo
+     * y delegar en saveClient() en lugar del comportamiento nativo.
+     */
     bindEvents() {
         const form = document.getElementById('client-form');
         if (form) {
@@ -217,7 +253,14 @@ SIModules.clientFormAdmin = {
         }
     },
 
-    /** Funcionalidad real de guardado (Post a API en creacion) */
+    /**
+     * GUARDAR CLIENTE
+     * Valida el formulario, normaliza los datos y ejecuta la petición
+     * correcta según el modo: POST para crear, PUT para actualizar.
+     * Tras el éxito redirige a la ficha del cliente.
+     * @api POST /api/clients      → { id } en creación
+     * @api PUT  /api/clients/:id  → null  en edición
+     */
     async saveClient() {
         const data = SIApp.getValidatedFormData('client-form');
         if (!data) return;

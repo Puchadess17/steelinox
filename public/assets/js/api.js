@@ -1,7 +1,10 @@
 /**
- * Steel Inox Extranet — API Client
- * Capa centralizada para llamadas fetch a la API REST.
- * Gestiona CSRF token automáticamente para POST/PUT/PATCH/DELETE.
+ * STEEL INOX EXTRANET — API CLIENT
+ * Capa centralizada para todas las llamadas fetch a la API REST interna.
+ * Gestiona el token CSRF automáticamente para mutaciones (POST/PUT/PATCH/DELETE),
+ * reintenta tras invalidación de CSRF (403), y redirige en sesión expirada (401).
+ *
+ * Uso: API.get('/projects'), API.post('/login', body), API.put('/me', data), etc.
  *
  * Formato de respuesta esperado del backend:
  * @typedef {Object} ApiResponse
@@ -190,7 +193,8 @@ const API = {
         }
     },
 
-    // ── Atajos ──
+    // ── ATAJOS SEMÁNTICOS ──
+    // Proxies cortos para evitar pasar el método en cada llamada.
     get(endpoint, options) { return this.request('GET', endpoint, null, options); },
     post(endpoint, data, options) { return this.request('POST', endpoint, data, options); },
     put(endpoint, data, options) { return this.request('PUT', endpoint, data, options); },
@@ -252,9 +256,11 @@ const API = {
 };
 
 
-// ═══════════════════════════════════════════
-// Sistema de Toasts — Notificaciones Premium
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// SITOAST — SISTEMA GLOBAL DE NOTIFICACIONES FLOTANTES
+// Muestra toasts premium en la esquina inferior derecha.
+// Uso: SIToast.success('Título', 'Mensaje'), SIToast.error(...)
+// ═══════════════════════════════════════════════════════════
 const SIToast = {
     container: null,
 
@@ -315,7 +321,8 @@ const SIToast = {
         return div.innerHTML;
     },
 
-    // Atajos semánticos
+    // ATAJOS SEMÁNTICOS POR TIPO
+    // El toast de error dura 7 s y el de warning 6 s para dar más tiempo de lectura.
     success(title, msg) { this.show(title, msg, 'success'); },
     error(title, msg) { this.show(title, msg, 'error', 7000); },
     warning(title, msg) { this.show(title, msg, 'warning', 6000); },

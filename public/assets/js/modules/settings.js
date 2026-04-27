@@ -1,6 +1,13 @@
 /**
- * Steel Inox Extranet — Settings Module
- * Maneja la interfaz de ajustes de usuario con diseño premium y modal de seguridad.
+ * STEEL INOX EXTRANET — SETTINGS MODULE
+ * Gestión del perfil del usuario y preferencias de interfaz (tema, fuente).
+ * Las preferencias de UI se persisten en localStorage para sobrevivir recargas.
+ *
+ * @api GET  /api/me       → { id, name, email, role, created_at, client_id }
+ * @api PUT  /api/me       → null  (actualizar nombre de perfil)
+ * @api POST /api/password/change → null  (cambio de contraseña)
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), auth.js (Auth)
  */
 window.SIModules = window.SIModules || {};
 
@@ -11,7 +18,12 @@ SIModules.settings = {
         { value: '20px', label: 'Muy Grande' }
     ],
 
-    /** Inicializar la vista de ajustes */
+    /**
+     * INICIALIZACIÓN DE LA VISTA DE AJUSTES
+     * Obtiene el perfil actualizado desde el backend si faltan campos clave,
+     * genera el template y enlaza los eventos de los formularios.
+     * @api GET /api/me → { id, name, email, role, created_at, client_id }
+     */
     async init() {
         let user = SIApp.user;
 

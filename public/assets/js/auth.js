@@ -1,7 +1,13 @@
 /**
- * Steel Inox Extranet — Auth Module
- * Login, logout, y gestión de sesión en sessionStorage.
- * Depende de: api.js (API, SIToast)
+ * STEEL INOX EXTRANET — AUTH MODULE
+ * Gestiona la autenticación del usuario: login, logout y flujo de
+ * recuperación de contraseña. Persiste los datos del usuario en sessionStorage.
+ *
+ * @api POST /api/login   → { user: { id, name, role, client_id } }
+ * @api POST /api/logout  → null
+ * @api GET  /api/me      → { id, name, email, role, client_id }
+ * @api POST /api/password/forgot → null
+ * Depende de: api.js (API, SIToast), app.js (SIApp)
  */
 const Auth = {
 
@@ -9,6 +15,12 @@ const Auth = {
     // LOGIN
     // ──────────────────────────────────────
 
+    /**
+     * INICIALIZACIÓN DEL FORMULARIO DE LOGIN
+     * Enlaza el toggle de visibilidad de contraseña y el submit del formulario.
+     * Realiza validación client-side antes de enviar al servidor.
+     * @api POST /api/login → { user: { id, name, role, client_id } }
+     */
     initLogin() {
         this.initForgotPassword();
         const form = document.getElementById('login-form');
@@ -129,6 +141,12 @@ const Auth = {
         }
     },
 
+    /**
+     * INICIALIZACIÓN DEL FORMULARIO DE RECUPERACIÓN DE CONTRASEÑA
+     * Enlaza el submit del formulario de "olvidaste tu contraseña" y
+     * envía el email al backend para generar el enlace de reset.
+     * @api POST /api/password/forgot → null
+     */
     initForgotPassword() {
         const form = document.getElementById('forgot-password-form');
         if (!form) return;
@@ -190,7 +208,11 @@ const Auth = {
         }
     },
 
-    /** Cerrar sesión */
+    /**
+     * CIERRE DE SESIÓN
+     * Notifica al backend y limpia todos los datos locales antes de redirigir al login.
+     * @api POST /api/logout → null
+     */
     async logout() {
         try {
             await API.post('/logout', null, { silent: true });

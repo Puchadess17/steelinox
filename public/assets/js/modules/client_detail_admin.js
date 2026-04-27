@@ -1,6 +1,18 @@
 /**
- * Steel Inox Extranet — Client Detail View (Admin/Commercial)
- * Handles the logic for the individual client page.
+ * STEEL INOX EXTRANET — CLIENT DETAIL VIEW (Admin/Comercial)
+ * Vista de detalle de un cliente individual.
+ * Gestiona fichas del cliente, usuarios asociados, proyectos vinculados
+ * e historial de actividad en una interfaz con pestañas.
+ *
+ * @api GET    /api/clients/:id              → { info, users, projects, kpis }
+ * @api GET    /api/clients/:id/audit        → { data: AuditLog[] }
+ * @api POST   /api/clients/:id/users        → null  (crear usuario)
+ * @api PUT    /api/clients/:id/users/:uid   → null  (editar usuario)
+ * @api DELETE /api/clients/:id/users/:uid   → null  (eliminar usuario)
+ * @api POST   /api/clients/:id/projects     → null  (vincular proyecto)
+ * @api DELETE /api/clients/:id             → null  (eliminar cliente)
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), templates.js (SITemplates), router.js (SIRouter)
  */
 
 window.SIModules = window.SIModules || {};
@@ -10,11 +22,16 @@ SIModules.clientDetailAdmin = {
     client: null,
     users: [],
     projects: [],
-    projectsLimit: 4,
+    projectsLimit: 4,  // Nº máximo de proyectos visibles antes del botón "cargar más"
     stats: null,
     userContext: null,
     activeTab: 'resumen',
 
+    /**
+     * PUNTO DE ENTRADA DESDE EL ROUTER
+     * Extrae el clientId de la URL (/steelinox/client/123),
+     * inyecta el esqueleto HTML y lanza la inicialización de datos.
+     */
     async loadClientDetailSPA() {
         console.log("[ClientDetailAdmin] Loading SPA view...");
 
@@ -96,6 +113,12 @@ SIModules.clientDetailAdmin = {
         await this.init(clientId, window.SIApp ? window.SIApp.user : null);
     },
 
+    /**
+     * INICIALIZACIÓN DEL MÓDULO
+     * Guarda el contexto de usuario y lanza la carga de datos del cliente.
+     * @param {string|number} clientId - ID del cliente
+     * @param {Object} user - Datos del usuario autenticado
+     */
     async init(clientId, user) {
         this.clientId = clientId;
         this.userContext = user;
@@ -110,7 +133,12 @@ SIModules.clientDetailAdmin = {
         await this.loadClientData();
     },
 
-    /** Fetch detail data from API */
+    /**
+     * CARGA DE DATOS DEL CLIENTE
+     * Obtiene del servidor la ficha completa con KPIs, usuarios y proyectos.
+     * Tras la carga delega el render en renderHeader(), renderModals() y renderTabContent().
+     * @api GET /api/clients/:id → { info, users, projects, kpis }
+     */
     async loadClientData() {
         try {
             console.log("[ClientDetailAdmin] Calling API for client:", this.clientId);
@@ -156,7 +184,11 @@ SIModules.clientDetailAdmin = {
         }
     },
 
-    /** Update Title, Reference, Status and Breadcrumb */
+    /**
+     * CABECERA DEL CLIENTE
+     * Actualiza el nombre, la referencia, el badge de estado y el breadcrumb
+     * con los datos cargados en this.client.
+     */
     renderHeader() {
         const nameEl = document.getElementById('client-name');
         const refEl = document.getElementById('client-ref');
@@ -182,7 +214,12 @@ SIModules.clientDetailAdmin = {
         }
     },
 
-    /** Switch active tab */
+    /**
+     * CAMBIO DE PESTAÑA ACTIVA
+     * Actualiza los estilos del tab seleccionado y relanza el render de contenido.
+     * @param {string} tabId - Identificador del tab ('resumen' | 'historial')
+     * @param {HTMLElement} btn - Botón que activa el tab (para actualizar clases CSS)
+     */
     switchTab(tabId, btn) {
         document.querySelectorAll('.client-tab-btn').forEach(t => {
             t.classList.remove('active', 'border-orange-500', 'text-orange-600');
@@ -194,7 +231,11 @@ SIModules.clientDetailAdmin = {
         this.renderTabContent();
     },
 
-    /** Render the active tab content */
+    /**
+     * RENDERIZADO DEL CONTENIDO DE PESTAÑA ACTIVA
+     * Despacha el render al método correspondiente según this.activeTab.
+     * Para 'resumen' también llama a renderProjectsList() de forma diferida.
+     */
     renderTabContent() {
         const container = document.getElementById('client-detail-content');
         if (!container) return;
@@ -208,6 +249,10 @@ SIModules.clientDetailAdmin = {
         }
     },
 
+    // ──────────────────────────────────────
+    // PESTAÑA RESUMEN
+    // Muestra KPIs, usuarios asociados y proyectos vinculados.
+    // ──────────────────────────────────────
     /** TAB: RESUMEN */
     _renderResumen() {
         return `
@@ -302,6 +347,10 @@ SIModules.clientDetailAdmin = {
         `;
     },
 
+    // ──────────────────────────────────────
+    // PESTAÑA HISTÓRICO
+    // Carga la línea de tiempo de eventos del cliente (async con setTimeout).
+    // ──────────────────────────────────────
     /** TAB: HISTÓRICO (Dinámico) */
     _renderHistorial() {
         setTimeout(() => this.loadClientTimeline(), 50);
@@ -326,6 +375,12 @@ SIModules.clientDetailAdmin = {
         `;
     },
 
+    /**
+     * CARGA DE LA LÍNEA DE TIEMPO DEL CLIENTE
+     * Solicita al backend los eventos del cliente y los renderiza cronológicamente.
+     * Guarda triggerId para evitar race conditions cuando el usuario navega rápidamente.
+     * @api GET /api/clients/:id/audit → { data: AuditLog[] }
+     */
     async loadClientTimeline() {
         const triggerId = this.clientId;
         try {
@@ -612,7 +667,11 @@ SIModules.clientDetailAdmin = {
         `;
     },
 
-    /** Render modals into a persistent container so they survive tab switching */
+    /**
+     * MODALES DEL MÓDULO
+     * Inyecta los modales de usuario y proyecto en un contenedor persistente
+     * para que no se pierdan al cambiar de pestaña. Se generan con SITemplates.modal().
+     */
     renderModals() {
         const modalsEl = document.getElementById('client-modals-container');
         if (!modalsEl) return;

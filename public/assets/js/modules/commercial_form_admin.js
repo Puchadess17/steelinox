@@ -1,6 +1,13 @@
 /**
- * Steel Inox — Commercial Form Admin
- * Formularios de Alta y Edición de comerciales.
+ * STEEL INOX EXTRANET — COMMERCIAL FORM ADMIN
+ * Formulario de alta y edición de usuarios de tipo 'comercial' (gestor de proyectos).
+ * Opera en dos modos: creación (POST) y edición (PUT), determinados por la URL.
+ *
+ * @api GET  /api/commercials/:id → { info: User }  (cargar datos en edición)
+ * @api POST /api/commercials     → null             (crear comercial)
+ * @api PUT  /api/commercials/:id → null             (actualizar comercial)
+ *
+ * Depende de: api.js (API, SIToast), app.js (SIApp), templates.js (SITemplates), router.js (SIRouter)
  */
 window.SIModules = window.SIModules || {};
 
@@ -10,11 +17,21 @@ SIModules.commercialFormAdmin = {
         return document.getElementById('main-content');
     },
 
+    /**
+     * VISTA DE ALTA (CREAR)
+     * Muestra el formulario vacío para registrar un nuevo comercial.
+     */
     /** 1. VISTA DE ALTA (CREAR) */
     async loadCreateSPA() {
         this._renderForm('Alta de Nuevo Comercial', 'Crea una nueva cuenta de acceso para un gestor comercial.', null);
     },
 
+    /**
+     * VISTA DE EDICIÓN (EDITAR)
+     * Extrae el ID del último segmento de la URL, obtiene los datos del comercial
+     * y muestra el formulario precargado.
+     * @api GET /api/commercials/:id → { info: User }
+     */
     /** 2. VISTA DE EDICIÓN (EDITAR) */
     async loadEditSPA() {
         const pathParts = window.location.pathname.split('/');
@@ -40,6 +57,14 @@ SIModules.commercialFormAdmin = {
         }
     },
 
+    /**
+     * RENDERIZADO DEL FORMULARIO
+     * Genera el layout en dos columnas (campos + avatar/estado/botón).
+     * Enlaza el submit al final del render.
+     * @param {string} title     - Título de la página
+     * @param {string} subtitle  - Descripción de la acción
+     * @param {Object|null} data - Datos del comercial (null en creación)
+     */
     /** 3. CORE: RENDERIZADO DEL FORMULARIO */
     _renderForm(title, subtitle, data = null) {
         const isEdit = !!data;
@@ -147,6 +172,15 @@ SIModules.commercialFormAdmin = {
         form.addEventListener('submit', (e) => this._handleSubmit(e, isEdit));
     },
 
+    /**
+     * MANEJO DEL SUBMIT
+     * Valida el formulario, normaliza is_active (boolean → int) y ejecuta
+     * POST (crear) o PUT (actualizar) según el modo.
+     * @api POST /api/commercials      → null  (creación)
+     * @api PUT  /api/commercials/:id  → null  (edición)
+     * @param {Event} e       - Evento submit del formulario
+     * @param {boolean} isEdit - true si estamos en modo edición
+     */
     /** 4. MANEJAR SUBMIT */
     async _handleSubmit(e, isEdit) {
         e.preventDefault();
