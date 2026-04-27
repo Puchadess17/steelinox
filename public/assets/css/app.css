@@ -481,21 +481,21 @@ body {
 }
 
 .badge-ejecucion {
-    background-color: #fff7ed;
-    /* orange-50 */
-    color: #c2410c;
-    /* orange-700 */
-    border-color: #fed7aa;
-    /* orange-200 */
-}
-
-.badge-cerrado {
     background-color: #ecfdf5;
     /* emerald-50 */
     color: #047857;
     /* emerald-700 */
     border-color: #a7f3d0;
     /* emerald-200 */
+}
+
+.badge-cerrado {
+    background-color: #fef2f2;
+    /* red-50 */
+    color: #b91c1c;
+    /* red-700 */
+    border-color: #fecaca;
+    /* red-200 */
 }
 
 .badge-activo {

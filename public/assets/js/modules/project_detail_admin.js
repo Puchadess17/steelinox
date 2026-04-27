@@ -687,8 +687,8 @@ SIModules.projectDetailAdmin = {
                                             <span class="w-2 h-2 rounded-full bg-orange-400"></span> Ejecución
                                             ${p.status === 'ejecucion' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
-                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Cerrado', 'bg-emerald-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
-                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cerrado
+                                        <li onclick="SIModules.projectDetailAdmin.selectCustomStatus('cerrado', 'Cerrado', 'bg-red-400', this)" class="px-4 py-2.5 transition-all flex items-center gap-2 ${p.status === 'cerrado' ? 'bg-gray-50 text-gray-900 cursor-default pointer-events-none shadow-inner' : 'hover:bg-orange-50/50 hover:pl-5 cursor-pointer text-gray-600'}">
+                                            <span class="w-2 h-2 rounded-full bg-red-400"></span> Cerrado
                                             ${p.status === 'cerrado' ? '<svg class="status-check w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                         </li>
                                     </ul>
@@ -1003,8 +1003,8 @@ SIModules.projectDetailAdmin = {
                 const steps = [
                     { id: 'propuesta', label: 'Propuesta', color: 'bg-amber-400' },
                     { id: 'aprobado', label: 'Aprobado', color: 'bg-blue-400' },
-                    { id: 'ejecucion', label: 'Ejecución', color: 'bg-orange-400' },
-                    { id: 'cerrado', label: 'Cerrado', color: 'bg-emerald-400' }
+                    { id: 'ejecucion', label: 'Ejecución', color: 'bg-emerald-400' },
+                    { id: 'cerrado', label: 'Cerrado', color: 'bg-red-400' }
                 ];
 
                 const currentIndex = steps.findIndex(s => s.id === currentStatus);
@@ -1013,8 +1013,8 @@ SIModules.projectDetailAdmin = {
                 if (currentStatus === 'cerrado') {
                     return `
                                     <div class="flex flex-col items-center text-center py-4">
-                                        <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-emerald-50/50">
-                                            <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                        <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-red-50/50">
+                                            <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         </div>
                                         <h4 class="text-xl font-black text-gray-900 mb-2">Proyecto Finalizado</h4>
                                         <p class="text-sm text-gray-500 mb-8 px-4 leading-relaxed">El proyecto ha sido completado y cerrado. Toda la documentación está archivada.</p>
@@ -1039,12 +1039,12 @@ SIModules.projectDetailAdmin = {
                                                         </div>
                                                         <div onclick="SIModules.projectDetailAdmin._selectReopenStatus('ejecucion', this)"
                                                              data-reopen-option="ejecucion"
-                                                             class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-orange-300 hover:bg-orange-50/30 group">
-                                                            <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-400 flex items-center justify-center transition-colors group-[.selected]:bg-orange-500 group-[.selected]:text-white">
+                                                             class="reopen-option-card cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 flex flex-col items-center gap-2 transition-all hover:border-emerald-300 hover:bg-emerald-50/30 group">
+                                                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-400 flex items-center justify-center transition-colors group-[.selected]:bg-emerald-500 group-[.selected]:text-white">
                                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                                             </div>
-                                                            <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-orange-600">Ejecución</span>
-                                                            <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-orange-500 group-[.selected]:bg-orange-500">
+                                                            <span class="text-xs font-black text-gray-700 uppercase tracking-wider group-[.selected]:text-emerald-600">Ejecución</span>
+                                                            <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all group-[.selected]:border-emerald-500 group-[.selected]:bg-emerald-500">
                                                                 <div class="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-[.selected]:opacity-100 transition-opacity"></div>
                                                             </div>
                                                         </div>
@@ -1357,7 +1357,7 @@ SIModules.projectDetailAdmin = {
         const isInExecution = !!ejecucionLog || (['ejecucion', 'cerrado'].includes(p.status));
 
         nodes.push(entry(
-            dot('bg-orange-400', isInExecution),
+            dot('bg-emerald-400', isInExecution),
             'Inicio de Ejecución',
             isInExecution ? fmtFull(ejecucionLog?.created_at || p.updated_at) : (isApproved ? 'Pendiente' : 'No disponible'),
             ejecucionLog?.actor_name ? `por ${ejecucionLog.actor_name}` : null,
@@ -1378,7 +1378,7 @@ SIModules.projectDetailAdmin = {
         const isClosed = p.status === 'cerrado';
         const closureLog = isClosed ? findInCycle('cerrado') : null;
         nodes.push(entry(
-            dot('bg-emerald-400', isClosed),
+            dot('bg-red-400', isClosed),
             'Cierre de Expediente',
             isClosed ? fmtFull(closureLog?.created_at || p.updated_at) : 'No finalizado',
             closureLog?.actor_name ? `por ${closureLog.actor_name}` : null,
@@ -2684,7 +2684,14 @@ SIModules.projectDetailAdmin = {
                 Number(me.id) === Number(c.author_id) ||
                 (me.email && c.author_email && me.email === c.author_email)
             );
-            const time = SIApp.formatDateTime(c.created_at);
+            let time = SIApp.formatDateTime(c.created_at);
+            let isEdited = false;
+            
+            if (c.updated_at && c.updated_at !== c.created_at) {
+                time = SIApp.formatDateTime(c.updated_at);
+                isEdited = true;
+            }
+
             const role = c.author_role || 'cliente';
 
             // ── Colores corporativos por rol ──────────────────────────────
@@ -2719,7 +2726,7 @@ SIModules.projectDetailAdmin = {
                              <!-- Burbuja -->
                              <div class="bg-gradient-to-br from-[#1e1f2e] to-[#000000] text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-lg text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
                              <!-- Timestamp (abajo a la derecha) -->
-                             <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium">${time}</div>
+                             <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium flex items-center gap-1">${time}${isEdited ? '<span class="italic opacity-60 ml-0.5">(editado)</span>' : ''}</div>
                          </div>
                      </div>
                  `;
@@ -2745,7 +2752,7 @@ SIModules.projectDetailAdmin = {
                              <!-- Burbuja -->
                              <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-[#000000] text-[13px] leading-relaxed break-words whitespace-pre-line max-w-full">${SIApp.escapeHtml(c.body.trim())}</div>
                              <!-- Timestamp (abajo a la izquierda) -->
-                             <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium">${time}</div>
+                             <div class="mt-1.5 px-1 text-[10px] text-gray-400 font-medium flex items-center gap-1">${time}${isEdited ? '<span class="italic opacity-60 ml-0.5">(editado)</span>' : ''}</div>
                          </div>
                      </div>
                  `;

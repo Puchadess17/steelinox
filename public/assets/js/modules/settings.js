@@ -82,7 +82,7 @@ SIModules.settings = {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     
                     <!-- 1. DATOS PERSONALES -->
-                    <section class="settings-card md:col-span-2 flex flex-col justify-between">
+                    <section class="settings-card md:col-span-1 flex flex-col justify-between">
                         <div>
                             <div class="settings-section-header">
                                 <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center">
@@ -177,44 +177,11 @@ SIModules.settings = {
                         </div>
                     </section>
 
-                    <!-- 4. NOTIFICACIONES -->
-                    <section class="settings-card">
-                        <div class="settings-section-header">
-                            <div class="w-10 h-10 bg-orange-50 dark:bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                            </div>
-                            <h3 class="text-xl font-extrabold text-gray-900 dark:text-white">Alertas</h3>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            ${this._notificationItem('notify-doc', 'Nuevos Documentos / Versiones', 'Planos, fotos o PDFs.')}
-                            ${this._notificationItem('notify-phase', 'Cambios de Estado', 'Avances en el proyecto.')}
-                            ${this._notificationItem('notify-comm', 'Nuevos Comentarios', 'Anotaciones en el muro del proyecto.')}
-                        </div>
-                    </section>
                 </div>
             </div>
         `;
     },
 
-    _notificationItem(id, title, desc) {
-        // Cargar estado de localStorage (por defecto true)
-        const saved = localStorage.getItem(`si-pref-${id}`);
-        const isChecked = saved !== null ? (saved === '1') : true;
-
-        return `
-            <div class="flex items-center justify-between p-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
-                <div>
-                    <span class="block text-sm font-black text-gray-700 dark:text-zinc-200 uppercase tracking-wide leading-none">${title}</span>
-                    <p class="text-[11px] text-gray-400 font-medium mt-1">${desc}</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="${id}" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="SIModules.settings.togglePreference('${id}', this.checked)">
-                    <div class="w-9 h-5 bg-gray-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                </label>
-            </div>
-        `;
-    },
 
     /** Helper para renderizar las opciones de tamaño de fuente con el tick en la seleccionada */
     _renderFontSizeOptions(currentValue) {
@@ -360,11 +327,6 @@ SIModules.settings = {
         }
     },
 
-    /** Guardar preferencia en localStorage */
-    togglePreference(key, value) {
-        localStorage.setItem(`si-pref-${key}`, value ? '1' : '0');
-        SIApp.showToast('Ajustes', 'Preferencia actualizada en este dispositivo.', 'info');
-    },
 
     /** Manejo del dropdown personalizado de tamaño de fuente */
     toggleFontSizeDropdown(e) {

@@ -109,14 +109,8 @@ SIModules.dashboard = {
         const projects = rawData.list || rawData || [];
         const pagination = result.pagination;
 
-        // Calcular e inyectar KPIs
-        const kpis = rawData.kpis || {
-            total: pagination ? pagination.total_results : projects.length,
-            ejecucion: projects.filter(p => p.status === 'ejecucion').length,
-            propuesta: projects.filter(p => p.status === 'propuesta').length,
-            cerrado: projects.filter(p => p.status === 'cerrado').length,
-            aprobado: projects.filter(p => p.status === 'aprobado').length,
-        };
+        // Inyectar KPIs devueltos por el backend
+        const kpis = rawData.kpis || { total: 0, ejecucion: 0, propuesta: 0, cerrado: 0, aprobado: 0 };
 
         this._renderProjectsKpis(kpis, 'admin-kpis-container');
 
@@ -139,7 +133,7 @@ SIModules.dashboard = {
         const isAdm = type === 'admin';
         const containerId = isAdm ? 'admin-table-container' : 'commercial-table-container';
         const paginationId = isAdm ? 'admin-table-pagination' : 'commercial-table-pagination';
-        
+
         const container = document.getElementById(containerId);
         const paginationContainer = document.getElementById(paginationId);
         if (!container) return;
@@ -369,13 +363,7 @@ SIModules.dashboard = {
         const pagination = result.pagination;
 
         const kpisContainer = document.getElementById('commercial-kpis-container');
-        const kpis = rawData.kpis || {
-            total: pagination ? pagination.total_results : projects.length,
-            ejecucion: projects.filter(p => p.status === 'ejecucion').length,
-            propuesta: projects.filter(p => p.status === 'propuesta').length,
-            cerrado: projects.filter(p => p.status === 'cerrado').length,
-            aprobado: projects.filter(p => p.status === 'aprobado').length,
-        };
+        const kpis = rawData.kpis || { total: 0, ejecucion: 0, propuesta: 0, cerrado: 0, aprobado: 0 };
 
         this._renderProjectsKpis(kpis, 'commercial-kpis-container');
 
@@ -667,19 +655,17 @@ SIModules.dashboard = {
             }
         }
 
-        // KPIs — se calculan siempre desde paginación y datos de la página
+        // KPIs — se recogen directamente del backend
         const kpisAll = rawData?.kpis || null;
-        if (kpisContainer) {
-            const total = kpisAll?.total ?? (pagination?.total_results ?? projects.length);
-            const pending = kpisAll?.pending ?? projects.filter(p => ['propuesta', 'aprobado'].includes(p.status)).length;
-            const inProgress = kpisAll?.ejecucion ?? projects.filter(p => p.status === 'ejecucion').length;
-            const completed = kpisAll?.cerrado ?? projects.filter(p => p.status === 'cerrado').length;
+
+        if (kpisContainer && kpisAll) {
+            const pending = (kpisAll.propuesta || 0) + (kpisAll.aprobado || 0);
 
             kpisContainer.innerHTML = `
-                ${this._kpiCardClient('TOTAL', total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
+                ${this._kpiCardClient('TOTAL', kpisAll.total || 0, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
                 ${this._kpiCardClient('PENDIENTES', pending, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>', 'amber')}
-                ${this._kpiCardClient('EN PROCESO', inProgress, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'blue')}
-                ${this._kpiCardClient('COMPLETADOS', completed, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+                ${this._kpiCardClient('EN PROCESO', kpisAll.ejecucion || 0, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'emerald')}
+                ${this._kpiCardClient('COMPLETADOS', kpisAll.cerrado || 0, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'red')}
             `;
         }
 
@@ -781,8 +767,8 @@ SIModules.dashboard = {
         container.innerHTML = `
             ${this._kpiCardClient('TOTAL', kpis.total, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.48-.46-8-1.308z" /></svg>', 'purple')}
             ${this._kpiCardClient('ACTIVOS', kpis.ejecucion + kpis.propuesta + kpis.aprobado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'amber')}
-            ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'blue')}
-            ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'emerald')}
+            ${this._kpiCardClient('EN EJECUCIÓN', kpis.ejecucion, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A120.15 120.15 0 0010 1C5.582 1 2 4.582 2 9c0 3.879 2.758 7.102 6.425 7.824a1 1 0 00.957-.492l1.625-2.844A1.9 1.9 0 0110 13.5a1.5 1.5 0 110-3 1.9 1.9 0 01-1.007-.088l1.624-2.842a1 1 0 00.493-.956A119.82 119.82 0 0010 6c1.9 0 3.65.6 5.068 1.624a1 1 0 001.373-.243l1.838-2.757a1 1 0 00-.244-1.374A120.25 120.25 0 0011.3 1.046zM15 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/></svg>', 'emerald')}
+            ${this._kpiCardClient('COMPLETADOS', kpis.cerrado, '<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>', 'red')}
         `;
     },
 
@@ -847,6 +833,7 @@ SIModules.dashboard = {
             amber: { bg: 'bg-[#fef9eb]', text: 'text-[#cb8e24]' },
             emerald: { bg: 'bg-[#ecfdf4]', text: 'text-[#44c173]' },
             blue: { bg: 'bg-blue-50', text: 'text-blue-500' },
+            red: { bg: 'bg-red-50', text: 'text-red-500' },
             gray: { bg: 'bg-gray-50', text: 'text-gray-500' },
         };
         const c = colorMap[colorTheme] || colorMap.gray;

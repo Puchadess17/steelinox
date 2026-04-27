@@ -238,8 +238,15 @@ window.SIModules.audit = {
                     ${SIApp.avatarInitials(actorName, 'w-11 h-11', 'text-xs')}
                     <div class="flex flex-col gap-1 min-w-0">
                         <div class="flex flex-col">
-                            <span class="text-sm font-black text-gray-900 truncate">${actorName}</span>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-orange-500/70">${actorRole}</span>
+                            ${log.actor_id && log.actor_role !== 'admin' && log.actor_role !== 'system' ? `
+                                <a href="/steelinox/${log.actor_role === 'cliente' ? 'user/edit' : 'commercial'}/${log.actor_id}" 
+                                   class="text-sm font-black text-gray-900 truncate hover:text-indigo-600 transition-colors">
+                                    ${SIApp.escapeHtml(actorName)}
+                                </a>
+                            ` : `
+                                <span class="text-sm font-black text-gray-900 truncate">${SIApp.escapeHtml(actorName)}</span>
+                            `}
+                            <span class="text-[9px] font-black uppercase tracking-widest ${log.actor_role === 'cliente' ? 'text-rose-500/70' : (log.actor_role === 'admin' ? 'text-amber-500/70' : 'text-indigo-500/70')}">${SIApp.escapeHtml(actorRole)}</span>
                         </div>
                         <div class="mt-1">
                             <span class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-0.5">Elemento Afectado</span>
@@ -384,15 +391,15 @@ window.SIModules.audit = {
                     <div class="flex items-center gap-4">
                         ${SIApp.avatarInitials(actorName, 'w-10 h-10', 'text-xs')}
                         <div>
-                            ${log.actor_id ? `
+                            ${log.actor_id && log.actor_role !== 'admin' && log.actor_role !== 'system' ? `
                                 <a href="/steelinox/${log.actor_role === 'cliente' ? 'user/edit' : 'commercial'}/${log.actor_id}" 
                                    class="text-sm font-black text-gray-900 line-clamp-1 truncate max-w-[150px] transition-colors ${log.actor_role === 'cliente' ? 'hover:text-rose-500' : 'hover:text-indigo-600'}">
-                                    ${actorName}
+                                    ${SIApp.escapeHtml(actorName)}
                                 </a>
                             ` : `
-                                <p class="text-sm font-black text-gray-900 line-clamp-1 truncate max-w-[150px]">${actorName}</p>
+                                <p class="text-sm font-black text-gray-900 line-clamp-1 truncate max-w-[150px]">${SIApp.escapeHtml(actorName)}</p>
                             `}
-                            <p class="text-[9px] font-black uppercase tracking-widest ${log.actor_role === 'cliente' ? 'text-rose-500/70' : 'text-indigo-500/70'}">${actorRole}</p>
+                            <p class="text-[9px] font-black uppercase tracking-widest ${log.actor_role === 'cliente' ? 'text-rose-500/70' : (log.actor_role === 'admin' ? 'text-amber-500/70' : 'text-indigo-500/70')}">${SIApp.escapeHtml(actorRole)}</p>
                         </div>
                     </div>
                 </td>
@@ -1000,7 +1007,22 @@ window.SIModules.audit = {
             if (pid) href = `/steelinox/project/${pid}`;
             hoverClass = "group-hover/link:text-blue-500";
         } else if (log.entity_type === 'user') {
-            if (log.actor_role === 'cliente') {
+            // Verificar el rol real de la entidad afectada
+            const selfActions = ['login_exitoso', 'logout_exitoso', 'login_fallido', 'login_bloqueado_inactivo', 'recuperacion_clave_solicitada', 'clave_actualizada'];
+            let entityRole = null;
+            
+            if (selfActions.includes(log.action_key)) {
+                entityRole = log.actor_role; // Acciones sobre sí mismo
+            } else if (log.metadata && log.metadata.role) {
+                entityRole = log.metadata.role;
+            } else {
+                // Fallback
+                entityRole = log.actor_role === 'cliente' ? 'cliente' : 'comercial';
+            }
+
+            if (entityRole === 'admin' || entityRole === 'system') {
+                href = null; // Administradores no tienen vista de perfil
+            } else if (entityRole === 'cliente') {
                 href = `/steelinox/user/edit/${log.entity_id}`;
                 hoverClass = "group-hover/link:text-rose-500";
             } else {
