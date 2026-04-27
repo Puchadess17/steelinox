@@ -132,6 +132,16 @@ class AuthController {
         $user = $userModel->findByEmail($email);
 
         if ($user && password_verify($password, $user['password_hash'])) {
+
+            if ((int)$user['is_active'] !== 1) {
+                // Auditoría: Intento de acceso desde cuenta desactivada
+                AuditLogger::log('login_bloqueado_inactivo', 'user', $user['id'], null, ['email' => $email]);
+
+                $this->sendResponse(403, false, 'Su cuenta ha sido desactivada.', null, [
+                    'auth' => 'Acceso denegado. Contacte con el administrador.'
+                ]);
+                return;
+            }
             
             // Limpieza total antes de iniciar la nueva sesión
             session_unset();

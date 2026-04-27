@@ -29,6 +29,7 @@ class NotificationService
             case 'nueva_propuesta':
             case 'nueva_version':
             case 'propuesta_aprobada':
+            case 'solicitud_aprobacion':
                 $recipients = array_merge($admins, $commercials);
                 break;
 
@@ -192,6 +193,19 @@ class NotificationService
                                 \"$comentario\"
                              </div>";
                 break;
+
+            case 'solicitud_aprobacion':
+                $subject = "🔒 Código de Seguridad: Aprobación de Proyecto $projRef";
+                $token2fa = $data['token'] ?? '000000';
+                
+                $content .= "<h2 style='margin:0 0 10px 0; color:#1a1b25;'>Confirmación Requerida</h2>";
+                $content .= "<p style='margin:0 0 20px 0; color:#64748b;'>Se ha solicitado la aprobación del proyecto <strong>$projRef</strong>. Para continuar, introduce el siguiente código de 6 dígitos:</p>";
+                $content .= "<div style='background:#f8fafc; border:2px dashed #e2e8f0; border-radius:12px; padding:30px; text-align:center; margin-bottom:25px;'>
+                                <span style='display:block; font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;'>Tu Código 2FA</span>
+                                <span style='font-size:36px; font-weight:800; color:#E57B23; letter-spacing:8px;'>$token2fa</span>
+                             </div>";
+                $content .= "<p style='margin:0; font-size:12px; color:#94a3b8; text-align:center;'>Este código caducará en 10 minutos por motivos de seguridad.</p>";
+                break;
         }
 
         $content .= "<div style='margin-top:40px; text-align:center;'>
@@ -228,23 +242,26 @@ class NotificationService
 
         switch ($eventName) {
             case 'alta_usuario':
-                $subject = "Bienvenido a Steelinox";
+                $subject = "Bienvenido a Steelinox - Activación de cuenta";
                 $nombre = htmlspecialchars($data['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
-                $email = htmlspecialchars($data['email'] ?? '', ENT_QUOTES, 'UTF-8');
                 $resetUrl = htmlspecialchars($data['reset_url'] ?? '', ENT_QUOTES, 'UTF-8');
 
                 $content .= "<h2 style='margin:0 0 10px 0; color:#1a1b25;'>Hola, $nombre</h2>";
-                $content .= "<p style='margin:0 0 25px 0; color:#64748b;'>Tu cuenta para acceder a nuestra plataforma privada ha sido creada correctamente.</p>";
-                $content .= "<div style='background:#f1f5f9; border-radius:16px; padding:25px; margin-bottom:30px;'>
-                                <div style='margin-bottom:15px;'>
-                                    <span style='display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Correo Electrónico (Usuario)</span>
-                                    <span style='font-size:15px; font-weight:700; color:#1a1b25;'>$email</span>
-                                </div>
+                $content .= "<p style='margin:0 0 25px 0; color:#64748b;'>Tu cuenta de acceso a la plataforma privada de Steelinox ha sido creada correctamente.</p>";
+                
+                $content .= "<div style='background:#f1f5f9; border-left:4px solid #E57B23; padding:20px; margin-bottom:25px;'>
+                                <p style='margin:0 0 10px 0; font-size:13px; font-weight:700; color:#1a1b25;'>🛡️ Recomendaciones de seguridad:</p>
+                                <ul style='margin:0; padding:0 0 0 20px; font-size:12px; color:#475569; line-height:1.6;'>
+                                    <li>Usa una contraseña única que no utilices en otros servicios.</li>
+                                    <li>No compartas tus credenciales con terceros.</li>
+                                    <li>Cierra la sesión siempre que accedas desde un equipo público.</li>
+                                </ul>
                              </div>";
-                $content .= "<p style='margin:0 0 20px 0; font-size:13px; color:#94a3b8;'>Para completar tu registro y establecer tu contraseña, haz clic en el siguiente enlace. Este enlace caduca en 24 horas.</p>";
+
                 $content .= "<div style='text-align:center;'>
-                                <a href='{$resetUrl}' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Establecer Contraseña</a>
+                                <a href='{$resetUrl}' style='display:inline-block; background:#E57B23; color:white; padding:16px 32px; border-radius:14px; font-weight:800; text-decoration:none; font-size:14px;'>Establecer mi Contraseña</a>
                              </div>";
+                $content .= "<p style='margin:20px 0 0 0; font-size:12px; color:#94a3b8; text-align:center;'>Este enlace de activación caducará en 24 horas.</p>";
                 break;
 
             case 'recuperar_password':

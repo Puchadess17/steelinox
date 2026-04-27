@@ -641,14 +641,14 @@ class ProjectController
             // Generamos el código legible (6 dígitos)
             $plainToken = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT); 
             
-            // Creamos el HASH para la base de datos
+            // Creamos el HASH para la base de datos (Seguridad)
             $hashedToken = password_hash($plainToken, PASSWORD_DEFAULT);
             
             // Guardamos el HASH y reseteamos intentos fallidos
             $stmt = $db->prepare("UPDATE projects SET approval_token = ?, approval_token_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE), approval_failed_attempts = 0 WHERE id = ?");
             $stmt->execute([$hashedToken, $id]);
 
-            // Enviamos el código en PLANO al cliente (vía email/notificación)
+            // USAMOS EL SERVICIO DE NOTIFICACIONES 
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueProjectEvent($id, 'solicitud_aprobacion', $userId, ['token' => $plainToken]);
 
@@ -670,7 +670,7 @@ class ProjectController
             $stmtQ = $db->prepare("INSERT INTO notifications_queue (recipient_user_id, event_type, recipient_email, subject, body, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
             $stmtQ->execute([$userId, 'codigo_aprobacion', $userEmail, $subject, $body]);
 
-            echo json_encode(['success' => true, 'message' => 'Token criptográfico enviado al email.', 'data' => null, 'errors' => null]);
+            echo json_encode(['success' => true, 'message' => 'Token de seguridad enviado al email.', 'data' => null, 'errors' => null]);
 
         } catch (Exception $e) {
             ErrorLogger::log($e->getMessage(), 'ProjectController::requestApproval');

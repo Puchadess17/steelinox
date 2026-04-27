@@ -9,6 +9,7 @@ require_once APP_PATH . '/Policies/CommentPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
 require_once APP_PATH . '/Services/ErrorLogger.php'; 
+require_once APP_PATH . '/Requests/CommentRequest.php'; // <-- NUEVO REQUEST
 
 class CommentController {
 
@@ -46,7 +47,6 @@ class CommentController {
                 return;
             }
 
-            // POLICY CHECK
             if (!CommentPolicy::canView($role, $docInfo['is_visible_to_client'])) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Documento confidencial', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
@@ -104,15 +104,9 @@ class CommentController {
                 return;
             }
 
-            // POLICY CHECK (Proyecto abierto)
             if (!CommentPolicy::canCreateOnProject($projectDetails['status'])) {
                 http_response_code(403);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Proyecto cerrado', 
-                    'data'    => null, 
-                    'errors'  => ['policy' => 'El proyecto está cerrado. Debe reabrirse para poder añadir comentarios.']
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto cerrado', 'data' => null, 'errors' => ['policy' => 'El proyecto está cerrado. Debe reabrirse para poder añadir comentarios.']]);
                 return;
             }
 
@@ -125,34 +119,32 @@ class CommentController {
                 return;
             }
 
-            // POLICY CHECK (Visibilidad del documento)
             if (!CommentPolicy::canCreateOnDocument($role, $projectDetails['status'], $docInfo['is_visible_to_client'])) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'No puedes comentar en un documento interno', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
                 return;
             }
 
-            $input = json_decode(file_get_contents('php://input'), true);
-            $rawBody = isset($input['body']) ? $input['body'] : '';
-
-            $safeBody = $this->sanitizeCommentBody($rawBody);
-
-            if (empty($safeBody)) {
+            // --- USO DEL REQUEST PARA VALIDACIÓN Y SANITIZACIÓN ---
+            $request = new CommentRequest();
+            if (!$request->validateStore()) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'data' => null, 'errors' => ['body' => 'Campo requerido']]);
+                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'data' => null, 'errors' => $request->errors()]);
                 return;
             }
+            $safeBody = $request->sanitizeBody($request->input('body'));
+            // ------------------------------------------------------
 
             $commentModel = new Comment();
             $db = Database::getInstance()->getConnection();
             $versionIdToSave = null;
 
-            if (!empty($input['version_id'])) {
+            if (!empty($request->input('version_id'))) {
                 $stmtCheckVer = $db->prepare("SELECT id FROM document_versions WHERE id = :v_id AND document_id = :d_id");
-                $stmtCheckVer->execute(['v_id' => (int)$input['version_id'], 'd_id' => $documentId]);
+                $stmtCheckVer->execute(['v_id' => (int)$request->input('version_id'), 'd_id' => $documentId]);
                 
                 if ($stmtCheckVer->fetchColumn()) {
-                    $versionIdToSave = (int)$input['version_id'];
+                    $versionIdToSave = (int)$request->input('version_id');
                 } else {
                     http_response_code(422);
                     echo json_encode(['success' => false, 'message' => 'Versión inválida', 'data' => null, 'errors' => ['version_id' => 'Esta versión no pertenece al documento actual.']]);
@@ -186,21 +178,16 @@ class CommentController {
                 ]);
 
                 http_response_code(200);
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Comentario publicado correctamente',
-                    'data'    => ['id' => $newCommentId],
-                    'errors'  => null
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Comentario publicado', 'data' => ['id' => $newCommentId], 'errors' => null]);
             } else {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'No se pudo guardar el comentario', 'data' => null, 'errors' => ['database' => 'Error al guardar']]);
+                echo json_encode(['success' => false, 'message' => 'No se pudo guardar', 'data' => null, 'errors' => ['database' => 'Error al guardar']]);
             }
 
         } catch (Throwable $e) {
             ErrorLogger::log($e->getMessage(), 'CommentController::store');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al publicar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al publicar']]);
         }
     }
 
@@ -223,7 +210,6 @@ class CommentController {
             $documentId = (int)$documentId;
             $commentId = (int)$commentId;
 
-            // 1. Validar el proyecto
             $projectModel = new Project();
             $projectDetails = $projectModel->getById($projectId, $userId, $role, $clientId);
 
@@ -233,7 +219,6 @@ class CommentController {
                 return;
             }
 
-            // 2. Validar el documento y su visibilidad
             $documentModel = new Document();
             $docInfo = $documentModel->getForDownload($documentId, $projectId);
             if (!$docInfo) {
@@ -242,52 +227,44 @@ class CommentController {
                 return;
             }
 
-            // Un usuario cliente solo puede editar si el documento es visible para él
             if ($role === 'cliente' && !$docInfo['is_visible_to_client']) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Sin permisos sobre este documento', 'data' => null, 'errors' => ['policy' => 'Denegado']]);
                 return;
             }
 
-            // 3. Obtener el comentario original asegurando que pertenece a este documento
             $commentModel = new Comment();
             $comment = $commentModel->getById($commentId, $projectId, $documentId);
 
             if (!$comment) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Comentario no encontrado en este documento', 'data' => null, 'errors' => ['comment' => 'No existe o fue movido']]);
+                echo json_encode(['success' => false, 'message' => 'Comentario no encontrado', 'data' => null, 'errors' => ['comment' => 'No existe o fue movido']]);
                 return;
             }
 
-            // 4. Evaluar permisos dinámicos de edición (Rol, Estado de proyecto, Autoría)
             if (!CommentPolicy::canEdit($role, $projectDetails['status'], (int)$comment['author_user_id'], $userId)) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Sin permisos', 'data' => null, 'errors' => ['policy' => 'No puedes editar este comentario. El proyecto puede estar cerrado o no eres el autor.']]);
+                echo json_encode(['success' => false, 'message' => 'Sin permisos', 'data' => null, 'errors' => ['policy' => 'No puedes editar este comentario.']]);
                 return;
             }
 
-            // 4. Procesar y sanitizar entrada
-            $input = json_decode(file_get_contents('php://input'), true);
-            $rawBody = isset($input['body']) ? $input['body'] : '';
-            $safeBody = $this->sanitizeCommentBody($rawBody);
-
-            if (empty($safeBody)) {
+            // --- USO DEL REQUEST PARA VALIDACIÓN ---
+            $request = new CommentRequest();
+            if (!$request->validateStore()) {
                 http_response_code(422);
-                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'data' => null, 'errors' => ['body' => 'Campo requerido']]);
+                echo json_encode(['success' => false, 'message' => 'El comentario no puede estar vacío', 'data' => null, 'errors' => $request->errors()]);
                 return;
             }
+            $safeBody = $request->sanitizeBody($request->input('body'));
+            // ---------------------------------------
 
-            // 5. Solo actualizar si hubo cambios reales
             if ($safeBody !== $comment['body']) {
                 if ($commentModel->update($commentId, $projectId, $safeBody)) {
-                    
-                    // REQUISITO AUDITORÍA DDS §11: Registrar texto anterior
                     AuditLogger::log('comentario_editado', 'comment', $commentId, $projectId, [
                         'documento_id'   => $documentId,
                         'texto_anterior' => $comment['body'],
                         'texto_nuevo'    => $safeBody
                     ]);
-
                 } else {
                     throw new Exception("Fallo en la persistencia de la base de datos");
                 }
@@ -299,7 +276,7 @@ class CommentController {
         } catch (Throwable $e) {
             ErrorLogger::log($e->getMessage(), 'CommentController::update');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al actualizar comentario']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al actualizar']]);
         }
     }
 
@@ -327,7 +304,7 @@ class CommentController {
 
             if (!$projectDetails) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado o sin permisos', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
+                echo json_encode(['success' => false, 'message' => 'Proyecto no encontrado', 'data' => null, 'errors' => ['project' => 'Acceso denegado']]);
                 return;
             }
 
@@ -344,8 +321,6 @@ class CommentController {
             }
 
             $commentModel = new Comment();
-            
-            // Verificamos que el comentario pertenezca al documento y proyecto
             $comment = $commentModel->getById($commentId, $projectId, $documentId);
             if (!$comment) {
                 http_response_code(404);
@@ -353,38 +328,22 @@ class CommentController {
                 return;
             }
 
-            // La ejecución del borrado lógico (deleted_at = NOW())
             if ($commentModel->delete($commentId, $projectId, $documentId)) {
                 AuditLogger::log('comentario_eliminado', 'comment', $commentId, $projectId, [
                     'documento_id' => $documentId
                 ]);
 
                 http_response_code(200);
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Comentario eliminado correctamente',
-                    'data'    => null,
-                    'errors'  => null
-                ]);
+                echo json_encode(['success' => true, 'message' => 'Comentario eliminado', 'data' => null, 'errors' => null]);
             } else {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'No se pudo eliminar el comentario', 'data' => null, 'errors' => ['database' => 'Error al eliminar']]);
+                echo json_encode(['success' => false, 'message' => 'No se pudo eliminar', 'data' => null, 'errors' => ['database' => 'Error al eliminar']]);
             }
             
         } catch (Throwable $e) {
             ErrorLogger::log($e->getMessage(), 'CommentController::destroy');
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error al eliminar']]);
+            echo json_encode(['success' => false, 'message' => 'Error interno', 'data' => null, 'errors' => ['server' => 'Error al eliminar']]);
         }
-    }
-
-    private function sanitizeCommentBody($text) {
-        if (empty($text)) return '';
-        $text = trim($text);
-        $text = preg_replace('/\s+/', ' ', $text);
-        $firstChar = mb_substr($text, 0, 1, "UTF-8");
-        $restOfText = mb_substr($text, 1, null, "UTF-8");
-        $text = mb_strtoupper($firstChar, "UTF-8") . $restOfText;
-        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     }
 }
