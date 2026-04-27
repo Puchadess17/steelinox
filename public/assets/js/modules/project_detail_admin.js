@@ -49,6 +49,8 @@ SIModules.projectDetailAdmin = {
             if (docMatch) docId = docMatch[1];
         }
 
+        const isEditAction = path.endsWith('/edit');
+
         // --- LÓGICA DE IDEMPOTENCIA (SPA OPTIMIZATION) ---
         // Si el proyecto ya está cargado, el layout existe, y solo cambia la pestaña/acción
         if (this.projectId === projectId && this.project && document.getElementById('project-tabs-nav')) {
@@ -56,6 +58,10 @@ SIModules.projectDetailAdmin = {
             this._syncTabClasses();
             this.renderTabContent();
             if (docId) this.openPreview(docId);
+            
+            if (isEditAction && this.user && this.user.role !== 'cliente') {
+                this.openEditProjectModal();
+            }
             return;
         }
 
@@ -434,6 +440,11 @@ SIModules.projectDetailAdmin = {
         `;
 
         await this.init(projectId, user);
+
+        if (isEditAction && user && user.role !== 'cliente') {
+            // Un pequeño delay para asegurar que el modal y el DOM estén listos
+            setTimeout(() => this.openEditProjectModal(), 100);
+        }
     },
 
     async init(projectId, user) {
@@ -2246,7 +2257,11 @@ SIModules.projectDetailAdmin = {
         if (chatBody) chatBody.classList.remove('hidden');
 
         const chatFilterLabel = document.getElementById('chat-version-filter-label');
-        if (chatFilterLabel) chatFilterLabel.textContent = 'Todas';
+        const chatSelect = document.getElementById('chat-version-select');
+        if (!versionId) {
+            if (chatFilterLabel) chatFilterLabel.textContent = 'Todas';
+            if (chatSelect) chatSelect.value = '';
+        }
 
         // Load versions (populates header dropdown) and comments
         this.loadDocVersionsForChat(doc.id, versionId);
@@ -2557,13 +2572,14 @@ SIModules.projectDetailAdmin = {
                 res.data.forEach(v => {
                     const isCurrent = v.is_current == 1;
                     const isSelected = selectedVersionId ? v.id == selectedVersionId : isCurrent;
+                    const isChatSelected = selectedVersionId ? v.id == selectedVersionId : false;
 
                     // Chat select option
                     if (chatSelect) {
                         const opt = document.createElement('option');
                         opt.value = v.id;
                         opt.textContent = `v${v.version_number}${isCurrent ? ' (Activa)' : ''}`;
-                        if (isSelected) opt.selected = true;
+                    if (isChatSelected) opt.selected = true;
                         chatSelect.appendChild(opt);
                     }
 
@@ -2607,6 +2623,11 @@ SIModules.projectDetailAdmin = {
                 });
                 const chatFilterList = document.getElementById('chat-version-filter-list');
                 if (chatFilterList) chatFilterList.innerHTML = chatFilterHtml;
+
+                // Forzar el valor del select oculto después de poblarlo (crucial para async)
+                if (chatSelect) {
+                    chatSelect.value = selectedVersionId || '';
+                }
             }
         } catch (e) {
             console.error('Error versiones:', e);

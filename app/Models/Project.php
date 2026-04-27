@@ -42,9 +42,10 @@ class Project {
         // Filtros de búsqueda y estado
         if (!empty($filters['search'])) {
             $q = "%" . $filters['search'] . "%";
-            $where[] = "(p.name LIKE :search1 OR p.reference LIKE :search2)";
+            $where[] = "(p.name LIKE :search1 OR p.reference LIKE :search2 OR c.name LIKE :search3)";
             $params['search1'] = $q;
             $params['search2'] = $q;
+            $params['search3'] = $q;
         }
 
         if (isset($filters['status']) && $filters['status'] !== 'all') {

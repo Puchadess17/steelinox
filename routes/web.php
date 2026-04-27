@@ -150,6 +150,7 @@ $router->get('/settings', 'DashboardController@index');
 $router->get('/projects-new', 'DashboardController@index');
 
 $router->get('/project/(\d+)', 'DashboardController@index');
+$router->get('/project/(\d+)/edit', 'DashboardController@index');
 $router->get('/project/(\d+)/documents', 'DashboardController@index');
 $router->get('/project/(\d+)/documents/(\d+)', 'DashboardController@index');
 $router->get('/project/(\d+)/logs', 'DashboardController@index');
