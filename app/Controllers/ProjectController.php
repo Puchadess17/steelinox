@@ -667,7 +667,7 @@ class ProjectController
             $body .= "<h2 style='color: #0056b3;'>Autorización Requerida</h2>";
             $body .= "<p>Has solicitado aprobar el proyecto <strong>" . $projectDetails['reference'] . "</strong>.</p>";
             $body .= "<p>Introduce el siguiente código de verificación de 6 dígitos en la plataforma:</p>";
-            $body .= "<div style='font-size: 32px; font-family: monospace; font-weight: bold; background: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0; display: block; border: 1px solid #ddd; text-align: center; letter-spacing: 10px; color: #E57B23;'>" . $token . "</div>";
+            $body .= "<div style='font-size: 32px; font-family: monospace; font-weight: bold; background: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0; display: block; border: 1px solid #ddd; text-align: center; letter-spacing: 10px; color: #E57B23;'>" . $plainToken . "</div>";
             $body .= "<p><em>Por motivos de seguridad, este código caducará en exactamente 10 minutos.</em></p></div>";
 
             $stmtQ = $db->prepare("INSERT INTO notifications_queue (recipient_user_id, event_type, recipient_email, subject, body, created_at) VALUES (?, ?, ?, ?, ?, NOW())");

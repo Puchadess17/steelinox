@@ -252,7 +252,9 @@ const SIRouter = {
 
         // Cambiamos la URL en el navegador SIN recargar la página
         window.history.pushState(null, '', finalUrl);
-        this.handleRoute(view);
+        
+        // Resolvemos la vista real desde la nueva URL
+        this.handleRoute(this.getViewFromUrl());
     },
 
     /** 404 */

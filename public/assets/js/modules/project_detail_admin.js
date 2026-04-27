@@ -104,7 +104,7 @@ SIModules.projectDetailAdmin = {
                         <span>Cerrar Proyecto</span>
                     </button>
                     <button onclick="SIModules.projectDetailAdmin.openEditProjectModal()" class="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:border-indigo-500 hover:text-indigo-600 transition-all flex items-center gap-2 shadow-sm group">
-                        <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-500 group-hover:scale-110 group-hover:rotate-12 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         <span>Editar Proyecto</span>
                     </button>
                     ` : ''}
@@ -741,9 +741,11 @@ SIModules.projectDetailAdmin = {
                                     placeholder="000000" required autocomplete="off">
                             </div>
                             
-                            <button type="submit" id="btn-confirm-2fa" class="w-full bg-[#E57B23] hover:bg-[#c9661c] text-white rounded-2xl py-4.5 px-6 text-sm font-black transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 group uppercase tracking-widest">
-                                <span>Verificar Identidad</span>
-                                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                            <button type="submit" id="btn-confirm-2fa" 
+                                class="w-full py-5 bg-gradient-to-br from-[#E57B23] via-[#F59E0B] to-[#D97706] text-white rounded-[1.25rem] text-[13px] font-black uppercase tracking-[0.15em] transition-all duration-500 shadow-[0_20px_50px_-20px_rgba(229,123,35,0.5)] hover:shadow-[0_30px_60px_-15px_rgba(229,123,35,0.6)] hover:-translate-y-1 active:translate-y-0 active:scale-[0.97] flex items-center justify-center gap-3 group relative overflow-hidden border-t border-white/20">
+                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                                <span class="relative z-10">Verificar Identidad</span>
+                                <svg class="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                             </button>
                         </form>
                     </div>
@@ -2560,6 +2562,12 @@ SIModules.projectDetailAdmin = {
         }
         if (headerList) {
             headerList.innerHTML = '<div class="px-3 py-2 flex justify-center"><div class="si-spinner w-4 h-4 border-orange-500/20 border-t-orange-500"></div></div>';
+        }
+
+        // Reset label to "Todas" if no version is specifically requested
+        const chatFilterLabel = document.getElementById('chat-version-filter-label');
+        if (chatFilterLabel && !selectedVersionId) {
+            chatFilterLabel.textContent = 'Todas';
         }
 
         try {
