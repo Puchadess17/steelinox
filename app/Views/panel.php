@@ -66,7 +66,7 @@
                     </svg>
                 </button>
                 <!-- Logo -->
-                <a href="javascript:void(0)" onclick="SIRouter.navigate('dashboard')" class="flex items-center gap-2">
+                <a href="/steelinox/panel" class="flex items-center gap-2">
                     <img src="/steelinox/public/logo-header.svg" alt="Steel Inox" class="h-9 w-auto dark:hidden">
                     <img src="/steelinox/public/logo-header-blanco.svg" alt="Steel Inox"
                         class="h-9 w-auto hidden dark:block">

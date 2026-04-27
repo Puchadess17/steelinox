@@ -148,8 +148,8 @@
 
             <!-- Footer del card -->
             <div class="border-t border-gray-100 px-8 py-4 bg-gray-50/50 text-center" id="footer-forgot">
-                <a href="javascript:void(0)" onclick="Auth.toggleForgotPassword(true)"
-                    class="text-sm text-orange-500 hover:text-orange-600 font-medium">¿Olvidaste tu contraseña?</a>
+                <button type="button" onclick="Auth.toggleForgotPassword(true)"
+                    class="text-sm text-orange-500 hover:text-orange-600 font-medium">¿Olvidaste tu contraseña?</button>
             </div>
         </div>
 

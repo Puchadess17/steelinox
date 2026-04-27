@@ -37,9 +37,29 @@
 }
 
 /* --- Line Clamp Utilities (Fallback for old environments) --- */
-.line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
-.line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1
+}
+
+.line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2
+}
+
+.line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
 
 /* --- Base Styles --- */
 * {
@@ -106,7 +126,8 @@
 .dark .bg-gray-100\/50,
 .dark .bg-white\/50,
 .dark .bg-white\/80 {
-    background-color: rgba(39, 39, 42, 0.4) !important; /* Zinc-800 aprox */
+    background-color: rgba(39, 39, 42, 0.4) !important;
+    /* Zinc-800 aprox */
 }
 
 /* Bordes Claros -> Oscuros */
@@ -768,7 +789,8 @@ body {
         transition: opacity 0.3s ease, visibility 0.3s ease;
         visibility: hidden;
         opacity: 0;
-        display: block !important; /* Sobrescribir el hidden inicial de HTML */
+        display: block !important;
+        /* Sobrescribir el hidden inicial de HTML */
     }
 
     .sidebar-mobile-overlay.active {
@@ -778,6 +800,7 @@ body {
 }
 
 @media (min-width: 1024px) {
+
     .sidebar-mobile-overlay,
     .sidebar-mobile {
         display: none !important;
