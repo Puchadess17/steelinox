@@ -52,7 +52,6 @@ SIModules.commercialFormAdmin = {
             this._renderForm('Editar Comercial', 'Modifica los datos de acceso o el estado de la cuenta.', result.data.info);
 
         } catch (error) {
-            console.error('Error loading edit form:', error);
             this.container.innerHTML = `<div class="p-10 text-center text-red-500">Error al cargar el formulario.</div>`;
         }
     },
@@ -210,7 +209,6 @@ SIModules.commercialFormAdmin = {
                 SIApp.handleApiError(result, 'No se pudo completar la acción.');
             }
         } catch (error) {
-            console.error('Submit error:', error);
             SIApp.showToast('Error', 'No se pudo conectar con el servidor.', 'error');
         } finally {
             SIApp.setBtnLoading('btn-submit-commercial', false, btnLabel);

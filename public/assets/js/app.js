@@ -65,7 +65,6 @@ const SIApp = {
                 if (json.success && json.data) {
                     // Si ya teníamos un usuario local, comparamos IDs
                     if (this.user && this.user.id !== json.data.id) {
-                        console.warn('SIApp: Desincronización de sesión detectada. Forzando logout.');
                         Auth.logout();
                         return;
                     }
@@ -85,7 +84,6 @@ const SIApp = {
                 return;
             }
         } catch (e) {
-            console.error('SIApp: Error verificando sesión:', e);
             // Si es un error de red, permitimos seguir con el local si existe, 
             // pero si no hay nada, mandamos al login.
             if (!this.user) {
@@ -804,8 +802,6 @@ const SIApp = {
     showToast(title, message, type = 'info') {
         if (typeof SIToast !== 'undefined') {
             SIToast.show(title, message, type);
-        } else {
-            console.error('showToast: SIToast no está definido');
         }
     },
 
@@ -834,7 +830,6 @@ const SIApp = {
     getValidatedFormData(formId) {
         const form = document.getElementById(formId);
         if (!form) {
-            console.error(`Formulario no encontrado: #${formId}`);
             return null;
         }
 

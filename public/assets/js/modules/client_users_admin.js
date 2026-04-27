@@ -120,7 +120,7 @@ SIModules.clientUsersAdmin = {
             this._renderTable(usersList, pagination);
 
         } catch (error) {
-            console.error('Error reloading client users:', error);
+            // Silently fail
         }
     },
 

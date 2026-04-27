@@ -41,7 +41,6 @@ const API = {
                     credentials: 'same-origin',
                 });
                 if (!res.ok) {
-                    console.warn('API: No se pudo obtener CSRF token, status:', res.status);
                     return null;
                 }
                 const json = await res.json();
@@ -51,7 +50,6 @@ const API = {
                 }
                 return null;
             } catch (err) {
-                console.error('API: Error obteniendo CSRF token:', err);
                 return null;
             } finally {
                 this._csrfPromise = null;
@@ -142,7 +140,6 @@ const API = {
             // ── 403 Forbidden → Solo reintentar si el mensaje indica fallo de CSRF ──
             if (response.status === 403 && !options._isRetry && result.message && result.message.toLowerCase().includes('csrf')) {
                 // Renovar token e intentar 1 vez más
-                console.warn('API: 403 (CSRF) recibido, reintentando con nuevo token...');
                 this.csrfToken = null;
                 await this.fetchCsrfToken();
                 return this.request(method, endpoint, data, { ...options, _isRetry: true });
@@ -180,7 +177,6 @@ const API = {
             return result;
 
         } catch (error) {
-            console.error('API Error:', error);
             if (!options.silent) {
                 SIToast.error('Error de conexión con el servidor. Verifique su conexión a Internet.');
             }

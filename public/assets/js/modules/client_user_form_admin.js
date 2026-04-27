@@ -62,7 +62,6 @@ SIModules.clientUserFormAdmin = {
             this._renderForm('Editar Usuario Cliente', 'Modifica los datos de acceso o el estado de la cuenta.', userResult.data);
 
         } catch (error) {
-            console.error('Error loading edit form:', error);
             this.container.innerHTML = `<div class="p-10 text-center text-red-500">Error al cargar el formulario.</div>`;
         }
     },
@@ -81,7 +80,6 @@ SIModules.clientUserFormAdmin = {
                 this.clients = Array.isArray(result.data) ? result.data : (result.data.list || []);
             }
         } catch (e) {
-            console.error('Error loading clients:', e);
             this.clients = [];
         }
     },
@@ -356,7 +354,6 @@ SIModules.clientUserFormAdmin = {
                 SIApp.handleApiError(res, 'Error en la operación');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', e.message, 'error');
         } finally {
             SIApp.setBtnLoading('btn-save-user', false, isEdit ? 'Guardar Cambios' : 'Crear Usuario');

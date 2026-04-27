@@ -217,7 +217,7 @@ const Auth = {
         try {
             await API.post('/logout', null, { silent: true });
         } catch (e) {
-            console.warn('Auth: Error en logout API, limpiando sesión local:', e);
+            // Silently fail if API logout fails, we still clear local session
         }
         this.clearLocalData();
         window.location.href = '/steelinox/';

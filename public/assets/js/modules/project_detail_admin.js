@@ -622,7 +622,6 @@ SIModules.projectDetailAdmin = {
             this.renderTabContent();
 
         } catch (error) {
-            console.error('[ProjectAdminDetail] Error:', error);
             document.getElementById('tab-content').innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-center">
                     <p class="text-red-500 font-bold mb-2">No se pudo cargar la información</p>
@@ -1538,7 +1537,6 @@ SIModules.projectDetailAdmin = {
                 }
             }
         } catch (e) {
-            console.error('Error loadProjectTimeline:', e);
         }
     },
 
@@ -1846,7 +1844,6 @@ SIModules.projectDetailAdmin = {
                 container.innerHTML = '<p class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Error al sincronizar expedientes.</p>';
             }
         } catch (e) {
-            console.error(e);
             container.innerHTML = '<p class="text-center py-10 text-red-500 font-bold uppercase tracking-widest text-[10px]">Error de conexión con el servidor.</p>';
         }
     },
@@ -2036,7 +2033,6 @@ SIModules.projectDetailAdmin = {
                 container.innerHTML = `<div class="p-4 text-center text-xs text-red-400 font-bold uppercase tracking-widest">Error al cargar historial</div>`;
             }
         } catch (e) {
-            console.error(e);
             container.innerHTML = `<div class="p-4 text-center text-xs text-red-400 font-bold uppercase tracking-widest">Error de conexión</div>`;
         }
     },
@@ -2711,7 +2707,6 @@ SIModules.projectDetailAdmin = {
                 }
             }
         } catch (e) {
-            console.error('Error versiones:', e);
             if (headerList) headerList.innerHTML = '<p class="px-4 py-3 text-xs text-red-400 font-bold">Error al cargar versiones</p>';
         }
     },
@@ -2740,7 +2735,6 @@ SIModules.projectDetailAdmin = {
                 this.renderDocComments(versionId);
             }
         } catch (e) {
-            console.error('Error comentarios:', e);
             if (!silent) {
                 container.innerHTML = '<p class="text-xs text-red-500 text-center py-4 font-bold border border-red-100 bg-red-50 rounded-lg">Error al cargar historial del chat</p>';
             }
@@ -2910,7 +2904,6 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al enviar el comentario', 'error');
             }
         } catch (e) {
-            console.error('Error enviando comentario:', e);
             if (window.SIApp) SIApp.showToast('Error', 'Error de conexión', 'error');
         } finally {
             SIApp.setBtnLoading('preview-chat-submit', false);
@@ -3082,7 +3075,6 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al subir versión.', 'error');
             }
         } catch (e) {
-            console.error(e);
             if (window.SIApp) SIApp.showToast('Error', 'No se pudo subir la versión.', 'error');
         } finally {
             setLoading(false);
@@ -3131,7 +3123,6 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al procesar la subida.', 'error');
             }
         } catch (e) {
-            console.error(e);
             if (window.SIApp) SIApp.showToast('Error fatal', 'No se pudo completar la subida.', 'error');
         } finally {
             setLoading(false);
@@ -3152,7 +3143,6 @@ SIModules.projectDetailAdmin = {
                 this.assignedUsers = [];
             }
         } catch (e) {
-            console.error('Error cargando comerciales asignados:', e);
             this.assignedUsers = [];
         }
     },
@@ -3220,7 +3210,6 @@ SIModules.projectDetailAdmin = {
                 container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">No hay comerciales disponibles para asignar.</p>';
             }
         } catch (err) {
-            console.error(err);
             container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">Error cargando comerciales.</p>';
         }
     },
@@ -3236,7 +3225,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res.message || 'No se pudo asignar.', 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Error interno al asignar.', 'error');
         }
     },
@@ -3256,7 +3244,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res.message || 'No se pudo desasignar.', 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Error interno.', 'error');
         }
     },
@@ -3297,7 +3284,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error al actualizar', res?.message || 'Revisa los campos', 'error');
             }
         } catch (error) {
-            console.error(error);
             SIApp.showToast('Error', 'Error al modificar el proyecto', 'error');
         } finally {
             SIApp.setBtnLoading(`${modalId}-btn-save`, false, 'Guardar Cambios');
@@ -3389,7 +3375,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res?.message || 'Revisa los campos', 'error');
             }
         } catch (error) {
-            console.error(error);
             SIApp.showToast('Error', 'Error al modificar documento', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Guardar Cambios');
@@ -3496,7 +3481,6 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res?.message || 'No se pudo cambiar el estado', 'error');
             }
         } catch (error) {
-            console.error(error);
             if (window.SIApp) SIApp.showToast('Error', 'Error al actualizar el estado', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Actualizar');
@@ -3558,7 +3542,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('No se puede aprobar', res.message || 'Error validando permisos o estado.', 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Error de conexión enviando código.', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Aprobar');
@@ -3594,7 +3577,6 @@ SIModules.projectDetailAdmin = {
                 }
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Error de conexión verificando código.', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Confirmar Código');
@@ -3675,7 +3657,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res.message || 'No se pudo actualizar.', 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Hubo un error al intentar editar el mensaje.', 'error');
         }
     },
@@ -3720,7 +3701,6 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res?.message || 'No se pudo cerrar el proyecto.', 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Error de conexión al cerrar el proyecto.', 'error');
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Cerrar Proyecto'; }

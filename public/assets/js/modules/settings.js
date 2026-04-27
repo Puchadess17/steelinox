@@ -329,7 +329,6 @@ SIModules.settings = {
                 SIApp.showToast('Error', result.message || 'No se pudo actualizar el perfil', 'error');
             }
         } catch (error) {
-            console.error('Error al guardar perfil:', error);
             SIApp.showToast('Error', 'Error de conexión con el servidor', 'error');
         } finally {
             if (btn) {

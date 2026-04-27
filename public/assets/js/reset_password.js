@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.innerHTML = originalHtml;
             }
         } catch (err) {
-            console.error('Reset password error:', err);
             errorBox.textContent = 'Error de conexión con el servidor.';
             errorBox.classList.remove('hidden');
             btn.disabled = false;

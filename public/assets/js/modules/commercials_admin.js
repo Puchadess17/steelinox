@@ -127,7 +127,7 @@ SIModules.commercialsAdmin = {
             this._renderTable(commercialsList, pagination);
 
         } catch (error) {
-            console.error('Error reloading commercials:', error);
+            // Silently fail, data just won't load
         }
     },
 
@@ -414,7 +414,6 @@ SIModules.commercialsAdmin = {
             `;
 
         } catch (error) {
-            console.error('Error detail:', error);
             this.container.innerHTML = `<div class="p-10 text-center text-red-500">Error al cargar la ficha técnica.</div>`;
         }
     },

@@ -65,7 +65,6 @@ SIModules.clientFormAdmin = {
             }
         } catch (error) {
             // En caso de fallar o si backend no está al 100%
-            console.error("Error al cargar en edición:", error);
             this.clientData = {
                 name: 'Cliente Mock',
                 reference: 'CLI-000',
@@ -293,7 +292,6 @@ SIModules.clientFormAdmin = {
                 SIApp.handleApiError(response, 'Error al guardar');
             }
         } catch (error) {
-            console.error('Error guardando cliente:', error);
             SIApp.showToast('Error', 'Ha ocurrido un error inesperado al guardar.', 'error');
         } finally {
             SIApp.setBtnLoading('btn-save-client', false, 'Guardar Cambios');

@@ -23,7 +23,6 @@ const SIRouter = {
         this.contentContainer = document.getElementById(containerId);
 
         if (!this.contentContainer) {
-            console.error('Router: container no encontrado:', containerId);
             return;
         }
 

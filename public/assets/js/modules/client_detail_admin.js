@@ -33,17 +33,13 @@ SIModules.clientDetailAdmin = {
      * inyecta el esqueleto HTML y lanza la inicialización de datos.
      */
     async loadClientDetailSPA() {
-        console.log("[ClientDetailAdmin] Loading SPA view...");
 
         // Extraer ID de forma robusta: /steelinox/client/123 -> 123
         const path = window.location.pathname;
         const match = path.match(/\/client\/(\d+)/i);
         const clientId = match ? match[1] : null;
 
-        console.log("[ClientDetailAdmin] Extracted Client ID:", clientId);
-
         if (!clientId) {
-            console.error("[ClientDetailAdmin] ID no encontrado en la URL:", path);
             SIRouter.show404();
             return;
         }
@@ -109,7 +105,7 @@ SIModules.clientDetailAdmin = {
             <div id="client-modals-container"></div>
         `;
 
-        console.log("[ClientDetailAdmin] Skeleton injected. Initializing data...");
+
         await this.init(clientId, window.SIApp ? window.SIApp.user : null);
     },
 
@@ -141,16 +137,13 @@ SIModules.clientDetailAdmin = {
      */
     async loadClientData() {
         try {
-            console.log("[ClientDetailAdmin] Calling API for client:", this.clientId);
             const response = await API.get('/clients/' + this.clientId);
-            console.log("[ClientDetailAdmin] API Response:", response);
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Error al cargar el cliente.');
             }
 
             const d = response.data;
-            console.log("[ClientDetailAdmin] Mapping data:", d);
 
             this.client = d.info || {};
             if (this.client && this.client.name) {
@@ -160,14 +153,12 @@ SIModules.clientDetailAdmin = {
             this.projects = d.projects || [];
             this.stats = d.kpis || {};
 
-            console.log("[ClientDetailAdmin] Rendering components...");
+
             this.renderHeader();
             this.renderModals();
             this.renderTabContent();
-            console.log("[ClientDetailAdmin] Load complete.");
 
         } catch (error) {
-            console.error('[ClientDetailAdmin] Error:', error);
             const detailContent = document.getElementById('client-detail-content');
             if (detailContent) {
                 detailContent.innerHTML = `
@@ -412,7 +403,6 @@ SIModules.clientDetailAdmin = {
             });
 
         } catch (err) {
-            console.error('[ClientDetailAdmin] Timeline error:', err);
             const container = document.getElementById('client-historial-timeline');
             if (container) container.innerHTML = `<div class="text-center text-red-500 py-10">Error al cargar el historial: ${err.message}</div>`;
         }
@@ -1009,7 +999,6 @@ SIModules.clientDetailAdmin = {
                 SIApp.showToast('Error', errorMsg, 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', e.message, 'error');
         } finally {
             SIApp.setBtnLoading(`${modalId}-btn-save`, false, isEdit ? 'Guardar Cambios' : 'Crear Usuario');
@@ -1031,7 +1020,6 @@ SIModules.clientDetailAdmin = {
                 SIApp.handleApiError(res, 'No se pudo eliminar el usuario');
             }
         } catch (e) {
-            console.error(e);
             SIApp.handleApiError(e, 'No se pudo eliminar el usuario');
         }
     },
@@ -1050,7 +1038,6 @@ SIModules.clientDetailAdmin = {
                 SIApp.handleApiError(res, 'No se pudo eliminar el cliente.');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', 'Error al eliminar cliente', 'error');
         }
     },
@@ -1128,7 +1115,6 @@ SIModules.clientDetailAdmin = {
                 SIApp.showToast('Error', errorMsg, 'error');
             }
         } catch (e) {
-            console.error(e);
             SIApp.showToast('Error', e.message, 'error');
         } finally {
             SIApp.setBtnLoading(`${modalId}-btn-save`, false, 'Crear Proyecto');

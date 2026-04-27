@@ -540,7 +540,7 @@ SIModules.dashboard = {
                 }
             }
         } catch (e) {
-            console.warn('No se pudieron cargar las empresas para el filtro:', e);
+            // Silently fail, the filter just won't have options
         }
     },
 
@@ -733,43 +733,45 @@ SIModules.dashboard = {
         const user = Auth.getUser();
 
         return projects.map(p => `
-            <a href="/steelinox/project/${p.id}" class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col cursor-pointer transition-all hover:shadow-lg block group">
-                
-                <div class="p-5 sm:p-6 flex-1 flex flex-col">
+            <div class="bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden card-hover flex flex-col transition-all hover:shadow-lg relative group">
+
+                <!-- Área clicable principal (título, ref, fecha) -->
+                <a href="/steelinox/project/${p.id}" class="p-5 sm:p-6 flex-1 flex flex-col">
                     <div class="flex items-start justify-between mb-4">
                         <span class="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">REF: ${SIApp.escapeHtml(p.reference)}</span>
                         ${SIApp.statusBadge(p.status)}
                     </div>
 
                     <h3 class="text-base sm:text-lg font-black text-[#000000] leading-snug mb-3 group-hover:text-orange-600 transition-colors">${SIApp.escapeHtml(p.name)}</h3>
-                    
-                    <div class="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-gray-400 mb-6">
+
+                    <div class="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-gray-400 mt-auto">
                         <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         Actualizado ${SIApp.timeAgo(p.created_at) || SIApp.formatDate(p.created_at)}
                     </div>
+                </a>
 
-                    <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs sm:text-sm font-black text-[#000000] group-hover:text-orange-600 transition-colors tracking-wide">
-                                Ver detalles
-                            </span>
-                            <svg class="w-4 h-4 text-[#000000] group-hover:text-orange-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                        </div>
-                        ${user && user.role !== 'cliente' ? `
-                        <div class="flex items-center gap-1">
-                            <a href="/steelinox/project/${p.id}/edit" onclick="event.stopPropagation()" class="p-2 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all" title="Editar Proyecto">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            </a>
-                            <button onclick="event.stopPropagation(); event.preventDefault(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')" 
-                                    class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" 
-                                    title="Eliminar Proyecto">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
-                        </div>
-                        ` : ''}
+                <!-- Footer: Ver detalles + botones de acción (fuera del <a> para evitar <a> dentro de <a>) -->
+                <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                    <a href="/steelinox/project/${p.id}" class="flex items-center gap-2 group/link">
+                        <span class="text-xs sm:text-sm font-black text-[#000000] group-hover/link:text-orange-600 transition-colors tracking-wide">
+                            Ver detalles
+                        </span>
+                        <svg class="w-4 h-4 text-[#000000] group-hover/link:text-orange-600 group-hover/link:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                    ${user && user.role !== 'cliente' ? `
+                    <div class="flex items-center gap-1">
+                        <a href="/steelinox/project/${p.id}/edit" class="p-2 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all" title="Editar Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </a>
+                        <button onclick="event.stopPropagation(); SIModules.dashboard._confirmDeleteProject(${p.id}, '${SIApp.escapeHtml(p.name)}')"
+                                class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                title="Eliminar Proyecto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
                     </div>
+                    ` : ''}
                 </div>
-            </a>
+            </div>
         `).join('');
     },
 
