@@ -3,6 +3,14 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * SUITE: AUTORIZACIÓN POR ROL
+ * ====================
+ * Verifica que las Policies impiden correctamente que roles sin privilegios
+ * accedan a operaciones restringidas (borrado de clientes, gestión de
+ * comerciales y creación de proyectos).
+ * Estas reglas son la primera línea de defensa del modelo "deny by default".
+ */
 class AuthorizationTest extends TestCase {
 
     public function test_solo_admin_puede_borrar_clientes() {

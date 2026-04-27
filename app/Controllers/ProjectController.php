@@ -1,10 +1,22 @@
 <?php
 // app/Controllers/ProjectController.php
 
+/**
+ * PROJECT CONTROLLER (GESTIÓN DE PROYECTOS / EXPEDIENTES)
+ * ====================
+ * CRUD completo de proyectos más operaciones especializadas:
+ *   - Asignación/desasignación de comerciales (tabla pivote project_user)
+ *   - Cambio de estado con validación del mapa de transiciones (DDS §4.3)
+ *   - Flujo de aprobación con 2FA de código OTP de 6 dígitos:
+ *       PASO 1: requestApproval → genera token y lo envía por email
+ *       PASO 2: confirmApproval → verifica hash, aplica rate limiting (3 intentos)
+ * La referencia del proyecto (PRJ-AAAA-XXXX) se genera de forma atómica
+ * en el Modelo con retry automático para evitar colisiones en alta concurrencia.
+ */
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Policies/ProjectPolicy.php';
-require_once APP_PATH . '/Services/AuditLogger.php'; 
+require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
 require_once APP_PATH . '/Services/ErrorLogger.php';
 require_once APP_PATH . '/Requests/ProjectRequest.php';
@@ -12,6 +24,12 @@ require_once APP_PATH . '/Requests/ProjectRequest.php';
 class ProjectController
 {
 
+    /**
+     * LISTADO PAGINADO (GET /api/projects)
+     * Devuelve proyectos + KPIs por estado. El modelo filtra por rol:
+     * cliente ve solo los suyos, comercial los asignados, admin todos.
+     * La ordenación se valida contra whitelist para prevenir inyección SQL.
+     */
     public function search()
     {
         AuthMiddleware::check();
@@ -62,6 +80,10 @@ class ProjectController
         }
     }
 
+    /**
+     * DETALLE DE PROYECTO (GET /api/projects/{id})
+     * El modelo aplica restricción de acceso por rol antes de devolver datos.
+     */
     public function show($id)
     {
         AuthMiddleware::check();
@@ -97,6 +119,10 @@ class ProjectController
         }
     }
 
+    /**
+     * COMERCIALES ASIGNADOS (GET /api/projects/{id}/users)
+     * Devuelve el equipo interno con acceso al proyecto.
+     */
     public function getAssignedUsers($projectId)
     {
         AuthMiddleware::check();
@@ -134,6 +160,11 @@ class ProjectController
         }
     }
 
+    /**
+     * ASIGNAR COMERCIAL (POST /api/projects/{pid}/users/{uid})
+     * Vincula un comercial al proyecto vía tabla pivote project_user.
+     * Usa INSERT IGNORE en el Modelo para tolerar asignaciones duplicadas.
+     */
     public function assignUser($projectId, $userId)
     {
         AuthMiddleware::check();
@@ -192,6 +223,10 @@ class ProjectController
         }
     }
 
+    /**
+     * DESASIGNAR COMERCIAL (DELETE /api/projects/{pid}/users/{uid})
+     * Elimina la fila de project_user. El proyecto y sus datos permanecen intactos.
+     */
     public function removeUser($projectId, $userId)
     {
         AuthMiddleware::check();
@@ -250,6 +285,11 @@ class ProjectController
         }
     }
 
+    /**
+     * COMERCIALES DISPONIBLES (GET /api/projects/{id}/available-users)
+     * Devuelve comerciales activos que aún no están asignados al proyecto.
+     * Exclusivo del administrador (ProjectPolicy::canViewAvailableUsers).
+     */
     public function getAvailableUsers($projectId)
     {
         AuthMiddleware::check();
@@ -296,6 +336,12 @@ class ProjectController
     }
 
 
+    /**
+     * CREACIÓN DE PROYECTO (POST /api/projects)
+     * Genera la referencia PRJ-AAAA-XXXX atómicamente en el Modelo.
+     * Si el actor es comercial, se auto-asigna al proyecto al crearlo.
+     * Verifica que el cliente_id pertenece al ámbito del actor.
+     */
     public function store()
     {
         AuthMiddleware::check();
@@ -367,6 +413,12 @@ class ProjectController
         }
     }
 
+    /**
+     * EDICIÓN DE PROYECTO (PUT /api/projects/{id})
+     * Aplica auditoría diferencial: solo registra los campos que cambian.
+     * Detecta colisiones de referencia (error 1062) y responde con 409.
+     * El admin puede cambiar la referencia con formato PRJ-AAAA-XXXX.
+     */
     public function update($id)
     {
         AuthMiddleware::check();
@@ -464,6 +516,11 @@ class ProjectController
         }
     }
 
+    /**
+     * BORRADO LÓGICO (DELETE /api/projects/{id})
+     * Solo se puede borrar un proyecto en estado 'cerrado' (DDS §4.3).
+     * El Modelo propaga el borrado en cascada a documentos y comentarios.
+     */
     public function destroy($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -511,6 +568,13 @@ class ProjectController
         }
     }
 
+    /**
+     * CAMBIO DE ESTADO (PUT /api/projects/{id}/status)
+     * Valida la transición contra el mapa del DDS §4.3 (ProjectRequest).
+     * La reapertura desde 'cerrado' exige motivo obligatorio.
+     * El paso a 'aprobado' no se permite directamente (requiere flujo 2FA).
+     * Tras el cambio dispara una notificación al equipo del proyecto.
+     */
     public function changeStatus($id)
     {
         AuthMiddleware::check();
@@ -588,6 +652,13 @@ class ProjectController
         }
     }
 
+    /**
+     * PASO 1 DE APROBACIÓN (POST /api/projects/{id}/approve/request)
+     * Genera un código OTP de 6 dígitos, lo hashea con password_hash y
+     * guarda el HASH en BD (nunca el plain text). El plain text se envía
+     * al email del solicitante. El token expira en 10 minutos.
+     * Requiere que haya al menos una propuesta o presupuesto subido.
+     */
     public function requestApproval($id)
     {
         AuthMiddleware::check();
@@ -682,6 +753,13 @@ class ProjectController
         }
     }
 
+    /**
+     * PASO 2 DE APROBACIÓN (POST /api/projects/{id}/approve/confirm)
+     * Verifica el OTP con password_verify() contra el hash en BD.
+     * Rate limiting: máximo 3 intentos fallidos antes de anular el token.
+     * Tras aprobación exitosa: limpia el token, cambia estado y notifica.
+     * El log de auditoría incluye IP, rol y método (token_2fa) para trazabilidad.
+     */
     public function confirmApproval($id)
     {
         AuthMiddleware::check();

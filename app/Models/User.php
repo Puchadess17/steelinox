@@ -289,6 +289,11 @@ class User
         ];
     }
 
+    /**
+     * CREACIÓN DE USUARIO INTERNO
+     * Inserta un nuevo comercial (o admin) con client_id siempre NULL,
+     * ya que los usuarios internos no pertenecen a ninguna empresa cliente.
+     */
     public function createInternalUser($data) {
         $sql = "INSERT INTO users (client_id, role, name, email, password_hash, is_active, created_at) 
                 VALUES (NULL, :role, :name, :email, :password_hash, :is_active, NOW())";
@@ -305,6 +310,12 @@ class User
         return $this->db->lastInsertId();
     }
 
+    /**
+     * ACTUALIZACIÓN DE USUARIO INTERNO
+     * Permite cambiar nombre, email, estado y opcionalmente la contraseña.
+     * La cláusula role = 'comercial' evita que este método afecte a admins
+     * aunque se llame con su ID por error.
+     */
     public function updateInternalUser($id, $data) {
         $sql = "UPDATE users 
                 SET name = :name, 
@@ -333,6 +344,11 @@ class User
         return $stmt->execute($params);
     }
 
+    /**
+     * FICHA DE COMERCIAL
+     * Recupera los datos de un usuario interno. Filtra por role = 'comercial'
+     * para evitar exponer datos de administradores a través de este endpoint.
+     */
     public function getCommercialDetails($id) {
         $sql = "SELECT id, name, email, is_active, last_login_at, created_at
                 FROM users 
@@ -343,6 +359,11 @@ class User
         return $stmt->fetch();
     }
 
+    /**
+     * CARTERA DE PROYECTOS DEL COMERCIAL
+     * Devuelve los proyectos a los que está asignado un comercial,
+     * incluyendo el nombre de la empresa cliente para cada expediente.
+     */
     public function getCommercialProjects($commercialId) {
         $sql = "SELECT p.id, p.name, p.reference, p.status, p.budget_amount, p.created_at, 
                        p.client_id, c.name AS client_name
@@ -359,6 +380,12 @@ class User
         return $stmt->fetchAll();
     }
 
+    /**
+     * LISTADO BÁSICO DE TODOS LOS USUARIOS
+     * Usado por AuditController para poblar el selector de "Actor" en el
+     * panel de auditoría. Incluye deleted_at para poder indicar si la
+     * cuenta ya no existe sin ocultar entradas históricas del log.
+     */
     public function getAllBasic() {
         $sql = "SELECT id, name, role, deleted_at FROM users ORDER BY name ASC";
         $stmt = $this->db->prepare($sql);

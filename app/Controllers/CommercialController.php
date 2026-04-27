@@ -1,6 +1,14 @@
 <?php
 // app/Controllers/CommercialController.php
 
+/**
+ * COMMERCIAL CONTROLLER (GESTIÓN DE COMERCIALES)
+ * ====================
+ * CRUD de usuarios internos con rol 'comercial'. Exclusivo del administrador.
+ * A diferencia de ClientController (soft delete en clientes),
+ * el borrado aquí es un soft delete en la tabla users (softDelete).
+ * Protección especial: el admin no puede eliminarse a sí mismo como comercial.
+ */
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
 require_once APP_PATH . '/Policies/UserPolicy.php';
@@ -11,6 +19,11 @@ require_once APP_PATH . '/Requests/CommercialRequest.php';
 
 class CommercialController {
 
+    /**
+     * LISTADO PAGINADO (GET /api/commercials)
+     * Devuelve la lista de comerciales con sus KPIs (proyectos asignados, activos...).
+     * Soporta filtros de búsqueda y estado.
+     */
     public function index() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -36,17 +49,14 @@ class CommercialController {
             ];
             
             $userModel = new User();
-            $result = $userModel->getCommercialsWithStats($limit, $offset, $filters);
+            $result    = $userModel->getCommercialsWithStats($limit, $offset, $filters);
 
             echo json_encode([
-                'success' => true,
-                'message' => 'Lista de comerciales recuperada',
-                'data'    => [
-                    'kpis' => $result['kpis'],
-                    'list' => $result['data']
-                ],
+                'success'    => true,
+                'message'    => 'Lista de comerciales recuperada',
+                'data'       => ['kpis' => $result['kpis'], 'list' => $result['data']],
                 'pagination' => PaginationHelper::format($result['total'], $limit, $page),
-                'errors'  => null
+                'errors'     => null
             ]);
 
         } catch (Exception $e) {
@@ -56,6 +66,57 @@ class CommercialController {
         }
     }
 
+    /**
+     * DETALLE DE COMERCIAL (GET /api/commercials/{id})
+     * Devuelve la ficha del comercial y la lista de proyectos en los que participa.
+     */
+    public function show($id) {
+        AuthMiddleware::check();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Se esperaba GET', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
+            return;
+        }
+
+        try {
+            $userModel      = new User();
+            $commercialInfo = $userModel->getCommercialDetails($id);
+            
+            if (!$commercialInfo) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado', 'data' => null, 'errors' => ['id' => 'Usuario no válido']]);
+                return;
+            }
+
+            $projectsList = $userModel->getCommercialProjects($id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Detalles recuperados',
+                'data'    => ['info' => $commercialInfo, 'projects' => $projectsList],
+                'errors'  => null
+            ]);
+
+        } catch (Exception $e) {
+            ErrorLogger::log($e->getMessage(), 'CommercialController::show');
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
+        }
+    }
+
+    /**
+     * CREACIÓN DE COMERCIAL (POST /api/commercials)
+     * Genera contraseña aleatoria, la hashea, crea el usuario en BD y envía
+     * el enlace de activación por email (válido 24 horas).
+     */
     public function store() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -72,9 +133,7 @@ class CommercialController {
             return;
         }
 
-        // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
         $request = new CommercialRequest();
-        
         if (!$request->validateStore()) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $request->errors()]);
@@ -82,20 +141,21 @@ class CommercialController {
         }
 
         try {
-            $cleanName = $request->sanitizeName($request->input('name'));
+            $cleanName  = $request->sanitizeName($request->input('name'));
             $cleanEmail = strtolower(trim($request->input('email')));
 
-
             $userModel = new User();
+            // Verificación de unicidad de email en todo el sistema (tabla users)
             if ($userModel->emailExists($cleanEmail)) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['email' => 'Este correo electrónico ya está registrado en el sistema.']]);
                 return;
             }
 
+            // Contraseña temporal aleatoria: el usuario la cambiará al activar su cuenta
             $randomPassword = bin2hex(random_bytes(8));
             $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
-            $isActive = $request->input('is_active') !== null ? (int)$request->input('is_active') : 1;
+            $isActive       = $request->input('is_active') !== null ? (int)$request->input('is_active') : 1;
 
             $newUserId = $userModel->createInternalUser([
                 'role'          => 'comercial',
@@ -112,11 +172,11 @@ class CommercialController {
                 'es_activo' => $isActive
             ]);
 
-            // Generar token para reset password inicial
-            $token = bin2hex(random_bytes(32));
+            // Genera token de activación (válido 24 horas) y envía el enlace por email
+            $token     = bin2hex(random_bytes(32));
             $userModel->setResetToken($cleanEmail, $token, '24 HOUR');
-            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? ((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox"), '/');
-            $resetUrl = $baseUrl . "/password/reset?token=" . $token;
+            $baseUrl   = rtrim($_ENV['APP_BASE_URL'] ?? ((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox"), '/');
+            $resetUrl  = $baseUrl . "/password/reset?token=" . $token;
 
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueUserEvent($newUserId, 'alta_usuario', $cleanEmail, [
@@ -135,6 +195,10 @@ class CommercialController {
         }
     }
 
+    /**
+     * EDICIÓN DE COMERCIAL (PUT /api/commercials/{id})
+     * Aplica auditoría diferencial. El cambio de contraseña es opcional.
+     */
     public function update($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -153,7 +217,7 @@ class CommercialController {
 
         try {
             $userModel = new User();
-            $oldData = $userModel->getCommercialDetails($id);
+            $oldData   = $userModel->getCommercialDetails($id);
             
             if (!$oldData) {
                 http_response_code(404);
@@ -161,7 +225,6 @@ class CommercialController {
                 return;
             }
 
-            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
             $request = new CommercialRequest();
             if (!$request->validateUpdate($oldData['email'])) {
                 http_response_code(422);
@@ -169,27 +232,29 @@ class CommercialController {
                 return;
             }
 
-            $newName = $request->input('name') !== null ? $request->sanitizeName($request->input('name')) : $oldData['name'];
-            $newEmail = $request->input('email') !== null ? strtolower(trim($request->input('email'))) : $oldData['email'];
+            $newName  = $request->input('name')  !== null ? $request->sanitizeName($request->input('name'))          : $oldData['name'];
+            $newEmail = $request->input('email') !== null ? strtolower(trim($request->input('email')))               : $oldData['email'];
             
+            // Unicidad del email al cambiar (excluye el propio ID para evitar falsos positivos)
             if ($newEmail !== $oldData['email'] && $userModel->emailExists($newEmail, $id)) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['email' => 'Este correo electrónico ya pertenece a otra cuenta.']]);
                 return;
             }
 
-            $hashedPassword = null;
+            $hashedPassword  = null;
             $passwordChanged = false;
             if (!empty($request->input('password'))) {
-                $hashedPassword = password_hash($request->input('password'), PASSWORD_DEFAULT);
+                $hashedPassword  = password_hash($request->input('password'), PASSWORD_DEFAULT);
                 $passwordChanged = true;
             }
 
             $newIsActive = $request->input('is_active') !== null ? (int)$request->input('is_active') : (int)$oldData['is_active'];
 
+            // Captura diferencial de cambios para el log de auditoría
             $changes = [];
-            if ($oldData['name'] !== $newName) $changes['name'] = ['antes' => $oldData['name'], 'despues' => $newName];
-            if ($oldData['email'] !== $newEmail) $changes['email'] = ['antes' => $oldData['email'], 'despues' => $newEmail];
+            if ($oldData['name']      !== $newName)    $changes['name']      = ['antes' => $oldData['name'],              'despues' => $newName];
+            if ($oldData['email']     !== $newEmail)   $changes['email']     = ['antes' => $oldData['email'],             'despues' => $newEmail];
             if ((int)$oldData['is_active'] !== $newIsActive) $changes['is_active'] = ['antes' => (int)$oldData['is_active'], 'despues' => $newIsActive];
             if ($passwordChanged) $changes['password'] = 'cambiada';
 
@@ -220,6 +285,10 @@ class CommercialController {
         }
     }
 
+    /**
+     * BORRADO LÓGICO (DELETE /api/commercials/{id})
+     * Previene el auto-borrado: el admin no puede eliminarse a sí mismo.
+     */
     public function destroy($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -237,6 +306,7 @@ class CommercialController {
         }
 
         try {
+            // Protección contra auto-borrado: el admin no puede eliminar su propia cuenta
             if ((int)$id === (int)$_SESSION['user_id']) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'No puedes eliminar tu propia cuenta', 'data' => null, 'errors' => ['user' => 'Auto-borrado bloqueado']]);
@@ -244,7 +314,7 @@ class CommercialController {
             }
 
             $userModel = new User();
-            $deleted = $userModel->softDelete($id);
+            $deleted   = $userModel->softDelete($id);
 
             if ($deleted) {
                 AuditLogger::log('usuario_borrado', 'user', $id);
@@ -255,48 +325,6 @@ class CommercialController {
 
         } catch (Exception $e) {
             ErrorLogger::log($e->getMessage(), 'CommercialController::destroy');
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
-        }
-    }
-
-    public function show($id) {
-        AuthMiddleware::check();
-        header('Content-Type: application/json; charset=utf-8');
-
-        if (!UserPolicy::canManageCommercials($_SESSION['role'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Acceso denegado', 'data' => null, 'errors' => ['policy' => 'Solo administradores']]);
-            return;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-            http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Se esperaba GET', 'data' => null, 'errors' => ['method' => 'Método no permitido']]);
-            return;
-        }
-
-        try {
-            $userModel = new User();
-            $commercialInfo = $userModel->getCommercialDetails($id);
-            
-            if (!$commercialInfo) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Comercial no encontrado', 'data' => null, 'errors' => ['id' => 'Usuario no válido']]);
-                return;
-            }
-
-            $projectsList = $userModel->getCommercialProjects($id);
-
-            echo json_encode([
-                'success' => true,
-                'message' => 'Detalles recuperados',
-                'data'    => ['info' => $commercialInfo, 'projects' => $projectsList],
-                'errors'  => null
-            ]);
-
-        } catch (Exception $e) {
-            ErrorLogger::log($e->getMessage(), 'CommercialController::show');
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno del servidor', 'data' => null, 'errors' => ['server' => 'Error interno']]);
         }

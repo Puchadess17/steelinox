@@ -3,6 +3,17 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * SUITE: MÁQUINA DE ESTADOS DEL PROYECTO
+ * ====================
+ * Verifica el comportamiento de ProjectPolicy en función del estado
+ * del expediente (propuesta → aprobado → ejecucion → cerrado).
+ * Comprueba que:
+ *   - Un proyecto cerrado es inmutable para todos los roles
+ *   - Solo el admin puede remover usuarios de proyectos activos
+ *   - El flujo de aprobación solo es posible desde el estado 'propuesta'
+ *   - Los comerciales nunca tienen poder de aprobación (requiere 2FA)
+ */
 class ProjectStateTest extends TestCase {
 
     public function test_proyecto_cerrado_es_solo_lectura_para_todos() {

@@ -1,6 +1,16 @@
 <?php
 // app/Controllers/PasswordResetController.php
 
+/**
+ * PASSWORD RESET CONTROLLER (RECUPERACIÓN DE CONTRASEÑA)
+ * ====================
+ * Gestiona el flujo de dos pasos para recuperar el acceso:
+ *   PASO 1 — sendResetEmail: genera token con expiración de 1 hora y envía email.
+ *   PASO 2 — resetPassword: valida token, actualiza hash e invalida el token.
+ *   showResetForm: sirve la vista HTML del formulario (no es endpoint API).
+ * Por seguridad, si el email no existe, se responde con el mismo mensaje genérico
+ * para no revelar qué cuentas están registradas en el sistema.
+ */
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Services/ErrorLogger.php';
@@ -8,11 +18,14 @@ require_once APP_PATH . '/Requests/PasswordResetRequest.php';
 
 class PasswordResetController
 {
-    /** Renderiza la vista de cambio de contraseña (GET /password/reset?token=...) */
+    /**
+     * RENDERIZADO DEL FORMULARIO (GET /password/reset?token=...)
+     * Valida el token antes de mostrar el formulario.
+     * Si el token no existe o expiró, redirige al login con parámetro de error.
+     */
     public function showResetForm()
     {
         try {
-            // Capturamos la URL base dinámica y le quitamos la barra final si la tiene
             $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? '/steelinox', '/');
             
             $token = $_GET['token'] ?? null;
@@ -39,14 +52,17 @@ class PasswordResetController
         }
     }
 
-    /** Procesa la solicitud de envío de email (POST /api/password/forgot) */
+    /**
+     * ENVÍO DE EMAIL DE RECUPERACIÓN (POST /api/password/forgot)
+     * Genera token de 64 chars hexadecimales, lo persiste con expiración de 1 hora
+     * y delega el envío del enlace a NotificationService.
+     */
     public function sendResetEmail()
     {
         header('Content-Type: application/json');
         
         try {
             $input = json_decode(file_get_contents('php://input'), true);
-            
             $email = isset($input['email']) ? strtolower(trim($input['email'])) : null;
 
             if (empty($email)) {
@@ -63,10 +79,8 @@ class PasswordResetController
             $user = $userModel->findByEmail($email);
 
             if (!$user) {
-                AuditLogger::log('recuperacion_clave_fallida', 'system', 0, null, [
-                    'email_intentado' => $email
-                ]);
-
+                // Respuesta genérica: no revelar si el email está o no en el sistema
+                AuditLogger::log('recuperacion_clave_fallida', 'system', 0, null, ['email_intentado' => $email]);
                 echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.', 'data' => null, 'errors' => null]);
                 return;
             }
@@ -74,7 +88,7 @@ class PasswordResetController
             $token = bin2hex(random_bytes(32));
             $userModel->setResetToken($email, $token, '1 HOUR');
 
-            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? ((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox"), '/');
+            $baseUrl   = rtrim($_ENV['APP_BASE_URL'] ?? ((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/steelinox"), '/');
             $resetLink = $baseUrl . "/password/reset?token=" . $token;
 
             require_once APP_PATH . '/Services/NotificationService.php';
@@ -83,10 +97,7 @@ class PasswordResetController
             ]);
 
             if ($queued) {
-                AuditLogger::log('recuperacion_clave_solicitada', 'user', $user['id'], null, [
-                    'email' => $email
-                ]);
-
+                AuditLogger::log('recuperacion_clave_solicitada', 'user', $user['id'], null, ['email' => $email]);
                 echo json_encode(['success' => true, 'message' => 'Si el correo está registrado, recibirás un enlace en unos minutos.', 'data' => null, 'errors' => null]);
             } else {
                 http_response_code(500);
@@ -100,15 +111,17 @@ class PasswordResetController
         }
     }
 
-    /** Procesa el cambio real de contraseña (POST /api/password/reset) */
+    /**
+     * APLICACIÓN DEL NUEVO HASH (POST /api/password/reset)
+     * Verifica el token, valida la contraseña, actualiza el hash e invalida el token.
+     */
     public function resetPassword()
     {
         header('Content-Type: application/json');
         
         try {
-            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
             $request = new PasswordResetRequest();
-            $token = $request->input('token');
+            $token   = $request->input('token');
 
             if (!$token || !$request->input('password')) {
                 echo json_encode(['success' => false, 'message' => 'Datos incompletos.', 'data' => null, 'errors' => ['request' => 'Faltan parámetros']]);
@@ -125,23 +138,17 @@ class PasswordResetController
 
             if (!$request->validateReset($user['email'])) {
                 http_response_code(422);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Error de validación', 
-                    'data'    => null,
-                    'errors'  => $request->errors()
-                ]);
+                echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $request->errors()]);
                 return;
             }
 
-            $hashed = password_hash($request->input('password'), PASSWORD_DEFAULT);
+            $hashed  = password_hash($request->input('password'), PASSWORD_DEFAULT);
             $updated = $userModel->update($user['id'], ['password_hash' => $hashed]);
 
             if ($updated) {
+                // Invalida el token para impedir su reutilización
                 $userModel->clearResetToken($user['id']);
-
                 AuditLogger::log('clave_actualizada', 'user', $user['id']);
-
                 echo json_encode(['success' => true, 'message' => 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.', 'data' => null, 'errors' => null]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'No se pudo actualizar la contraseña.', 'data' => null, 'errors' => ['server' => 'Error al guardar en base de datos']]);

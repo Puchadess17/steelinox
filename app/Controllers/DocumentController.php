@@ -1,6 +1,23 @@
 <?php
 // app/Controllers/DocumentController.php
 
+/**
+ * DOCUMENT CONTROLLER (GESTIÓN DOCUMENTAL Y SERVICIO DE ARCHIVOS)
+ * ====================
+ * Gestiona el ciclo de vida completo de los documentos de un proyecto:
+ * subida, versionado automático, edición de metadatos, borrado y descarga/vista.
+ *
+ * FLUJO DE SUBIDA (store):
+ *   1. Validar proyecto y política de subida
+ *   2. Validar archivo (DocumentRequest) y MIME real con finfo
+ *   3. Guardar en /storage/documents/ con nombre opaco (random_bytes + timestamp)
+ *   4. Si existe documento con mismo título → auto-versionar; si no → crear nuevo
+ *
+ * SERVICIO DE ARCHIVOS (serveFile):
+ *   - Soporte de Range requests (HTTP 206) para streaming de vídeo
+ *   - session_write_close() antes de enviar bytes (evita bloqueo de sesión)
+ *   - Auditoría solo en primer chunk para no duplicar eventos de descarga
+ */
 require_once APP_PATH . '/Models/Document.php';
 require_once APP_PATH . '/Models/Project.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
@@ -8,10 +25,15 @@ require_once APP_PATH . '/Policies/DocumentPolicy.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Helpers/PaginationHelper.php';
 require_once APP_PATH . '/Services/ErrorLogger.php';
-require_once APP_PATH . '/Requests/DocumentRequest.php'; // <-- NUEVO REQUEST
+require_once APP_PATH . '/Requests/DocumentRequest.php';
 
 class DocumentController {
 
+    /**
+     * LISTADO DE DOCUMENTOS (GET /api/projects/{id}/documents)
+     * Devuelve los documentos del proyecto filtrados por visibilidad.
+     * El modelo aplica automáticamente is_visible_to_client = 1 para clientes.
+     */
     public function index($projectId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -55,6 +77,14 @@ class DocumentController {
         }
     }
 
+    /**
+     * SUBIDA DE DOCUMENTO (POST /api/projects/{id}/documents)
+     * Detecta automáticamente si el título ya existe en el proyecto:
+     *   - Si existe → crea nueva versión (auto-versionado)
+     *   - Si no existe → crea documento nuevo con versión 1
+     * El nombre del fichero en disco es opaco (hex aleatorio) para evitar
+     * que se pueda adivinar la ruta de almacenamiento.
+     */
     public function store($projectId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -193,6 +223,12 @@ class DocumentController {
         }
     }
 
+    /**
+     * SUBIDA DE NUEVA VERSIÓN EXPLÍCITA (POST /api/projects/{pid}/documents/{did}/versions)
+     * A diferencia del auto-versionado de store(), aquí el usuario elige
+     * explícitamente el documento al que añadir la versión.
+     * Calcula el checksum SHA-256 antes de mover el archivo al destino.
+     */
     public function addVersion($projectId, $documentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -292,6 +328,10 @@ class DocumentController {
         }
     }
 
+    /**
+     * HISTORIAL DE VERSIONES (GET /api/projects/{pid}/documents/{did}/versions)
+     * Devuelve todas las versiones del documento ordenadas de más reciente a más antigua.
+     */
     public function versions($projectId, $documentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -328,6 +368,12 @@ class DocumentController {
         }
     }
 
+    /**
+     * EDICIÓN DE METADATOS (PUT /api/projects/{pid}/documents/{did})
+     * Solo modifica metadatos lógicos (título, tipo, visibilidad, acceso).
+     * No toca el archivo binario. Aplica auditoría diferencial.
+     * Solo accesible por admin y comercial (DocumentPolicy::canEditMetadata).
+     */
     public function update($projectId, $documentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -433,6 +479,12 @@ class DocumentController {
         }
     }
 
+    /**
+     * BORRADO LÓGICO (DELETE /api/projects/{pid}/documents/{did})
+     * Marca el documento como eliminado y propaga el borrado en cascada
+     * a sus comentarios (el Modelo lo gestiona en transacción).
+     * Las versiones físicas en document_versions se conservan intactas.
+     */
     public function destroy($projectId, $documentId) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -488,14 +540,30 @@ class DocumentController {
         }
     }
 
+    /**
+     * DESCARGA DE ARCHIVO (GET /api/projects/{pid}/documents/{did}/download)
+     * Fuerza la descarga del archivo con Content-Disposition: attachment.
+     */
     public function download($projectId, $documentId) {
         $this->serveFile($projectId, $documentId, 'attachment');
     }
 
+    /**
+     * VISUALIZACIÓN INLINE (GET /api/projects/{pid}/documents/{did}/view)
+     * Sirve el archivo para visualizarlo en el visor embebido del navegador
+     * con Content-Disposition: inline. Nunca expone la ruta real del archivo.
+     */
     public function view($projectId, $documentId) {
         $this->serveFile($projectId, $documentId, 'inline');
     }
 
+    /**
+     * MOTOR DE SERVICIO DE ARCHIVOS (PRIVADO)
+     * Implementa streaming binario con soporte de Range requests (HTTP 206)
+     * para que el navegador pueda hacer seeks en vídeos sin descargar el fichero entero.
+     * Verifica permisos de acceso y modo (download/view) antes de abrir el archivo.
+     * La auditoría solo se registra en el primer chunk para no duplicar eventos.
+     */
     private function serveFile($projectId, $documentId, $disposition) {
         AuthMiddleware::check();
 
@@ -642,6 +710,11 @@ class DocumentController {
         }
     }
 
+    /**
+     * HELPER DE SANITIZACIÓN DE NOMBRE DE ARCHIVO
+     * Convierte guiones y barras bajas en espacios y aplica htmlspecialchars.
+     * Usado para normalizar el título del documento extraído del nombre del archivo.
+     */
     private function sanitizeName($name) {
         if (empty($name)) return '';
         $name = trim($name);

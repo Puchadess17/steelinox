@@ -1,6 +1,14 @@
 <?php
 // app/Controllers/UserController.php
 
+/**
+ * USER CONTROLLER (GESTIÓN DE USUARIOS CLIENTE)
+ * ====================
+ * CRUD para usuarios con rol 'cliente'. Accesible por admin y comercial.
+ * El comercial solo puede gestionar usuarios de sus propios clientes
+ * (la restricción de ámbito se aplica en el Modelo con JOIN de pertenencia).
+ * Adicionalmente gestiona el cambio de contraseña y la edición de perfil propio.
+ */
 require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Models/Client.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
@@ -12,12 +20,17 @@ require_once APP_PATH . '/Requests/UserRequest.php';
 
 class UserController {
 
+    /**
+     * LISTADO PAGINADO (GET /api/users)
+     * Devuelve la lista de usuarios cliente con KPIs. Soporta filtros de
+     * búsqueda, estado y ordenación. El comercial solo ve sus propios clientes.
+     */
     public function index() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
         $actorUserId = $_SESSION['user_id'];
-        $actorRole = $_SESSION['role'];
+        $actorRole   = $_SESSION['role'];
 
         if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
@@ -35,24 +48,21 @@ class UserController {
             [$page, $limit, $offset] = PaginationHelper::getParams();
 
             $filters = [
-                'search'   => isset($_GET['search']) ? htmlspecialchars(trim($_GET['search']), ENT_QUOTES, 'UTF-8') : null,
-                'status'   => isset($_GET['status']) ? htmlspecialchars(trim($_GET['status']), ENT_QUOTES, 'UTF-8') : 'all',
-                'sort_by'  => isset($_GET['sort_by']) ? htmlspecialchars(trim($_GET['sort_by']), ENT_QUOTES, 'UTF-8') : 'created_at',
+                'search'   => isset($_GET['search'])   ? htmlspecialchars(trim($_GET['search']),   ENT_QUOTES, 'UTF-8') : null,
+                'status'   => isset($_GET['status'])   ? htmlspecialchars(trim($_GET['status']),   ENT_QUOTES, 'UTF-8') : 'all',
+                'sort_by'  => isset($_GET['sort_by'])  ? htmlspecialchars(trim($_GET['sort_by']),  ENT_QUOTES, 'UTF-8') : 'created_at',
                 'sort_dir' => isset($_GET['sort_dir']) ? htmlspecialchars(trim($_GET['sort_dir']), ENT_QUOTES, 'UTF-8') : 'desc'
             ];
             
             $userModel = new User();
-            $result = $userModel->getClientUsersList($actorUserId, $actorRole, $limit, $offset, $filters);
+            $result    = $userModel->getClientUsersList($actorUserId, $actorRole, $limit, $offset, $filters);
 
             echo json_encode([
-                'success' => true, 
-                'message' => 'Usuarios recuperados correctamente',
-                'data' => [
-                    'list' => $result['data'],
-                    'kpis' => $result['kpis']
-                ],
+                'success'    => true, 
+                'message'    => 'Usuarios recuperados correctamente',
+                'data'       => ['list' => $result['data'], 'kpis' => $result['kpis']],
                 'pagination' => PaginationHelper::format($result['total'], $limit, $page),
-                'errors' => null
+                'errors'     => null
             ]);
         } catch (Exception $e) {
             ErrorLogger::log($e->getMessage(), 'UserController::index');
@@ -61,12 +71,17 @@ class UserController {
         }
     }
 
+    /**
+     * DETALLE DE USUARIO CLIENTE (GET /api/users/{id})
+     * Verifica que el usuario sea de rol 'cliente' y que el actor tenga
+     * permisos sobre la empresa a la que pertenece.
+     */
     public function show($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
         $actorUserId = $_SESSION['user_id'];
-        $actorRole = $_SESSION['role'];
+        $actorRole   = $_SESSION['role'];
 
         if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
@@ -82,14 +97,16 @@ class UserController {
 
         try {
             $userModel = new User();
-            $user = $userModel->findByIdWithInactive($id);
+            $user      = $userModel->findByIdWithInactive($id);
 
+            // Asegura que el recurso es un usuario cliente (no un admin o comercial)
             if (!$user || $user['role'] !== 'cliente') {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Usuario no encontrado', 'data' => null, 'errors' => ['user' => 'Inaccesible']]);
                 return;
             }
 
+            // Verifica que el actor tenga acceso a la empresa del usuario
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
@@ -97,6 +114,7 @@ class UserController {
                 return;
             }
 
+            // Elimina el hash de contraseña antes de enviarlo al frontend
             unset($user['password_hash']);
 
             echo json_encode(['success' => true, 'message' => 'Detalle recuperado', 'data' => $user, 'errors' => null]);
@@ -107,12 +125,17 @@ class UserController {
         }
     }
 
+    /**
+     * CREACIÓN DE USUARIO CLIENTE (POST /api/users)
+     * Genera contraseña aleatoria, verifica unicidad de email y envía
+     * enlace de activación por email (token válido 24 horas).
+     */
     public function store() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
         $actorUserId = $_SESSION['user_id'];
-        $actorRole = $_SESSION['role'];
+        $actorRole   = $_SESSION['role'];
 
         if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
@@ -126,9 +149,7 @@ class UserController {
             return;
         }
 
-        // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
         $request = new UserRequest();
-        
         if (!$request->validateStore()) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => $request->errors()]);
@@ -136,11 +157,11 @@ class UserController {
         }
 
         try {
-            $cleanName = $request->sanitizeName($request->input('name'));
+            $cleanName  = $request->sanitizeName($request->input('name'));
             $cleanEmail = strtolower(trim($request->input('email')));
-            $clientId = (int)$request->input('client_id');
-            $clientId = (int)$request->input('client_id');
+            $clientId   = (int)$request->input('client_id');
 
+            // Verificación de que el actor tiene acceso a la empresa indicada
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($clientId, $actorUserId, $actorRole)) {
                 http_response_code(403);
@@ -150,12 +171,14 @@ class UserController {
 
             $userModel = new User();
 
+            // Unicidad de email en toda la tabla users (no solo en clientes)
             if ($userModel->emailExists($cleanEmail)) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Error de validación', 'data' => null, 'errors' => ['email' => 'El email ya está en uso.']]);
                 return;
             }
 
+            // Contraseña temporal; el usuario la cambiará al activar su cuenta
             $randomPassword = bin2hex(random_bytes(8));
             $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
 
@@ -175,11 +198,11 @@ class UserController {
                 'email'     => $cleanEmail
             ]);
 
-            // Generar token para reset password inicial
-            $token = bin2hex(random_bytes(32));
+            // Token de activación (24h) y envío de email de bienvenida con enlace de reset
+            $token    = bin2hex(random_bytes(32));
             $userModel->setResetToken($cleanEmail, $token, '24 HOUR');
 
-            $baseUrl = rtrim($_ENV['APP_BASE_URL'] ?? '/steelinox', '/');
+            $baseUrl  = rtrim($_ENV['APP_BASE_URL'] ?? '/steelinox', '/');
             $resetUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $baseUrl . "/password/reset?token=" . $token;
 
             require_once APP_PATH . '/Services/NotificationService.php';
@@ -198,12 +221,18 @@ class UserController {
         }
     }
 
+    /**
+     * EDICIÓN DE USUARIO CLIENTE (PUT /api/users/{id})
+     * Permite cambiar nombre, email, empresa, estado y contraseña.
+     * Aplica auditoría diferencial y selecciona la clave de acción correcta
+     * según si el usuario fue activado o desactivado.
+     */
     public function update($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
         $actorUserId = $_SESSION['user_id'];
-        $actorRole = $_SESSION['role'];
+        $actorRole   = $_SESSION['role'];
 
         if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
@@ -219,7 +248,7 @@ class UserController {
 
         try {
             $userModel = new User();
-            $user = $userModel->findByIdWithInactive($id);
+            $user      = $userModel->findByIdWithInactive($id);
 
             if (!$user) {
                 http_response_code(404);
@@ -227,6 +256,7 @@ class UserController {
                 return;
             }
 
+            // Verifica que el actor puede gestionar la empresa del usuario a editar
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
@@ -234,7 +264,6 @@ class UserController {
                 return;
             }
 
-            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
             $request = new UserRequest();
             if (!$request->validateUpdate($user['email'])) {
                 http_response_code(422);
@@ -243,7 +272,7 @@ class UserController {
             }
 
             $updateData = [];
-            $changes = [];
+            $changes    = [];
 
             if ($request->input('name') !== null) {
                 $newName = $request->sanitizeName($request->input('name'));
@@ -256,26 +285,28 @@ class UserController {
             if ($request->input('email') !== null) {
                 $newEmail = strtolower(trim($request->input('email')));
                 if ($newEmail !== $user['email']) {
+                    // Unicidad del email excluyendo el propio usuario
                     if ($userModel->emailExists($newEmail, $id)) {
                         http_response_code(422);
                         echo json_encode(['success' => false, 'message' => 'Email en uso', 'data' => null, 'errors' => ['email' => 'El email ya está en uso.']]);
                         return;
                     }
-                    $updateData['email'] = $newEmail;
-                    $changes['email'] = ['antes' => $user['email'], 'despues' => $newEmail];
+                    $updateData['email']   = $newEmail;
+                    $changes['email']      = ['antes' => $user['email'], 'despues' => $newEmail];
                 }
             }
 
             if ($request->input('client_id') !== null && $request->input('client_id') !== '') {
                 $newClientId = (int)$request->input('client_id');
                 if ($newClientId !== (int)$user['client_id']) {
+                    // Verifica que el actor también tiene acceso a la nueva empresa
                     if (!$clientModel->getDetailsById($newClientId, $actorUserId, $actorRole)) {
                         http_response_code(403);
                         echo json_encode(['success' => false, 'message' => 'No tienes permisos sobre la nueva empresa seleccionada', 'data' => null, 'errors' => ['client_id' => 'Denegado']]);
                         return;
                     }
                     $updateData['client_id'] = $newClientId;
-                    $changes['client_id'] = ['antes' => (int)$user['client_id'], 'despues' => $newClientId];
+                    $changes['client_id']    = ['antes' => (int)$user['client_id'], 'despues' => $newClientId];
                 }
             }
 
@@ -289,7 +320,7 @@ class UserController {
 
             if (!empty($request->input('password'))) {
                 $updateData['password_hash'] = password_hash($request->input('password'), PASSWORD_DEFAULT);
-                $changes['password'] = 'cambiada';
+                $changes['password']         = 'cambiada';
             }
 
             if (!empty($updateData)) {
@@ -319,12 +350,16 @@ class UserController {
         }
     }
 
+    /**
+     * BORRADO LÓGICO (DELETE /api/users/{id})
+     * Elimina la cuenta del usuario cliente. Verifica pertenencia a empresa.
+     */
     public function destroy($id) {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
 
         $actorUserId = $_SESSION['user_id'];
-        $actorRole = $_SESSION['role'];
+        $actorRole   = $_SESSION['role'];
 
         if (!UserPolicy::canManageClientUsers($actorRole)) {
             http_response_code(403);
@@ -340,7 +375,7 @@ class UserController {
 
         try {
             $userModel = new User();
-            $user = $userModel->findByIdWithInactive($id);
+            $user      = $userModel->findByIdWithInactive($id);
 
             if (!$user) {
                 http_response_code(404);
@@ -348,6 +383,7 @@ class UserController {
                 return;
             }
 
+            // Verificación de pertenencia antes de permitir el borrado
             $clientModel = new Client();
             if (!$clientModel->getDetailsById($user['client_id'], $actorUserId, $actorRole)) {
                 http_response_code(403);
@@ -371,6 +407,11 @@ class UserController {
         }
     }
 
+    /**
+     * CAMBIO DE CONTRASEÑA PROPIO (PUT /api/me/password)
+     * El usuario (cualquier rol) puede cambiar su propia contraseña.
+     * Verifica la contraseña actual antes de actualizar el hash.
+     */
     public function updatePassword() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -382,11 +423,10 @@ class UserController {
         }
 
         try {
-            $userId = $_SESSION['user_id'];
+            $userId    = $_SESSION['user_id'];
             $userModel = new User();
-            $user = $userModel->findByIdWithInactive($userId);
+            $user      = $userModel->findByIdWithInactive($userId);
 
-            // --- DELEGAMOS LA VALIDACIÓN AL REQUEST ---
             $request = new UserRequest();
             if (!$request->validatePasswordChange($user['email'] ?? '')) {
                 http_response_code(422);
@@ -394,6 +434,7 @@ class UserController {
                 return;
             }
 
+            // Verifica que la contraseña actual coincide con el hash almacenado
             if (!$user || !password_verify($request->input('current_password'), $user['password_hash'])) {
                 http_response_code(401);
                 echo json_encode(['success' => false, 'message' => 'Contraseña incorrecta', 'data' => null, 'errors' => ['current_password' => 'La contraseña actual no es correcta.']]);
@@ -401,11 +442,12 @@ class UserController {
             }
 
             $hashedPassword = password_hash($request->input('new_password'), PASSWORD_DEFAULT);
-            $updated = $userModel->update($userId, ['password_hash' => $hashedPassword]);
+            $updated        = $userModel->update($userId, ['password_hash' => $hashedPassword]);
 
             if ($updated) {
                 AuditLogger::log('password_cambiada', 'user', $userId);
 
+                // Notificación de seguridad por email informando del cambio
                 require_once APP_PATH . '/Services/NotificationService.php';
                 NotificationService::queueUserEvent($userId, 'cambio_password_seguridad', $user['email'], [
                     'nombre' => $user['name']
@@ -423,6 +465,11 @@ class UserController {
         }
     }
 
+    /**
+     * EDICIÓN DE PERFIL PROPIO (PUT /api/me/profile)
+     * Permite al usuario autenticado cambiar su nombre de visualización.
+     * Bloquea el cambio si el nuevo nombre es idéntico al actual.
+     */
     public function updateProfile() {
         AuthMiddleware::check();
         header('Content-Type: application/json; charset=utf-8');
@@ -434,9 +481,9 @@ class UserController {
         }
 
         try {
-            $userId = $_SESSION['user_id'];
+            $userId    = $_SESSION['user_id'];
             $userModel = new User();
-            $user = $userModel->findByIdWithInactive($userId);
+            $user      = $userModel->findByIdWithInactive($userId);
 
             if (!$user) {
                 http_response_code(404);
@@ -454,6 +501,7 @@ class UserController {
             $updateData = [];
             if ($request->input('name') !== null) {
                 $newName = $request->sanitizeName($request->input('name'));
+                // Bloquea el cambio si el nombre es igual al actual (operación sin efecto)
                 if ($newName === $user['name']) {
                     http_response_code(422);
                     echo json_encode(['success' => false, 'message' => 'El nuevo nombre no puede ser igual al actual.', 'data' => null, 'errors' => ['name' => 'El nombre es igual al actual.']]);
@@ -466,7 +514,7 @@ class UserController {
                 $updated = $userModel->update($userId, $updateData);
                 if ($updated) {
                     AuditLogger::log('usuario_actualizado', 'user', $userId, null, [
-                        'antes' => ['name' => $user['name']],
+                        'antes'   => ['name' => $user['name']],
                         'despues' => $updateData
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Perfil actualizado correctamente', 'data' => ['name' => $updateData['name']]]);

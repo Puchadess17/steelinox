@@ -1,6 +1,20 @@
 <?php
 // tests/AccessMatrixTest.php
 
+/**
+ * SUITE: ACCESS MATRIX (Tests de Integración de Seguridad)
+ * ====================
+ * Script de test manual (sin PHPUnit) que verifica directamente la tabla
+ * central de permisos (AccessMatrix::check). Cubre todos los recursos
+ * y acciones definidos en el DDS §3.2:
+ *   - Fail-safe: recursos y acciones no definidos deben ser denegados
+ * 
+ * Diseñado para ejecutarse desde CLI:
+ *   php tests/AccessMatrixTest.php
+ *
+ * Retorna exit(1) si algún test falla, compatible con pipelines CI/CD.
+ */
+
 define('APP_PATH', realpath(__DIR__ . '/../app'));
 require_once APP_PATH . '/Policies/AccessMatrix.php';
 

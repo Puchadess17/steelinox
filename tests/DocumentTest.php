@@ -3,6 +3,15 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * SUITE: POLÍTICA DE DOCUMENTOS
+ * ====================
+ * Verifica las reglas de visibilidad y control de acceso de DocumentPolicy:
+ *   - Acceso a documentos ocultos (is_visible_to_client)
+ *   - Restricción de descarga según access_mode (download / view / both)
+ *   - Bloqueo de subida de versiones en proyectos cerrados
+ * Todos los tests son puramente unitarios (sin BD).
+ */
 class DocumentTest extends TestCase {
 
     public function test_cliente_no_puede_acceder_a_documento_oculto() {
