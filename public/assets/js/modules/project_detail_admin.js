@@ -369,20 +369,20 @@ SIModules.projectDetailAdmin = {
                             </div>
 
                             <!-- Mensaje Archivo No Encontrado (Fallback para archivo borrado/roto) -->
-                            <div id="preview-file-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-50 p-8 text-center z-20">
+                            <div id="preview-file-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-8 text-center z-20">
                                 <div class="relative mb-8">
-                                    <!-- Icono central -->
-                                    <div class="w-24 h-24 bg-white rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-center text-gray-200 mx-auto">
+                                    <!-- Icono central con efecto de cristal/vidrio -->
+                                    <div class="w-24 h-24 bg-white dark:bg-zinc-900 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-xl flex items-center justify-center text-gray-200 dark:text-zinc-800 mx-auto transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                         <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                                     </div>
-                                    <!-- Badge de error -->
-                                    <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-red-100 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                                        <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <!-- Badge de error vibrante -->
+                                    <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-red-500 border-4 border-white dark:border-zinc-950 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </div>
                                 </div>
-                                <p class="text-lg font-black text-gray-900 tracking-tight mb-1">Archivo no disponible</p>
-                                <p id="preview-file-error-msg" class="text-sm text-gray-400 max-w-xs mx-auto font-medium leading-relaxed mb-6">El archivo ya no se encuentra en el servidor. Es posible que haya sido eliminado.</p>
-                                <a id="preview-file-error-download" href="#" target="_blank" class="hidden px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black rounded-xl transition-all uppercase tracking-widest flex items-center gap-2">
+                                <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Archivo no disponible</h3>
+                                <p id="preview-file-error-msg" class="text-sm text-gray-500 dark:text-zinc-400 max-w-xs mx-auto font-medium leading-relaxed mb-8">El archivo ya no se encuentra en el servidor o el enlace ha caducado.</p>
+                                <a id="preview-file-error-download" href="#" target="_blank" class="hidden px-8 py-3 bg-gray-900 dark:bg-zinc-800 hover:bg-black dark:hover:bg-zinc-700 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-gray-200 dark:shadow-none">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                     Intentar Descargar
                                 </a>

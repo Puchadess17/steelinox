@@ -36,6 +36,11 @@
     --si-text-muted: #9CA3AF;
 }
 
+/* --- Line Clamp Utilities (Fallback for old environments) --- */
+.line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+.line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+
 /* --- Base Styles --- */
 * {
     font-family: 'Inter', sans-serif;
@@ -81,8 +86,16 @@
 .dark .bg-orange-50,
 .dark .bg-amber-50,
 .dark .bg-blue-50,
+.dark .bg-indigo-50,
 .dark .bg-emerald-50,
-.dark .bg-\[\#FAFAFA\] {
+.dark .bg-\[\#f8faff\],
+.dark .bg-\[\#f8f9fa\],
+.dark .bg-\[\#FAFAFA\],
+.dark .bg-\[\#fdf2d0\],
+.dark .bg-\[\#fef9eb\],
+.dark .bg-\[\#f0efff\],
+.dark .bg-\[\#fcfaff\],
+.dark .bg-\[\#fff9eb\] {
     background-color: var(--si-bg-card) !important;
 }
 
@@ -93,8 +106,7 @@
 .dark .bg-gray-100\/50,
 .dark .bg-white\/50,
 .dark .bg-white\/80 {
-    background-color: rgba(39, 39, 42, 0.4) !important;
-    /* Zinc-800 aprox */
+    background-color: rgba(39, 39, 42, 0.4) !important; /* Zinc-800 aprox */
 }
 
 /* Bordes Claros -> Oscuros */
@@ -105,6 +117,9 @@
 .dark .border-slate-200,
 .dark .border-orange-100,
 .dark .border-orange-200,
+.dark .border-\[\#e0e7ff\],
+.dark .border-\[\#c7d2fe\],
+.dark .border-\[\#f3ebff\],
 .dark .border-white {
     border-color: var(--si-border-card) !important;
 }
@@ -114,7 +129,12 @@
 .dark .text-gray-800,
 .dark .text-slate-800,
 .dark .text-zinc-950,
-.dark .text-\[\#000000\] {
+.dark .text-\[\#000000\],
+.dark .text-\[\#1e1b4b\],
+.dark .text-\[\#111827\],
+.dark .text-\[\#a17a22\],
+.dark .text-\[\#cb8e24\],
+.dark .text-\[\#6e56cf\] {
     color: var(--si-text-title) !important;
 }
 
