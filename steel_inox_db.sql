@@ -188,8 +188,8 @@ CREATE TABLE `users` (
 
 -- STAFF INTERNO (Admins y Comerciales)
 INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `is_active`) VALUES
-(1, NULL, 'admin', 'Administrador Principal', 'admin@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
-(2, NULL, 'comercial', 'Juan Comercial Senior', 'juan.ventas@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
+(1, NULL, 'admin', 'Administrador Principal', 'steelinox2026@outlook.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
+(2, NULL, 'comercial', 'Juan Comercial Senior', 'steelinoxprueba@outlook.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
 (3, NULL, 'comercial', 'Ana Proyectos', 'ana.proyectos@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
 (4, NULL, 'comercial', 'Luis Desarrollo Negocio', 'luis.negocio@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
 (5, NULL, 'comercial', 'Elena Grandes Cuentas', 'elena.cuentas@steelinox.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
@@ -220,7 +220,7 @@ INSERT INTO `clients` (`id`, `name`, `reference`, `is_active`, `created_by`) VAL
 
 -- 40 USUARIOS CLIENTE (2 POR EMPRESA APROX)
 INSERT INTO `users` (`id`, `client_id`, `role`, `name`, `email`, `password_hash`, `is_active`) VALUES
-(7, 1, 'cliente', 'Carlos CEO Alfa', 'carlos.ceo@alfa.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
+(7, 1, 'cliente', 'Carlos CEO Alfa', 'steelinoxusercliente@outlook.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
 (8, 1, 'cliente', 'Marta CFO Alfa', 'marta.cfo@alfa.com', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
 (9, 2, 'cliente', 'Laura Compras Beta', 'laura.compras@beta.es', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
 (10, 2, 'cliente', 'Pedro Arquitecto', 'pedro.arq@beta.es', '$2y$12$jmb.xqviJVpJ0m.qJT57C.mYvIq7V0j43uwD6GMsUl8w9lZreS9q.', 1),
