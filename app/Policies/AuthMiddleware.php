@@ -16,7 +16,7 @@ class AuthMiddleware
      * Define el tiempo máximo (en segundos) sin interacción antes de invalidar
      * la sesión de forma automática (1800s = 30 minutos).
      */
-    private const TIMEOUT_SECONDS = 180;
+    private const TIMEOUT_SECONDS = 1800;
 
     /**
      * VERIFICACIÓN DE ACCESO
