@@ -207,11 +207,10 @@
         <script>
             // Inicializar CSRF + login form cuando el DOM esté listo
             document.addEventListener('DOMContentLoaded', async () => {
-                // Si ya tiene sesión, ir al panel
-                if (Auth.isLoggedIn()) {
-                    window.location.href = '/steelinox/panel';
-                    return;
-                }
+                // Si el servidor ha renderizado esta vista, significa que la sesión PHP ha expirado.
+                // Limpiamos los datos locales para alinear el estado y evitar bucles de redirección.
+                Auth.clearLocalData();
+
                 // Pedir CSRF para el login POST
                 await API.fetchCsrfToken();
                 // Bindear formulario

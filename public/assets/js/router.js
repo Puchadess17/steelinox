@@ -148,7 +148,8 @@ const SIRouter = {
     /** Manejar cambio de ruta */
     async handleRoute(view) {
         const user = Auth.getUser();
-        const isLoginPage = window.location.pathname === '/steelinox/' || window.location.pathname === '/steelinox/index.php';
+        const pClean = window.location.pathname.replace(/\/$/, '');
+        const isLoginPage = pClean === '/steelinox' || pClean === '/steelinox/index.php';
 
         if (!user) {
             if (!isLoginPage) {

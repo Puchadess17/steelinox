@@ -8,22 +8,24 @@
  * la existencia de una sesión activa, gestionando la expiración por inactividad
  * y mitigando ataques CSRF mediante la verificación de tokens en cabeceras HTTP.
  */
-class AuthMiddleware {
-    
+class AuthMiddleware
+{
+
     /**
      * LÍMITE DE INACTIVIDAD
      * Define el tiempo máximo (en segundos) sin interacción antes de invalidar
      * la sesión de forma automática (1800s = 30 minutos).
      */
-    private const TIMEOUT_SECONDS = 1800;
+    private const TIMEOUT_SECONDS = 180;
 
     /**
      * VERIFICACIÓN DE ACCESO
      * Punto de entrada del middleware. Ejecuta la cadena de validaciones de
      * sesión, tiempo y token de seguridad.
      */
-    public static function check() {
-        
+    public static function check()
+    {
+
         // Inicia o reanuda la sesión de usuario
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
@@ -41,9 +43,9 @@ class AuthMiddleware {
          */
         if (isset($_SESSION['last_activity'])) {
             $secondsInactive = time() - $_SESSION['last_activity'];
-            
+
             if ($secondsInactive >= self::TIMEOUT_SECONDS) {
-                
+
                 // Registra la expiración en el log de auditoría
                 if (isset($_SESSION['user_id'])) {
                     require_once APP_PATH . '/Services/AuditLogger.php';
@@ -66,19 +68,19 @@ class AuthMiddleware {
          * Compara el token almacenado en sesión con el recibido en la cabecera X-CSRF-TOKEN.
          */
         if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'])) {
-            
+
             // Extrae y normaliza las cabeceras HTTP entrantes ignorando mayúsculas/minúsculas
             $headers = getallheaders();
             $headers = array_change_key_case($headers, CASE_UPPER);
-            
+
             $tokenRecibido = $headers['X-CSRF-TOKEN'] ?? '';
-            
+
             if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $tokenRecibido)) {
-                
+
                 // Registra el intento de violación de seguridad
                 require_once APP_PATH . '/Services/AuditLogger.php';
                 AuditLogger::log('auth_csrf_blocked', 'system', 0, null, ['ip' => $_SERVER['REMOTE_ADDR']]);
-                
+
                 self::reject('Fallo de seguridad CSRF. Petición rechazada.', 403);
             }
         }
@@ -91,14 +93,15 @@ class AuthMiddleware {
      * Interrumpe la ejecución del script y devuelve una respuesta HTTP
      * estándar en formato JSON indicando el motivo del bloqueo.
      */
-    private static function reject($message, $code) {
+    private static function reject($message, $code)
+    {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code($code);
         echo json_encode([
             'success' => false,
             'message' => $message,
-            'data'    => null,
-            'errors'  => ['auth' => $message]
+            'data' => null,
+            'errors' => ['auth' => $message]
         ]);
         exit();
     }
