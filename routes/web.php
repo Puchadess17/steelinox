@@ -36,6 +36,7 @@ $router->get('/api/me', 'AuthController@me');
 $router->put('/api/me', 'UserController@updateProfile');
 $router->put('/api/me/password', 'UserController@updatePassword');
 $router->post('/api/login', 'AuthController@login');
+$router->post('/api/login/verify-otp', 'AuthController@verifyOtp');
 $router->post('/api/logout', 'AuthController@logout');
 $router->post('/api/password/forgot', 'PasswordResetController@sendResetEmail');
 $router->post('/api/password/reset', 'PasswordResetController@resetPassword');

@@ -10,14 +10,16 @@ require_once CORE_PATH . '/Database.php';
  * referencial entre el registro lógico (documento) y sus iteraciones físicas 
  * (versiones) mediante transacciones de base de datos.
  */
-class Document {
+class Document
+{
     private $db;
 
     /**
      * CONSTRUCTOR E INYECCIÓN DE CONEXIÓN
      * Inicializa la instancia obteniendo la conexión PDO activa.
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getInstance()->getConnection();
     }
 
@@ -27,7 +29,8 @@ class Document {
      * contenedor lógico (documents), inserta su iteración inicial 
      * (document_versions) y actualiza el puntero de la versión activa.
      */
-    public function uploadNewDocument($docData, $versionData) {
+    public function uploadNewDocument($docData, $versionData)
+    {
         try {
             $this->db->beginTransaction();
 
@@ -36,14 +39,14 @@ class Document {
                        VALUES (:project_id, :type, :title, :is_visible_to_client, :access_mode, :created_by, NOW())";
             $stmtDoc = $this->db->prepare($sqlDoc);
             $stmtDoc->execute([
-                'project_id'           => $docData['project_id'],
-                'type'                 => $docData['type'],
-                'title'                => $docData['title'],
-                'is_visible_to_client' => isset($docData['is_visible_to_client']) ? (int)$docData['is_visible_to_client'] : 0,
-                'access_mode'          => $docData['access_mode'] ?? 'download',
-                'created_by'           => $docData['created_by']
+                'project_id' => $docData['project_id'],
+                'type' => $docData['type'],
+                'title' => $docData['title'],
+                'is_visible_to_client' => isset($docData['is_visible_to_client']) ? (int) $docData['is_visible_to_client'] : 0,
+                'access_mode' => $docData['access_mode'] ?? 'download',
+                'created_by' => $docData['created_by']
             ]);
-            
+
             $documentId = $this->db->lastInsertId();
 
             // 2. Registro de la primera versión física (Hijo)
@@ -51,13 +54,13 @@ class Document {
                        VALUES (:document_id, 1, :file_name, :storage_path, :mime_type, :file_size, :checksum_sha256, 1, :uploaded_by, NOW())";
             $stmtVer = $this->db->prepare($sqlVer);
             $stmtVer->execute([
-                'document_id'     => $documentId,
-                'file_name'       => $versionData['file_name'],
-                'storage_path'    => $versionData['storage_path'],
-                'mime_type'       => $versionData['mime_type'],
-                'file_size'       => $versionData['file_size'],
+                'document_id' => $documentId,
+                'file_name' => $versionData['file_name'],
+                'storage_path' => $versionData['storage_path'],
+                'mime_type' => $versionData['mime_type'],
+                'file_size' => $versionData['file_size'],
                 'checksum_sha256' => $versionData['checksum_sha256'],
-                'uploaded_by'     => $versionData['uploaded_by']
+                'uploaded_by' => $versionData['uploaded_by']
             ]);
 
             $versionId = $this->db->lastInsertId();
@@ -66,7 +69,7 @@ class Document {
             $sqlUpdateDoc = "UPDATE documents SET current_version_id = :version_id WHERE id = :document_id";
             $stmtUpdateDoc = $this->db->prepare($sqlUpdateDoc);
             $stmtUpdateDoc->execute([
-                'version_id'  => $versionId,
+                'version_id' => $versionId,
                 'document_id' => $documentId
             ]);
 
@@ -85,10 +88,11 @@ class Document {
      * barreras de visibilidad (is_visible_to_client) si la petición
      * proviene de un usuario externo.
      */
-    public function getListByProject($projectId, $role, $clientId = null, $limit = 15, $offset = 0) {
+    public function getListByProject($projectId, $role, $clientId = null, $limit = 15, $offset = 0)
+    {
         $params = ['project_id' => $projectId];
         $baseWhere = "WHERE d.project_id = :project_id AND d.deleted_at IS NULL";
-        
+
         // Filtro estricto de seguridad multitenant intencionado en el modelo
         if ($role === 'cliente') {
             $baseWhere .= " AND d.is_visible_to_client = 1 AND p.client_id = :client_id";
@@ -99,7 +103,7 @@ class Document {
         $countSql = "SELECT COUNT(*) FROM documents d LEFT JOIN projects p ON d.project_id = p.id " . $baseWhere;
         $stmtCount = $this->db->prepare($countSql);
         $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
+        $total = (int) $stmtCount->fetchColumn();
 
         // Extracción cruzando datos de la versión activa y el autor
         $dataSql = "SELECT d.id, d.type, d.title, d.is_visible_to_client, d.access_mode, d.created_at,
@@ -120,10 +124,10 @@ class Document {
         $stmtData->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmtData->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmtData->execute();
-        
+
         return [
             'total' => $total,
-            'data'  => $stmtData->fetchAll()
+            'data' => $stmtData->fetchAll()
         ];
     }
 
@@ -133,7 +137,8 @@ class Document {
      * de almacenamiento protegido. Soporta la extracción de la versión activa 
      * por defecto, o una iteración histórica específica si se provee el ID.
      */
-    public function getForDownload($documentId, $projectId, $versionId = null) {
+    public function getForDownload($documentId, $projectId, $versionId = null)
+    {
         if (!$versionId) {
             $sql = "SELECT d.id, d.title, d.is_visible_to_client, d.access_mode,
                            v.id AS version_id, v.version_number, v.file_name, v.storage_path, v.mime_type, v.file_size 
@@ -154,10 +159,10 @@ class Document {
                       AND d.deleted_at IS NULL";
             $params = ['document_id' => $documentId, 'project_id' => $projectId, 'version_id' => $versionId];
         }
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        
+
         return $stmt->fetch();
     }
 
@@ -166,7 +171,8 @@ class Document {
      * Comprueba la existencia de un título idéntico dentro del mismo
      * expediente para evitar redundancias durante la subida de archivos.
      */
-    public function findDocumentByTitle($projectId, $title) {
+    public function findDocumentByTitle($projectId, $title)
+    {
         $sql = "SELECT id FROM documents WHERE project_id = :project_id AND title = :title AND deleted_at IS NULL LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['project_id' => $projectId, 'title' => $title]);
@@ -178,7 +184,8 @@ class Document {
      * Extrae la línea temporal de un documento específico, ordenando
      * las iteraciones desde la más reciente a la más antigua.
      */
-    public function getVersions($documentId) {
+    public function getVersions($documentId)
+    {
         $sql = "SELECT v.id, v.version_number, v.file_name, v.file_size, v.mime_type, v.uploaded_at, u.name AS uploaded_by_name, v.is_current
                 FROM document_versions v
                 LEFT JOIN users u ON v.uploaded_by = u.id
@@ -195,7 +202,8 @@ class Document {
      * Calcula automáticamente el número secuencial, revoca el estado "actual"
      * de las versiones previas y actualiza el puntero principal.
      */
-    public function uploadNewVersion($documentId, $versionData) {
+    public function uploadNewVersion($documentId, $versionData)
+    {
         try {
             $this->db->beginTransaction();
 
@@ -203,7 +211,7 @@ class Document {
             $sqlMax = "SELECT MAX(version_number) FROM document_versions WHERE document_id = :document_id";
             $stmtMax = $this->db->prepare($sqlMax);
             $stmtMax->execute(['document_id' => $documentId]);
-            $lastVersion = (int)$stmtMax->fetchColumn();
+            $lastVersion = (int) $stmtMax->fetchColumn();
             $newVersion = $lastVersion + 1;
 
             // 2. Revocación de flags activos anteriores
@@ -216,14 +224,14 @@ class Document {
                        VALUES (:document_id, :version_number, :file_name, :storage_path, :mime_type, :file_size, :checksum_sha256, 1, :uploaded_by, NOW())";
             $stmtVer = $this->db->prepare($sqlVer);
             $stmtVer->execute([
-                'document_id'     => $documentId,
-                'version_number'  => $newVersion,
-                'file_name'       => $versionData['file_name'],
-                'storage_path'    => $versionData['storage_path'],
-                'mime_type'       => $versionData['mime_type'],
-                'file_size'       => $versionData['file_size'],
+                'document_id' => $documentId,
+                'version_number' => $newVersion,
+                'file_name' => $versionData['file_name'],
+                'storage_path' => $versionData['storage_path'],
+                'mime_type' => $versionData['mime_type'],
+                'file_size' => $versionData['file_size'],
                 'checksum_sha256' => $versionData['checksum_sha256'],
-                'uploaded_by'     => $versionData['uploaded_by']
+                'uploaded_by' => $versionData['uploaded_by']
             ]);
 
             $newVersionId = $this->db->lastInsertId();
@@ -232,7 +240,7 @@ class Document {
             $sqlUpdateDoc = "UPDATE documents SET current_version_id = :version_id WHERE id = :document_id";
             $stmtUpdateDoc = $this->db->prepare($sqlUpdateDoc);
             $stmtUpdateDoc->execute([
-                'version_id'  => $newVersionId,
+                'version_id' => $newVersionId,
                 'document_id' => $documentId
             ]);
 
@@ -249,7 +257,8 @@ class Document {
      * RECUPERACIÓN DE METADATOS
      * Obtiene los datos lógicos de un documento sin extraer sus iteraciones físicas.
      */
-    public function getMetadata($documentId, $projectId) {
+    public function getMetadata($documentId, $projectId)
+    {
         $sql = "SELECT id, title, type, is_visible_to_client, access_mode 
                 FROM documents 
                 WHERE id = :id AND project_id = :project_id AND deleted_at IS NULL";
@@ -262,7 +271,8 @@ class Document {
      * ACTUALIZACIÓN DINÁMICA DE METADATOS
      * Modifica las propiedades de visibilidad y clasificación sin alterar el archivo.
      */
-    public function updateMetadata($documentId, $projectId, $data) {
+    public function updateMetadata($documentId, $projectId, $data)
+    {
         $updates = [];
         $params = ['document_id' => $documentId, 'project_id' => $projectId];
 
@@ -289,7 +299,8 @@ class Document {
      * lógico a todos sus comentarios asociados, preservando la integridad 
      * referencial mediante transacciones.
      */
-    public function delete($documentId, $projectId) {
+    public function delete($documentId, $projectId)
+    {
         try {
             $this->db->beginTransaction();
 
@@ -297,8 +308,8 @@ class Document {
             $sqlDoc = "UPDATE documents SET deleted_at = NOW() WHERE id = :document_id AND project_id = :project_id AND deleted_at IS NULL";
             $stmtDoc = $this->db->prepare($sqlDoc);
             $stmtDoc->execute([
-                'document_id' => $documentId, 
-                'project_id'  => $projectId
+                'document_id' => $documentId,
+                'project_id' => $projectId
             ]);
 
             // 2. Borrado lógico en cascada de los comentarios asociados a este documento
@@ -324,34 +335,62 @@ class Document {
      * Única fuente de la verdad para validar archivos subidos al sistema.
      * Combina formatos estándar, ofimática, CAD, 3D, multimedia y binarios.
      */
-    public static function getAllowedMimeTypes() {
+    public static function getAllowedMimeTypes()
+    {
         return [
             // Documentos Estándar
-            'application/pdf', 'text/plain', 'text/csv', 'text/markdown', 
-            'application/json', 'application/x-yaml', 'text/yaml',
+            'application/pdf',
+            'text/plain',
+            'text/csv',
+            'text/markdown',
+            'application/json',
+            'application/x-yaml',
+            'text/yaml',
 
             // Imágenes (Web y Alta resolución)
-            'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 
-            'image/heic', 'image/heif', 'image/vnd.adobe.photoshop', 'application/postscript',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/svg+xml',
+            'image/heic',
+            'image/heif',
+            'image/vnd.adobe.photoshop',
+            'application/postscript',
 
             // Video (Revisión de obra/Drones)
-            'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska',
+            'video/mp4',
+            'video/quicktime',
+            'video/webm',
+            'video/x-matroska',
 
             // Office (Word, Excel, Powerpoint)
-            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 
             // CAD e Ingeniería (AutoCAD y variantes)
-            'image/vnd.dwg', 'image/x-dwg', 'application/acad', 'application/x-acad', 
-            'application/autocad_dwg', 'image/vnd.dxf', 'application/dxf', 'application/x-dxf',
+            'image/vnd.dwg',
+            'image/x-dwg',
+            'application/acad',
+            'application/x-acad',
+            'application/autocad_dwg',
+            'image/vnd.dxf',
+            'application/dxf',
+            'application/x-dxf',
 
             // Modelado 3D (Impresión/Estructuras)
-            'model/obj', 'model/stl', 'application/sla',
+            'model/obj',
+            'model/stl',
+            'application/sla',
 
             // Archivos comprimidos (Paquetes de proyectos)
-            'application/zip', 'application/x-zip-compressed', 
-            'application/x-7z-compressed', 'application/x-rar-compressed',
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/x-7z-compressed',
+            'application/x-rar-compressed',
 
             // Fallback genérico para archivos binarios propietarios
             'application/octet-stream'

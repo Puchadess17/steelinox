@@ -1,33 +1,6 @@
 /**
- * STEEL INOX EXTRANET — PROJECT DETAIL VIEW (Admin/Comercial/Cliente)
- * Módulo núcleo para la vista de detalle de proyectos individuales.
- * Es el componente más complejo del frontend; gestiona:
- *   - Pestañas: Resumen, Documentos, Histórico (Solo staff)
- *   - Documentos: subida, previsión, versiones, comentarios y metadatos
- *   - Ciclo de vida del proyecto: cambio de estado con lógica de roles
- *   - Flujo de aprobación con 2FA (solo Admin)
- *   - Chat inline en la previsión de documentos
- *
- * @api GET    /api/projects/:id                          → Project
- * @api GET    /api/projects/:id/documents               → Document[]
- * @api GET    /api/projects/:id/audit                   → AuditLog[]
- * @api PUT    /api/projects/:id                         → null  (editar metadatos)
- * @api PATCH  /api/projects/:id/status                  → null  (cambiar estado)
- * @api POST   /api/projects/:id/close                   → null  (cerrar con motivo)
- * @api POST   /api/projects/:id/approve/init            → null  (enviar código 2FA)
- * @api POST   /api/projects/:id/approve/confirm         → null  (confirmar con código)
- * @api GET    /api/projects/:id/users                   → User[]
- * @api POST   /api/projects/:id/commercials             → null  (asignar comercial)
- * @api DELETE /api/projects/:id/commercials/:cid        → null  (quitar comercial)
- * @api POST   /api/projects/:id/documents               → Document (subir archivo)
- * @api PUT    /api/projects/:id/documents/:docId        → null  (editar metadatos)
- * @api POST   /api/projects/:id/documents/:docId/versions → null (nueva versión)
- * @api DELETE /api/projects/:id/documents/:docId        → null  (eliminar documento)
- * @api GET    /api/projects/:id/documents/:docId/comments  → Comment[]
- * @api POST   /api/projects/:id/documents/:docId/comments  → null (nuevo comentario)
- *
- * Depende de: api.js (API, SIToast), app.js (SIApp), auth.js (Auth),
- *             templates.js (SITemplates), router.js (SIRouter)
+ * Steel Inox Extranet — Project Detail View (Admin/Commercial)
+ * Maneja la lógica de la página individual del proyecto para el equipo interno.
  */
 
 window.SIModules = window.SIModules || {};
@@ -57,12 +30,6 @@ SIModules.projectDetailAdmin = {
     /** Shortcut: usuario de sesión activo (siempre legible desde SIApp) */
     get user() { return window.SIApp ? SIApp.user : null; },
 
-    /**
-     * PUNTO DE ENTRADA DESDE EL ROUTER
-     * Extrae el projectId de la URL (/steelinox/project/42) y el subAction
-     * (resumen, documents, logs). Implementa idempotencia SPA: si el mismo
-     * proyecto ya está cargado, solo actualiza la pestaña activa sin recarga.
-     */
     async loadProjectDetailSPA() {
         const path = window.location.pathname;
         const match = path.match(/\/project\/(\d+)/);
@@ -91,7 +58,7 @@ SIModules.projectDetailAdmin = {
             this._syncTabClasses();
             this.renderTabContent();
             if (docId) this.openPreview(docId);
-            
+
             if (isEditAction && this.user && this.user.role !== 'cliente') {
                 this.openEditProjectModal();
             }
@@ -347,15 +314,13 @@ SIModules.projectDetailAdmin = {
 
                             <!-- EL VISUALIZADOR DE IMÁGENES NATIVO -->
                             <img id="preview-img" class="hidden opacity-0 transition-opacity duration-500 object-contain h-full w-auto max-h-full max-w-full mx-auto block" 
-                                 onload="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden');"
-                                 onerror="SIModules.projectDetailAdmin._showPreviewFileError()">
+                                 onload="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden')">
 
                             <!-- EL REPRODUCTOR DE VIDEO NATIVO (Crucial para Mobile) -->
                             <video id="preview-video" class="hidden opacity-0 transition-opacity duration-500 h-full w-full max-h-full max-w-full bg-black shadow-inner" 
                                    controls playsinline webkit-playsinline preload="metadata" 
-                                   onloadedmetadata="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden');"
-                                   onerror="SIModules.projectDetailAdmin._showPreviewFileError()"></video>
-                            <!-- Mensaje Archivo No Soportado (Fallback para MIME no previsualizable) -->
+                                   onloadedmetadata="this.classList.remove('opacity-0'); document.getElementById('preview-skeleton').classList.add('hidden')"></video>
+                            <!-- Mensaje Archivo No Soportado (Fallback) -->
                             <div id="preview-unsupported" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-50 p-8 text-center z-20">
                                 <div class="w-20 h-20 bg-white shadow-sm border border-gray-100 rounded-[2rem] flex items-center justify-center mb-6 text-gray-300">
                                      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
@@ -365,26 +330,6 @@ SIModules.projectDetailAdmin = {
                                 <a id="preview-unsupported-download" href="#" target="_blank" class="px-8 py-3.5 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-orange-500 transition-all uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-gray-900/10 group">
                                      <svg class="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> 
                                      Descargar Archivo Original
-                                </a>
-                            </div>
-
-                            <!-- Mensaje Archivo No Encontrado (Fallback para archivo borrado/roto) -->
-                            <div id="preview-file-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-8 text-center z-20">
-                                <div class="relative mb-8">
-                                    <!-- Icono central con efecto de cristal/vidrio -->
-                                    <div class="w-24 h-24 bg-white dark:bg-zinc-900 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-xl flex items-center justify-center text-gray-200 dark:text-zinc-800 mx-auto transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-                                    </div>
-                                    <!-- Badge de error vibrante -->
-                                    <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-red-500 border-4 border-white dark:border-zinc-950 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </div>
-                                </div>
-                                <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Archivo no disponible</h3>
-                                <p id="preview-file-error-msg" class="text-sm text-gray-500 dark:text-zinc-400 max-w-xs mx-auto font-medium leading-relaxed mb-8">El archivo ya no se encuentra en el servidor o el enlace ha caducado.</p>
-                                <a id="preview-file-error-download" href="#" target="_blank" class="hidden px-8 py-3 bg-gray-900 dark:bg-zinc-800 hover:bg-black dark:hover:bg-zinc-700 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-gray-200 dark:shadow-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                    Intentar Descargar
                                 </a>
                             </div>
                             <!-- Botón flotante para reabrir el chat (visible en desktop cuando está colapsado) -->
@@ -502,13 +447,6 @@ SIModules.projectDetailAdmin = {
         }
     },
 
-    /**
-     * INICIALIZACIÓN DEL MÓDULO
-     * Guarda contexto de usuario y lanza la carga de datos del proyecto.
-     * Resetea el estado interno para evitar persistencia SPA entre proyectos.
-     * @param {string} projectId - ID del proyecto
-     * @param {Object} user - Datos del usuario autenticado
-     */
     async init(projectId, user) {
         this.projectId = projectId;
         this.userContext = user;
@@ -571,14 +509,7 @@ SIModules.projectDetailAdmin = {
         }
     },
 
-    /**
-     * CARGA INICIAL DE DATOS
-     * Obtiene en paralelo: datos del proyecto, listado de documentos y
-     * logs de auditoría (solo para staff). Desencadena el render completo.
-     * @api GET /api/projects/:id           → Project
-     * @api GET /api/projects/:id/documents → Document[]
-     * @api GET /api/projects/:id/audit     → AuditLog[]
-     */
+    /** Cargar datos de la API */
     async loadProjectData() {
         try {
             const user = this.user;
@@ -622,6 +553,7 @@ SIModules.projectDetailAdmin = {
             this.renderTabContent();
 
         } catch (error) {
+            console.error('[ProjectAdminDetail] Error:', error);
             document.getElementById('tab-content').innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-center">
                     <p class="text-red-500 font-bold mb-2">No se pudo cargar la información</p>
@@ -1537,6 +1469,7 @@ SIModules.projectDetailAdmin = {
                 }
             }
         } catch (e) {
+            console.error('Error loadProjectTimeline:', e);
         }
     },
 
@@ -1844,6 +1777,7 @@ SIModules.projectDetailAdmin = {
                 container.innerHTML = '<p class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Error al sincronizar expedientes.</p>';
             }
         } catch (e) {
+            console.error(e);
             container.innerHTML = '<p class="text-center py-10 text-red-500 font-bold uppercase tracking-widest text-[10px]">Error de conexión con el servidor.</p>';
         }
     },
@@ -2033,6 +1967,7 @@ SIModules.projectDetailAdmin = {
                 container.innerHTML = `<div class="p-4 text-center text-xs text-red-400 font-bold uppercase tracking-widest">Error al cargar historial</div>`;
             }
         } catch (e) {
+            console.error(e);
             container.innerHTML = `<div class="p-4 text-center text-xs text-red-400 font-bold uppercase tracking-widest">Error de conexión</div>`;
         }
     },
@@ -2222,10 +2157,6 @@ SIModules.projectDetailAdmin = {
         this.currentDocId = doc.id;
         this.currentDoc = doc;
         document.getElementById('chat-current-doc-id').value = doc.id;
-
-        // Ocultar el panel de error de archivo por defecto
-        const fileErrorDiv = document.getElementById('preview-file-error');
-        if (fileErrorDiv) fileErrorDiv.classList.add('hidden');
 
         // Populate metadata in header
         this._updatePreviewHeader(doc);
@@ -2656,7 +2587,7 @@ SIModules.projectDetailAdmin = {
                         const opt = document.createElement('option');
                         opt.value = v.id;
                         opt.textContent = `v${v.version_number}${isCurrent ? ' (Activa)' : ''}`;
-                    if (isChatSelected) opt.selected = true;
+                        if (isChatSelected) opt.selected = true;
                         chatSelect.appendChild(opt);
                     }
 
@@ -2707,6 +2638,7 @@ SIModules.projectDetailAdmin = {
                 }
             }
         } catch (e) {
+            console.error('Error versiones:', e);
             if (headerList) headerList.innerHTML = '<p class="px-4 py-3 text-xs text-red-400 font-bold">Error al cargar versiones</p>';
         }
     },
@@ -2735,6 +2667,7 @@ SIModules.projectDetailAdmin = {
                 this.renderDocComments(versionId);
             }
         } catch (e) {
+            console.error('Error comentarios:', e);
             if (!silent) {
                 container.innerHTML = '<p class="text-xs text-red-500 text-center py-4 font-bold border border-red-100 bg-red-50 rounded-lg">Error al cargar historial del chat</p>';
             }
@@ -2782,7 +2715,7 @@ SIModules.projectDetailAdmin = {
             );
             let time = SIApp.formatDateTime(c.created_at);
             let isEdited = false;
-            
+
             if (c.updated_at && c.updated_at !== c.created_at) {
                 time = SIApp.formatDateTime(c.updated_at);
                 isEdited = true;
@@ -2904,94 +2837,23 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al enviar el comentario', 'error');
             }
         } catch (e) {
+            console.error('Error enviando comentario:', e);
             if (window.SIApp) SIApp.showToast('Error', 'Error de conexión', 'error');
         } finally {
             SIApp.setBtnLoading('preview-chat-submit', false);
         }
     },
 
-    /**
-     * DETECCIÓN DE ERROR EN IFRAME (PDF/Texto)
-     * Cuando el backend responde 404 (archivo borrado del disco), el iframe carga
-     * una página de texto plano. Como es mismo origen, podemos leer contentDocument
-     * para detectarlo y mostrar el panel de error en lugar de un iframe en blanco.
-     */
     onIframeLoad() {
         const iframe = document.getElementById('preview-iframe');
         const skeleton = document.getElementById('preview-skeleton');
 
-        if (!iframe || !skeleton) return;
-
-        // Intentar detectar respuesta de error del mismo origen (404 del backend)
-        try {
-            const doc = iframe.contentDocument || iframe.contentWindow?.document;
-            const bodyText = doc?.body?.innerText?.trim() || '';
-            const isErrorResponse = (
-                bodyText.includes('no encontrado') ||
-                bodyText.includes('sin permisos') ||
-                bodyText.includes('confidencial') ||
-                bodyText.includes('Error interno') ||
-                bodyText === '' ||
-                doc?.title === ''
-            );
-
-            if (isErrorResponse && bodyText !== '') {
-                // El iframe cargó pero con contenido de error del backend
-                iframe.classList.add('hidden');
-                skeleton.classList.add('hidden');
-                this._showPreviewFileError('El archivo no está disponible en el servidor.');
-                return;
-            }
-        } catch (e) {
-            // No se pudo leer contentDocument (caso cross-origin, ignorar)
+        if (iframe && skeleton) {
+            iframe.classList.remove('opacity-0');
+            skeleton.classList.add('opacity-0');
+            setTimeout(() => skeleton.classList.add('hidden'), 500);
         }
-
-        // Carga exitosa: revelar iframe y ocultar skeleton
-        iframe.classList.remove('opacity-0');
-        skeleton.classList.add('opacity-0');
-        setTimeout(() => skeleton.classList.add('hidden'), 500);
     },
-
-    /**
-     * PANEL DE ARCHIVO NO ENCONTRADO
-     * Oculta todos los visualizadores y muestra el panel de error premium.
-     * Difiere del panel #preview-unsupported (tipo de archivo no soportado):
-     * este indica un fallo real de disponibilidad del archivo en el servidor.
-     * @param {string} [msg] - Mensaje opcional a mostrar al usuario
-     */
-    _showPreviewFileError(msg) {
-        // Ocultar skeleton y todos los visualizadores
-        const skeleton   = document.getElementById('preview-skeleton');
-        const iframe     = document.getElementById('preview-iframe');
-        const img        = document.getElementById('preview-img');
-        const video      = document.getElementById('preview-video');
-        const unsupported = document.getElementById('preview-unsupported');
-        const errorDiv   = document.getElementById('preview-file-error');
-        const errorMsg   = document.getElementById('preview-file-error-msg');
-        const errorDl    = document.getElementById('preview-file-error-download');
-
-        if (skeleton)    { skeleton.classList.add('hidden'); }
-        if (iframe)      { iframe.classList.add('hidden'); iframe.src = 'about:blank'; }
-        if (img)         { img.classList.add('hidden'); }
-        if (video)       { video.classList.add('hidden'); video.pause?.(); }
-        if (unsupported) { unsupported.classList.add('hidden'); }
-
-        // Personalizar el mensaje si se pasa uno
-        if (errorMsg && msg) errorMsg.textContent = msg;
-
-        // Mostrar el enlace de descarga solo si el usuario puede descargar
-        const doc = this.currentDoc;
-        const isClient = this.user && this.user.role === 'cliente';
-        const canDownload = !isClient || doc?.access_mode === 'download' || doc?.access_mode === 'both';
-        if (errorDl) {
-            const downloadUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${this.currentDocId}/download`;
-            errorDl.href = downloadUrl;
-            errorDl.classList.toggle('hidden', !canDownload);
-        }
-
-        if (errorDiv) errorDiv.classList.remove('hidden');
-    },
-
 
     closePreviewModal() {
         // Detener short polling para no consumir recursos innecesarios
@@ -3075,6 +2937,7 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al subir versión.', 'error');
             }
         } catch (e) {
+            console.error(e);
             if (window.SIApp) SIApp.showToast('Error', 'No se pudo subir la versión.', 'error');
         } finally {
             setLoading(false);
@@ -3123,6 +2986,7 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al procesar la subida.', 'error');
             }
         } catch (e) {
+            console.error(e);
             if (window.SIApp) SIApp.showToast('Error fatal', 'No se pudo completar la subida.', 'error');
         } finally {
             setLoading(false);
@@ -3143,6 +3007,7 @@ SIModules.projectDetailAdmin = {
                 this.assignedUsers = [];
             }
         } catch (e) {
+            console.error('Error cargando comerciales asignados:', e);
             this.assignedUsers = [];
         }
     },
@@ -3153,16 +3018,20 @@ SIModules.projectDetailAdmin = {
         }
 
         const user = this.user;
+        const isAdmin = user && user.role === 'admin';
         let html = '<div class="flex flex-wrap justify-center gap-2">';
 
         this.assignedUsers.forEach(u => {
+            const linkHref = isAdmin ? `/steelinox/commercial/${u.id}` : '';
+            const linkAttr = isAdmin ? `href="${linkHref}"` : 'style="cursor: default;"';
+
             html += `
-                <div class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/50 transition-colors rounded-full pl-1.5 pr-3 py-1.5 shadow-sm group">
+                <div class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 ${isAdmin ? 'hover:border-indigo-200 hover:bg-indigo-50/50' : ''} transition-colors rounded-full pl-1.5 pr-3 py-1.5 shadow-sm group">
                     <div class="w-6 h-6 bg-white border border-gray-200 text-indigo-600 rounded-full flex items-center justify-center text-[9px] font-extrabold pb-[1px] shrink-0">
                         ${SIApp._getInitials(u.name)}
                     </div>
-                    <span class="text-[13px] font-bold text-gray-700 group-hover:text-indigo-700 whitespace-nowrap">${u.name}</span>
-                    ${user && user.role !== 'cliente' ? `
+                    <a ${linkAttr} class="text-[13px] font-bold text-gray-700 ${isAdmin ? 'hover:text-indigo-700' : ''} whitespace-nowrap transition-colors">${SIApp.escapeHtml(u.name)}</a>
+                    ${isAdmin ? `
                     <button onclick="SIModules.projectDetailAdmin.removeUser(${u.id})" class="ml-1 text-gray-300 hover:text-red-500 bg-white hover:bg-red-50 rounded-full p-0.5 transition-all shrink-0" title="Eliminar asignación">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -3210,6 +3079,7 @@ SIModules.projectDetailAdmin = {
                 container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">No hay comerciales disponibles para asignar.</p>';
             }
         } catch (err) {
+            console.error(err);
             container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">Error cargando comerciales.</p>';
         }
     },
@@ -3225,6 +3095,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res.message || 'No se pudo asignar.', 'error');
             }
         } catch (e) {
+            console.error(e);
             SIApp.showToast('Error', 'Error interno al asignar.', 'error');
         }
     },
@@ -3244,6 +3115,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res.message || 'No se pudo desasignar.', 'error');
             }
         } catch (e) {
+            console.error(e);
             SIApp.showToast('Error', 'Error interno.', 'error');
         }
     },
@@ -3284,6 +3156,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error al actualizar', res?.message || 'Revisa los campos', 'error');
             }
         } catch (error) {
+            console.error(error);
             SIApp.showToast('Error', 'Error al modificar el proyecto', 'error');
         } finally {
             SIApp.setBtnLoading(`${modalId}-btn-save`, false, 'Guardar Cambios');
@@ -3375,6 +3248,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res?.message || 'Revisa los campos', 'error');
             }
         } catch (error) {
+            console.error(error);
             SIApp.showToast('Error', 'Error al modificar documento', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Guardar Cambios');
@@ -3481,6 +3355,7 @@ SIModules.projectDetailAdmin = {
                 if (window.SIApp) SIApp.showToast('Error', res?.message || 'No se pudo cambiar el estado', 'error');
             }
         } catch (error) {
+            console.error(error);
             if (window.SIApp) SIApp.showToast('Error', 'Error al actualizar el estado', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Actualizar');
@@ -3542,6 +3417,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('No se puede aprobar', res.message || 'Error validando permisos o estado.', 'error');
             }
         } catch (e) {
+            console.error(e);
             SIApp.showToast('Error', 'Error de conexión enviando código.', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Aprobar');
@@ -3577,6 +3453,7 @@ SIModules.projectDetailAdmin = {
                 }
             }
         } catch (e) {
+            console.error(e);
             SIApp.showToast('Error', 'Error de conexión verificando código.', 'error');
         } finally {
             SIApp.setBtnLoading(btnId, false, 'Confirmar Código');
@@ -3657,6 +3534,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res.message || 'No se pudo actualizar.', 'error');
             }
         } catch (e) {
+            console.error(e);
             SIApp.showToast('Error', 'Hubo un error al intentar editar el mensaje.', 'error');
         }
     },
@@ -3701,6 +3579,7 @@ SIModules.projectDetailAdmin = {
                 SIApp.showToast('Error', res?.message || 'No se pudo cerrar el proyecto.', 'error');
             }
         } catch (e) {
+            console.error(e);
             SIApp.showToast('Error', 'Error de conexión al cerrar el proyecto.', 'error');
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Cerrar Proyecto'; }

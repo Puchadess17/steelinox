@@ -144,6 +144,37 @@
                         Volver a Iniciar Sesión
                     </button>
                 </form>
+
+                <!-- Formulario Verificación OTP (Oculto Inicialmente) -->
+                <form id="otp-form" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <h2 class="text-lg font-bold text-gray-900 mb-1">Verificación de seguridad</h2>
+                        <p class="text-xs text-gray-500">Hemos enviado un código de 6 dígitos a <br><span id="otp-email-hint" class="font-bold text-gray-700"></span></p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="otp-code" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center mb-3">Código de verificación</label>
+                        <input type="text" id="otp-code" name="code" maxlength="6" placeholder="000000"
+                            class="w-full text-center text-3xl font-black tracking-[0.5em] py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-gray-100"
+                            required autocomplete="one-time-code" inputmode="numeric">
+                        <p class="text-[10px] text-gray-400 mt-4 text-center">El código caduca en 10 minutos.</p>
+                    </div>
+
+                    <button type="submit" id="btn-otp"
+                        class="w-full flex items-center justify-center gap-2 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-orange-500/20">
+                        <span>Verificar y Acceder</span>
+                    </button>
+
+                    <button type="button" onclick="Auth.showLoginPanel()"
+                        class="w-full mt-4 text-sm text-gray-500 hover:text-gray-700 font-medium">
+                        Usar otra cuenta
+                    </button>
+                </form>
             </div>
 
             <!-- Footer del card -->

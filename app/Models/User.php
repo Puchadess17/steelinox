@@ -211,6 +211,51 @@ class User
 
     /**
      * ====================
+     * GESTIÓN DE 2FA (OTP)
+     * ====================
+     */
+
+    /** Genera y persiste el OTP en la BD (expira en N minutos) */
+    public function setOtp($userId, $code, $interval = '10 MINUTE')
+    {
+        $sql = "UPDATE users 
+                SET otp_code = :code, 
+                    otp_expires_at = DATE_ADD(NOW(), INTERVAL $interval) 
+                WHERE id = :id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'code' => $code,
+            'id'   => $userId
+        ]);
+    }
+
+    /** Verifica el OTP: devuelve el usuario si es válido y no ha expirado */
+    public function findByValidOtp($userId, $code)
+    {
+        $sql = "SELECT id, name, email, role, client_id 
+                FROM users 
+                WHERE id = :id 
+                  AND otp_code = :code 
+                  AND otp_expires_at > NOW() 
+                  AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'id'   => $userId,
+            'code' => $code
+        ]);
+        return $stmt->fetch();
+    }
+
+    /** Borra el OTP tras verificación exitosa o caducidad */
+    public function clearOtp($userId)
+    {
+        $sql = "UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $userId]);
+    }
+
+    /**
+     * ====================
      * ÁMBITO: COMERCIALES (PERSONAL INTERNO)
      * ====================
      */

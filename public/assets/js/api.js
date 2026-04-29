@@ -130,7 +130,7 @@ const API = {
                 // No redirigir si estamos en endpoints de auth o verificación
                 const authEndpoints = ['/login', '/me', '/csrf-token'];
                 const isAuthEndpoint = authEndpoints.some(e => endpoint.includes(e));
-                
+
                 if (!isAuthEndpoint) {
                     this.handleUnauthorized();
                 }

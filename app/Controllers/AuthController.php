@@ -12,6 +12,7 @@ require_once APP_PATH . '/Models/User.php';
 require_once APP_PATH . '/Models/Audit.php';
 require_once APP_PATH . '/Services/AuditLogger.php';
 require_once APP_PATH . '/Policies/AuthMiddleware.php';
+require_once APP_PATH . '/Services/NotificationService.php';
 
 class AuthController {
 
@@ -134,11 +135,18 @@ class AuthController {
          */
         $auditModel = new Audit();
         $failedAttempts = $auditModel->countRecentFailedLogins($ip, 15);
+        $failedOtps     = $auditModel->countRecentFailedOtps($ip, 15);
 
-        if ($failedAttempts >= 5) {
-            AuditLogger::log('ip_bloqueada', 'system', 0, null, ['ip' => $ip, 'email_intentado' => $email]);
+        if ($failedAttempts >= 5 || $failedOtps >= 3) {
+            AuditLogger::log('ip_bloqueada', 'system', 0, null, [
+                'ip' => $ip, 
+                'email_intentado' => $email,
+                'reason' => $failedOtps >= 3 ? 'Exceso de fallos OTP' : 'Exceso de fallos Login'
+            ]);
 
-            $this->sendResponse(429, false, 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.', null, ['rate_limit' => 'Inténtelo de nuevo en 15 minutos']);
+            $this->sendResponse(429, false, 'Acceso bloqueado temporalmente por seguridad.', null, [
+                'rate_limit' => 'Inténtelo de nuevo en 15 minutos'
+            ]);
             return;
         }
 
@@ -172,32 +180,102 @@ class AuthController {
             }
             
             /**
-             * INICIO DE SESIÓN SEGURO
-             * Se limpian los datos de la sesión anterior y se regenera el ID
-             * para prevenir ataques de session fixation.
+             * FLUJO 2FA (SEGUNDO FACTOR)
+             * En lugar de abrir la sesión, generamos un OTP y lo enviamos por email.
+             * Guardamos el ID del usuario en una sesión temporal y "ciega".
              */
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $userModel->setOtp($user['id'], $otp);
+
+            // Encolar email de verificación
+            NotificationService::queueUserEvent($user['id'], 'otp_login', $user['email'], ['otp' => $otp]);
+
             session_unset();
             session_regenerate_id(true);
+            $_SESSION['otp_pending_user_id'] = $user['id'];
+            $_SESSION['otp_limit_attempts']  = 0;
 
-            $_SESSION['user_id']       = $user['id'];
-            $_SESSION['role']          = $user['role'];
-            $_SESSION['client_id']     = $user['client_id'];
-            $_SESSION['last_activity'] = time(); // Inicializa el contador de inactividad
-            
-            $userModel->updateLastLogin($user['id']);
-
-            AuditLogger::log('login_exitoso', 'user', $user['id']);
-
-            $this->sendResponse(200, true, 'Login correcto', [
-                'id'   => $user['id'],
-                'name' => $user['name'],
-                'role' => $user['role']
+            $this->sendResponse(200, true, 'Se requiere verificación', [
+                'requires_2fa' => true,
+                'email_hint'   => substr($user['email'], 0, 3) . '...' . substr($user['email'], strpos($user['email'], '@'))
             ], null);
         } else {
             // entity_id = 0 indica que el evento no pertenece a ningún usuario concreto
             AuditLogger::log('login_fallido', 'system', 0, null, ['email_intentado' => $email]);
 
             $this->sendResponse(401, false, 'Credenciales incorrectas', null, ['auth' => 'Email o contraseña inválidos']);
+        }
+    }
+
+    /**
+     * VERIFICACIÓN DE OTP (POST /api/login/verify-otp)
+     * Completa el inicio de sesión validando el código de 6 dígitos.
+     */
+    public function verifyOtp() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (session_status() === PHP_SESSION_NONE) @session_start();
+
+        if (empty($_SESSION['otp_pending_user_id'])) {
+            $this->sendResponse(403, false, 'Sesión de verificación expirada o inválida.', null, ['auth' => 'Inicie sesión de nuevo']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $code  = $input['code'] ?? '';
+        $userId = $_SESSION['otp_pending_user_id'];
+        $ip     = $_SERVER['REMOTE_ADDR'];
+
+        // Rate limiting de intentos de OTP (máximo 3 por IP en 15 min)
+        $auditModel = new Audit();
+        $failedOtps = $auditModel->countRecentFailedOtps($ip, 15);
+
+        if ($failedOtps >= 3) {
+            AuditLogger::log('ip_bloqueada_otp', 'system', 0, null, ['ip' => $ip, 'user_id' => $userId]);
+            session_unset();
+            session_destroy();
+            $this->sendResponse(429, false, 'Demasiados intentos fallidos. Su IP ha sido bloqueada 15 minutos.', null, ['otp' => 'Límite de intentos excedido']);
+            return;
+        }
+
+        if (empty($code)) {
+            $this->sendResponse(422, false, 'El código es obligatorio', null, ['code' => 'Campo requerido']);
+            return;
+        }
+
+        $userModel = new User();
+        $user = $userModel->findByValidOtp($userId, $code);
+
+        if ($user) {
+            /**
+             * ÉXITO: ABRIR SESIÓN REAL
+             */
+            $userModel->clearOtp($userId);
+            $userModel->updateLastLogin($userId);
+
+            // Guardar datos definitivos en sesión
+            $_SESSION['user_id']       = $user['id'];
+            $_SESSION['role']          = $user['role'];
+            $_SESSION['client_id']     = $user['client_id'];
+            $_SESSION['last_activity'] = time();
+            
+            // Limpiar flags de OTP
+            unset($_SESSION['otp_pending_user_id']);
+            unset($_SESSION['otp_limit_attempts']);
+
+            // Regenerar ID para seguridad post-autenticación
+            session_regenerate_id(true);
+
+            AuditLogger::log('login_exitoso', 'user', $user['id'], null, ['method' => '2fa_email']);
+
+            $this->sendResponse(200, true, 'Verificación exitosa', [
+                'id'   => $user['id'],
+                'name' => $user['name'],
+                'role' => $user['role']
+            ], null);
+        } else {
+            AuditLogger::log('otp_fallido', 'user', $userId, null, ['code_intentado' => $code]);
+            $this->sendResponse(401, false, 'Código de verificación incorrecto o expirado.', null, ['code' => 'Código inválido']);
         }
     }
     

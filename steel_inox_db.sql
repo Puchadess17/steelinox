@@ -172,6 +172,8 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) NOT NULL,
   `reset_token` varchar(255) DEFAULT NULL,
   `reset_token_expires_at` datetime DEFAULT NULL,
+  `otp_code` varchar(6) DEFAULT NULL,
+  `otp_expires_at` datetime DEFAULT NULL,
   `is_active` tinyint(4) DEFAULT 1,
   `last_login_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),

@@ -78,14 +78,15 @@ const Auth = {
             const result = await API.post('/login', { email, password }, { silent: true });
 
             if (result.success && result.data) {
-                // Limpiar cualquier rastro de sesión anterior antes de guardar la nueva
-                this.clearLocalData();
-                
-                // Guardar datos del usuario en sessionStorage
-                sessionStorage.setItem('si_user', JSON.stringify(result.data));
-
-                // Redirigir al panel
-                window.location.href = '/steelinox/panel';
+                if (result.data.requires_2fa) {
+                    // FLUJO 2FA: Intercambiar formularios en la misma vista
+                    Auth.showOtpPanel(result.data.email_hint);
+                } else {
+                    // LOGIN DIRECTO (Legacy/Bypass si fuera necesario)
+                    this.clearLocalData();
+                    sessionStorage.setItem('si_user', JSON.stringify(result.data));
+                    window.location.href = '/steelinox/panel';
+                }
             } else {
                 // Mostrar error
                 let errorMsg = result.message || 'Error al iniciar sesión.';
@@ -102,6 +103,9 @@ const Auth = {
                 SIApp.setBtnLoading('btn-login', false);
             }
         });
+
+        // Inicializar también el form de OTP por si acaso el usuario refresca (aunque SPA previene esto)
+        this.initOtp();
 
         // Foco inicial en email
         emailInput?.focus();
@@ -123,10 +127,12 @@ const Auth = {
     toggleForgotPassword(show) {
         const loginForm = document.getElementById('login-form');
         const forgotForm = document.getElementById('forgot-password-form');
+        const otpForm = document.getElementById('otp-form');
         const footer = document.getElementById('footer-forgot');
         const errorBox = document.getElementById('login-error');
 
         if (errorBox) errorBox.classList.add('hidden');
+        if (otpForm) otpForm.classList.add('hidden');
 
         if (show) {
             loginForm.classList.add('hidden');
@@ -138,6 +144,92 @@ const Auth = {
             loginForm.classList.remove('hidden');
             footer.classList.remove('opacity-0', 'pointer-events-none');
             loginForm.querySelector('input').focus();
+        }
+    },
+
+    /**
+     * FLUJO 2FA: MOSTRAR PANEL OTP
+     * Oculta el login y muestra el campo de 6 dígitos sin recarga de página.
+     */
+    showOtpPanel(emailHint) {
+        const loginForm = document.getElementById('login-form');
+        const otpForm = document.getElementById('otp-form');
+        const footer = document.getElementById('footer-forgot');
+        const emailHintEl = document.getElementById('otp-email-hint');
+
+        if (emailHintEl) emailHintEl.textContent = emailHint || 'tu correo';
+
+        loginForm.classList.add('hidden');
+        otpForm.classList.remove('hidden');
+        if (footer) footer.classList.add('hidden');
+
+        // Focus al primer campo de código
+        setTimeout(() => {
+            document.getElementById('otp-code')?.focus();
+        }, 400);
+    },
+
+    /** Volver al panel de login desde OTP */
+    showLoginPanel() {
+        const loginForm = document.getElementById('login-form');
+        const otpForm = document.getElementById('otp-form');
+        const footer = document.getElementById('footer-forgot');
+        const errorBox = document.getElementById('login-error');
+
+        if (errorBox) errorBox.classList.add('hidden');
+        otpForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        if (footer) footer.classList.remove('hidden');
+        
+        SIApp.setBtnLoading('btn-login', false);
+    },
+
+    /**
+     * INICIALIZACIÓN DEL FORMULARIO OTP
+     * Gestiona el submit del código de 6 dígitos.
+     * @api POST /api/login/verify-otp → { user: { id, name, role } }
+     */
+    initOtp() {
+        const form = document.getElementById('otp-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const codeInput = document.getElementById('otp-code');
+            const code = codeInput.value.trim();
+
+            if (code.length !== 6) {
+                this.showLoginError('El código debe tener 6 dígitos.');
+                return;
+            }
+
+            SIApp.setBtnLoading('btn-otp', true, 'Verificando...');
+
+            try {
+                const result = await API.post('/login/verify-otp', { code }, { silent: true });
+                if (result.success && result.data) {
+                    this.clearLocalData();
+                    sessionStorage.setItem('si_user', JSON.stringify(result.data));
+                    window.location.href = '/steelinox/panel';
+                } else {
+                    this.showLoginError(result.message || 'Código incorrecto.');
+                }
+            } catch (err) {
+                this.showLoginError('Error de conexión al verificar el código.');
+            } finally {
+                SIApp.setBtnLoading('btn-otp', false);
+            }
+        });
+
+        // Mejorar experiencia de entrada: solo números
+        const codeInput = document.getElementById('otp-code');
+        if (codeInput) {
+            codeInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                if (e.target.value.length === 6) {
+                    // Auto-submit opcional? Mejor que el usuario pulse el botón por seguridad
+                }
+            });
         }
     },
 

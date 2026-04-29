@@ -271,4 +271,22 @@ class Audit
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Cuenta intentos fallidos de OTP desde una IP en un intervalo de tiempo.
+     */
+    public function countRecentFailedOtps($ip, $minutes = 15)
+    {
+        $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));
+
+        $sql = "SELECT COUNT(*) FROM audit_logs 
+                WHERE action_key = 'otp_fallido' 
+                  AND ip = :ip 
+                  AND created_at >= :time_limit";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['ip' => $ip, 'time_limit' => $timeLimit]);
+
+        return (int) $stmt->fetchColumn();
+    }
 }
