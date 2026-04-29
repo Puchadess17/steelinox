@@ -447,7 +447,7 @@ class ProjectController
 
             if (!ProjectPolicy::canEdit($role, $projectDetails['status'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No permitido.', 'data' => null, 'errors' => ['policy' => 'No puedes editar el proyecto en este estado.']]);
+                echo json_encode(['success' => false, 'message' => 'Operación no permitida.', 'data' => null, 'errors' => ['project' => 'No puedes editar el proyecto en este estado. Solo se permiten cambios en fases abiertas.']]);
                 return;
             }
 
@@ -548,7 +548,7 @@ class ProjectController
 
             if (!ProjectPolicy::canDelete($role, $projectDetails['status'])) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'No permitido.', 'data' => null, 'errors' => ['policy' => 'No tienes permisos para eliminar proyectos.']]);
+                echo json_encode(['success' => false, 'message' => 'Operación denegada.', 'data' => null, 'errors' => ['project' => 'Solo se pueden eliminar proyectos que estén en estado "Cerrado".']]);
                 return;
             }
 

@@ -197,7 +197,10 @@ class DocumentController {
                     'auto_versionado'  => true
                 ]);
 
-                NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, ['titulo' => $title]);
+                NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, [
+                    'titulo'      => $title,
+                    'document_id' => $existingId
+                ]);
 
                 echo json_encode(['success' => true, 'message' => 'Auto-Versionado exitoso.', 'data' => ['id' => $existingId, 'version_id' => $newVersionId, 'is_new_version' => true], 'errors' => null]);
             } else {
@@ -211,7 +214,10 @@ class DocumentController {
                     'mime_type'        => $realMime
                 ]);
 
-                NotificationService::queueProjectEvent($projectId, 'nueva_propuesta', $userId, ['titulo' => $title]);
+                NotificationService::queueProjectEvent($projectId, 'nueva_propuesta', $userId, [
+                    'titulo'      => $title,
+                    'document_id' => $newDocId
+                ]);
 
                 echo json_encode(['success' => true, 'message' => 'Documento subido.', 'data' => ['id' => $newDocId, 'is_new_version' => false], 'errors' => null]);
             }
@@ -316,7 +322,8 @@ class DocumentController {
 
             require_once APP_PATH . '/Services/NotificationService.php';
             NotificationService::queueProjectEvent($projectId, 'nueva_version', $userId, [
-                'titulo' => $docInfo ? $docInfo['title'] : 'Desconocido'
+                'titulo'      => $docInfo ? $docInfo['title'] : 'Desconocido',
+                'document_id' => $documentId
             ]);
 
             echo json_encode(['success' => true, 'message' => 'Nueva versión subida', 'data' => ['version_id' => $versionId], 'errors' => null]);

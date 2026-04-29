@@ -85,7 +85,7 @@ const Auth = {
                     // LOGIN DIRECTO (Legacy/Bypass si fuera necesario)
                     this.clearLocalData();
                     sessionStorage.setItem('si_user', JSON.stringify(result.data));
-                    window.location.href = '/steelinox/panel';
+                    this._performRedirect();
                 }
             } else {
                 // Mostrar error
@@ -210,7 +210,7 @@ const Auth = {
                 if (result.success && result.data) {
                     this.clearLocalData();
                     sessionStorage.setItem('si_user', JSON.stringify(result.data));
-                    window.location.href = '/steelinox/panel';
+                    this._performRedirect();
                 } else {
                     this.showLoginError(result.message || 'Código incorrecto.');
                 }
@@ -279,6 +279,17 @@ const Auth = {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     },
 
+    /** Maneja la redirección inteligente tras login */
+    _performRedirect() {
+        const target = sessionStorage.getItem('si_redirect_after_login');
+        if (target) {
+            sessionStorage.removeItem('si_redirect_after_login');
+            window.location.href = target;
+        } else {
+            window.location.href = '/steelinox/panel';
+        }
+    },
+
     // ──────────────────────────────────────
     // SESIÓN
     // ──────────────────────────────────────
@@ -317,8 +328,12 @@ const Auth = {
 
     /** Limpia todos los datos de sesión local y preferencias específicas */
     clearLocalData() {
-        // 1. Limpiar sessionStorage (datos de navegación temporal)
+        // 1. Limpiar sessionStorage (conservando si hay una redirección pendiente)
+        const pendingRedirect = sessionStorage.getItem('si_redirect_after_login');
         sessionStorage.clear();
+        if (pendingRedirect) {
+            sessionStorage.setItem('si_redirect_after_login', pendingRedirect);
+        }
 
         // 2. Limpiar localStorage de forma selectiva (solo lo que empiece por si-)
         const keys = Object.keys(localStorage);

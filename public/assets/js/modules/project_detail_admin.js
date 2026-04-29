@@ -2981,7 +2981,7 @@ SIModules.projectDetailAdmin = {
             if (res.success) {
                 if (window.SIApp) SIApp.showToast('¡Éxito!', 'Documento añadido correctamente.', 'success');
                 this.closeUploadModal();
-                await this.loadProjectDocuments();
+                await this.loadProjectDocuments(true);
             } else {
                 if (window.SIApp) SIApp.showToast('Error', res.message || 'Error al procesar la subida.', 'error');
             }
@@ -3241,7 +3241,7 @@ SIModules.projectDetailAdmin = {
             if (res && res.success) {
                 SIApp.showToast('Documento actualizado', 'Metadatos guardados correctamente', 'success');
                 SIApp.modal.close('edit-document-modal');
-                await this.loadProjectDocuments();
+                await this.loadProjectDocuments(true);
                 // Por si afecta a documentos destacados como la Propuesta
                 if (this.project.status === 'propuesta' || this.project.status === 'ejecucion') this.loadProjectData();
             } else {

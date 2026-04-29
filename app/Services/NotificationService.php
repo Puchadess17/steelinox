@@ -224,8 +224,17 @@ class NotificationService
                 break;
         }
 
+        $buttonUrl = "{$baseUrl}/project/{$project['id']}";
+        $buttonText = "Ver Detalles del Proyecto";
+
+        // Si tenemos un ID de documento, apuntamos directamente a él
+        if (!empty($data['document_id'])) {
+            $buttonUrl .= "/documents/" . $data['document_id'];
+            $buttonText = ($eventName === 'nuevo_comentario') ? "Ver Conversación" : "Ver Documento";
+        }
+
         $content .= "<div style='margin-top:40px; text-align:center;'>
-                        <a href='{$baseUrl}/project/{$project['id']}' style='display:inline-block; background:#F97316; color:white; padding:18px 36px; border-radius:16px; font-weight:800; text-decoration:none; font-size:15px; box-shadow: 0 10px 20px rgba(249, 115, 22, 0.2); transition: all 0.3s ease;'>Ver Detalles del Proyecto</a>
+                        <a href='{$buttonUrl}' style='display:inline-block; background:#F97316; color:white; padding:18px 36px; border-radius:16px; font-weight:800; text-decoration:none; font-size:15px; box-shadow: 0 10px 20px rgba(249, 115, 22, 0.2); transition: all 0.3s ease;'>$buttonText</a>
                      </div>";
 
         $body = self::getHtmlWrapper($content, "Notificación importante sobre el proyecto $projRef");

@@ -1403,7 +1403,8 @@ SIModules.dashboard = {
                     SIApp.showToast('Eliminado', 'El cliente ha sido eliminado correctamente.', 'success');
                     await this._reloadClientsTable();
                 } else {
-                    SIApp.showToast('Error', res.message, 'error');
+                    const msg = (res.errors && res.errors.client) ? res.errors.client : (res.message || 'No se pudo eliminar el cliente.');
+                    SIApp.showToast('No se puede eliminar', msg, 'error');
                 }
             } catch (e) {
                 SIApp.showToast('Error', 'No se pudo eliminar el cliente.', 'error');
@@ -1428,7 +1429,8 @@ SIModules.dashboard = {
                         await this._reloadProjectsListTable();
                     }
                 } else {
-                    SIApp.showToast('No se pudo eliminar', res.message || 'Verifica que el proyecto esté cerrado antes de eliminarlo.', 'error');
+                    const msg = (res.errors && res.errors.project) ? res.errors.project : (res.message || 'Verifica que el proyecto esté cerrado antes de eliminarlo.');
+                    SIApp.showToast('No se puede eliminar', msg, 'error');
                 }
             } catch (e) {
                 SIApp.showToast('Error', 'No se pudo eliminar el proyecto.', 'error');

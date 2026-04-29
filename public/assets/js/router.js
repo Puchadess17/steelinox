@@ -152,6 +152,11 @@ const SIRouter = {
 
         if (!user) {
             if (!isLoginPage) {
+                // Guardamos la URL actual para redirigir tras el login
+                const currentPath = window.location.pathname;
+                if (currentPath !== '/steelinox/' && currentPath !== '/steelinox/panel') {
+                    sessionStorage.setItem('si_redirect_after_login', currentPath);
+                }
                 window.location.href = '/steelinox/';
             }
             return;

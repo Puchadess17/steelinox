@@ -204,7 +204,8 @@ class CommentController {
 
                 require_once APP_PATH . '/Services/NotificationService.php';
                 NotificationService::queueProjectEvent($projectId, 'nuevo_comentario', $userId, [
-                    'comentario' => $safeBody
+                    'comentario'  => $safeBody,
+                    'document_id' => $documentId
                 ]);
 
                 http_response_code(200);
