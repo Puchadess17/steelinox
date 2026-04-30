@@ -354,20 +354,6 @@ INSERT INTO `project_status_logs` (`project_id`, `changed_by_user_id`, `old_stat
 (58, 5, 'aprobado', 'ejecucion', 'Desvío de tráficos'),
 (58, 5, 'ejecucion', 'cerrado', 'Apertura nuevas urgencias');
 
-INSERT INTO `audit_logs` (`actor_user_id`, `actor_role`, `action_key`, `entity_type`, `entity_id`, `project_id`, `metadata_json`, `ip`) VALUES
-(1, 'admin', 'login_exitoso', 'user', 1, NULL, '{"method":"password"}', '192.168.1.10'),
-(2, 'comercial', 'login_exitoso', 'user', 2, NULL, '{"method":"password"}', '192.168.1.11'),
-(3, 'comercial', 'login_exitoso', 'user', 3, NULL, '{"method":"password"}', '192.168.1.12'),
-(4, 'comercial', 'login_exitoso', 'user', 4, NULL, '{"method":"password"}', '192.168.1.13'),
-(5, 'comercial', 'login_exitoso', 'user', 5, NULL, '{"method":"password"}', '192.168.1.14'),
-(6, 'comercial', 'login_exitoso', 'user', 6, NULL, '{"method":"password"}', '192.168.1.15'),
-(7, 'cliente', 'login_exitoso', 'user', 7, NULL, '{"method":"password"}', '10.0.0.1'),
-(8, 'cliente', 'login_exitoso', 'user', 8, NULL, '{"method":"password"}', '10.0.0.2'),
-(2, 'comercial', 'proyecto_creado', 'project', 1, 1, '{"referencia":"PRJ-2026-0001"}', '192.168.1.11'),
-(3, 'comercial', 'proyecto_creado', 'project', 4, 4, '{"referencia":"PRJ-2026-0004"}', '192.168.1.12'),
-(4, 'comercial', 'proyecto_creado', 'project', 22, 22, '{"referencia":"PRJ-2026-0022"}', '192.168.1.13'),
-(5, 'comercial', 'estado_actualizado', 'project', 58, 58, '{"new":"cerrado"}', '192.168.1.14');
-
 -- --------------------------------------------------------
 -- 3. RESTRICCIONES DE INTEGRIDAD REFERENCIAL (FOREIGN KEYS)
 -- --------------------------------------------------------

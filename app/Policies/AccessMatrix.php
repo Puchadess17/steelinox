@@ -68,7 +68,7 @@ class AccessMatrix {
                 'delete' => [
                     'admin'     => true,
                     'comercial' => true,
-                    'cliente'   => false, // DDS §4.5 Borrado lógico preventivo
+                    'cliente'   => false,
                 ]
             ],
 

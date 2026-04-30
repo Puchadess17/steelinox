@@ -23,7 +23,6 @@ require_once APP_PATH . '/Requests/ProjectRequest.php';
 
 class ProjectController
 {
-
     /**
      * LISTADO PAGINADO (GET /api/projects)
      * Devuelve proyectos + KPIs por estado. El modelo filtra por rol:

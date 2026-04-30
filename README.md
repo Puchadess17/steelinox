@@ -89,7 +89,7 @@ DB_USER=root
 DB_PASS=              # En XAMPP por defecto está vacía
 
 # URL base de la aplicación (sin barra final)
-APP_BASE_URL=/steelinox
+APP_BASE_URL=http://localhost/steelinox
 
 # Límite de subida de documentos
 MAX_FILE_SIZE_MB=100

@@ -254,38 +254,41 @@ class Audit
     /**
      * PREVENCIÓN DE FUERZA BRUTA (RATE LIMITING)
      * Cuenta los intentos de acceso fallidos desde una IP específica en 
-     * un margen de tiempo determinado. Utilizado para bloquear temporalmente
-     * ataques automatizados o ingresos no autorizados.
+     * un margen de tiempo determinado.
      */
     public function countRecentFailedLogins($ip, $minutes = 15)
     {
-        $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));
-
-        $sql = "SELECT COUNT(*) FROM audit_logs 
-                WHERE action_key = 'login_fallido' 
-                  AND ip = :ip 
-                  AND created_at >= :time_limit";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['ip' => $ip, 'time_limit' => $timeLimit]);
-
-        return (int) $stmt->fetchColumn();
+        return $this->countFailedAttempts('login_fallido', $ip, $minutes);
     }
 
     /**
+     * PREVENCIÓN DE FUERZA BRUTA PARA OTP (RATE LIMITING)
      * Cuenta intentos fallidos de OTP desde una IP en un intervalo de tiempo.
      */
     public function countRecentFailedOtps($ip, $minutes = 15)
     {
+        return $this->countFailedAttempts('otp_fallido', $ip, $minutes);
+    }
+
+    /**
+     * Método interno centralizado para el conteo de intentos fallidos por tipo.
+     * Principio DRY (Don't Repeat Yourself).
+     */
+    private function countFailedAttempts($actionKey, $ip, $minutes)
+    {
         $timeLimit = date('Y-m-d H:i:s', time() - ($minutes * 60));
 
         $sql = "SELECT COUNT(*) FROM audit_logs 
-                WHERE action_key = 'otp_fallido' 
+                WHERE action_key = :action 
                   AND ip = :ip 
                   AND created_at >= :time_limit";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['ip' => $ip, 'time_limit' => $timeLimit]);
+        $stmt->execute([
+            'action'     => $actionKey,
+            'ip'         => $ip, 
+            'time_limit' => $timeLimit
+        ]);
 
         return (int) $stmt->fetchColumn();
     }
