@@ -68,6 +68,7 @@ SIModules.projectDetailAdmin = {
         // Si es un proyecto nuevo o primera carga
         this.activeTab = this._getInternalTabName(subAction);
         this.pendingPreviewDocId = docId;
+        this.pendingPreviewVersionId = null;
         const user = Auth.getUser();
 
         // Generar layout inicial
@@ -458,6 +459,9 @@ SIModules.projectDetailAdmin = {
         this.activeDocTypeFilter = 'all';
         this.documents = [];
         this.auditLogs = [];
+        this.pendingPreviewVersionId = null;
+        this.currentComments = [];
+        this.docVersions = [];
 
         if (!this.projectId) {
             window.location.href = '/steelinox/panel';
@@ -2161,6 +2165,16 @@ SIModules.projectDetailAdmin = {
         // Populate metadata in header
         this._updatePreviewHeader(doc);
 
+        const chatFilterLabel = document.getElementById('chat-version-filter-label');
+        const chatSelect = document.getElementById('chat-version-select');
+        
+        // Reset state and sync UI immediately
+        this.currentComments = []; // Force fresh fetch and render
+        if (chatSelect) chatSelect.value = versionId || '';
+        if (chatFilterLabel) {
+            chatFilterLabel.textContent = versionId ? `v${versionId}` : 'Todas';
+        }
+
         // URLs
         const viewUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/view?${versionId ? 'version_id=' + versionId + '&' : ''}_t=${Date.now()}`;
         const downloadUrl = `${window.API_BASE}/projects/${this.projectId}/documents/${doc.id}/download${versionId ? '?version_id=' + versionId : ''}`;
@@ -2257,13 +2271,6 @@ SIModules.projectDetailAdmin = {
         // Asegurar que el cuerpo del chat sea visible e inicializar label del filtro
         const chatBody = document.getElementById('chat-collapsible-body');
         if (chatBody) chatBody.classList.remove('hidden');
-
-        const chatFilterLabel = document.getElementById('chat-version-filter-label');
-        const chatSelect = document.getElementById('chat-version-select');
-        if (!versionId) {
-            if (chatFilterLabel) chatFilterLabel.textContent = 'Todas';
-            if (chatSelect) chatSelect.value = '';
-        }
 
         // Load versions (populates header dropdown) and comments
         this.loadDocVersionsForChat(doc.id, versionId);
@@ -2656,9 +2663,9 @@ SIModules.projectDetailAdmin = {
         try {
             const res = await API.get(`/projects/${this.projectId}/documents/${docId}/comments`, { silent: true });
             if (res.success && res.data) {
-                // Optimización: Solo re-renderizar si el contenido ha cambiado (evita saltos de scroll innecesarios)
+                // Optimización: Solo re-renderizar si el contenido ha cambiado o si no es un polling silencioso
                 const newJson = JSON.stringify(res.data);
-                if (newJson !== JSON.stringify(this.currentComments)) {
+                if (!silent || newJson !== JSON.stringify(this.currentComments)) {
                     this.currentComments = res.data;
                     this.renderDocComments(versionId);
                 }
